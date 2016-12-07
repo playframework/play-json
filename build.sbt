@@ -1,7 +1,5 @@
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val PlayVersion = playVersion("2.5.10")
-
 val specsVersion = "3.8.6"
 val specsBuild = Seq(
   "specs2-core",
