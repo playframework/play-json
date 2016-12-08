@@ -1,0 +1,16 @@
+language: scala
+scala:
+- 2.12.1
+- 2.11.8
+jdk:
+- oraclejdk8
+cache:
+  directories:
+  - "$HOME/.ivy2/cache"
+before_cache:
+- rm -rf $HOME/.ivy2/cache/com.typesafe.play/*
+- rm -rf $HOME/.ivy2/cache/scala_*/sbt_*/com.typesafe.play/*
+- find $HOME/.ivy2/cache -name "ivydata-*.properties" -print0 | xargs -n10 -0 rm
+notifications:
+  slack:
+    secure: JPXUQyHjF3FKac8EdQimLZA5B4iGGtMsslK9w+tjgcNbupbuqErAmLdlebJU7lOVaPYbk9DrKjaqx82248hVca++t5uhEuj1Qgijl3Fn3VdTyv94D+wQ0p/5iiNjTOF1TS5R8NnY6WHaXfMD/ibGnlZKHHjgGX3RyszHmg8YWVxD8+Y/0uE+q9LddPeeGWGEmWgfwHS8fI+5c3/f7cwv7r2wEkHpXOorZbDLlyjD7/b22GBw+8/rsIEEnURNOI7A58IDJHRG4JAkv+Y/vX4i7mPSWdD4/YD6shAy0Jgxk8tNV4WtU8Mq9cV3/Kd8P+hWAaSd6aAhsaj+kNq9C2ZrTDVDe02tcZ34j0g0oaPZQDXTLATHdo0qX9sf+k5EWm25swkhn4CotcqBZ8frDwfO07j9n3lj5lxLauaRzurwoNYaY6nuDjPzFwi1vA6VqYHUnR0z0k+rh7EPbmgZjqtLH8gdwbYqE96NTd1O0A6kngMJ1T6FhHhmNbK6uepAp94q96s41OoyBXMc9pFx8V9dksMzGvvm0n1Or+B7F38OKjX9CMsCh/tuv/wC1sTc6dKh7Eg+odfwEUM1DuGS3JU5qMRkXqvj6aOeoCp+tvU9ZGWA/iELiQKlX4tZ4kY5Onj4VgWjfaKsx3FpnLt3kBXFL2UUF/+scumV31USgTKSEnA=
