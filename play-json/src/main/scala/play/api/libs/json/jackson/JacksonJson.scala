@@ -264,6 +264,9 @@ private[json] object JacksonJson {
     sw.getBuffer.toString
   }
 
+  def jsValueToBytes(jsValue: JsValue): Array[Byte] =
+    mapper.writeValueAsBytes(jsValue)
+
   def jsValueToJsonNode(jsValue: JsValue): JsonNode =
     mapper.valueToTree(jsValue)
 

@@ -325,6 +325,22 @@ class JsonSpec extends org.specs2.mutable.Specification {
       parse(stringify(json)) must equalTo(json)
     }
 
+    "convert to a byte array containing the UTF-8 representation" in {
+      val json = Json.parse(
+        """
+          |{
+          |  "name": "coffee",
+          |  "symbol": "☕",
+          |  "price": "2.5 €"
+          |}
+        """.stripMargin)
+      val bytes = Json.toBytes(json)
+      val string = new String(bytes, "UTF-8")
+      val parsedJson = Json.parse(string)
+      parsedJson \ "symbol" must_== JsDefined(JsString("☕"))
+      parsedJson \ "price" must_== JsDefined(JsString("2.5 €"))
+    }
+
     "Serialize and deserialize Lists" in {
       val xs: List[Int] = (1 to 5).toList
       val json = arr(1, 2, 3, 4, 5)
