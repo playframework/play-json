@@ -63,6 +63,11 @@ class MacroSpec extends org.specs2.mutable.Specification {
         }
       }
     }
+
+    "be generated for a sealed family" in {
+      Json.reads[Family]
+      ???
+    }
   }
 
   "Writes" should {
@@ -278,9 +283,10 @@ class MacroSpec extends org.specs2.mutable.Specification {
 
   // ---
 
-  case class Simple(bar: String)
-  case class Lorem[T](ipsum: T, age: Int)
-  case class Optional(prop: Option[String])
+  sealed trait Family
+  case class Simple(bar: String) extends Family
+  case class Lorem[T](ipsum: T, age: Int) extends Family
+  case class Optional(prop: Option[String]) extends Family
 
   case class Foo(id: Long, value: Option[Either[String, Foo]])
   case class Interval[T](base: T, other: Option[T])
