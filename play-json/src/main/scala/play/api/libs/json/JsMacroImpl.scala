@@ -55,22 +55,71 @@ object JsMacroImpl {
    * @param natag The class of the reads/writes/format.
    */
   private def macroImpl[A, M[_], N[_]](c: blackbox.Context, methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
-    // Helper function to create parameter lists for function invocations based on whether this is a reads,
-    // writes or both.
-    def conditionalList[T](ifReads: T, ifWrites: T): List[T] =
-      (if (reads) List(ifReads) else Nil) :::
-        (if (writes) List(ifWrites) else Nil)
-
     import c.universe._
 
-    val tpeArgs = atag.tpe match {
-      case TypeRef(_, _, args) => args
+    def directKnownSubclasses: Option[List[Type]] = {
+      // Workaround for SI-7046: https://issues.scala-lang.org/browse/SI-7046
+      val tpeSym = atag.tpe.typeSymbol.asClass
 
-      case t => c.abort(
-        c.enclosingPosition,
-        s"Type ${t.typeSymbol.fullName} is not a valid case class"
-      )
+      @annotation.tailrec
+      def allSubclasses(path: Traversable[Symbol], subclasses: Set[Type]): Set[Type] = path.headOption match {
+        case Some(cls: ClassSymbol) if (
+          tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym)
+        ) => {
+          val newSub: Set[Type] = if (!cls.isCaseClass) {
+            c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: no case accessor")
+            Set.empty
+          } else if (!cls.typeParams.isEmpty) {
+            c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: type parameter not supported")
+            Set.empty
+          } else Set(cls.selfType)
+
+          allSubclasses(path.tail, subclasses ++ newSub)
+        }
+
+        case Some(o: ModuleSymbol) if (
+          o.companion == NoSymbol && // not a companion object
+            tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
+        ) => {
+          val newSub: Set[Type] = if (!o.moduleClass.asClass.isCaseClass) {
+            c.warning(c.enclosingPosition, s"cannot handle object ${o.fullName}: no case accessor")
+            Set.empty
+          } else Set(o.typeSignature)
+
+          allSubclasses(path.tail, subclasses ++ newSub)
+        }
+
+        case Some(o: ModuleSymbol) if (
+          o.companion == NoSymbol // not a companion object
+        ) => allSubclasses(path.tail, subclasses)
+
+        case Some(_) => allSubclasses(path.tail, subclasses)
+
+        case _ => subclasses
+      }
+
+      if (tpeSym.isSealed && tpeSym.isAbstract) {
+        Some(allSubclasses(tpeSym.owner.typeSignature.decls, Set.empty).toList)
+      } else None
     }
+
+    directKnownSubclasses match {
+      case Some(subTypes) => macroSealedFamilyImpl[A, M, N](c, methodName, mapLikeMethod, reads, writes)(subTypes)(atag, matag, natag)
+
+      case _ => atag.tpe match {
+        case TypeRef(_, _, args) => macroCaseImpl[A, M, N](c, methodName, mapLikeMethod, reads, writes)(args)(atag, matag, natag)
+
+        case t => c.abort(
+          c.enclosingPosition,
+          s"Type ${t.typeSymbol.fullName} is not a valid case class")
+      }
+    }
+  }
+
+  @inline private def macroSealedFamilyImpl[A, M[_], N[_]](c: blackbox.Context, methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(subTypes: List[c.universe.Type])(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = ??? // TODO
+
+  @inline private def macroCaseImpl[A, M[_], N[_]](c: blackbox.Context, methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(tpeArgs: List[c.universe.Type])(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
+    import c.universe._
 
     // The call is the term name, either "read", "write" or "format",
     // that gets invoked on JsPath (e.g. `(__ \ "foo").read`)
@@ -472,6 +521,12 @@ object JsMacroImpl {
     // if case class has one single field, needs to use map/contramap/inmap on the Reads/Writes/Format instead of
     // canbuild.apply
     val applyOrMap = TermName(if (multiParam) "apply" else mapLikeMethod)
+
+    // Helper function to create parameter lists for function invocations
+    // based on whether this is a reads, writes or both.
+    def conditionalList[T](ifReads: T, ifWrites: T): List[T] =
+      (if (reads) List(ifReads) else Nil) :::
+        (if (writes) List(ifWrites) else Nil)
 
     val syntaxImport = if (!multiParam && !writes) q"" else q"import $syntax._"
     @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, ApplyUnapply.unapplyFunction)})"
