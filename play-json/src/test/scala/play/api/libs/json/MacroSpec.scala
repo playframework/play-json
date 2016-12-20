@@ -151,14 +151,12 @@ class MacroSpec extends org.specs2.mutable.Specification {
     }
 
     "handle case class with default values" >> {
-      implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
-
       val json01 = Json.obj("id" -> 15)
       val json02 = Json.obj("id" -> 15, "a" -> "a")
       val json03 = Json.obj("id" -> 15, "a" -> "a", "b" -> "b")
       val fixture0 = WithDefault(15, "a", Some("b"))
 
-      val json1 = Json.obj("id" -> 15, "b" -> JsNull)
+      val json11 = Json.obj("id" -> 15, "b" -> JsNull)
       val fixture1 = WithDefault(15, "a", None)
 
       val json2 = Json.obj("id" -> 15, "a" -> "aa")
@@ -167,24 +165,24 @@ class MacroSpec extends org.specs2.mutable.Specification {
       val json3 = Json.obj("id" -> 15, "a" -> "aa", "b" -> "bb")
       val fixture3 = WithDefault(15, "aa", Some("bb"))
 
-      val json4 = Json.obj("id" -> 18)
+      val json4 = Json.obj("id" -> 18, "a" -> "a", "b" -> "b")
       val fixture4 = WithDefault(18)
 
       def readSpec(r: Reads[WithDefault]) = {
-        (r.reads(json01).get must_== fixture0) and
-        (r.reads(json02).get must_== fixture0) and
-        (r.reads(json03).get must_== fixture0) and
-        (r.reads(json1).get must_== fixture1) and
-        (r.reads(json2).get must_== fixture2) and
-        (r.reads(json3).get must_== fixture3)
+        r.reads(json01).get must_== fixture0 and {
+          r.reads(json02).get must_== fixture0 and {
+            r.reads(json03).get must_== fixture0 and {
+              r.reads(json11).get must_== fixture1 and {
+                r.reads(json2).get must_== fixture2 and {
+                  r.reads(json3).get must_== fixture3
+                }
+              }
+            }
+          }
+        }
       }
 
-      def writeSpec(w: OWrites[WithDefault]) = {
-        (w.writes(fixture4) must_== json4) and
-        (w.writes(fixture3) must_== json3) and
-        (w.writes(fixture2) must_== json2) and
-        (w.writes(fixture1) must_== json1)
-      }
+      def writeSpec(w: OWrites[WithDefault]) = w.writes(fixture4) must_== json4
 
       "to generate Reads" in readSpec(Json.reads[WithDefault])
 
@@ -198,7 +196,6 @@ class MacroSpec extends org.specs2.mutable.Specification {
     }
 
     "handle case class with default values inner optional case class containing default values" >> {
-      implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
       implicit val withDefaultFormat = Json.format[WithDefault]
 
       val json01 = Json.obj("id" -> 3)
@@ -237,9 +234,7 @@ class MacroSpec extends org.specs2.mutable.Specification {
         }
       }
 
-      def writeSpec(w: OWrites[ComplexWithDefault]) = {
-        w.writes(fixture2) must_== Json.obj("id" -> 18)
-      }
+      def writeSpec(w: OWrites[ComplexWithDefault]) = w.writes(fixture2) must_== json2
 
       "to generate Reads" in readSpec(Json.reads[ComplexWithDefault])
 
