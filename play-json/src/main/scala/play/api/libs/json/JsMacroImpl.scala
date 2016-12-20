@@ -76,7 +76,8 @@ object JsMacroImpl {
       paramType: Type,
       neededImplicit: Tree,
       tpe: Type,
-      selfRef: Boolean
+      selfRef: Boolean,
+      default: Option[Tree]
     )
 
     val optTpeCtor = typeOf[Option[_]].typeConstructor
@@ -84,8 +85,8 @@ object JsMacroImpl {
 
     /* Utility for implicit resolution - can hardly be moved outside
      * (due to dependent types).
-     * 
-     * @param resolvedType Per each symbol of the type parameters, 
+     *
+     * @param resolvedType Per each symbol of the type parameters,
      * which type is bound to
      */
     class ImplicitResolver(resolvedType: Type => Type) {
@@ -163,7 +164,7 @@ object JsMacroImpl {
         }
       }
 
-      def createImplicit(subject: Type, ctag: Type)(ptype: Type): Implicit = {
+      def createImplicit(subject: Type, ctag: Type, defaultValue: Option[Tree])(ptype: Type): Implicit = {
         val tpe = ptype match {
           case TypeRef(_, _, targ :: _) =>
             // Option[_] needs special treatment because we need to use XXXOpt
@@ -189,7 +190,7 @@ object JsMacroImpl {
           )
         )
 
-        Implicit(ptype, neededImplicit, tpe, selfRef)
+        Implicit(ptype, neededImplicit, tpe, selfRef, defaultValue)
       }
     }
 
@@ -348,9 +349,17 @@ object JsMacroImpl {
       }
 
       // Parameters symbols -> Function tree
-      lazy val applyFunction: Option[(Tree, List[TypeSymbol], List[Symbol])] =
+      lazy val applyFunction: Option[(Tree, List[TypeSymbol], List[Symbol], List[Option[Tree]])] =
         maybeApply.flatMap { app =>
           app.paramLists.headOption.map { params =>
+
+            val defaultValues = params.map(_.asTerm).zipWithIndex map { case (p, i) =>
+              if (!p.isParamWithDefault) None else {
+                val getter = TermName("apply$default$" + (i + 1))
+                Some(q"$companionObject.$getter")
+              }
+            }
+
             val tree = if (hasVarArgs) {
               val applyParams = params.foldLeft(List.empty[Tree]) { (l, e) =>
                 l :+ Ident(TermName(e.name.encodedName.toString))
@@ -364,7 +373,7 @@ object JsMacroImpl {
               q"$companionObject.apply _"
             } else q"$companionObject.apply[..$tpeArgs] _"
 
-            (tree, app.typeParams.map(_.asType), params)
+            (tree, app.typeParams.map(_.asType), params, defaultValues)
           }
         }
 
@@ -373,7 +382,7 @@ object JsMacroImpl {
       } else q"$unlift($companionObject.$effectiveUnapply[..$tpeArgs])"
 
       @inline private def params: List[(Name, Type)] = applyFunction match {
-        case Some((_, _, ps)) => {
+        case Some((_, _, ps, _)) => {
           val base = if (hasVarArgs) ps.init else ps
           val defs = base.map { p => p.name -> p.typeSignature }.toList
           val end = if (!hasVarArgs) List.empty[(Name, Type)] else {
@@ -387,14 +396,14 @@ object JsMacroImpl {
       }
 
       def implicits(resolver: ImplicitResolver): List[(Name, Implicit)] = {
-        val createImplicit = resolver.createImplicit(atag.tpe, natag.tpe) _
+        val createImplicit = resolver.createImplicit(atag.tpe, natag.tpe, None) _
         val effectiveImplicits = params.map {
           case (n, t) => n -> createImplicit(t)
         }
 
         // if any implicit is missing, abort
         val missingImplicits = effectiveImplicits.collect {
-          case (_, Implicit(t, EmptyTree /* ~= not found */ , _, _)) => t
+          case (_, Implicit(t, EmptyTree /* ~= not found */ , _, _, None)) => t
         }
 
         if (missingImplicits.nonEmpty) {
@@ -409,7 +418,7 @@ object JsMacroImpl {
 
       lazy val boundTypes: Map[String, Type] =
         applyFunction.fold(Map.empty[String, Type]) {
-          case (_, tparams, _) => tparams.zip(tpeArgs).map {
+          case (_, tparams, _, _) => tparams.zip(tpeArgs).map {
             case (sym, ty) => sym.fullName -> ty
           }.toMap
         }
@@ -485,7 +494,7 @@ object JsMacroImpl {
             subTypes.foldLeft(List.empty[CaseDef]) { (out, t) =>
               val rtpe = appliedType(readsType, List(t))
               val reader = resolver.createImplicit(
-                atag.tpe, rtpe
+                atag.tpe, rtpe, None
               )(t).neededImplicit
 
               if (reader.isEmpty) {
@@ -545,9 +554,9 @@ object JsMacroImpl {
         // from the implicit scope, due to the contravariant/implicit issue:
         // https://groups.google.com/forum/#!topic/scala-language/ZE83TvSWpT4
 
-        q"""{ v: ${atag.tpe} => 
+        q"""{ v: ${atag.tpe} =>
           val ${term.name} = "eliminatedImplicit"
-          $cases 
+          $cases
         }"""
       }
 
@@ -580,7 +589,7 @@ object JsMacroImpl {
 
       }
 
-      val (applyFunction, tparams, params) = utility.applyFunction match {
+      val (applyFunction, tparams, params, defaultValues) = utility.applyFunction match {
         case Some(info) => info
 
         case _ => c.abort(
@@ -599,6 +608,22 @@ object JsMacroImpl {
       // e.g. `(__ \ "foo").readNullable`
       val callNullable = TermName(s"${methodName}Nullable")
 
+      // readWithDefault is term for "readWithDefault"
+      // e.g. `(__ \ "foo").readWithDefault("bar")`
+      val readWithDefault = TermName("readWithDefault")
+
+      // formatWithDefault is term for "formatWithDefault"
+      // e.g. `(__ \ "foo").formatWithDefault("bar")`
+      val formatWithDefault = TermName("formatWithDefault")
+
+      // readNullableWithDefault is term for "readNullableWithDefault"
+      // e.g. `(__ \ "foo").readNullableWithDefault(Some("Bar"))`
+      val readNullableWithDefault = TermName("readNullableWithDefault")
+
+      // formatNullableWithDefault is term for "formatNullableWithDefault"
+      // e.g. `(__ \ "foo").formatNullableWithDefault(Some("Bar"))`
+      val formatNullableWithDefault = TermName("formatNullableWithDefault")
+
       // combines all reads into CanBuildX
       val cfgName = TermName(c.freshName("config"))
       val resolver = new ImplicitResolver({
@@ -610,21 +635,48 @@ object JsMacroImpl {
       })
       val resolvedImplicits = utility.implicits(resolver)
       val canBuild = resolvedImplicits.map {
-        case (name, Implicit(pt, impl, _, _)) =>
+        case (name, Implicit(pt, impl, _, _, defaultValue)) =>
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
           val cn = c.Expr[String](
             q"$cfgName.naming(${name.decodedName.toString})"
           )
 
+          val useDefaultValues = c.Expr[String](q"$cfgName.useDefaultValues")
+
+
           val jspathTree = q"""$JsPath \ $cn"""
 
           // If we're not recursive, simple, just invoke read/write/format
           // If we're an option, invoke the nullable version
-          if (pt.typeConstructor <:< optTpeCtor) {
-            q"$jspathTree.$callNullable($impl)"
-          } else {
-            q"$jspathTree.$call($impl)"
+          // If we're an default value, invoke the withDefault version
+          // If we're an option with default value, invoke the nullableWithDefault version
+          val isOption = pt.typeConstructor <:< optTpeCtor
+
+          def canBuild() = {
+            val effectiveCall = if (isOption) callNullable else call
+            q"$jspathTree.$effectiveCall($impl)"
+          }
+
+          def canBuildWithDefaults(
+            defaultValue: Tree,
+            callWithDefault: TermName,
+            callNullableWithDefault: TermName
+          ) = {
+
+            val effectiveCall = if (isOption) callNullableWithDefault else callWithDefault
+            q"if($useDefaultValues) $jspathTree.$effectiveCall($defaultValue)($impl) else ${canBuild()}"
+          }
+
+          (defaultValue, methodName) match {
+            case (Some(defaultValue), "read") =>
+              canBuildWithDefaults(defaultValue, readWithDefault, readNullableWithDefault)
+
+            case (Some(defaultValue), "format") =>
+              canBuildWithDefaults(defaultValue, formatWithDefault, formatNullableWithDefault)
+
+            case _ =>
+              canBuild()
           }
       }.reduceLeft[Tree] { (acc, r) =>
         q"$acc.and($r)"
