@@ -34,10 +34,13 @@ trait PathReads {
   def required(path: JsPath)(implicit reads: Reads[JsValue]): Reads[JsValue] = at(path)(reads)
 
   def at[A](path: JsPath)(implicit reads: Reads[A]): Reads[A] =
-    Reads[A] { js => path.asSingleJsResult(js).flatMap(reads.reads(_).repath(path)) }
+    Reads[A](js => path.asSingleJsResult(js).flatMap(reads.reads(_).repath(path)))
 
-  def withDefault[A](path: JsPath, defaultValue: => A)(implicit reads: Reads[A]): Reads[A] =
-    at[A](path) orElse Reads.pure(defaultValue)
+  def at[A](path: JsPath, defaultValue: => A)(implicit reads: Reads[A]): Reads[A] =
+    Reads[A](js => path.asSingleJsResult(js) match {
+      case JsSuccess(js, _) => reads.reads(js).repath(path)
+      case JsError(_) => JsSuccess(defaultValue, path)
+    })
 
   /**
    * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
@@ -192,9 +195,6 @@ trait PathWrites {
   def at[A](path: JsPath)(implicit wrs: Writes[A]): OWrites[A] =
     OWrites[A] { a => JsPath.createObj(path -> wrs.writes(a)) }
 
-  def nonDefault[A](path: JsPath, defaultValue: => A)(implicit wrs: Writes[A]): OWrites[A] =
-    OWrites[A] { a => if(a == defaultValue) Json.obj() else JsPath.createObj(path -> wrs.writes(a)) }
-
   /**
    * writes a optional field in given JsPath : if None, doesn't write field at all.
    * Please note we do not write "null" but simply omit the field when None
@@ -205,21 +205,6 @@ trait PathWrites {
       a match {
         case Some(a) => JsPath.createObj(path -> wrs.writes(a))
         case None => Json.obj()
-      }
-    }
-
-  /**
-    * writes a optional field in given JsPath : if None, doesn't write field at all.
-    * Please note we do not write "null" but simply omit the field when None
-    * If you want to write a "null", use ConstraintWrites.optionWithNull[A]
-    */
-  def nullableNonDefault[A](path: JsPath, defaultValue: => Option[A])(implicit wrs: Writes[A]): OWrites[Option[A]] =
-    OWrites[Option[A]] { a =>
-      a match {
-        case a if a == defaultValue => Json.obj()
-        case None if defaultValue.isDefined => JsPath.createObj(path -> JsNull)
-        case None => Json.obj()
-        case Some(a) => JsPath.createObj(path -> wrs.writes(a))
       }
     }
 
