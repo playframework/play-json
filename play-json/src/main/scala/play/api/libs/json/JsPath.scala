@@ -283,6 +283,7 @@ case class JsPath(path: List[PathNode] = List()) {
    *   - If last node is found => applies implicit Reads[T]
    */
   def readNullable[T](implicit r: Reads[T]): Reads[Option[T]] = Reads.nullable[T](this)(r)
+
   /**
     * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
     * default value, null is None and other cases are Error).
@@ -294,7 +295,7 @@ case class JsPath(path: List[PathNode] = List()) {
     *   - If last node is found with value "null" => returns None
     *   - If last node is found => applies implicit Reads[T]
     */
-  def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.nullable[T](this, defaultValue)(r)
+  def readOptional[T](implicit r: Reads[T]): Reads[Option[T]] = Reads.optional[T](this)(r)
 
   /**
    * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
