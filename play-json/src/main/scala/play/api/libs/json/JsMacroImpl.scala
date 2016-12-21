@@ -76,8 +76,7 @@ object JsMacroImpl {
     // callNullable is the equivalent of call for options
     // e.g. `(__ \ "foo").readNullable`
     val callNullable = TermName(s"${methodName}Nullable")
-    val callWithDefault = TermName(s"${methodName}WithDefault")
-    val callNullableWithDefault = TermName(s"${methodName}NullableWithDefault")
+    val callOptional = TermName(s"${methodName}Optional")
 
     // All these can be sort of thought as imports that can then be used later in quasi quote interpolation
     val libs = q"_root_.play.api.libs"
@@ -458,12 +457,14 @@ object JsMacroImpl {
 
         // If we're not recursive, simple, just invoke read/write/format
         // If we're an option, invoke the nullable version
-        // If we're an default value, invoke the withDefault version
-        // If we're an option with default value, invoke the nullableWithDefault version
+        // If we're an default value, invoke the usual version with fallback to default value
+        // If we're an option with default value, invoke the optional version with fallback to default value
         val isOption = pt.typeConstructor <:< typeOf[Option[_]].typeConstructor
         (isOption, defaultValue, methodName) match {
-          case (true,  Some(dv), "read" | "format") => q"$jspathTree.$callNullableWithDefault($dv)($impl)"
-          case (false, Some(dv), "read" | "format") => q"$jspathTree.$callWithDefault($dv)($impl)"
+          case (true,  Some(dv), "format")          => q"OFormat($jspathTree.readOptional($impl).orElse(Reads.pure($dv)), $jspathTree.writeNullable($impl))"
+          case (true,  Some(dv), "read")            => q"$jspathTree.readOptional($impl).orElse(Reads.pure($dv))"
+          case (false, Some(dv), "format")          => q"OFormat($jspathTree.read($impl).orElse(Reads.pure($dv)), $jspathTree.write($impl))"
+          case (false, Some(dv), "read")            => q"$jspathTree.read($impl).orElse(Reads.pure($dv))"
           case (true,  _, _)                        => q"$jspathTree.$callNullable($impl)"
           case (false, _, _)                        => q"$jspathTree.$call($impl)"
         }

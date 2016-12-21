@@ -83,6 +83,9 @@ object CustomApply {
   def apply(): CustomApply = apply(10, "foo")
 }
 
+case class WithDefault1(a: String = "a", b: Option[String] = Some("b"))
+case class WithDefault2(a: String = "a", bar: Option[WithDefault1] = Some(WithDefault1()))
+
 class JsonExtensionSpec extends Specification {
 
   "JsonExtension" should {
@@ -648,6 +651,61 @@ class JsonExtensionSpec extends Specification {
 
       Json.fromJson[UserProfileHolder](Json.obj("holder" -> "Christian", "profile" -> UserProfile.json1)) must beEqualTo(JsSuccess(UserProfileHolder("Christian", UserProfile.obj1)))
       Json.toJson(UserProfileHolder("Christian", UserProfile.obj1)) must beEqualTo(Json.obj("holder" -> "Christian", "profile" -> UserProfile.json1))
+    }
+
+    "manage default values" in {
+      import play.api.libs.json.Json
+      import play.api.libs.functional.syntax._
+
+      def functionalReads: Reads[WithDefault2] = {
+        implicit val barReads = {
+          val barA = (__ \ "a").read[String] orElse Reads.pure("a")
+          val barB = (__ \ "b").readOptional[String] orElse Reads.pure(Some("b"))
+
+          (barA ~ barB)(WithDefault1)
+        }
+
+        val fooA = (__ \ "a").read[String] orElse Reads.pure("a")
+        val fooBar = (__ \ "bar").readOptional[WithDefault1] orElse Reads.pure(Some(WithDefault1()))
+
+        (fooA ~ fooBar)(WithDefault2)
+      }
+
+
+      def functionalFormat: Format[WithDefault2] = {
+        implicit val barReads: Format[WithDefault1] = {
+          val barA: OFormat[String] = OFormat[String] ((__ \ "a").read[String] orElse Reads.pure("a"), (__ \ "a").write[String])
+          val barB: OFormat[Option[String]] = OFormat[Option[String]] ((__ \ "b").readOptional[String] orElse Reads.pure(Some("b")), (__ \ "b").writeNullable[String])
+
+          (barA ~ barB)(WithDefault1.apply, unlift(WithDefault1.unapply))
+        }
+
+        val fooA: OFormat[String] = OFormat[String] ((__ \ "a").read[String] orElse Reads.pure("a"), (__ \ "a").write[String])
+        val fooBar: OFormat[Option[WithDefault1]] = OFormat[Option[WithDefault1]]((__ \ "bar").readOptional[WithDefault1] orElse Reads.pure(Some(WithDefault1())), (__ \ "bar").writeNullable[WithDefault1])
+
+        (fooA ~ fooBar)(WithDefault2.apply, unlift(WithDefault2.unapply))
+      }
+
+      def macroReads: Reads[WithDefault2] = {
+        implicit val barReads = Json.reads[WithDefault1]
+        Json.reads[WithDefault2]
+      }
+
+      def macroFormat: Reads[WithDefault2] = {
+        implicit val barReads = Json.format[WithDefault1]
+        Json.format[WithDefault2]
+      }
+
+      def validate(fooReads: Reads[WithDefault2]) = {
+        fooReads.reads(Json.obj()) must beEqualTo(JsSuccess(WithDefault2()))
+        fooReads.reads(Json.obj("bar" -> JsNull)) must beEqualTo(JsSuccess(WithDefault2(bar = None)))
+      }
+
+      validate(functionalReads)
+      validate(functionalFormat)
+      validate(macroReads)
+      validate(macroFormat)
+
     }
 
   }
