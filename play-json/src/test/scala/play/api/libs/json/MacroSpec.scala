@@ -65,14 +65,34 @@ class MacroSpec extends org.specs2.mutable.Specification {
     }
 
     "be generated for a sealed family" in {
-      Json.reads[Family]
-      ???
-    }
+      implicit val simpleReads = Reads[Simple] { js =>
+        (js \ "bar").validate[String].map(Simple(_))
+      }
+      implicit val optionalReads: Reads[Optional] = Json.reads[Optional]
+      implicit val familyReads: Reads[Family] = Json.reads[Family]
+
+      val simple = Simple("foo")
+      val jsSimple = Json.obj(
+        "_type" -> "play.api.libs.json.MacroSpec.Simple",
+        "_value" -> Json.writes[Simple].writes(simple)
+      )
+
+      val optional = Optional(None)
+      val jsOptional = Json.obj(
+        "_type" -> "play.api.libs.json.MacroSpec.Optional",
+        "_value" -> Json.writes[Optional].writes(optional)
+      )
+
+      jsSimple.validate[Family].get must beTypedEqualTo(simple) and {
+        jsOptional.validate[Family].get must beTypedEqualTo(optional)
+      }
+    } tag "wip"
   }
 
   "Writes" should {
     "be generated for simple case class" in {
-      Json.writes[Simple].writes(Simple("lorem")) must_== Json.obj("bar" -> "lorem")
+      Json.writes[Simple].writes(
+        Simple("lorem")) must_== Json.obj("bar" -> "lorem")
     }
 
     "as Format for a generic case class" in {
