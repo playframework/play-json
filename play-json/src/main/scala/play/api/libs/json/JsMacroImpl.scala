@@ -25,14 +25,16 @@ object JsMacroImpl {
 
   def formatImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[OFormat[A]] =
     macroImpl[A, OFormat, Format](
-      c, "format", "inmap", reads = true, writes = true)
+      c, "format", "inmap", reads = true, writes = true
+    )
 
   def readsImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[Reads[A]] =
     macroImpl[A, Reads, Reads](c, "read", "map", reads = true, writes = false)
 
   def writesImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[OWrites[A]] =
     macroImpl[A, OWrites, Writes](
-      c, "write", "contramap", reads = false, writes = true)
+      c, "write", "contramap", reads = false, writes = true
+    )
 
   /**
    * Generic implementation of the macro
@@ -125,17 +127,18 @@ object JsMacroImpl {
        * @return the normalized type + whether any self reference has been found
        */
       private def normalized(subject: Type, tpe: Type): (Type, Boolean) = resolvedType(tpe) match {
-          case t if (t =:= subject) => PlaceholderType -> true
+        case t if (t =:= subject) => PlaceholderType -> true
 
-          case TypeRef(_, sym, args) if args.nonEmpty =>
-            refactor(args, sym.asType, List.empty, List.empty,
-              _ =:= subject, PlaceholderType, false)
+        case TypeRef(_, sym, args) if args.nonEmpty =>
+          refactor(args, sym.asType, List.empty, List.empty,
+            _ =:= subject, PlaceholderType, false)
 
-          case t => t -> false
-        }
+        case t => t -> false
+      }
 
       private class ImplicitTransformer[T](
-        subject: Type) extends Transformer {
+          subject: Type
+      ) extends Transformer {
 
         /* Restores reference to the type itself when Placeholder is found. */
         private def denormalized(ptype: Type): Type = ptype match {
@@ -182,7 +185,8 @@ object JsMacroImpl {
         } else c.untypecheck(
           // Reset the type attributes on the refactored tree for the implicit
           tx.transform(
-            c.inferImplicitValue(neededImplicitType))
+            c.inferImplicitValue(neededImplicitType)
+          )
         )
 
         Implicit(ptype, neededImplicit, tpe, selfRef)
@@ -240,7 +244,8 @@ object JsMacroImpl {
             if (a.fullName != b.fullName) {
               c.warning(
                 c.enclosingPosition,
-                s"Type symbols are not compatible: $a != $b")
+                s"Type symbols are not compatible: $a != $b"
+              )
 
               false
             } else conforms(types.tail)
@@ -249,7 +254,8 @@ object JsMacroImpl {
           case Some((a, b)) if (a.typeArgs.size != b.typeArgs.size) => {
             c.warning(
               c.enclosingPosition,
-              s"Type parameters are not matching: $a != $b")
+              s"Type parameters are not matching: $a != $b"
+            )
 
             false
           }
@@ -258,7 +264,8 @@ object JsMacroImpl {
             if (a =:= b) conforms(types.tail) else {
               c.warning(
                 c.enclosingPosition,
-                s"Types are not compatible: $a != $b")
+                s"Types are not compatible: $a != $b"
+              )
 
               false
             }
@@ -266,7 +273,8 @@ object JsMacroImpl {
           case Some((a, b)) if (a.baseClasses != b.baseClasses) => {
             c.warning(
               c.enclosingPosition,
-              s"Generic types are not compatible: $a != $b")
+              s"Generic types are not compatible: $a != $b"
+            )
 
             false
           }
@@ -282,7 +290,8 @@ object JsMacroImpl {
         companionType.decl(TermName("apply")) match {
           case NoSymbol => c.abort(
             c.enclosingPosition,
-            s"No apply function found for ${companioned.fullName}")
+            s"No apply function found for ${companioned.fullName}"
+          )
 
           case s => s.asTerm.alternatives.flatMap { apply =>
             val meth = apply.asMethod
@@ -348,8 +357,7 @@ object JsMacroImpl {
               }
               val vals = params.foldLeft(List.empty[Tree])((l, e) =>
                 // Let type inference infer the type by using the empty type
-                l :+ q"val ${TermName(e.name.encodedName.toString)}: ${TypeTree()}"
-              )
+                l :+ q"val ${TermName(e.name.encodedName.toString)}: ${TypeTree()}")
 
               q"(..$vals) => $companionObject.apply(..${applyParams.init}, ${applyParams.last}: _*)"
             } else if (tpeArgs.isEmpty) {
@@ -392,7 +400,8 @@ object JsMacroImpl {
         if (missingImplicits.nonEmpty) {
           c.abort(
             c.enclosingPosition,
-            s"No instance of ${natag.tpe.typeSymbol.fullName} is available for ${missingImplicits.map(prettyType(_)).mkString(", ")} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)")
+            s"No instance of ${natag.tpe.typeSymbol.fullName} is available for ${missingImplicits.map(prettyType(_)).mkString(", ")} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+          )
         }
 
         effectiveImplicits
@@ -406,7 +415,7 @@ object JsMacroImpl {
         }
 
       // To print the implicit types in the compiler messages
-      private def prettyType(t: Type): String = 
+      private def prettyType(t: Type): String =
         boundTypes.getOrElse(t.typeSymbol.fullName, t) match {
           case TypeRef(_, base, args) if args.nonEmpty => s"""${base.asType.fullName}[${args.map(prettyType(_)).mkString(", ")}]"""
 
@@ -438,7 +447,7 @@ object JsMacroImpl {
 
         case Some(o: ModuleSymbol) if (
           o.companion == NoSymbol && // not a companion object
-            tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
+          tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
         ) => {
           val newSub: Set[Type] = if (!o.moduleClass.asClass.isCaseClass) {
             c.warning(c.enclosingPosition, s"cannot handle object ${o.fullName}: no case accessor")
@@ -464,24 +473,26 @@ object JsMacroImpl {
 
     // --- Sub implementations
 
-    val writesType = c.typeOf[Writes[_]]
     val readsType = c.typeOf[Reads[_]]
 
     def macroSealedFamilyImpl(subTypes: List[Type]): c.Expr[M[A]] = {
       val typeNaming = (_: Type).typeSymbol.fullName
-      val resolver = new ImplicitResolver({ orig: Type => orig })
 
       def readLambda: Tree = {
+        val resolver = new ImplicitResolver({ orig: Type => orig })
         val cases = Match(q"""obj.value.lift("_value")""", (
           cq"""_ => $json.JsError("error.missing.path")""" :: (
             subTypes.foldLeft(List.empty[CaseDef]) { (out, t) =>
               val rtpe = appliedType(readsType, List(t))
               val reader = resolver.createImplicit(
-                atag.tpe, rtpe)(t).neededImplicit
+                atag.tpe, rtpe
+              )(t).neededImplicit
 
               if (reader.isEmpty) {
-                c.abort(c.enclosingPosition,
-                  s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)")
+                c.abort(
+                  c.enclosingPosition,
+                  s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+                )
               }
 
               cq"""Some(v) if (dis == ${typeNaming(t)}) => $reader.reads(v)""" :: out
@@ -499,22 +510,35 @@ object JsMacroImpl {
       }
 
       def writeLambda: Tree = {
+        val owner = c.internal.enclosingOwner
+
+        if (!owner.isTerm) {
+          c.abort(
+            c.enclosingPosition,
+            "the macro must be used to generate the body of a term"
+          )
+        }
+
+        // ---
+
+        val term = owner.asTerm
         val cases = Match(q"v", subTypes.map { t =>
-          val wtpe = appliedType(writesType, List(t))
-          val writer = resolver.createImplicit(atag.tpe, wtpe)(t).neededImplicit
-
-          if (writer.isEmpty) {
-            c.abort(c.enclosingPosition,
-              s"No instance of Writes is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)")
-          }
-
+          // Use `implicitly` rather than `ImplicitResolver.createImplicit`,
+          // due to the implicit/contravariance workaround
           cq"""x: $t => Json.obj(
             "_type" -> ${typeNaming(t)},
-            "_value" -> $writer.writes(x)
+            "_value" -> implicitly[Writes[$t]].writes(x)
           )"""
         })
 
-        q"{ v: ${atag.tpe} => $cases }"
+        // Use shadowing to eliminate the generated term itself
+        // from the implicit scope, due to the contravariant/implicit issue:
+        // https://groups.google.com/forum/#!topic/scala-language/ZE83TvSWpT4
+
+        q"""{ v: ${atag.tpe} => 
+          val ${term.name} = "eliminatedImplicit"
+          $cases 
+        }"""
       }
 
       def tree = methodName match {
@@ -531,8 +555,9 @@ object JsMacroImpl {
         case TypeRef(_, _, args) => args
 
         case t => c.abort(
-        c.enclosingPosition,
-          s"Type ${t.typeSymbol.fullName} is not a valid case class")
+          c.enclosingPosition,
+          s"Type ${t.typeSymbol.fullName} is not a valid case class"
+        )
       }
       val utility = new CaseClass[A](tpeArgs)
       val (companioned, isCase) = utility.validCaseClass
@@ -540,7 +565,8 @@ object JsMacroImpl {
       if (!isCase) {
         c.abort(
           c.enclosingPosition,
-          s"Type ${companioned.fullName} is not valid: must be a case class with at least one non empty list of parameter")
+          s"Type ${companioned.fullName} is not valid: must be a case class with at least one non empty list of parameter"
+        )
 
       }
 
@@ -549,7 +575,8 @@ object JsMacroImpl {
 
         case _ => c.abort(
           c.enclosingPosition,
-          s"No apply function found matching unapply parameters")
+          s"No apply function found matching unapply parameters"
+        )
       }
 
       // ---
@@ -577,7 +604,8 @@ object JsMacroImpl {
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
           val cn = c.Expr[String](
-            q"$cfgName.naming(${name.decodedName.toString})")
+            q"$cfgName.naming(${name.decodedName.toString})"
+          )
 
           val jspathTree = q"""$JsPath \ $cn"""
 
@@ -601,7 +629,7 @@ object JsMacroImpl {
       // based on whether this is a reads, writes or both.
       def conditionalList[T](ifReads: T, ifWrites: T): List[T] =
         (if (reads) List(ifReads) else Nil) :::
-      (if (writes) List(ifWrites) else Nil)
+          (if (writes) List(ifWrites) else Nil)
 
       val syntaxImport = if (!multiParam && !writes) q"" else q"import $syntax._"
       @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
@@ -691,7 +719,7 @@ object JsMacroImpl {
     directKnownSubclasses match {
       case Some(subTypes) => macroSealedFamilyImpl(subTypes)
       case _ => macroCaseImpl
-    }    
+    }
   }
 
   private lazy val debugEnabled =
