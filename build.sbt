@@ -1,6 +1,11 @@
 import interplay.ScalaVersions
 import ReleaseTransformations._
 
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifacts
+
+//import com.typesafe.tools.mima.core._
+
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 scalaVersion := ScalaVersions.scala212
@@ -25,6 +30,12 @@ def jsonDependencies(scalaVersion: String) = Seq(
   logback % Test
 ) ++ jacksons ++ specsBuild.map(_ % Test)
 
+val previousVersion = "2.6.0-M1" // first from this separate repo
+lazy val commonSettings = mimaDefaultSettings ++ Seq(
+  previousArtifacts := Set(
+    organization.value %% moduleName.value % previousVersion)
+)
+
 lazy val root = project
   .in(file("."))
   .enablePlugins(PlayRootProject)
@@ -33,11 +44,13 @@ lazy val root = project
 lazy val `play-json` = project
   .in(file("play-json"))
   .enablePlugins(PlayLibrary)
+  .settings(commonSettings)
   .settings(libraryDependencies ++= jsonDependencies(scalaVersion.value))
   .dependsOn(`play-functional`)
 
 lazy val `play-functional` = project
   .in(file("play-functional"))
+  .settings(commonSettings)
   .enablePlugins(PlayLibrary)
 
 playBuildRepoName in ThisBuild := "play-json"
