@@ -251,7 +251,7 @@ case class JsPath(path: List[PathNode] = List()) {
   /** Reads a T at JsPath */
   def read[T](implicit r: Reads[T]): Reads[T] = Reads.at[T](this)(r)
 
-  /** Reads a T at JsPath */
+  /** Reads a T at JsPath (provided default value will be used if not found)*/
   def readWithDefault[T](defaultValue: => T)(implicit r: Reads[T]): Reads[T] = {
     read[T] orElse Reads.pure(defaultValue)
   }
@@ -386,6 +386,7 @@ case class JsPath(path: List[PathNode] = List()) {
   def formatWithDefault[T](defaultValue: => T)(implicit f: Format[T]): OFormat[T] = {
     Format.withDefault[T](this, defaultValue)(f)
   }
+
   /** Reads/Writes a T at JsPath using provided explicit Reads[T] and implicit Writes[T]*/
   def format[T](r: Reads[T])(implicit w: Writes[T]): OFormat[T] = Format.at[T](this)(Format(r, w))
   /** Reads/Writes a T at JsPath using provided explicit Writes[T] and implicit Reads[T]*/

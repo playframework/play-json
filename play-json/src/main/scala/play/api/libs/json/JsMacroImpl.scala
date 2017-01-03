@@ -495,7 +495,7 @@ object JsMacroImpl {
     val applyOrMap = TermName(if (multiParam) "apply" else mapLikeMethod)
 
     val syntaxImport = if (!multiParam && !writes) q"" else q"import $syntax._"
-    @inline def buildCall = q"""$canBuild.$applyOrMap(..${conditionalList(applyFunction, ApplyUnapply.unapplyFunction)})"""
+    @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, ApplyUnapply.unapplyFunction)})"
 
     val canBuildCall = methodName match {
       case "read" => {
