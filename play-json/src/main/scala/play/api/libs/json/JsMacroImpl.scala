@@ -79,8 +79,15 @@ object JsMacroImpl {
     // callNullable is the equivalent of call for options
     // e.g. `(__ \ "foo").readNullable`
     val callNullable = TermName(s"${methodName}Nullable")
-    val callWithDefault = TermName(s"${methodName}WithDefault")
-    val callNullableWithDefault = TermName(s"${methodName}NullableWithDefault")
+
+    // callWithDefault is the equivalent of call but default values are counted
+    // e.g. `(__ \ "foo").readWithDefault("bar")`
+    // callNullableWithDefault is the equivalent of callNullable but default values are counted
+    // e.g. `(__ \ "foo").readNullableWithDefault(Some("Bar"))`
+    val (callWithDefault, callNullableWithDefault) = methodName match {
+      case "read" | "format"  => (TermName(s"${methodName}WithDefault"), TermName(s"${methodName}NullableWithDefault"))
+      case "write"            => (TermName("writeNonDefault"), TermName("writeNullableNonDefault"))
+    }
 
     // All these can be sort of thought as imports that can then be used later in quasi quote interpolation
     val libs = q"_root_.play.api.libs"
@@ -466,18 +473,29 @@ object JsMacroImpl {
           q"$cfgName.naming(${name.decodedName.toString})"
         )
 
+        val useDefaultValues = c.Expr[String](q"$cfgName.useDefaultValues")
+
         val jspathTree = q"""$JsPath \ $cn"""
 
         // If we're not recursive, simple, just invoke read/write/format
         // If we're an option, invoke the nullable version
-        // If we're an default value, invoke the withDefault version
-        // If we're an option with default value, invoke the nullableWithDefault version
+        // If we're an default value, invoke the usual version with fallback to default value
+        // If we're an option with default value, invoke the optional version with fallback to default value
         val isOption = pt.typeConstructor <:< typeOf[Option[_]].typeConstructor
-        (isOption, defaultValue, methodName) match {
-          case (true,  Some(dv), "read" | "format") => q"$jspathTree.$callNullableWithDefault($dv)($impl)"
-          case (false, Some(dv), "read" | "format") => q"$jspathTree.$callWithDefault($dv)($impl)"
-          case (true,  _, _)                        => q"$jspathTree.$callNullable($impl)"
-          case (false, _, _)                        => q"$jspathTree.$call($impl)"
+
+        def plain() = {
+          val effectiveCall = if (isOption) callNullable else call
+          q"$jspathTree.$effectiveCall($impl)"
+        }
+
+        def withDefaults(defaultValue: Tree) = {
+          val effectiveCall = if (isOption) callNullableWithDefault else callWithDefault
+          q"if($useDefaultValues) $jspathTree.$effectiveCall($defaultValue)($impl) else ${plain()}"
+        }
+
+        defaultValue match {
+          case Some(defaultValue) => withDefaults(defaultValue)
+          case _                  => plain()
         }
     }.reduceLeft[Tree] { (acc, r) =>
       q"$acc.and($r)"
