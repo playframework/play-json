@@ -659,52 +659,85 @@ class JsonExtensionSpec extends Specification {
 
       def functionalReads: Reads[WithDefault2] = {
         implicit val barReads = {
-          val barA = (__ \ "a").read[String] orElse Reads.pure("a")
-          val barB = (__ \ "b").readOptional[String] orElse Reads.pure(Some("b"))
+          val barA = (__ \ "a").readWithDefault("a")
+          val barB = (__ \ "b").readNullableWithDefault(Some("b"))
 
           (barA ~ barB)(WithDefault1)
         }
 
-        val fooA = (__ \ "a").read[String] orElse Reads.pure("a")
-        val fooBar = (__ \ "bar").readOptional[WithDefault1] orElse Reads.pure(Some(WithDefault1()))
+        val fooA = (__ \ "a").readWithDefault("a")
+        val fooBar = (__ \ "bar").readNullableWithDefault(Some(WithDefault1()))
 
         (fooA ~ fooBar)(WithDefault2)
       }
 
+      def functionalWrites: Writes[WithDefault2] = {
+        implicit val barWrites = {
+          val barA = (__ \ "a").writeNonDefault("a")
+          val barB = (__ \ "b").writeNullableNonDefault(Some("b"))
+
+          (barA ~ barB)(unlift(WithDefault1.unapply))
+        }
+
+        val fooA = (__ \ "a").writeNonDefault("a")
+        val fooBar = (__ \ "bar").writeNullableNonDefault(Some(WithDefault1()))
+
+        (fooA ~ fooBar)(unlift(WithDefault2.unapply))
+      }
 
       def functionalFormat: Format[WithDefault2] = {
         implicit val barReads: Format[WithDefault1] = {
-          val barA: OFormat[String] = OFormat[String] ((__ \ "a").read[String] orElse Reads.pure("a"), (__ \ "a").write[String])
-          val barB: OFormat[Option[String]] = OFormat[Option[String]] ((__ \ "b").readOptional[String] orElse Reads.pure(Some("b")), (__ \ "b").writeNullable[String])
+          val barA: OFormat[String] = (__ \ "a").formatWithDefault("a")
+          val barB: OFormat[Option[String]] = (__ \ "b").formatNullableWithDefault(Some("b"))
 
           (barA ~ barB)(WithDefault1.apply, unlift(WithDefault1.unapply))
         }
 
-        val fooA: OFormat[String] = OFormat[String] ((__ \ "a").read[String] orElse Reads.pure("a"), (__ \ "a").write[String])
-        val fooBar: OFormat[Option[WithDefault1]] = OFormat[Option[WithDefault1]]((__ \ "bar").readOptional[WithDefault1] orElse Reads.pure(Some(WithDefault1())), (__ \ "bar").writeNullable[WithDefault1])
+        val fooA: OFormat[String] = (__ \ "a").formatWithDefault("a")
+        val fooBar: OFormat[Option[WithDefault1]] = (__ \ "bar").formatNullableWithDefault(Some(WithDefault1()))
 
         (fooA ~ fooBar)(WithDefault2.apply, unlift(WithDefault2.unapply))
       }
 
       def macroReads: Reads[WithDefault2] = {
+        implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
         implicit val barReads = Json.reads[WithDefault1]
         Json.reads[WithDefault2]
       }
 
-      def macroFormat: Reads[WithDefault2] = {
-        implicit val barReads = Json.format[WithDefault1]
+      def macroWrites: Writes[WithDefault2] = {
+        implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
+        implicit val barWrites = Json.writes[WithDefault1]
+        Json.writes[WithDefault2]
+      }
+
+      def macroFormat: Format[WithDefault2] = {
+        implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
+        implicit val barFormats = Json.format[WithDefault1]
         Json.format[WithDefault2]
       }
 
-      def validate(fooReads: Reads[WithDefault2]) = {
+      def validateReads(fooReads: Reads[WithDefault2]) = {
         fooReads.reads(Json.obj()) must beEqualTo(JsSuccess(WithDefault2()))
         fooReads.reads(Json.obj("bar" -> JsNull)) must beEqualTo(JsSuccess(WithDefault2(bar = None)))
+        fooReads.reads(Json.obj("a" -> "z")) must beEqualTo(JsSuccess(WithDefault2(a = "z")))
+        fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) must beEqualTo(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
       }
 
-      validate(functionalReads)
-      validate(functionalFormat)
-      validate(macroReads)
-      validate(macroFormat)
+
+      def validateWrites(fooWrites: Writes[WithDefault2]) = {
+        fooWrites.writes(WithDefault2()) must_== Json.obj()
+        fooWrites.writes(WithDefault2(bar = None)) must_== Json.obj("bar" -> JsNull)
+        fooWrites.writes(WithDefault2(a = "z")) must_== Json.obj("a" -> "z")
+        fooWrites.writes(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))) must_== Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))
+      }
+
+      "by functional reads"   >> { validateReads(functionalReads) }
+      "by functional writes"  >> { validateWrites(functionalFormat) }
+      "by functional formats" >> { validateReads(functionalFormat) and validateWrites(functionalFormat) }
+      "by macro reads"        >> { validateReads(macroReads) }
+      "by macro writes"       >> { validateWrites(macroWrites) }
+      "by macro formats"      >> { validateReads(macroFormat) and validateWrites(macroFormat) }
 
     }
 
