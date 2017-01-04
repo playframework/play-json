@@ -17,17 +17,14 @@ import java.time.{
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 import java.time.temporal.UnsupportedTemporalTypeException
 
-import play.api.libs.json.jackson.JacksonJson
-
-import scala.annotation.implicitNotFound
 import scala.collection._
-import scala.language.higherKinds
+import scala.reflect.ClassTag
+import scala.annotation.implicitNotFound
+
+import play.api.libs.json.jackson.JacksonJson
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
-
-import Json._
-import reflect.ClassTag
 
 /**
  * Json deserializer: write an implicit to define a deserializer for any type.
@@ -41,6 +38,10 @@ trait Reads[A] { self =>
    */
   def reads(json: JsValue): JsResult[A]
 
+  /**
+   * @param f the function applied on the result of the current instance,
+   * if successful
+   */
   def map[B](f: A => B): Reads[B] =
     Reads[B] { json => self.reads(json).map(f) }
 
@@ -48,7 +49,7 @@ trait Reads[A] { self =>
     // Do not flatMap result to avoid repath
     self.reads(json) match {
       case JsSuccess(a, _) => f(a).reads(json)
-      case error: JsError => error
+      case error @ JsError(_) => error
     }
   }
 
@@ -70,13 +71,12 @@ trait Reads[A] { self =>
   def orElse(v: Reads[A]): Reads[A] =
     Reads[A] { json => self.reads(json).orElse(v.reads(json)) }
 
-  def compose[B <: JsValue](rb: Reads[B]): Reads[A] =
-    Reads[A] { js =>
-      rb.reads(js) match {
-        case JsSuccess(b, p) => this.reads(b).repath(p)
-        case JsError(e) => JsError(e)
-      }
+  def compose[B <: JsValue](rb: Reads[B]): Reads[A] = Reads[A] { js =>
+    rb.reads(js) match {
+      case JsSuccess(b, p) => this.reads(b).repath(p)
+      case JsError(e) => JsError(e)
     }
+  }
 
   def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
     rb.compose(this.map(witness))
@@ -92,11 +92,14 @@ object Reads extends ConstraintReads with PathReads with DefaultReads {
 
   val path: PathReads = this
 
+  /** Returns a `JsSuccess(a)` (with root path) for any JSON value read. */
+  def pure[A](a: A): Reads[A] = Reads[A] { _ => JsSuccess(a) }
+
   import play.api.libs.functional._
 
   implicit def applicative(implicit applicativeJsResult: Applicative[JsResult]): Applicative[Reads] = new Applicative[Reads] {
 
-    def pure[A](a: A): Reads[A] = Reads[A] { _ => JsSuccess(a) }
+    def pure[A](a: A): Reads[A] = Reads.pure(a)
 
     def map[A, B](m: Reads[A], f: A => B): Reads[B] = m.map(f)
 
@@ -109,9 +112,9 @@ object Reads extends ConstraintReads with PathReads with DefaultReads {
     def |[A, B >: A](alt1: Reads[A], alt2: Reads[B]): Reads[B] = new Reads[B] {
       def reads(js: JsValue) = alt1.reads(js) match {
         case r @ JsSuccess(_, _) => r
-        case r @ JsError(es1) => alt2.reads(js) match {
+        case JsError(es1) => alt2.reads(js) match {
           case r2 @ JsSuccess(_, _) => r2
-          case r2 @ JsError(es2) => JsError(JsError.merge(es1, es2))
+          case JsError(es2) => JsError(JsError.merge(es1, es2))
         }
       }
     }
@@ -130,7 +133,7 @@ object Reads extends ConstraintReads with PathReads with DefaultReads {
 
   implicit object JsObjectMonoid extends Monoid[JsObject] {
     def append(o1: JsObject, o2: JsObject) = o1 deepMerge o2
-    def identity = JsObject(Seq())
+    def identity = JsObject(Seq.empty)
   }
 
   implicit val JsObjectReducer = Reducer[JsObject, JsObject](o => o)
@@ -152,6 +155,8 @@ object Reads extends ConstraintReads with PathReads with DefaultReads {
  * See https://github.com/playframework/playframework/issues/4313 for more details.
  */
 trait LowPriorityDefaultReads {
+  import scala.language.higherKinds
+  import Json._
 
   /**
    * Generic deserializer for collections types.
@@ -186,6 +191,7 @@ trait LowPriorityDefaultReads {
  */
 trait DefaultReads extends LowPriorityDefaultReads {
   import scala.language.implicitConversions
+  import Json._
 
   /**
    * builds a JsErrorObj JsObject
@@ -837,10 +843,13 @@ trait DefaultReads extends LowPriorityDefaultReads {
     }
 
     def reads(json: JsValue) = json match {
-      case JsString(s) => {
-        parseUuid(s).map(JsSuccess(_)).getOrElse(JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.uuid")))))
-      }
-      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.uuid"))))
+      case JsString(s) => parseUuid(s).map(JsSuccess(_)).getOrElse(JsError(
+        Seq(JsPath() -> Seq(JsonValidationError("error.expected.uuid")))
+      ))
+
+      case _ => JsError(Seq(JsPath() -> Seq(
+        JsonValidationError("error.expected.uuid")
+      )))
     }
   }
 

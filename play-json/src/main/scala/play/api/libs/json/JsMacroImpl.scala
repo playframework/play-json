@@ -475,6 +475,9 @@ object JsMacroImpl {
 
     val syntaxImport = if (!multiParam && !writes) q"" else q"import $syntax._"
     @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, ApplyUnapply.unapplyFunction)})"
+    def readResult =
+      if (multiParam) q"underlying.reads(obj)"
+      else q"underlying.flatMap[${atag.tpe}]($json.Reads.pure(_)).reads(obj)"
 
     val canBuildCall = methodName match {
       case "read" => {
@@ -482,7 +485,7 @@ object JsMacroImpl {
           val underlying = $buildCall
 
           $json.Reads[${atag.tpe}] {
-            case obj @ $json.JsObject(_) => underlying.reads(obj)
+            case obj @ $json.JsObject(_) => $readResult
             case _ => $json.JsError("error.expected.jsobject")
           }
         }"""
@@ -492,7 +495,7 @@ object JsMacroImpl {
         q"""{ 
           val underlying = $buildCall
           val rfn: $json.JsValue => $json.JsResult[${atag.tpe}] = {
-            case obj @ $json.JsObject(_) => underlying.reads(obj)
+            case obj @ $json.JsObject(_) => $readResult
             case _ => $json.JsError("error.expected.jsobject")
           }
 

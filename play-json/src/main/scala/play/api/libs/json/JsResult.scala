@@ -40,7 +40,9 @@ object JsError {
   }
 
   def toJson(e: JsError): JsObject = toJson(e.errors, false)
+
   def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])]): JsObject = toJson(errors, false)
+
   //def toJsonErrorsOnly: JsValue = original // TODO
   def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map { case (path, seq) => path.toJsonString -> seq }
 
@@ -69,7 +71,7 @@ sealed trait JsResult[+A] { self =>
 
   def map[B](f: A => B): JsResult[B] = this match {
     case JsSuccess(v, path) => JsSuccess(f(v), path)
-    case e: JsError => e
+    case e @ JsError(_) => e
   }
 
   def filterNot(error: JsError)(p: A => Boolean): JsResult[A] =
@@ -108,16 +110,19 @@ sealed trait JsResult[+A] { self =>
         else JsError()
       case e: JsError => e
     }
+
     def flatMap[B](f: A => JsResult[B]): JsResult[B] = self match {
       case JsSuccess(a, path) =>
         if (p(a)) f(a).repath(path)
         else JsError()
       case e: JsError => e
     }
+
     def foreach(f: A => Unit): Unit = self match {
       case JsSuccess(a, _) if p(a) => f(a)
       case _ => ()
     }
+
     def withFilter(q: A => Boolean) = new WithFilter(a => p(a) && q(a))
   }
 
@@ -151,12 +156,12 @@ sealed trait JsResult[+A] { self =>
 
   def recover[AA >: A](errManager: PartialFunction[JsError, AA]): JsResult[AA] = this match {
     case JsSuccess(v, p) => JsSuccess(v, p)
-    case e: JsError => if (errManager isDefinedAt e) JsSuccess(errManager(e)) else this
+    case e @ JsError(_) => if (errManager isDefinedAt e) JsSuccess(errManager(e)) else this
   }
 
   def recoverTotal[AA >: A](errManager: JsError => AA): AA = this match {
     case JsSuccess(v, p) => v
-    case e: JsError => errManager(e)
+    case e @ JsError(_) => errManager(e)
   }
 }
 
@@ -171,7 +176,7 @@ object JsResult {
       case (JsSuccess(t, p), _) => JsSuccess(t, p)
       case (JsError(e1), JsError(e2)) => JsError(JsError.merge(e1, e2))
     }
-    def empty: JsResult[Nothing] = JsError(Seq())
+    def empty: JsResult[Nothing] = JsError(Seq.empty)
   }
 
   implicit val applicativeJsResult: Applicative[JsResult] = new Applicative[JsResult] {

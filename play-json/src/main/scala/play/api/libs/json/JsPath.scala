@@ -8,6 +8,7 @@ sealed trait PathNode {
   def toJsonString: String
 
   private[json] def splitChildren(json: JsValue): List[Either[(PathNode, JsValue), (PathNode, JsValue)]]
+
   def set(json: JsValue, transform: JsValue => JsValue): JsValue
 
   private[json] def toJsonField(value: JsValue): JsValue = value
@@ -27,17 +28,17 @@ case class RecursiveSearch(key: String) extends PathNode {
    * First found, first set and never goes down after setting
    */
   def set(json: JsValue, transform: JsValue => JsValue): JsValue = json match {
-    case obj: JsObject =>
+    case JsObject(fields) => {
       var found = false
-      val o = JsObject(obj.fields.map {
+      JsObject(fields.map {
         case (k, v) =>
           if (k == this.key) {
             found = true
             k -> transform(v)
           } else k -> set(v, transform)
       })
+    }
 
-      o
     case _ => json
   }
 
@@ -116,7 +117,6 @@ case class IdxPathNode(idx: Int) extends PathNode {
   }
 
   private[json] override def toJsonField(value: JsValue) = value
-
 }
 
 object JsPath extends JsPath(List.empty) {
@@ -128,7 +128,7 @@ object JsPath extends JsPath(List.empty) {
       def step(path: List[PathNode], value: JsValue): JsObject = {
         path match {
           case List() => value match {
-            case obj: JsObject => obj
+            case obj @ JsObject(_) => obj
             case _ => throw new RuntimeException("when empty JsPath, expecting JsObject")
           }
           case List(p) => p match {
