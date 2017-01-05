@@ -9,9 +9,12 @@ import java.time.{
   LocalDate,
   OffsetDateTime,
   ZonedDateTime,
-  ZoneOffset
+  ZoneOffset,
+  ZoneId
 }
 import java.time.format.DateTimeFormatter
+
+import org.specs2.specification.core.Fragment
 
 class WritesSpec extends org.specs2.mutable.Specification {
 
@@ -145,6 +148,22 @@ class WritesSpec extends org.specs2.mutable.Specification {
       CustomWrites1.writes(instant).
         aka("written date") must_== JsString("03/12/2011, 10:15:30")
     }
+  }
+
+  "ZoneId" should {
+
+    val DefaultWrites = implicitly[Writes[ZoneId]]
+    import DefaultWrites.writes
+
+    val validTimeZones = "America/Los_Angeles" :: "UTC" :: "CET" :: "UTC-8" :: Nil
+
+    Fragment.foreach(validTimeZones)( tz =>
+      s"be written as time zone string $tz" in {
+        val zoneId = ZoneId.of(tz)
+        writes(zoneId) must_== JsString(zoneId.getId)
+      }
+    )
+
   }
 
   "OWrites" should {

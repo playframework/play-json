@@ -604,6 +604,23 @@ trait DefaultReads extends LowPriorityDefaultReads {
     instantReads(DateTimeFormatter.ISO_DATE_TIME)
 
   /**
+   * Reads for the `java.time.ZoneId` type.
+   */
+  implicit val ZoneIdReads :Reads[ZoneId]= new Reads[ZoneId] {
+    override def reads(json: JsValue): JsResult[ZoneId] = json match {
+      case JsString(s) => try {
+        JsSuccess(ZoneId.of(s))
+      } catch {
+        case _: DateTimeException =>
+          JsError(Seq(JsPath() ->
+            Seq(JsonValidationError("error.expected.timezone", s))))
+      }
+      case _ =>  JsError(Seq(JsPath() ->
+        Seq(JsonValidationError("error.expected.jsstring"))))
+    }
+  }
+
+  /**
    * ISO 8601 Reads
    */
   object IsoDateReads extends Reads[java.util.Date] {
