@@ -16,6 +16,8 @@ import java.time.{
 }
 import java.time.format.DateTimeFormatter
 
+import org.specs2.specification.core.Fragment
+
 case class Ipsum(id: Long, value: Either[String, Ipsum])
 
 class ReadsSpec extends org.specs2.mutable.Specification {
@@ -423,6 +425,43 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with custom formatter" in {
         CustomReads2.reads(JsString("# 03/12/2011, 10:15:30")).
           aka("read date") must_== JsSuccess(time)
+      }
+    }
+  }
+
+  "ZoneId" should {
+
+    val DefaultReads = implicitly[Reads[ZoneId]]
+    import DefaultReads.reads
+
+    val validTimeZones = "America/Los_Angeles" :: "UTC" :: "CET" :: "UTC-8" :: Nil
+
+    Fragment.foreach(validTimeZones)( tz =>
+      s"be successfully read from $tz" in {
+        reads(JsString(tz)).
+          aka("read ZoneId") must_== JsSuccess(ZoneId.of(tz))
+      }
+    )
+
+    "not be read from number" in {
+      val reads1 = reads(JsNumber(123))
+      reads1 must beLike {
+        case JsError((_, JsonValidationError(
+          "error.expected.jsstring" :: Nil) :: Nil) :: Nil) => ok
+      }
+    }
+
+    "not be read from unknown time zone" in {
+      reads(JsString("America/Gotham")) must beLike {
+        case JsError((_, JsonValidationError(
+          "error.expected.timezone" :: Nil, "America/Gotham") :: Nil) :: Nil) => ok
+      }
+    }
+
+    "not be read from malformed time zone" in {
+      reads(JsString("UTC+x")) must beLike {
+        case JsError((_, JsonValidationError(
+          "error.expected.timezone" :: Nil, "UTC+x") :: Nil) :: Nil) => ok
       }
     }
   }
