@@ -5,7 +5,7 @@ package play.api.libs.json
 
 import java.time.format.DateTimeFormatter
 import java.time.temporal.Temporal
-import java.time.{ Instant, LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime }
+import java.time.{ Instant, LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime, ZoneId }
 
 import com.fasterxml.jackson.databind.JsonNode
 import play.api.libs.functional.ContravariantFunctor
@@ -348,6 +348,11 @@ trait DefaultWrites extends LowPriorityWrites {
   implicit val DefaultInstantWrites = new Writes[Instant] {
     def writes(i: Instant): JsValue = JsString(i.toString)
   }
+
+  /**
+   * Serializer for `java.time.ZoneId` as JSON string.
+   */
+  implicit val ZoneIdWrites: Writes[ZoneId] = Writes[ZoneId](zone => JsString(zone.getId))
 
   /**
    * Serializer for `java.time.LocalDateTime` as JSON number.
