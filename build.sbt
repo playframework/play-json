@@ -2,9 +2,7 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 val specsVersion = "3.8.6"
 val specsBuild = Seq(
-  "specs2-core",
-  "specs2-junit",
-  "specs2-mock"
+  "specs2-core"
 ).map("org.specs2" %% _ % specsVersion)
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
