@@ -606,18 +606,13 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Reads for the `java.time.ZoneId` type.
    */
-  implicit val ZoneIdReads :Reads[ZoneId]= new Reads[ZoneId] {
-    override def reads(json: JsValue): JsResult[ZoneId] = json match {
-      case JsString(s) => try {
+  implicit val ZoneIdReads: Reads[ZoneId] = Reads[ZoneId] {
+    case JsString(s) => try {
         JsSuccess(ZoneId.of(s))
       } catch {
-        case _: DateTimeException =>
-          JsError(Seq(JsPath() ->
-            Seq(JsonValidationError("error.expected.timezone", s))))
+        case _: DateTimeException => JsError(JsonValidationError("error.expected.timezone", s))
       }
-      case _ =>  JsError(Seq(JsPath() ->
-        Seq(JsonValidationError("error.expected.jsstring"))))
-    }
+    case _ => JsError(JsonValidationError("error.expected.jsstring"))
   }
 
   /**
