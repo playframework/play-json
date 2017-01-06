@@ -608,10 +608,11 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit val ZoneIdReads: Reads[ZoneId] = Reads[ZoneId] {
     case JsString(s) => try {
-        JsSuccess(ZoneId.of(s))
-      } catch {
-        case _: DateTimeException => JsError(JsonValidationError("error.expected.timezone", s))
-      }
+      JsSuccess(ZoneId.of(s))
+    } catch {
+      case _: DateTimeException => JsError(JsonValidationError("error.expected.timezone", s))
+    }
+
     case _ => JsError(JsonValidationError("error.expected.jsstring"))
   }
 
@@ -818,6 +819,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   class UUIDReader(checkUuuidValidity: Boolean) extends Reads[java.util.UUID] {
     import java.util.UUID
+
     import scala.util.Try
 
     def check(s: String)(u: UUID): Boolean = (u != null && s == u.toString())

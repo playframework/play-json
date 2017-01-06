@@ -352,7 +352,7 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for `java.time.ZoneId` as JSON string.
    */
-  implicit val ZoneIdWrites = Writes[ZoneId](zone => JsString(zone.getId))
+  implicit val ZoneIdWrites: Writes[ZoneId] = Writes[ZoneId](zone => JsString(zone.getId))
 
   /**
    * Serializer for `java.time.LocalDateTime` as JSON number.
