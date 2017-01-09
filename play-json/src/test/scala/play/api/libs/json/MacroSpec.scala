@@ -42,7 +42,8 @@ class MacroSpec extends org.specs2.mutable.Specification {
       val fmt = Json.format[Lorem[Double]]
 
       fmt.reads(Json.obj("ipsum" -> 0.123D, "age" -> 1)).get must_== Lorem(
-        0.123D, 1)
+        0.123D, 1
+      )
     }
 
     "refuse value other than JsObject when properties are optional" in {
@@ -74,7 +75,8 @@ class MacroSpec extends org.specs2.mutable.Specification {
       val fmt = Json.format[Lorem[Float]]
 
       fmt.writes(Lorem(2.34F, 2)) must_== Json.obj(
-        "ipsum" -> 2.34F, "age" -> 2)
+        "ipsum" -> 2.34F, "age" -> 2
+      )
     }
   }
 
@@ -266,7 +268,8 @@ class MacroSpec extends org.specs2.mutable.Specification {
       "to generate Reads" in readSpec1(Json.reads[WithImplicit1])
 
       "to generate Writes with type parameters" in writeSpec2(
-        Json.writes[WithImplicit2[Double]])
+        Json.writes[WithImplicit2[Double]]
+      )
 
       "to generate Format" in {
         val f1 = Json.format[WithImplicit1]
@@ -286,13 +289,16 @@ class MacroSpec extends org.specs2.mutable.Specification {
       val nestedLeft = Json.obj("id" -> 2, "a" -> 0.2F, "b" -> 0.3F, "c" -> 3)
 
       val nestedRight = Json.obj(
-        "id" -> 1, "a" -> 0.1F, "b" -> "right1", "c" -> 2)
+        "id" -> 1, "a" -> 0.1F, "b" -> "right1", "c" -> 2
+      )
 
       val jsonRight = Json.obj(
-        "id" -> 3, "a" -> nestedRight, "b" -> "right2", "c" -> 0.4D)
+        "id" -> 3, "a" -> nestedRight, "b" -> "right2", "c" -> 0.4D
+      )
 
       val jsonLeft = Json.obj(
-        "id" -> 4, "a" -> nestedLeft, "b" -> nestedRight, "c" -> 0.5D)
+        "id" -> 4, "a" -> nestedLeft, "b" -> nestedRight, "c" -> 0.5D
+      )
 
       val complexRight = Complex(3, Complex(1, 0.1F, Right("right1"), 2),
         Right("right2"), 0.4D)
@@ -394,5 +400,6 @@ class MacroSpec extends org.specs2.mutable.Specification {
     ls: List[A],
     set: Set[Int],
     seq: Seq[B],
-    scores: Map[String, Float])
+    scores: Map[String, Float]
+  )
 }

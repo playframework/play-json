@@ -120,7 +120,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     val value = deserialize(jp, ctxt, List())
 
     if (!klass.isAssignableFrom(value.getClass)) {
-      throw ctxt.mappingException(klass)
+      ctxt.handleUnexpectedToken(klass, jp)
     }
     value
   }
