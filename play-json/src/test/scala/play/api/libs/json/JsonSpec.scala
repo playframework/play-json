@@ -246,7 +246,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
       val m = Map("timestamp" -> t)
       val jsonM = toJson(m)
       (jsonM \ "timestamp").as[Long] must_== t and (
-        jsonM.toString must_== """{"timestamp":1330950829160}""")
+        jsonM.toString must_== """{"timestamp":1330950829160}"""
+      )
     }
 
     "Serialize short integers correctly" in {
@@ -254,7 +255,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
       val m = Map("s" -> s)
       val jsonM = toJson(m)
       (jsonM \ "s").as[Short] must_== s and (
-        jsonM.toString must_== """{"s":1234}""")
+        jsonM.toString must_== """{"s":1234}"""
+      )
     }
 
     "Serialize bytes correctly" in {
@@ -262,14 +264,16 @@ class JsonSpec extends org.specs2.mutable.Specification {
       val m = Map("b" -> b)
       val jsonM = toJson(m)
       (jsonM \ "b").as[Byte] must_== b and (
-        jsonM.toString must_== """{"b":123}""")
+        jsonM.toString must_== """{"b":123}"""
+      )
     }
 
     "Serialize and deserialize BigDecimals" in {
       val n = BigDecimal("12345678901234567890.42")
       val json = toJson(n)
       json must equalTo(JsNumber(n)) and (
-        fromJson[BigDecimal](json) must equalTo(JsSuccess(n)))
+        fromJson[BigDecimal](json) must equalTo(JsSuccess(n))
+      )
     }
 
     "Not lose precision when parsing BigDecimals" in {
@@ -326,7 +330,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
       val json = arr(1, 2, 3, 4, 5)
 
       toJson(xs) must_== json and (
-        fromJson[List[Int]](json) must_== JsSuccess(xs))
+        fromJson[List[Int]](json) must_== JsSuccess(xs)
+      )
     }
 
     "Serialize and deserialize Jackson ObjectNodes" in {
@@ -335,7 +340,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
       val json = Json.obj("foo" -> 1, "bar" -> "two")
 
       toJson(on) must_== json and (
-        fromJson[JsonNode](json).map(_.toString) must_== JsSuccess(on.toString))
+        fromJson[JsonNode](json).map(_.toString) must_== JsSuccess(on.toString)
+      )
     }
 
     "Serialize and deserialize Jackson ArrayNodes" in {
@@ -343,7 +349,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
         .add("one").add(2)
       val json = Json.arr("one", 2)
       toJson(an) must equalTo(json) and (
-        fromJson[JsonNode](json).map(_.toString) must_== JsSuccess(an.toString))
+        fromJson[JsonNode](json).map(_.toString) must_== JsSuccess(an.toString)
+      )
     }
 
     "Deserialize integer JsNumber as Jackson number node" in {
@@ -413,7 +420,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
         "{\"key1\":\"\\u2028\\u2029\\u2030\"," +
           "\"key2\":\"\\u00E1\\u00E9\\u00ED\\u00F3\\u00FA\"," +
           "\"key3\":\"\\u00A9\\u00A3\"," + "" +
-          "\"key4\":\"\\u6837\\u54C1\"}")
+          "\"key4\":\"\\u6837\\u54C1\"}"
+      )
     }
 
     "asciiStringify should escape ascii characters properly" in {
@@ -514,7 +522,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
           "name" -> "foo",
           "zip" -> "foo",
           "city" -> "foo"
-        ))
+        )
+      )
       val req = """{"name":"foo", "zip":"foo", "city":"foo"}"""
       test.toString must beEqualTo(Json.parse(req).toString).ignoreSpace
     }

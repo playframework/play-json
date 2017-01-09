@@ -315,7 +315,8 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   implicit val DefaultLocalDateTimeWrites =
     temporalWrites[LocalDateTime, DateTimeFormatter](
-      DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+      DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    )
 
   /**
    * The default typeclass to write a `java.time.OffsetDateTime`,
@@ -323,7 +324,8 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   implicit val DefaultOffsetDateTimeWrites =
     temporalWrites[OffsetDateTime, DateTimeFormatter](
-      DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      DateTimeFormatter.ISO_OFFSET_DATE_TIME
+    )
 
   /**
    * The default typeclass to write a `java.time.ZonedDateTime`,
@@ -331,7 +333,8 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   implicit val DefaultZonedDateTimeWrites =
     temporalWrites[ZonedDateTime, DateTimeFormatter](
-      DateTimeFormatter.ISO_ZONED_DATE_TIME)
+      DateTimeFormatter.ISO_ZONED_DATE_TIME
+    )
 
   /**
    * The default typeclass to write a `java.time.LocalDate`,
@@ -339,7 +342,8 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   implicit val DefaultLocalDateWrites =
     temporalWrites[LocalDate, DateTimeFormatter](
-      DateTimeFormatter.ISO_LOCAL_DATE)
+      DateTimeFormatter.ISO_LOCAL_DATE
+    )
 
   /**
    * The default typeclass to write a `java.time.Instant`,
@@ -367,7 +371,8 @@ trait DefaultWrites extends LowPriorityWrites {
   val LocalDateTimeNumberWrites: Writes[LocalDateTime] =
     new Writes[LocalDateTime] {
       def writes(t: LocalDateTime): JsValue = JsNumber(BigDecimal.valueOf(
-        t.toInstant(ZoneOffset.UTC).toEpochMilli))
+        t.toInstant(ZoneOffset.UTC).toEpochMilli
+      ))
     }
 
   /**
@@ -398,7 +403,8 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   val LocalDateNumberWrites: Writes[LocalDate] = new Writes[LocalDate] {
     def writes(t: LocalDate): JsValue = JsNumber(BigDecimal.valueOf(
-      t.atStartOfDay.toInstant(ZoneOffset.UTC).toEpochMilli))
+      t.atStartOfDay.toInstant(ZoneOffset.UTC).toEpochMilli
+    ))
   }
 
   /**

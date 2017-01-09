@@ -32,7 +32,7 @@ object JsError {
   def apply(path: JsPath, error: String): JsError = JsError(path -> JsonValidationError(error))
 
   def merge(e1: Seq[(JsPath, Seq[JsonValidationError])], e2: Seq[(JsPath, Seq[JsonValidationError])]): Seq[(JsPath, Seq[JsonValidationError])] = {
-    (e1 ++ e2).groupBy(_._1).mapValues(_.map(_._2).flatten).toList
+    (e1 ++ e2).groupBy(_._1).mapValues(_.flatMap(_._2)).toList
   }
 
   def merge(e1: JsError, e2: JsError): JsError = {

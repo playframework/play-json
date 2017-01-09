@@ -436,7 +436,8 @@ trait DefaultReads extends LowPriorityDefaultReads {
     }
 
     @inline def epoch(millis: Long): LocalDateTime = LocalDateTime.ofInstant(
-      Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      Instant.ofEpochMilli(millis), ZoneOffset.UTC
+    )
   }
 
   /**
@@ -516,7 +517,8 @@ trait DefaultReads extends LowPriorityDefaultReads {
     }
 
     @inline def epoch(millis: Long): ZonedDateTime = ZonedDateTime.ofInstant(
-      Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      Instant.ofEpochMilli(millis), ZoneOffset.UTC
+    )
   }
 
   /**
@@ -556,7 +558,8 @@ trait DefaultReads extends LowPriorityDefaultReads {
       }
 
       @inline def epoch(millis: Long): LocalDate = LocalDate.now(
-        Clock.fixed(Instant.ofEpochMilli(millis), ZoneOffset.UTC))
+        Clock.fixed(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      )
     }
 
   /**
