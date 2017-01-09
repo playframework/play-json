@@ -106,6 +106,14 @@ sealed trait JsLookupResult extends Any with JsReadable {
   def get: JsValue = toOption.get
   def getOrElse(v: => JsValue): JsValue = toOption.getOrElse(v)
 
+  /**
+    * If this result is defined return `this`. Otherwise return `alternative`.
+    */
+  def orElse(alternative: => JsLookupResult): JsLookupResult = this match {
+    case JsDefined(_) => this
+    case JsUndefined() => alternative
+  }
+
   def validate[A](implicit rds: Reads[A]): JsResult[A] = this match {
     case JsDefined(v) => v.validate[A]
     case undef: JsUndefined => JsError(undef.validationError)
