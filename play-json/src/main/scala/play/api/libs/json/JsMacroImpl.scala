@@ -25,14 +25,16 @@ object JsMacroImpl {
 
   def formatImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[OFormat[A]] =
     macroImpl[A, OFormat, Format](
-      c, "format", "inmap", reads = true, writes = true)
+      c, "format", "inmap", reads = true, writes = true
+    )
 
   def readsImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[Reads[A]] =
     macroImpl[A, Reads, Reads](c, "read", "map", reads = true, writes = false)
 
   def writesImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[OWrites[A]] =
     macroImpl[A, OWrites, Writes](
-      c, "write", "contramap", reads = false, writes = true)
+      c, "write", "contramap", reads = false, writes = true
+    )
 
   /**
    * Generic implementation of the macro
@@ -66,7 +68,8 @@ object JsMacroImpl {
 
       case t => c.abort(
         c.enclosingPosition,
-        s"Type ${t.typeSymbol.fullName} is not a valid case class")
+        s"Type ${t.typeSymbol.fullName} is not a valid case class"
+      )
     }
 
     // The call is the term name, either "read", "write" or "format",
@@ -134,7 +137,8 @@ object JsMacroImpl {
             if (a.fullName != b.fullName) {
               c.warning(
                 c.enclosingPosition,
-                s"Type symbols are not compatible: $a != $b")
+                s"Type symbols are not compatible: $a != $b"
+              )
 
               false
             } else conforms(types.tail)
@@ -143,7 +147,8 @@ object JsMacroImpl {
           case Some((a, b)) if (a.typeArgs.size != b.typeArgs.size) => {
             c.warning(
               c.enclosingPosition,
-              s"Type parameters are not matching: $a != $b")
+              s"Type parameters are not matching: $a != $b"
+            )
 
             false
           }
@@ -152,7 +157,8 @@ object JsMacroImpl {
             if (a =:= b) conforms(types.tail) else {
               c.warning(
                 c.enclosingPosition,
-                s"Types are not compatible: $a != $b")
+                s"Types are not compatible: $a != $b"
+              )
 
               false
             }
@@ -160,7 +166,8 @@ object JsMacroImpl {
           case Some((a, b)) if (a.baseClasses != b.baseClasses) => {
             c.warning(
               c.enclosingPosition,
-              s"Generic types are not compatible: $a != $b")
+              s"Generic types are not compatible: $a != $b"
+            )
 
             false
           }
@@ -176,7 +183,8 @@ object JsMacroImpl {
         companionType.decl(TermName("apply")) match {
           case NoSymbol => c.abort(
             c.enclosingPosition,
-            s"No apply function found for ${companioned.fullName}")
+            s"No apply function found for ${companioned.fullName}"
+          )
 
           case s => s.asTerm.alternatives.flatMap { apply =>
             val meth = apply.asMethod
@@ -241,8 +249,7 @@ object JsMacroImpl {
               }
               val vals = params.foldLeft(List.empty[Tree])((l, e) =>
                 // Let type inference infer the type by using the empty type
-                l :+ q"val ${TermName(e.name.encodedName.toString)}: ${TypeTree()}"
-              )
+                l :+ q"val ${TermName(e.name.encodedName.toString)}: ${TypeTree()}")
 
               q"(..$vals) => $companionObject.apply(..${applyParams.init}, ${applyParams.last}: _*)"
             } else if (tpeArgs.isEmpty) {
@@ -263,7 +270,8 @@ object JsMacroImpl {
     if (ApplyUnapply.isValid) {
       c.abort(
         c.enclosingPosition,
-        s"Type ${companioned.fullName} is not valid: must be a case class with at least one non empty list of parameter")
+        s"Type ${companioned.fullName} is not valid: must be a case class with at least one non empty list of parameter"
+      )
     }
 
     val (applyFunction, tparams, params) = ApplyUnapply.applyFunction match {
@@ -271,7 +279,8 @@ object JsMacroImpl {
 
       case _ => c.abort(
         c.enclosingPosition,
-        s"No apply function found matching unapply parameters")
+        s"No apply function found matching unapply parameters"
+      )
     }
 
     // ---
@@ -371,7 +380,7 @@ object JsMacroImpl {
         }
 
         val (ntpe, selfRef) = normalized(tpe)
-        val ptpe = boundTypes.get(ntpe.typeSymbol.fullName).getOrElse(ntpe)
+        val ptpe = boundTypes.getOrElse(ntpe.typeSymbol.fullName, ntpe)
 
         // infers implicit
         val neededImplicitType = appliedType(natag.tpe.typeConstructor, ptpe)
@@ -380,7 +389,8 @@ object JsMacroImpl {
         } else c.untypecheck(
           // Reset the type attributes on the refactored tree for the implicit
           ImplicitTransformer.transform(
-            c.inferImplicitValue(neededImplicitType))
+            c.inferImplicitValue(neededImplicitType)
+          )
         )
 
         Implicit(name, ptype, neededImplicit, tpe, selfRef)
@@ -389,9 +399,9 @@ object JsMacroImpl {
       // To print the implicit types in the compiler messages
       private def prettyType(t: Type): String =
         boundTypes.getOrElse(t.typeSymbol.fullName, t) match {
-          case TypeRef(_, base, args) if args.nonEmpty => s"""${base.asType.fullName}[${args.map(prettyType(_)).mkString(", ")}]"""
+          case TypeRef(_, base, args) if args.nonEmpty => s"""${base.asType.fullName}[${args.map(prettyType).mkString(", ")}]"""
 
-          case t => t.typeSymbol.fullName
+          case tp => tp.typeSymbol.fullName
         }
 
       def apply(params: List[Symbol]): List[Implicit] = {
@@ -401,7 +411,8 @@ object JsMacroImpl {
         val effectiveImplicits = if (ApplyUnapply.hasVarArgs) {
           val varArgsImplicit = createImplicit(
             resolvedImplicits.last.paramName,
-            ApplyUnapply.unapplyReturnTypes.get.last)
+            ApplyUnapply.unapplyReturnTypes.get.last
+          )
 
           resolvedImplicits.init :+ varArgsImplicit
         } else resolvedImplicits
@@ -414,7 +425,8 @@ object JsMacroImpl {
         if (missingImplicits.nonEmpty) {
           c.abort(
             c.enclosingPosition,
-            s"No instance of ${natag.tpe.typeSymbol.fullName} is available for ${missingImplicits.map(prettyType(_)).mkString(", ")} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)")
+            s"No instance of ${natag.tpe.typeSymbol.fullName} is available for ${missingImplicits.map(prettyType).mkString(", ")} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+          )
         }
 
         effectiveImplicits
@@ -440,7 +452,8 @@ object JsMacroImpl {
         // Equivalent to __ \ "name", but uses a naming scheme
         // of (String) => (String) to find the correct "name"
         val cn = c.Expr[String](
-          q"$cfgName.naming(${name.decodedName.toString})")
+          q"$cfgName.naming(${name.decodedName.toString})"
+        )
 
         val jspathTree = q"""$JsPath \ $cn"""
 

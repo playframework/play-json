@@ -4,6 +4,9 @@ scala:
 - 2.11.8
 jdk:
 - oraclejdk8
+script:
+- sbt ++$TRAVIS_SCALA_VERSION test
+- sbt ++$TRAVIS_SCALA_VERSION validateCode
 cache:
   directories:
   - "$HOME/.ivy2/cache"

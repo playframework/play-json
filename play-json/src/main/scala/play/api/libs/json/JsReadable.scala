@@ -20,7 +20,7 @@ trait JsReadable extends Any {
    */
   def as[T](implicit fjs: Reads[T]): T = validate(fjs).fold(
     valid = identity,
-    invalid = e => throw new JsResultException(e)
+    invalid = e => throw JsResultException(e)
   )
 
   /**

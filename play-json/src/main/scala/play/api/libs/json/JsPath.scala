@@ -229,8 +229,7 @@ case class JsPath(path: List[PathNode] = List()) {
             js match {
               case o: JsObject =>
                 step(o, JsPath(tail)).repath(lpath).flatMap(value =>
-                  filterPathNode(json, head, value)
-                )
+                  filterPathNode(json, head, value))
               case _ => JsError(lpath, JsonValidationError("error.expected.jsobject"))
             }
           case h :: t => JsError(lpath, JsonValidationError("error.path.result.multiple"))

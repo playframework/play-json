@@ -1,11 +1,16 @@
+import interplay.ScalaVersions
+import ReleaseTransformations._
+
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
+
+scalaVersion := ScalaVersions.scala212
 
 val specsVersion = "3.8.6"
 val specsBuild = Seq(
   "specs2-core"
 ).map("org.specs2" %% _ % specsVersion)
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
+val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
 val jacksonVersion = "2.8.5"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
@@ -38,8 +43,6 @@ lazy val `play-functional` = project
 
 playBuildRepoName in ThisBuild := "play-json"
 
-import ReleaseTransformations._
-
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
@@ -54,3 +57,19 @@ releaseProcess := Seq[ReleaseStep](
   ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true),
   pushChanges
 )
+
+lazy val checkCodeFormat = taskKey[Unit]("Check that code format is following Scalariform rules")
+
+checkCodeFormat := {
+  val exitCode = "git diff --exit-code".!
+  if (exitCode != 0) {
+    sys.error(
+      """
+        |ERROR: Scalariform check failed, see differences above.
+        |To fix, format your sources using sbt scalariformFormat test:scalariformFormat before submitting a pull request.
+        |Additionally, please squash your commits (eg, use git commit --amend) if you're going to update this pull request.
+      """.stripMargin)
+  }
+}
+
+addCommandAlias("validateCode", ";scalariformFormat;checkCodeFormat")
