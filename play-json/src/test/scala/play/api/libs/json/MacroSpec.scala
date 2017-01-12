@@ -35,15 +35,14 @@ class MacroSpec extends org.specs2.mutable.Specification {
   "Reads" should {
     "be generated for simple case class" in {
       Json.reads[Simple].reads(Json.obj("bar" -> "lorem")).
-        get must_== Simple("lorem")
+        aka("result") must_== JsSuccess(Simple("lorem"), JsPath)
     }
 
     "as Format for a simple generic case class" in {
       val fmt = Json.format[Lorem[Double]]
 
-      fmt.reads(Json.obj("ipsum" -> 0.123D, "age" -> 1)).get must_== Lorem(
-        0.123D, 1
-      )
+      fmt.reads(Json.obj("ipsum" -> 0.123D, "age" -> 1)).
+        aka("result") must_== JsSuccess(Lorem(0.123D, 1), JsPath)
     }
 
     "refuse value other than JsObject when properties are optional" in {
