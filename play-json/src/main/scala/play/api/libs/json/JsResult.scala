@@ -5,10 +5,16 @@ package play.api.libs.json
 
 import Json._
 
+/**
+ * The result for a successful parsing.
+ */
 case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
   def get: T = value
 }
 
+/**
+ * The result in case of parsing `errors`.
+ */
 case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsResult[Nothing] {
   def get: Nothing = throw new NoSuchElementException("JsError.get")
 

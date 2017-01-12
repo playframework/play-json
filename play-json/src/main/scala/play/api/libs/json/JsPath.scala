@@ -119,6 +119,20 @@ case class IdxPathNode(idx: Int) extends PathNode {
   private[json] override def toJsonField(value: JsValue) = value
 }
 
+/**
+ * Companion object and root path.
+ *
+ * For an object `{ "name": "foo" }`, the path to the `name` property is:
+ * {{{
+ * JsPath \ "name"
+ * }}}
+ *
+ * For an object `{ "id": 1, "nested": { "score": 0.12 } }`,
+ * the path to the nested `score` is:
+ * {{{
+ * JsPath \ "nested" \ "score"
+ * }}}
+ */
 object JsPath extends JsPath(List.empty) {
 
   // TODO implement it correctly (doesn't merge )
@@ -145,14 +159,18 @@ object JsPath extends JsPath(List.empty) {
       step(path.path, value)
     }
 
-    pathValues.foldLeft(Json.obj()) { (obj, pv) =>
-      val (path, value) = (pv._1, pv._2)
-      val subobj = buildSubPath(path, value)
-      obj.deepMerge(subobj)
+    pathValues.foldLeft(Json.obj()) {
+      case (obj, (path, value)) =>
+        obj.deepMerge(buildSubPath(path, value))
     }
   }
 }
 
+/**
+ * Path to a [[JsValue]];
+ * As for path to file on FS, there may not be any matching value
+ * in the parsed JSON.
+ */
 case class JsPath(path: List[PathNode] = List()) {
   def \(child: String) = JsPath(path :+ KeyPathNode(child))
   def \(child: Symbol) = JsPath(path :+ KeyPathNode(child.name))
