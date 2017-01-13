@@ -1,10 +1,10 @@
 import interplay.ScalaVersions
 import ReleaseTransformations._
 
-import com.typesafe.tools.mima.core._
+import com.typesafe.tools.mima.core._, ProblemFilters._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{
-  binaryIssueFilters, previousArtifacts
+  mimaBinaryIssueFilters, mimaPreviousArtifacts
 }
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
@@ -35,11 +35,13 @@ def jsonDependencies(scalaVersion: String) = Seq(
 import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 
-val previousVersion = "2.6.0-M1" // first from this separate repo
+val previousVersion = Some("2.6.0-M1") // first from this separate repo
+
 lazy val commonSettings = mimaDefaultSettings ++ (
   SbtScalariform.scalariformSettings) ++ Seq(
-    previousArtifacts := Set(
-      organization.value %% moduleName.value % previousVersion),
+    mimaPreviousArtifacts := previousVersion.map { v =>
+      organization.value %% moduleName.value % v
+    }.toSet,
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
@@ -53,12 +55,22 @@ lazy val root = project
   .enablePlugins(PlayRootProject)
   .aggregate(`play-json`, `play-functional`)
 
+val filtersNew = Seq(
+  ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.ZoneIdWrites"),
+  ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.play$api$libs$json$DefaultWrites$_setter_$ZoneIdWrites_="),
+  ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.play$api$libs$json$DefaultReads$_setter_$ZoneIdReads_="),
+  ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.ZoneIdReads"),
+  ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsLookupResult.isDefined"),
+  ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsLookupResult.isEmpty"),
+  ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsLookupResult.orElse")
+)
+
 lazy val `play-json` = project
   .in(file("play-json"))
   .enablePlugins(PlayLibrary)
   .settings(commonSettings)
   .settings(
-    binaryIssueFilters ++= Seq(
+    mimaBinaryIssueFilters ++= filtersNew :+ (
       ProblemFilters.exclude[MissingClassProblem]("play.libs.Json")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value))
