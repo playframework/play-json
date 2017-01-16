@@ -29,11 +29,9 @@ case class RecursiveSearch(key: String) extends PathNode {
    */
   def set(json: JsValue, transform: JsValue => JsValue): JsValue = json match {
     case JsObject(fields) => {
-      var found = false
       JsObject(fields.map {
         case (k, v) =>
           if (k == this.key) {
-            found = true
             k -> transform(v)
           } else k -> set(v, transform)
       })
