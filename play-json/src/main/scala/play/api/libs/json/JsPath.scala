@@ -285,16 +285,16 @@ case class JsPath(path: List[PathNode] = List()) {
   def readNullable[T](implicit r: Reads[T]): Reads[Option[T]] = Reads.nullable[T](this)(r)
 
   /**
-    * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
-    * default value, null is None and other cases are Error).
-    *
-    * It runs through JsValue following all JsPath nodes on JsValue except last node:
-    * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
-    * - If all nodes are found till last node, it runs through JsValue with last node =>
-    *   - If last node is not found => returns default value
-    *   - If last node is found with value "null" => returns None
-    *   - If last node is found => applies implicit Reads[T]
-    */
+   * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
+   * default value, null is None and other cases are Error).
+   *
+   * It runs through JsValue following all JsPath nodes on JsValue except last node:
+   * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
+   * - If all nodes are found till last node, it runs through JsValue with last node =>
+   *   - If last node is not found => returns default value
+   *   - If last node is found with value "null" => returns None
+   *   - If last node is found => applies implicit Reads[T]
+   */
   def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.nullableWithDefault[T](this, defaultValue)(r)
 
   /**
@@ -361,12 +361,12 @@ case class JsPath(path: List[PathNode] = List()) {
   def writeNullable[T](implicit w: Writes[T]): OWrites[Option[T]] = Writes.nullable[T](this)(w)
 
   /**
-    * Writes a Option[T] at given JsPath
-    * If equal to defaultValue => doesn't write the field
-    * If None and defaultValue is not None => write Null
-    * If None => doesn't write the field
-    * else => writes the field using implicit Writes[T]
-    */
+   * Writes a Option[T] at given JsPath
+   * If equal to defaultValue => doesn't write the field
+   * If None and defaultValue is not None => write Null
+   * If None => doesn't write the field
+   * else => writes the field using implicit Writes[T]
+   */
   def writeNullableNonDefault[T](defaultValue: => Option[T])(implicit w: Writes[T]): OWrites[Option[T]] = {
     Writes.nullableNonDefault[T](this, defaultValue)(w)
   }
@@ -437,11 +437,11 @@ case class JsPath(path: List[PathNode] = List()) {
   def formatNullable[T](implicit f: Format[T]): OFormat[Option[T]] = Format.nullable[T](this)(f)
 
   /**
-    * Reads/Writes a Option[T] (nullable field) at given JsPath
-    *
-    * @see [[JsPath.readNullableWithDefault]] to see behavior in reads
-    * @see [[JsPath.writeNullableNonDefault]] to see behavior in writes
-    */
+   * Reads/Writes a Option[T] (nullable field) at given JsPath
+   *
+   * @see [[JsPath.readNullableWithDefault]] to see behavior in reads
+   * @see [[JsPath.writeNullableNonDefault]] to see behavior in writes
+   */
   def formatNullableWithDefault[T](defaultValue: => Option[T])(implicit f: Format[T]): OFormat[Option[T]] = {
     Format.nullableWithDefault[T](this, defaultValue)(f)
   }

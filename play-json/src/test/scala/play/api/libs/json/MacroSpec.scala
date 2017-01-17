@@ -243,18 +243,18 @@ class MacroSpec extends org.specs2.mutable.Specification {
 
       def readSpec(r: Reads[WithDefault]) = {
         (r.reads(json01).get must_== fixture0) and
-        (r.reads(json02).get must_== fixture0) and
-        (r.reads(json03).get must_== fixture0) and
-        (r.reads(json1).get must_== fixture1) and
-        (r.reads(json2).get must_== fixture2) and
-        (r.reads(json3).get must_== fixture3)
+          (r.reads(json02).get must_== fixture0) and
+          (r.reads(json03).get must_== fixture0) and
+          (r.reads(json1).get must_== fixture1) and
+          (r.reads(json2).get must_== fixture2) and
+          (r.reads(json3).get must_== fixture3)
       }
 
       def writeSpec(w: OWrites[WithDefault]) = {
         (w.writes(fixture4) must_== json4) and
-        (w.writes(fixture3) must_== json3) and
-        (w.writes(fixture2) must_== json2) and
-        (w.writes(fixture1) must_== json1)
+          (w.writes(fixture3) must_== json3) and
+          (w.writes(fixture2) must_== json2) and
+          (w.writes(fixture1) must_== json1)
       }
 
       "to generate Reads" in readSpec(Json.reads[WithDefault])
@@ -277,14 +277,16 @@ class MacroSpec extends org.specs2.mutable.Specification {
         "id" -> 3,
         "ref" -> Json.obj(
           "id" -> 1
-        ))
+        )
+      )
       val json03 = Json.obj(
         "id" -> 3,
         "ref" -> Json.obj(
           "id" -> 1,
           "a" -> "a",
           "b" -> "b"
-        ))
+        )
+      )
       val fixture0 = ComplexWithDefault(3)
 
       val json11 = Json.obj("id" -> 15, "ref" -> JsNull)
@@ -295,7 +297,9 @@ class MacroSpec extends org.specs2.mutable.Specification {
         "ref" -> Json.obj(
           "id" -> 1,
           "a" -> "a",
-          "b" -> "b"))
+          "b" -> "b"
+        )
+      )
       val fixture2 = ComplexWithDefault(18)
 
       def readSpec(r: Reads[ComplexWithDefault]) = {
