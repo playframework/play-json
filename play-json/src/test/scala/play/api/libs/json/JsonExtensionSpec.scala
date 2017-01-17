@@ -672,20 +672,6 @@ class JsonExtensionSpec extends Specification {
         (fooA ~ fooBar)(WithDefault2)
       }
 
-      def functionalWrites: Writes[WithDefault2] = {
-        implicit val barWrites = {
-          val barA = (__ \ "a").writeNonDefault("a")
-          val barB = (__ \ "b").writeNullableNonDefault(Some("b"))
-
-          (barA ~ barB)(unlift(WithDefault1.unapply))
-        }
-
-        val fooA = (__ \ "a").writeNonDefault("a")
-        val fooBar = (__ \ "bar").writeNullableNonDefault(Some(WithDefault1()))
-
-        (fooA ~ fooBar)(unlift(WithDefault2.unapply))
-      }
-
       def functionalFormat: Format[WithDefault2] = {
         implicit val barReads: Format[WithDefault1] = {
           val barA: OFormat[String] = (__ \ "a").formatWithDefault("a")
@@ -706,12 +692,6 @@ class JsonExtensionSpec extends Specification {
         Json.reads[WithDefault2]
       }
 
-      def macroWrites: Writes[WithDefault2] = {
-        implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
-        implicit val barWrites = Json.writes[WithDefault1]
-        Json.writes[WithDefault2]
-      }
-
       def macroFormat: Format[WithDefault2] = {
         implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
         implicit val barFormats = Json.format[WithDefault1]
@@ -725,19 +705,10 @@ class JsonExtensionSpec extends Specification {
         fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) must beEqualTo(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
       }
 
-      def validateWrites(fooWrites: Writes[WithDefault2]) = {
-        fooWrites.writes(WithDefault2()) must_== Json.obj()
-        fooWrites.writes(WithDefault2(bar = None)) must_== Json.obj("bar" -> JsNull)
-        fooWrites.writes(WithDefault2(a = "z")) must_== Json.obj("a" -> "z")
-        fooWrites.writes(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))) must_== Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))
-      }
-
       "by functional reads" >> { validateReads(functionalReads) }
-      "by functional writes" >> { validateWrites(functionalFormat) }
-      "by functional formats" >> { validateReads(functionalFormat) and validateWrites(functionalFormat) }
+      "by functional formats" >> { validateReads(functionalFormat) }
       "by macro reads" >> { validateReads(macroReads) }
-      "by macro writes" >> { validateWrites(macroWrites) }
-      "by macro formats" >> { validateReads(macroFormat) and validateWrites(macroFormat) }
+      "by macro formats" >> { validateReads(macroFormat) }
 
     }
 

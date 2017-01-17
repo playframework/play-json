@@ -84,10 +84,10 @@ object JsMacroImpl {
     // e.g. `(__ \ "foo").readWithDefault("bar")`
     // callNullableWithDefault is the equivalent of callNullable but default values are counted
     // e.g. `(__ \ "foo").readNullableWithDefault(Some("Bar"))`
-    val (callWithDefault, callNullableWithDefault) = methodName match {
-      case "read" | "format" => (TermName(s"${methodName}WithDefault"), TermName(s"${methodName}NullableWithDefault"))
-      case "write" => (TermName("writeNonDefault"), TermName("writeNullableNonDefault"))
-    }
+    val readWithDefault = TermName(s"readWithDefault")
+    val formatWithDefault = TermName(s"formatWithDefault")
+    val readNullableWithDefault = TermName(s"readNullableWithDefault")
+    val formatNullableWithDefault = TermName(s"formatNullableWithDefault")
 
     // All these can be sort of thought as imports that can then be used later in quasi quote interpolation
     val libs = q"_root_.play.api.libs"
@@ -486,19 +486,30 @@ object JsMacroImpl {
         // If we're an option with default value, invoke the optional version with fallback to default value
         val isOption = pt.typeConstructor <:< typeOf[Option[_]].typeConstructor
 
-        def plain() = {
+        def canBuild() = {
           val effectiveCall = if (isOption) callNullable else call
           q"$jspathTree.$effectiveCall($impl)"
         }
 
-        def withDefaults(defaultValue: Tree) = {
+        def canBuildWithDefaults(
+          defaultValue: Tree,
+          callWithDefault: TermName,
+          callNullableWithDefault: TermName
+        ) = {
+
           val effectiveCall = if (isOption) callNullableWithDefault else callWithDefault
-          q"if($useDefaultValues) $jspathTree.$effectiveCall($defaultValue)($impl) else ${plain()}"
+          q"if($useDefaultValues) $jspathTree.$effectiveCall($defaultValue)($impl) else ${canBuild()}"
         }
 
-        defaultValue match {
-          case Some(defaultValue) => withDefaults(defaultValue)
-          case _ => plain()
+        (defaultValue, methodName) match {
+          case (Some(defaultValue), "read") =>
+            canBuildWithDefaults(defaultValue, readWithDefault, readNullableWithDefault)
+
+          case (Some(defaultValue), "format") =>
+            canBuildWithDefaults(defaultValue, formatWithDefault, formatNullableWithDefault)
+
+          case _ =>
+            canBuild()
         }
     }.reduceLeft[Tree] { (acc, r) =>
       q"$acc.and($r)"

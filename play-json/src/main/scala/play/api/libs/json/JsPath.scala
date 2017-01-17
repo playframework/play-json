@@ -335,28 +335,12 @@ case class JsPath(path: List[PathNode] = List()) {
   /** Writes a T at given JsPath */
   def write[T](implicit w: Writes[T]): OWrites[T] = Writes.at[T](this)(w)
 
-  /** Writes a T at given JsPath */
-  def writeNonDefault[T](defaultValue: => T)(implicit w: Writes[T]): OWrites[T] = {
-    Writes.nonDefault[T](this, defaultValue)(w)
-  }
-
   /**
    * Writes a Option[T] at given JsPath
    * If None => doesn't write the field (never writes null actually)
    * else => writes the field using implicit Writes[T]
    */
   def writeNullable[T](implicit w: Writes[T]): OWrites[Option[T]] = Writes.nullable[T](this)(w)
-
-  /**
-   * Writes a Option[T] at given JsPath
-   * If equal to defaultValue => doesn't write the field
-   * If None and defaultValue is not None => write Null
-   * If None => doesn't write the field
-   * else => writes the field using implicit Writes[T]
-   */
-  def writeNullableNonDefault[T](defaultValue: => Option[T])(implicit w: Writes[T]): OWrites[Option[T]] = {
-    Writes.nullableNonDefault[T](this, defaultValue)(w)
-  }
 
   /**
    * Writes a T at JsPath using the explicit Writes[T] passed by name which is useful in case of
