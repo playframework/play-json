@@ -725,7 +725,6 @@ class JsonExtensionSpec extends Specification {
         fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) must beEqualTo(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
       }
 
-
       def validateWrites(fooWrites: Writes[WithDefault2]) = {
         fooWrites.writes(WithDefault2()) must_== Json.obj()
         fooWrites.writes(WithDefault2(bar = None)) must_== Json.obj("bar" -> JsNull)
@@ -733,12 +732,12 @@ class JsonExtensionSpec extends Specification {
         fooWrites.writes(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))) must_== Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))
       }
 
-      "by functional reads"   >> { validateReads(functionalReads) }
-      "by functional writes"  >> { validateWrites(functionalFormat) }
+      "by functional reads" >> { validateReads(functionalReads) }
+      "by functional writes" >> { validateWrites(functionalFormat) }
       "by functional formats" >> { validateReads(functionalFormat) and validateWrites(functionalFormat) }
-      "by macro reads"        >> { validateReads(macroReads) }
-      "by macro writes"       >> { validateWrites(macroWrites) }
-      "by macro formats"      >> { validateReads(macroFormat) and validateWrites(macroFormat) }
+      "by macro reads" >> { validateReads(macroReads) }
+      "by macro writes" >> { validateWrites(macroWrites) }
+      "by macro formats" >> { validateReads(macroFormat) and validateWrites(macroFormat) }
 
     }
 

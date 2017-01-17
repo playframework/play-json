@@ -5,7 +5,8 @@ package play.api.libs.json
 
 case class JsonConfiguration(
   naming: JsonNaming,
-  useDefaultValues: Boolean = false)
+  useDefaultValues: Boolean = false
+)
 
 trait LowPriorityDefaultJsonConfigurationImplicit {
 

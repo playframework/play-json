@@ -85,8 +85,8 @@ object JsMacroImpl {
     // callNullableWithDefault is the equivalent of callNullable but default values are counted
     // e.g. `(__ \ "foo").readNullableWithDefault(Some("Bar"))`
     val (callWithDefault, callNullableWithDefault) = methodName match {
-      case "read" | "format"  => (TermName(s"${methodName}WithDefault"), TermName(s"${methodName}NullableWithDefault"))
-      case "write"            => (TermName("writeNonDefault"), TermName("writeNullableNonDefault"))
+      case "read" | "format" => (TermName(s"${methodName}WithDefault"), TermName(s"${methodName}NullableWithDefault"))
+      case "write" => (TermName("writeNonDefault"), TermName("writeNullableNonDefault"))
     }
 
     // All these can be sort of thought as imports that can then be used later in quasi quote interpolation
@@ -253,11 +253,12 @@ object JsMacroImpl {
         maybeApply.flatMap { app =>
           app.paramLists.headOption.map { params =>
 
-            val defaultValues = params.map(_.asTerm).zipWithIndex map { case (p, i) =>
-              if (!p.isParamWithDefault) None else {
-                val getter = TermName("apply$default$" + (i + 1))
-                Some(q"$companionObject.$getter")
-              }
+            val defaultValues = params.map(_.asTerm).zipWithIndex map {
+              case (p, i) =>
+                if (!p.isParamWithDefault) None else {
+                  val getter = TermName("apply$default$" + (i + 1))
+                  Some(q"$companionObject.$getter")
+                }
             }
 
             val tree = if (hasVarArgs) {
@@ -422,14 +423,16 @@ object JsMacroImpl {
         }
 
       def apply(params: List[Symbol], defaultValues: List[Option[Tree]]): List[Implicit] = {
-        val resolvedImplicits = params.zip(defaultValues).map { case (param, defaultValue) =>
-          createImplicit(param.name, param.typeSignature, defaultValue)
+        val resolvedImplicits = params.zip(defaultValues).map {
+          case (param, defaultValue) =>
+            createImplicit(param.name, param.typeSignature, defaultValue)
         }
         val effectiveImplicits = if (ApplyUnapply.hasVarArgs) {
           val varArgsImplicit = createImplicit(
             resolvedImplicits.last.paramName,
             ApplyUnapply.unapplyReturnTypes.get.last,
-            None)
+            None
+          )
 
           resolvedImplicits.init :+ varArgsImplicit
         } else resolvedImplicits
@@ -495,7 +498,7 @@ object JsMacroImpl {
 
         defaultValue match {
           case Some(defaultValue) => withDefaults(defaultValue)
-          case _                  => plain()
+          case _ => plain()
         }
     }.reduceLeft[Tree] { (acc, r) =>
       q"$acc.and($r)"
