@@ -4,13 +4,13 @@
 package play.api.libs.json
 
 case class JsonConfiguration(
-  naming: JsonNaming,
+  naming: JsonNaming = JsonNaming.Identity,
   useDefaultValues: Boolean = false
 )
 
 trait LowPriorityDefaultJsonConfigurationImplicit {
 
-  implicit val defaultConfiguration: JsonConfiguration = JsonConfiguration(JsonNaming.Identity)
+  implicit val defaultConfiguration: JsonConfiguration = JsonConfiguration()
 
 }
 
