@@ -660,30 +660,30 @@ class JsonExtensionSpec extends Specification {
 
       def functionalReads: Reads[WithDefault2] = {
         implicit val barReads = {
-          val barA = (__ \ "a").readWithDefault("a")
-          val barB = (__ \ "b").readNullableWithDefault(Some("b"))
-
-          (barA ~ barB)(WithDefault1)
+          (
+            (__ \ "a").readWithDefault("a") and
+            (__ \ "b").readNullableWithDefault(Some("b"))
+          )(WithDefault1)
         }
 
-        val fooA = (__ \ "a").readWithDefault("a")
-        val fooBar = (__ \ "bar").readNullableWithDefault(Some(WithDefault1()))
-
-        (fooA ~ fooBar)(WithDefault2)
+        (
+          (__ \ "a").readWithDefault("a") and
+          (__ \ "bar").readNullableWithDefault(Some(WithDefault1()))
+        )(WithDefault2)
       }
 
       def functionalFormat: Format[WithDefault2] = {
         implicit val barReads: Format[WithDefault1] = {
-          val barA: OFormat[String] = (__ \ "a").formatWithDefault("a")
-          val barB: OFormat[Option[String]] = (__ \ "b").formatNullableWithDefault(Some("b"))
-
-          (barA ~ barB)(WithDefault1.apply, unlift(WithDefault1.unapply))
+          (
+            (__ \ "a").formatWithDefault("a") and
+            (__ \ "b").formatNullableWithDefault(Some("b"))
+          )(WithDefault1.apply, unlift(WithDefault1.unapply))
         }
 
-        val fooA: OFormat[String] = (__ \ "a").formatWithDefault("a")
-        val fooBar: OFormat[Option[WithDefault1]] = (__ \ "bar").formatNullableWithDefault(Some(WithDefault1()))
-
-        (fooA ~ fooBar)(WithDefault2.apply, unlift(WithDefault2.unapply))
+        (
+          (__ \ "a").formatWithDefault("a") and
+          (__ \ "bar").formatNullableWithDefault(Some(WithDefault1()))
+        )(WithDefault2.apply, unlift(WithDefault2.unapply))
       }
 
       def macroReads: Reads[WithDefault2] = {

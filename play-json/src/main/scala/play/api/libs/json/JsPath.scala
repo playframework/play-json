@@ -381,6 +381,7 @@ case class JsPath(path: List[PathNode] = List()) {
 
   /** Reads/Writes a T at JsPath using provided implicit Format[T] */
   def format[T](implicit f: Format[T]): OFormat[T] = Format.at[T](this)(f)
+
   /** Reads/Writes a T at JsPath using provided implicit Format[T] with fallback to default value*/
   def formatWithDefault[T](defaultValue: => T)(implicit f: Format[T]): OFormat[T] = {
     Format.withDefault[T](this, defaultValue)(f)
