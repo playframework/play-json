@@ -699,10 +699,13 @@ class JsonExtensionSpec extends Specification {
       }
 
       def validateReads(fooReads: Reads[WithDefault2]) = {
-        fooReads.reads(Json.obj()) must beEqualTo(JsSuccess(WithDefault2()))
-        fooReads.reads(Json.obj("bar" -> JsNull)) must beEqualTo(JsSuccess(WithDefault2(bar = None)))
-        fooReads.reads(Json.obj("a" -> "z")) must beEqualTo(JsSuccess(WithDefault2(a = "z")))
-        fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) must beEqualTo(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
+        fooReads.reads(Json.obj()) must beEqualTo(JsSuccess(WithDefault2())) and (
+          fooReads.reads(Json.obj("bar" -> JsNull)) must beEqualTo(JsSuccess(WithDefault2(bar = None))) and (
+            fooReads.reads(Json.obj("a" -> "z")) must beEqualTo(JsSuccess(WithDefault2(a = "z"))) and (
+              fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) must beEqualTo(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
+            )
+          )
+        )
       }
 
       "by functional reads" >> { validateReads(functionalReads) }
