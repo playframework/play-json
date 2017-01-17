@@ -494,8 +494,7 @@ object JsMacroImpl {
         def canBuildWithDefaults(
           defaultValue: Tree,
           callWithDefault: TermName,
-          callNullableWithDefault: TermName
-        ) = {
+          callNullableWithDefault: TermName) = {
 
           val effectiveCall = if (isOption) callNullableWithDefault else callWithDefault
           q"if($useDefaultValues) $jspathTree.$effectiveCall($defaultValue)($impl) else ${canBuild()}"
