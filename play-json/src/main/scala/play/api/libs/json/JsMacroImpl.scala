@@ -480,8 +480,8 @@ object JsMacroImpl {
 
       def readLambda: Tree = {
         val resolver = new ImplicitResolver({ orig: Type => orig })
-        val cases = Match(q"""obj.value.lift("_value")""", (
-          cq"""_ => $json.JsError("error.missing.path")""" :: (
+        val cases = Match(q"dis", (
+          cq"""_ => $json.JsError("error.invalid")""" :: (
             subTypes.foldLeft(List.empty[CaseDef]) { (out, t) =>
               val rtpe = appliedType(readsType, List(t))
               val reader = resolver.createImplicit(
@@ -495,14 +495,19 @@ object JsMacroImpl {
                 )
               }
 
-              cq"""Some(v) if (dis == ${typeNaming(t)}) => $reader.reads(v)""" :: out
+              cq"${typeNaming(t)} => $reader.reads(vjs)" :: out
             }
           )
         ).reverse)
 
         q"""(_: $json.JsValue) match {
           case obj @ $json.JsObject(_) => obj.value.get("_type") match {
-             case Some(tjs) => tjs.validate[String].flatMap { dis => $cases }
+             case Some(tjs) => {
+               val vjs = obj.value.get("_value").getOrElse(obj)
+               tjs.validate[String].flatMap { dis => $cases }
+             }
+
+             case _ => $json.JsError($JsPath \ "_type", "error.missing.path")
           }
 
           case _ => $json.JsError("error.expected.jsobject")
@@ -525,10 +530,15 @@ object JsMacroImpl {
         val cases = Match(q"v", subTypes.map { t =>
           // Use `implicitly` rather than `ImplicitResolver.createImplicit`,
           // due to the implicit/contravariance workaround
-          cq"""x: $t => Json.obj(
-            "_type" -> ${typeNaming(t)},
-            "_value" -> implicitly[Writes[$t]].writes(x)
-          )"""
+          cq"""x: $t => {
+            val xjs = implicitly[Writes[$t]].writes(x)
+            @inline def jso = xjs match {
+              case xo @ JsObject(_) => xo
+              case jsv => JsObject(Seq("_value" -> jsv))
+            }
+
+            jso + ("_type" -> JsString(${typeNaming(t)}))
+          }"""
         })
 
         // Use shadowing to eliminate the generated term itself

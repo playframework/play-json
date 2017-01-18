@@ -64,7 +64,7 @@ class MacroSpec extends org.specs2.mutable.Specification {
       }
     }
 
-    "be generated for a sealed family" in {
+    "be generated for a sealed family" >> {
       implicit val simpleReads = Reads[Simple] { js =>
         (js \ "bar").validate[String].map(Simple(_))
       }
@@ -72,19 +72,36 @@ class MacroSpec extends org.specs2.mutable.Specification {
       implicit val familyReads: Reads[Family] = Json.reads[Family]
 
       val simple = Simple("foo")
-      val jsSimple = Json.obj(
-        "_type" -> "play.api.libs.json.MacroSpec.Simple",
-        "_value" -> Json.writes[Simple].writes(simple)
-      )
-
       val optional = Optional(None)
-      val jsOptional = Json.obj(
-        "_type" -> "play.api.libs.json.MacroSpec.Optional",
-        "_value" -> Json.writes[Optional].writes(optional)
-      )
 
-      jsSimple.validate[Family].get must beTypedEqualTo(simple) and {
-        jsOptional.validate[Family].get must beTypedEqualTo(optional)
+      "using the _value syntax" in {
+        val jsSimple = Json.obj(
+          "_type" -> "play.api.libs.json.MacroSpec.Simple",
+          "_value" -> Json.writes[Simple].writes(simple)
+        )
+
+        val jsOptional = Json.obj(
+          "_type" -> "play.api.libs.json.MacroSpec.Optional",
+          "_value" -> Json.writes[Optional].writes(optional)
+        )
+
+        jsSimple.validate[Family].get must beTypedEqualTo(simple) and {
+          jsOptional.validate[Family].get must beTypedEqualTo(optional)
+        }
+      }
+
+      "using the compact syntax" in {
+        val jsSimple = Json.writes[Simple].writes(simple) + (
+          "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
+        )
+
+        val jsOptional = Json.writes[Optional].writes(optional) + (
+          "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
+        )
+
+        jsSimple.validate[Family].get must beTypedEqualTo(simple) and {
+          jsOptional.validate[Family].get must beTypedEqualTo(optional)
+        }
       }
     }
   }
@@ -104,7 +121,7 @@ class MacroSpec extends org.specs2.mutable.Specification {
       )
     }
 
-    "be generated for a sealed family" in {
+    "be generated for a sealed family" >> {
       implicit val simpleWrites = Writes[Simple] { simple =>
         Json.obj("bar" -> simple.bar)
       }
@@ -112,19 +129,23 @@ class MacroSpec extends org.specs2.mutable.Specification {
       implicit val familyWrites: OWrites[Family] = Json.writes[Family]
 
       val simple = Simple("foo")
-      val jsSimple = Json.obj(
-        "_type" -> "play.api.libs.json.MacroSpec.Simple",
-        "_value" -> simpleWrites.writes(simple)
-      )
-
       val optional = Optional(None)
-      val jsOptional = Json.obj(
-        "_type" -> "play.api.libs.json.MacroSpec.Optional",
-        "_value" -> optionalWrites.writes(optional)
+
+      val jsSimple = simpleWrites.writes(simple).asInstanceOf[JsObject] + (
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
       )
 
-      Json.toJson[Family](simple) must_== jsSimple and {
-        Json.toJson[Family](optional) must_== jsOptional
+      val jsOptional = optionalWrites.writes(optional) + (
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
+      )
+
+      lazy val wsimple = Json.toJson[Family](simple)
+      lazy val wopt = Json.toJson[Family](optional)
+
+      wsimple must_== jsSimple and {
+        wsimple.validate(Json.reads[Simple]).get must beTypedEqualTo(simple)
+      } and (wopt must_== jsOptional) and {
+        wopt.validate(Json.reads[Optional]).get must beTypedEqualTo(optional)
       }
     }
   }
@@ -326,7 +347,7 @@ class MacroSpec extends org.specs2.mutable.Specification {
     }
 
     "handle sealed family" in {
-      implicit val simpleWrites = Writes[Simple] { simple =>
+      implicit val simpleWrites = OWrites[Simple] { simple =>
         Json.obj("bar" -> simple.bar)
       }
       implicit val simpleReads = Reads[Simple] { js =>
@@ -336,15 +357,13 @@ class MacroSpec extends org.specs2.mutable.Specification {
       implicit val familyFormat: OFormat[Family] = Json.format[Family]
 
       val simple = Simple("foo")
-      val jsSimple = Json.obj(
-        "_type" -> "play.api.libs.json.MacroSpec.Simple",
-        "_value" -> simpleWrites.writes(simple)
+      val jsSimple = simpleWrites.writes(simple) + (
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
       )
 
       val optional = Optional(None)
-      val jsOptional = Json.obj(
-        "_type" -> "play.api.libs.json.MacroSpec.Optional",
-        "_value" -> optionalFormat.writes(optional)
+      val jsOptional = optionalFormat.writes(optional) + (
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
 
       Json.toJson[Family](simple) must_== jsSimple and {
@@ -353,6 +372,11 @@ class MacroSpec extends org.specs2.mutable.Specification {
         jsSimple.validate[Family].get must beTypedEqualTo(simple)
       } and {
         jsOptional.validate[Family].get must beTypedEqualTo(optional)
+      } and {
+        jsSimple.validate(Json.reads[Simple]).get must beTypedEqualTo(simple)
+      } and {
+        jsOptional.validate(Json.reads[Optional]).
+          get must beTypedEqualTo(optional)
       }
     }
   }
