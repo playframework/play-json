@@ -25,7 +25,6 @@ def jsonDependencies(scalaVersion: String) = Seq(
   logback % Test
 ) ++ jacksons ++ specsBuild.map(_ % Test)
 
-
 lazy val root = project
   .in(file("."))
   .enablePlugins(PlayRootProject)
