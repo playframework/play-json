@@ -687,13 +687,13 @@ class JsonExtensionSpec extends Specification {
       }
 
       def macroReads: Reads[WithDefault2] = {
-        implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
+        implicit val enableDefaultValues = JsonConfiguration(useDefaultValues = true)
         implicit val barReads = Json.reads[WithDefault1]
         Json.reads[WithDefault2]
       }
 
       def macroFormat: Format[WithDefault2] = {
-        implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
+        implicit val enableDefaultValues = JsonConfiguration(useDefaultValues = true)
         implicit val barFormats = Json.format[WithDefault1]
         Json.format[WithDefault2]
       }

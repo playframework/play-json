@@ -424,7 +424,7 @@ case class JsPath(path: List[PathNode] = List()) {
    * Reads/Writes a Option[T] (nullable field) at given JsPath
    *
    * @see [[JsPath.readNullableWithDefault]] to see behavior in reads
-   * @see [[JsPath.writeNullableNonDefault]] to see behavior in writes
+   * @see [[JsPath.writeNullable]] to see behavior in writes
    */
   def formatNullableWithDefault[T](defaultValue: => Option[T])(implicit f: Format[T]): OFormat[Option[T]] = {
     Format.nullableWithDefault[T](this, defaultValue)(f)

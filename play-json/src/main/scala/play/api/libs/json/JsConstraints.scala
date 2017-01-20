@@ -16,8 +16,6 @@ trait PathFormat {
   def at[A](path: JsPath)(implicit f: Format[A]): OFormat[A] =
     OFormat[A](Reads.at(path)(f), Writes.at(path)(f))
 
-  def nullable[A](path: JsPath)(implicit f: Format[A]): OFormat[Option[A]] =
-
   def withDefault[A](path: JsPath, defaultValue: => A)(implicit f: Format[A]): OFormat[A] =
     OFormat[A](Reads.withDefault(path, defaultValue)(f), Writes.at(path)(f))
 
@@ -34,7 +32,7 @@ trait PathReads {
   def required(path: JsPath)(implicit reads: Reads[JsValue]): Reads[JsValue] = at(path)(reads)
 
   def at[A](path: JsPath)(implicit reads: Reads[A]): Reads[A] =
-    Reads[A] { js => path.asSingleJsResult(js).flatMap(reads.reads(_).repath(path)) }
+    Reads[A](js => path.asSingleJsResult(js).flatMap(reads.reads(_).repath(path)))
 
   def withDefault[A](path: JsPath, defaultValue: => A)(implicit reads: Reads[A]): Reads[A] =
     at[A](path) orElse Reads.pure(defaultValue)

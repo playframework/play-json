@@ -76,8 +76,7 @@ object JsMacroImpl {
       paramType: Type,
       neededImplicit: Tree,
       tpe: Type,
-      selfRef: Boolean,
-      default: Option[Tree]
+      selfRef: Boolean
     )
 
     val optTpeCtor = typeOf[Option[_]].typeConstructor
@@ -164,7 +163,7 @@ object JsMacroImpl {
         }
       }
 
-      def createImplicit(subject: Type, ctag: Type, defaultValue: Option[Tree])(ptype: Type): Implicit = {
+      def createImplicit(subject: Type, ctag: Type)(ptype: Type): Implicit = {
         val tpe = ptype match {
           case TypeRef(_, _, targ :: _) =>
             // Option[_] needs special treatment because we need to use XXXOpt
@@ -190,7 +189,7 @@ object JsMacroImpl {
           )
         )
 
-        Implicit(ptype, neededImplicit, tpe, selfRef, defaultValue)
+        Implicit(ptype, neededImplicit, tpe, selfRef)
       }
     }
 
@@ -352,12 +351,12 @@ object JsMacroImpl {
       lazy val applyFunction: Option[(Tree, List[TypeSymbol], List[Symbol], List[Option[Tree]])] =
         maybeApply.flatMap { app =>
           app.paramLists.headOption.map { params =>
-
-            val defaultValues = params.map(_.asTerm).zipWithIndex map { case (p, i) =>
-              if (!p.isParamWithDefault) None else {
-                val getter = TermName("apply$default$" + (i + 1))
-                Some(q"$companionObject.$getter")
-              }
+            val defaultValues = params.map(_.asTerm).zipWithIndex map {
+              case (p, i) =>
+                if (!p.isParamWithDefault) None else {
+                  val getter = TermName("apply$default$" + (i + 1))
+                  Some(q"$companionObject.$getter")
+                }
             }
 
             val tree = if (hasVarArgs) {
@@ -396,14 +395,14 @@ object JsMacroImpl {
       }
 
       def implicits(resolver: ImplicitResolver): List[(Name, Implicit)] = {
-        val createImplicit = resolver.createImplicit(atag.tpe, natag.tpe, None) _
+        val createImplicit = resolver.createImplicit(atag.tpe, natag.tpe) _
         val effectiveImplicits = params.map {
           case (n, t) => n -> createImplicit(t)
         }
 
         // if any implicit is missing, abort
         val missingImplicits = effectiveImplicits.collect {
-          case (_, Implicit(t, EmptyTree /* ~= not found */ , _, _, None)) => t
+          case (_, Implicit(t, EmptyTree /* ~= not found */ , _, _)) => t
         }
 
         if (missingImplicits.nonEmpty) {
@@ -494,7 +493,7 @@ object JsMacroImpl {
             subTypes.foldLeft(List.empty[CaseDef]) { (out, t) =>
               val rtpe = appliedType(readsType, List(t))
               val reader = resolver.createImplicit(
-                atag.tpe, rtpe, None
+                atag.tpe, rtpe
               )(t).neededImplicit
 
               if (reader.isEmpty) {
@@ -633,9 +632,12 @@ object JsMacroImpl {
           boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
         }
       })
+      val defaultValueMap = params.zip(defaultValues).collect {
+        case (p, Some(dv)) => p.name.encodedName -> dv
+      }.toMap
       val resolvedImplicits = utility.implicits(resolver)
       val canBuild = resolvedImplicits.map {
-        case (name, Implicit(pt, impl, _, _, defaultValue)) =>
+        case (name, Implicit(pt, impl, _, _)) =>
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
           val cn = c.Expr[String](
@@ -644,31 +646,29 @@ object JsMacroImpl {
 
           val useDefaultValues = c.Expr[String](q"$cfgName.useDefaultValues")
 
-
           val jspathTree = q"""$JsPath \ $cn"""
+
+          val isOption = pt.typeConstructor <:< optTpeCtor
 
           // If we're not recursive, simple, just invoke read/write/format
           // If we're an option, invoke the nullable version
-          // If we're an default value, invoke the withDefault version
-          // If we're an option with default value, invoke the nullableWithDefault version
-          val isOption = pt.typeConstructor <:< optTpeCtor
-
           def canBuild() = {
             val effectiveCall = if (isOption) callNullable else call
             q"$jspathTree.$effectiveCall($impl)"
           }
 
+          // If we're an default value, invoke the withDefault version
+          // If we're an option with default value, invoke the nullableWithDefault version
           def canBuildWithDefaults(
             defaultValue: Tree,
             callWithDefault: TermName,
             callNullableWithDefault: TermName
           ) = {
-
             val effectiveCall = if (isOption) callNullableWithDefault else callWithDefault
             q"if($useDefaultValues) $jspathTree.$effectiveCall($defaultValue)($impl) else ${canBuild()}"
           }
 
-          (defaultValue, methodName) match {
+          (defaultValueMap get name, methodName) match {
             case (Some(defaultValue), "read") =>
               canBuildWithDefaults(defaultValue, readWithDefault, readNullableWithDefault)
 
