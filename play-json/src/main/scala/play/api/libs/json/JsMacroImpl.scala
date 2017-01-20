@@ -399,7 +399,7 @@ object JsMacroImpl {
         val effectiveImplicits = params.map {
           case (n, t) => n -> createImplicit(t)
         }
-        
+
         // if any implicit is missing, abort
         val missingImplicits = effectiveImplicits.collect {
           case (_, Implicit(t, EmptyTree /* ~= not found */ , _, _)) => t
