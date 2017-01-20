@@ -298,19 +298,6 @@ case class JsPath(path: List[PathNode] = List()) {
   def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.nullableWithDefault[T](this, defaultValue)(r)
 
   /**
-   * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
-   * default value, null is None and other cases are Error).
-   *
-   * It runs through JsValue following all JsPath nodes on JsValue except last node:
-   * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
-   * - If all nodes are found till last node, it runs through JsValue with last node =>
-   *   - If last node is not found => returns default value
-   *   - If last node is found with value "null" => returns None
-   *   - If last node is found => applies implicit Reads[T]
-   */
-  def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.nullableWithDefault[T](this, defaultValue)(r)
-
-  /**
    * Reads a T at JsPath using the explicit Reads[T] passed by name which is useful in case of
    * recursive case classes for ex.
    *
