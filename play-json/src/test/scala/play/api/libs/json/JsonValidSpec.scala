@@ -576,6 +576,18 @@ class JsonValidSpec extends Specification {
       Json.obj("type" -> "coucou", "data" -> Json.obj("title" -> "blabla")).validate(TupleReads) must beEqualTo(JsError(__ \ "data" \ "created", "error.path.missing"))
     }
 
+    "verifying reads" in {
+      case class User(id: Long, username: String)
+
+      implicit val UserReads = (
+        (__ \ 'id).read[Long] and
+        (__ \ 'username).read[String](Reads.verifying[String] { suggestedUsername => suggestedUsername.head.isLetter })
+      )(User)
+
+      Json.obj("id" -> 123L, "username" -> "bob").validate[User] must beEqualTo(JsSuccess(User(123L, "bob")))
+      Json.obj("id" -> 123L, "username" -> "2bob").validate[User] must beEqualTo(JsError(__ \ "username", "error.invalid"))
+    }
+
     "recursive reads" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
