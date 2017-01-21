@@ -176,14 +176,14 @@ class JsonValidSpec extends Specification {
         (json.validate((__ \ "day3").read(Reads.enumNameReads(Weekdays))).asOpt must beNone)
     }
 
-    "Can reads with nullable" in {
+    "read fields with null values" in {
       val json = Json.obj("field" -> JsNull)
 
       val resultPost = json.validate((__ \ "field").read(Reads.optionWithNull[String]))
       resultPost.get must equalTo(None)
     }
 
-    "Validate options using validateOpt" in {
+    "validate options using validateOpt" in {
       val json = Json.obj("foo" -> JsNull, "bar" -> "bar")
 
       (json \ "foo").validateOpt[String] must_== JsSuccess(None)
