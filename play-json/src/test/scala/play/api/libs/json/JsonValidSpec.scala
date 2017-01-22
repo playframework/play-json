@@ -147,7 +147,7 @@ class JsonValidSpec extends Specification {
         aka("formatted date") must beEqualTo(JsSuccess(c.getTime))
     }
 
-    "validate UUID" in {
+    "validate UUID" >> {
       "validate correct UUIDs" in {
         val uuid = java.util.UUID.randomUUID()
         Json.toJson[java.util.UUID](uuid).validate[java.util.UUID] must beEqualTo(JsSuccess(uuid))
@@ -925,7 +925,7 @@ class JsonValidSpec extends Specification {
       x must equalTo(JsSuccess(42))
     }
 
-    "be a functor" in {
+    "be a functor" >> {
       "JsSuccess" in {
         val res1: JsResult[String] = JsSuccess("foo", JsPath(List(KeyPathNode("bar"))))
         res1.map(identity) must equalTo(res1)
