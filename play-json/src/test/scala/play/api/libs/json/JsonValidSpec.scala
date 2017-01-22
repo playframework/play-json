@@ -216,6 +216,49 @@ class JsonValidSpec extends Specification {
       JsString("alphabeta").validate[String] must equalTo(JsSuccess("alphabeta"))
     }
 
+    "validate reads on the root path" in {
+      case class Address(street: String, zip: String)
+
+      implicit val userReads = (
+        (__ \ "name").read[String] and
+        (__ \ "age").read[Int]
+      )(User)
+
+      implicit val addressReads = (
+        (__ \ "street").read[String] and
+        (__ \ "zip").read[String]
+      )(Address)
+
+      val bobby = Json.obj(
+        "name" -> "bobby",
+        "age" -> 54,
+        "street" -> "13 Main St",
+        "zip" -> "98765"
+      )
+
+      "reads" in {
+        implicit val userAddressReads: Reads[(User, Address)] = (
+          __.read[User] and
+          __.read[Address]
+        ).tupled
+
+        bobby.validate[(User, Address)] must equalTo(
+          JsSuccess((User("bobby", 54), Address("13 Main St", "98765")))
+        )
+      }
+
+      "readNullables" in {
+        implicit val userAddressReads: Reads[(User, Option[Address])] = (
+          __.read[User] and
+          __.readNullable[Address]
+        ).tupled
+
+        bobby.validate[(User, Option[Address])] must equalTo(
+          JsSuccess((User("bobby", 54), Some(Address("13 Main St", "98765"))))
+        )
+      }
+    }
+
     "validate simple constraints" in {
       JsString("alphabeta").validate[String](Reads.minLength(5)) must equalTo(JsSuccess("alphabeta"))
     }
