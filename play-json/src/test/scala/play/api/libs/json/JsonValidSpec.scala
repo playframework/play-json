@@ -216,7 +216,7 @@ class JsonValidSpec extends Specification {
       JsString("alphabeta").validate[String] must equalTo(JsSuccess("alphabeta"))
     }
 
-    "validate reads on the root path" in {
+    "validate reads on the root path" >> {
       case class Address(street: String, zip: String)
 
       implicit val userReads = (
