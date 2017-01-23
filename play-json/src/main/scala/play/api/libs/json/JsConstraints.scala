@@ -48,7 +48,7 @@ trait PathReads {
    *   - If last node is found with value "null" => returns None
    *   - If last node is found => applies implicit Reads[T]
    */
-  def nullable[A](path: JsPath)(implicit reads: Reads[A]) =
+  def nullable[A](path: JsPath)(implicit reads: Reads[A]): Reads[Option[A]] =
     nullableWithDefault(path, None)
 
   /**
@@ -62,15 +62,16 @@ trait PathReads {
    *   - If last node is found with value "null" => returns None
    *   - If last node is found => applies implicit Reads[T]
    */
-  def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]) = Reads[Option[A]] { json =>
-    path.applyTillLast(json).fold(identity, _.fold(
-      _ => JsSuccess(defaultValue),
-      _ match {
-        case JsNull => JsSuccess(None)
-        case js => reads.reads(js).repath(path).map(Some(_))
-      }
-    ))
-  }
+  def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]): Reads[Option[A]] =
+    Reads[Option[A]] { json =>
+      path.applyTillLast(json).fold(identity, _.fold(
+        _ => JsSuccess(defaultValue),
+        _ match {
+          case JsNull => JsSuccess(None)
+          case js => reads.reads(js).repath(path).map(Some(_))
+        }
+      ))
+    }
 
   def jsPick[A <: JsValue](path: JsPath)(implicit reads: Reads[A]): Reads[A] = at(path)(reads)
 
