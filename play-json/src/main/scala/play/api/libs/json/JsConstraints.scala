@@ -74,13 +74,12 @@ trait PathReads {
    */
   def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]) = Reads[Option[A]] { json =>
     path.applyTillLast(json).fold(identity, _.fold(
-        _ => JsSuccess(defaultValue),
-        _ match {
-          case JsNull => JsSuccess(None)
-          case js => reads.reads(js).repath(path).map(Some(_))
-        }
-      )
-    )
+      _ => JsSuccess(defaultValue),
+      _ match {
+        case JsNull => JsSuccess(None)
+        case js => reads.reads(js).repath(path).map(Some(_))
+      }
+    ))
   }
 
   def jsPick[A <: JsValue](path: JsPath)(implicit reads: Reads[A]): Reads[A] = at(path)(reads)
