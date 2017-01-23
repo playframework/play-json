@@ -48,18 +48,8 @@ trait PathReads {
    *   - If last node is found with value "null" => returns None
    *   - If last node is found => applies implicit Reads[T]
    */
-  def nullable[A](path: JsPath)(implicit reads: Reads[A]) = Reads[Option[A]] { json =>
-    path.applyTillLast(json).fold(
-      jserr => jserr,
-      jsres => jsres.fold(
-        _ => JsSuccess(None),
-        a => a match {
-          case JsNull => JsSuccess(None)
-          case js => reads.reads(js).repath(path).map(Some(_))
-        }
-      )
-    )
-  }
+  def nullable[A](path: JsPath)(implicit reads: Reads[A]) =
+    nullableWithDefault(path, None)
 
   /**
    * Reads a Option[T] search nullable field at JsPath (null is None
