@@ -56,6 +56,9 @@ lazy val root = project
   .aggregate(`play-json`, `play-functional`)
 
 val filtersNew = Seq(
+  ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.JsMacroImpl$ImplicitResolver$2$ImplicitTransformer$"),
+  ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.JsMacroImpl$ImplicitResolver$2$Implicit$"),
+  ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.JsMacroImpl$ImplicitResolver$2$Implicit"),
   ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.ZoneIdWrites"),
   ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.play$api$libs$json$DefaultWrites$_setter_$ZoneIdWrites_="),
   ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.play$api$libs$json$DefaultReads$_setter_$ZoneIdReads_="),
