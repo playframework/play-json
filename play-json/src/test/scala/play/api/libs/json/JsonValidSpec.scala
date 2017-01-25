@@ -257,6 +257,34 @@ class JsonValidSpec extends Specification {
           JsSuccess((User("bobby", 54), Some(Address("13 Main St", "98765"))))
         )
       }
+
+      "readNullables for badly formed root path" >> {
+        implicit val userAddressReads: Reads[(User, Option[Address])] = (
+          __.read[User] and
+          __.readNullable[Address]
+        ).tupled
+
+        val missingZipBobby = Json.obj(
+          "name" -> "bobby",
+          "age" -> 54,
+          "street" -> "13 Main St"
+        )
+
+        missingZipBobby.validate(userAddressReads) must equalTo(
+          JsError(__ \ "zip", JsonValidationError("error.path.missing"))
+        )
+      }
+
+      "readNullables for null root path" >> {
+        implicit val userAddressReads = (
+          __.readNullable[User] and
+          __.readNullable[Address]
+        ).tupled
+
+        JsNull.validate(userAddressReads) must equalTo(
+          JsSuccess((None, None))
+        )
+      }
     }
 
     "validate simple constraints" in {
