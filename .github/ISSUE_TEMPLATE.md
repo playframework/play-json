@@ -1,8 +1,8 @@
 ### Are you looking for help?
 
-This is an issue tracker, used to manage and track the development of Play. It is not a support system and so it is not a place to ask questions or get help. If you're not sure if you have found a bug, the best place to start is with either the [users mailing list](https://groups.google.com/forum/#!forum/play-framework) or [Stack Overflow](http://stackoverflow.com/questions/ask?tags=play-json). If you have a feature request, the [developer mailing list](https://groups.google.com/forum/#!forum/play-framework-dev) is a better forum than an issue tracker to discuss it.
+This is an issue tracker, used to manage and track the development of Play JSON. It is not a support system and so it is not a place to ask questions or get help. If you're not sure if you have found a bug, the best place to start is with either the [users mailing list](https://groups.google.com/forum/#!forum/play-framework) or [Stack Overflow](http://stackoverflow.com/questions/ask?tags=play-json). If you have a feature request, the [developer mailing list](https://groups.google.com/forum/#!forum/play-framework-dev) is a better forum than an issue tracker to discuss it.
 
-### Play Version (2.5.x / etc)
+### Play JSON Version (2.5.x / etc)
 
 
 
@@ -34,7 +34,7 @@ Please describe the expected behavior of the issue, starting from the first acti
 
 Please provide a description of what actually happens, working from the same starting point.
 
-Be descriptive: "it doesn't work" does not describe what the behavior actually is -- instead, say "the page renders a 500 error code with no body content."  Copy and paste logs, and include any URLs.  Turn on internal Play logging with `<logger name="play" value="TRACE"/>` if there is no log output.  
+Be descriptive: "it doesn't work" does not describe what the behavior actually is -- instead, say "the page renders a 500 error code with no body content."  Copy and paste logs, and include any URLs.  Turn on internal Play JSON logging with `<logger name="play" value="TRACE"/>` if there is no log output.  
 
 1.
 2.
