@@ -194,8 +194,9 @@ case class JsPath(path: List[PathNode] = List()) {
   }
 
   def applyTillLast(json: JsValue): Either[JsError, JsResult[JsValue]] = {
+    @annotation.tailrec
     def step(path: List[PathNode], json: JsValue): Either[JsError, JsResult[JsValue]] = path match {
-      case Nil => Left(JsError(Seq(this -> Seq(JsonValidationError("error.path.empty")))))
+      case Nil => Right(JsSuccess(json))
       case List(node) => node(json) match {
         case Nil => Right(JsError(Seq(this -> Seq(JsonValidationError("error.path.missing")))))
         case List(js) => Right(JsSuccess(js))

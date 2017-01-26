@@ -147,7 +147,7 @@ class JsonValidSpec extends Specification {
         aka("formatted date") must beEqualTo(JsSuccess(c.getTime))
     }
 
-    "validate UUID" in {
+    "validate UUID" >> {
       "validate correct UUIDs" in {
         val uuid = java.util.UUID.randomUUID()
         Json.toJson[java.util.UUID](uuid).validate[java.util.UUID] must beEqualTo(JsSuccess(uuid))
@@ -176,14 +176,14 @@ class JsonValidSpec extends Specification {
         (json.validate((__ \ "day3").read(Reads.enumNameReads(Weekdays))).asOpt must beNone)
     }
 
-    "Can reads with nullable" in {
+    "read fields with null values" in {
       val json = Json.obj("field" -> JsNull)
 
       val resultPost = json.validate((__ \ "field").read(Reads.optionWithNull[String]))
       resultPost.get must equalTo(None)
     }
 
-    "Validate options using validateOpt" in {
+    "validate options using validateOpt" in {
       val json = Json.obj("foo" -> JsNull, "bar" -> "bar")
 
       (json \ "foo").validateOpt[String] must_== JsSuccess(None)
@@ -214,6 +214,94 @@ class JsonValidSpec extends Specification {
 
     "validate simple reads" in {
       JsString("alphabeta").validate[String] must equalTo(JsSuccess("alphabeta"))
+    }
+
+    "validate reads on the root path" >> {
+      case class Address(street: String, zip: String)
+
+      implicit val userReads = (
+        (__ \ "name").read[String] and
+        (__ \ "age").read[Int]
+      )(User)
+
+      implicit val addressReads = (
+        (__ \ "street").read[String] and
+        (__ \ "zip").read[String]
+      )(Address)
+
+      val bobby = Json.obj(
+        "name" -> "bobby",
+        "age" -> 54,
+        "street" -> "13 Main St",
+        "zip" -> "98765"
+      )
+
+      "reads" in {
+        implicit val userAddressReads: Reads[(User, Address)] = (
+          __.read[User] and
+          __.read[Address]
+        ).tupled
+
+        bobby.validate[(User, Address)] must equalTo(
+          JsSuccess((User("bobby", 54), Address("13 Main St", "98765")))
+        )
+      }
+
+      "readNullables" in {
+        implicit val userAddressReads: Reads[(User, Option[Address])] = (
+          __.read[User] and
+          __.readNullable[Address]
+        ).tupled
+
+        bobby.validate[(User, Option[Address])] must equalTo(
+          JsSuccess((User("bobby", 54), Some(Address("13 Main St", "98765"))))
+        )
+      }
+
+      "readNullables for missing root path fragment" >> {
+        implicit val userAddressReads = (
+          __.read[User] and
+          __.readNullable[Address]
+        ).tupled
+
+        val missingAddressBobby = Json.obj(
+          "name" -> "bobby",
+          "age" -> 54
+        )
+
+        missingAddressBobby.validate(userAddressReads) must equalTo(
+          JsError(__ \ "street", JsonValidationError("error.path.missing")) ++
+            JsError(__ \ "zip", JsonValidationError("error.path.missing"))
+        )
+      }
+
+      "readNullables for badly formed root path" >> {
+        implicit val userAddressReads: Reads[(User, Option[Address])] = (
+          __.read[User] and
+          __.readNullable[Address]
+        ).tupled
+
+        val missingZipBobby = Json.obj(
+          "name" -> "bobby",
+          "age" -> 54,
+          "street" -> "13 Main St"
+        )
+
+        missingZipBobby.validate(userAddressReads) must equalTo(
+          JsError(__ \ "zip", JsonValidationError("error.path.missing"))
+        )
+      }
+
+      "readNullables for null root path" >> {
+        implicit val userAddressReads = (
+          __.readNullable[User] and
+          __.readNullable[Address]
+        ).tupled
+
+        JsNull.validate(userAddressReads) must equalTo(
+          JsSuccess((None, None))
+        )
+      }
     }
 
     "validate simple constraints" in {
@@ -576,6 +664,18 @@ class JsonValidSpec extends Specification {
       Json.obj("type" -> "coucou", "data" -> Json.obj("title" -> "blabla")).validate(TupleReads) must beEqualTo(JsError(__ \ "data" \ "created", "error.path.missing"))
     }
 
+    "verifying reads" in {
+      case class User(id: Long, username: String)
+
+      implicit val UserReads = (
+        (__ \ 'id).read[Long] and
+        (__ \ 'username).read[String](Reads.verifying[String] { suggestedUsername => suggestedUsername.head.isLetter })
+      )(User)
+
+      Json.obj("id" -> 123L, "username" -> "bob").validate[User] must beEqualTo(JsSuccess(User(123L, "bob")))
+      Json.obj("id" -> 123L, "username" -> "2bob").validate[User] must beEqualTo(JsError(__ \ "username", "error.invalid"))
+    }
+
     "recursive reads" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
@@ -870,7 +970,7 @@ class JsonValidSpec extends Specification {
       x must equalTo(JsSuccess(42))
     }
 
-    "be a functor" in {
+    "be a functor" >> {
       "JsSuccess" in {
         val res1: JsResult[String] = JsSuccess("foo", JsPath(List(KeyPathNode("bar"))))
         res1.map(identity) must equalTo(res1)
