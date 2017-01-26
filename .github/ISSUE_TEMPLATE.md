@@ -2,6 +2,8 @@
 
 This is an issue tracker, used to manage and track the development of Play JSON. It is not a support system and so it is not a place to ask questions or get help. If you're not sure if you have found a bug, the best place to start is with either the [users mailing list](https://groups.google.com/forum/#!forum/play-framework) or [Stack Overflow](http://stackoverflow.com/questions/ask?tags=play-json). If you have a feature request, the [developer mailing list](https://groups.google.com/forum/#!forum/play-framework-dev) is a better forum than an issue tracker to discuss it.
 
+If you want to discuss a feature request, the same tools are available.  
+
 ### Play JSON Version (2.5.x / etc)
 
 
