@@ -258,6 +258,23 @@ class JsonValidSpec extends Specification {
         )
       }
 
+      "readNullables for missing root path fragment" >> {
+        implicit val userAddressReads = (
+          __.read[User] and
+            __.readNullable[Address]
+        ).tupled
+
+        val missingAddressBobby = Json.obj(
+          "name" -> "bobby",
+          "age" -> 54
+        )
+
+        missingAddressBobby.validate(userAddressReads) must equalTo(
+          JsError(__ \ "street", JsonValidationError("error.path.missing")) ++
+          JsError(__ \ "zip", JsonValidationError("error.path.missing"))
+        )
+      }
+
       "readNullables for badly formed root path" >> {
         implicit val userAddressReads: Reads[(User, Option[Address])] = (
           __.read[User] and
