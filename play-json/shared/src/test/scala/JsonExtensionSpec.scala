@@ -689,15 +689,15 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
       }
 
       def macroReads: Reads[WithDefault2] = {
-        implicit val enableDefaultValues = JsonConfiguration(useDefaultValues = true)
-        implicit val barReads = Json.reads[WithDefault1]
-        Json.reads[WithDefault2]
+        implicit val br = Json.using[Json.WithDefaultValues].reads[WithDefault1]
+        Json.using[Json.MacroOptions with Json.DefaultValues].reads[WithDefault2]
       }
 
       def macroFormat: Format[WithDefault2] = {
-        implicit val enableDefaultValues = JsonConfiguration(useDefaultValues = true)
-        implicit val barFormats = Json.format[WithDefault1]
-        Json.format[WithDefault2]
+        val jsWithDefaults = Json.using[Json.WithDefaultValues]
+        implicit val bf = jsWithDefaults.format[WithDefault1]
+
+        jsWithDefaults.format[WithDefault2]
       }
 
       def validateReads(fooReads: Reads[WithDefault2]) = {
@@ -707,10 +707,10 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
         fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) mustEqual JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z")))))
       }
 
-      "by functional reads" in { validateReads(functionalReads) }
-      "by functional formats" in { validateReads(functionalFormat) }
-      "by macro reads" in { validateReads(macroReads) }
-      "by macro formats" in { validateReads(macroFormat) }
+      "by functional reads" in validateReads(functionalReads)
+      "by functional formats" in validateReads(functionalFormat)
+      "by reads macro" in validateReads(macroReads)
+      "by format macro" in validateReads(macroFormat)
     }
   }
 }

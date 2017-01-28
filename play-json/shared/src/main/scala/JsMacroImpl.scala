@@ -25,21 +25,14 @@ import scala.reflect.macros.blackbox
     }
   }
 
-  def formatImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[OFormat[A]] =
-    macroImpl[A, OFormat, Format, O](
-      "format", "inmap", reads = true, writes = true
-    )
+  def readsImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads, O]("read", "map", reads = true, writes = false)
 
-  def readsImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[Reads[A]] =
-    macroImpl[A, Reads, Reads, O]("read", "map", reads = true, writes = false)
+  def writesImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes, O]("write", "contramap", reads = false, writes = true)
 
-  def writesImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[OWrites[A]] =
-    macroImpl[A, OWrites, Writes, O](
-      "write", "contramap", reads = false, writes = true
-    )
+  def formatImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format, O]("format", "inmap", reads = true, writes = true)
 
   /**
-   * Generic implementation of the macro
+   * Generic implementation of the macro.
    *
    * The reads/writes flags are used to say whether a reads/writes is being generated (in the case format,
    * these are both true).  This is also used to determine what arguments should be passed to various
@@ -56,7 +49,8 @@ import scala.reflect.macros.blackbox
    * @param matag The class of the reads/writes/format.
    * @param natag The class of the reads/writes/format.
    */
-  private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
+  private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]], otag: c.WeakTypeTag[O]): c.Expr[M[A]] = {
+    import c.universe._
 
     // All these can be sort of thought as imports
     // that can then be used later in quasi quote interpolation
@@ -82,6 +76,10 @@ import scala.reflect.macros.blackbox
 
     val optTpeCtor = typeOf[Option[_]].typeConstructor
     val forwardName = TermName(c.freshName("forward"))
+
+    // MacroOptions
+    val options = c.weakTypeOf[O]
+    def hasOption[Flag: c.TypeTag]: Boolean = options <:< typeOf[Flag]
 
     /* Utility for implicit resolution - can hardly be moved outside
      * (due to dependent types).
@@ -609,9 +607,12 @@ import scala.reflect.macros.blackbox
           boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
         }
       })
-      val defaultValueMap = params.zip(defaultValues).collect {
-        case (p, Some(dv)) => p.name.encodedName -> dv
-      }.toMap
+      val defaultValueMap: Map[Name, Tree] =
+        if (!hasOption[Json.DefaultValues]) Map.empty else {
+          params.zip(defaultValues).collect {
+            case (p, Some(dv)) => p.name.encodedName -> dv
+          }.toMap
+        }
 
       val resolvedImplicits = utility.implicits(resolver)
       val canBuild = resolvedImplicits.map {
@@ -621,32 +622,27 @@ import scala.reflect.macros.blackbox
           val cn = c.Expr[String](
             q"$cfgName.naming(${name.decodedName.toString})"
           )
-
-          val useDefaultValues = c.Expr[String](q"$cfgName.useDefaultValues")
           val jspathTree = q"$JsPath \ $cn"
           val isOption = pt.typeConstructor <:< optTpeCtor
 
-          @inline def defaultValue = // not applicable for 'write' only
+          val defaultValue = // not applicable for 'write' only
             defaultValueMap.get(name).filter(_ => methodName != "write")
 
           // - If we're an default value, invoke the withDefault version
           // - If we're an option with default value,
           //   invoke the nullableWithDefault version
           (isOption, defaultValue) match {
-            case (true, Some(v)) => {
-              val nwd = TermName(s"${methodName}NullableWithDefault")
-              val n = TermName(s"${methodName}Nullable")
-              q"if ($useDefaultValues) $jspathTree.$nwd($v)($impl) else $jspathTree.$n($impl)"
-            }
+            case (true, Some(v)) =>
+              val c = TermName(s"${methodName}NullableWithDefault")
+              q"$jspathTree.$c($v)($impl)"
 
             case (true, _) =>
               val c = TermName(s"${methodName}Nullable")
               q"$jspathTree.$c($impl)"
 
             case (false, Some(v)) =>
-              val wd = TermName(s"${methodName}WithDefault")
-              val c = TermName(methodName)
-              q"if ($useDefaultValues) $jspathTree.$wd($v)($impl) else $jspathTree.$c($impl)"
+              val c = TermName(s"${methodName}WithDefault")
+              q"$jspathTree.$c($v)($impl)"
 
             case _ =>
               q"$jspathTree.${TermName(methodName)}($impl)"

@@ -227,7 +227,7 @@ class MacroSpec extends WordSpec with MustMatchers
     }
 
     "handle case class with default values" when {
-      implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
+      implicit val cfg = JsonConfiguration(JsonNaming.Identity)
 
       val json01 = Json.obj("id" -> 15)
       val json02 = Json.obj("id" -> 15, "a" -> "a")
@@ -255,13 +255,20 @@ class MacroSpec extends WordSpec with MustMatchers
         r.reads(json3).get mustEqual fixture3
       }
 
-      "to generate Reads" in readSpec(Json.reads[WithDefault])
-      "to generate Format" in readSpec(Json.format[WithDefault])
+      val jsWithDefaults = Json.using[Json.WithDefaultValues]
+
+      "to generate Reads" in readSpec(
+        jsWithDefaults.reads[WithDefault]
+      )
+
+      "to generate Format" in readSpec(
+        jsWithDefaults.format[WithDefault]
+      )
     }
 
     "handle case class with default values inner optional case class containing default values" when {
-      implicit val enableDefaultValues = JsonConfiguration(JsonNaming.Identity, useDefaultValues = true)
-      implicit val withDefaultFormat = Json.format[WithDefault]
+      implicit val cfg = JsonConfiguration(JsonNaming.Identity)
+      implicit val withDefaultFormat = Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
 
       val json01 = Json.obj("id" -> 3)
       val json02 = Json.obj(
@@ -292,9 +299,15 @@ class MacroSpec extends WordSpec with MustMatchers
         r.reads(json11).get mustEqual fixture1
       }
 
-      "to generate Reads" in readSpec(Json.reads[ComplexWithDefault])
+      val jsWithDefaults = Json.using[Json.WithDefaultValues]
 
-      "to generate Format" in readSpec(Json.format[ComplexWithDefault])
+      "to generate Reads" in readSpec(
+        jsWithDefaults.reads[ComplexWithDefault]
+      )
+
+      "to generate Format" in readSpec(
+        jsWithDefaults.format[ComplexWithDefault]
+      )
     }
 
     "handle case class with implicits" when {
