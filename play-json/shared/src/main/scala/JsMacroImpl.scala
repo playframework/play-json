@@ -608,22 +608,6 @@ import scala.reflect.macros.blackbox
       // e.g. `(__ \ "foo").readNullable`
       val callNullable = TermName(s"${methodName}Nullable")
 
-      // readWithDefault is term for "readWithDefault"
-      // e.g. `(__ \ "foo").readWithDefault("bar")`
-      val readWithDefault = TermName("readWithDefault")
-
-      // formatWithDefault is term for "formatWithDefault"
-      // e.g. `(__ \ "foo").formatWithDefault("bar")`
-      val formatWithDefault = TermName("formatWithDefault")
-
-      // readNullableWithDefault is term for "readNullableWithDefault"
-      // e.g. `(__ \ "foo").readNullableWithDefault(Some("Bar"))`
-      val readNullableWithDefault = TermName("readNullableWithDefault")
-
-      // formatNullableWithDefault is term for "formatNullableWithDefault"
-      // e.g. `(__ \ "foo").formatNullableWithDefault(Some("Bar"))`
-      val formatNullableWithDefault = TermName("formatNullableWithDefault")
-
       // combines all reads into CanBuildX
       val cfgName = TermName(c.freshName("config"))
       val resolver = new ImplicitResolver({
@@ -636,6 +620,7 @@ import scala.reflect.macros.blackbox
       val defaultValueMap = params.zip(defaultValues).collect {
         case (p, Some(dv)) => p.name.encodedName -> dv
       }.toMap
+
       val resolvedImplicits = utility.implicits(resolver)
       val canBuild = resolvedImplicits.map {
         case (name, Implicit(pt, impl, _, _)) =>
@@ -646,39 +631,33 @@ import scala.reflect.macros.blackbox
           )
 
           val useDefaultValues = c.Expr[String](q"$cfgName.useDefaultValues")
-
-          val jspathTree = q"""$JsPath \ $cn"""
-
+          val jspathTree = q"$JsPath \ $cn"
           val isOption = pt.typeConstructor <:< optTpeCtor
 
-          // If we're not recursive, simple, just invoke read/write/format
-          // If we're an option, invoke the nullable version
-          def canBuild() = {
-            val effectiveCall = if (isOption) callNullable else call
-            q"$jspathTree.$effectiveCall($impl)"
-          }
+          @inline def defaultValue = // not applicable for 'write' only
+            defaultValueMap.get(name).filter(_ => methodName != "write")
 
-          // If we're an default value, invoke the withDefault version
-          // If we're an option with default value, invoke the nullableWithDefault version
-          def canBuildWithDefaults(
-            defaultValue: Tree,
-            callWithDefault: TermName,
-            callNullableWithDefault: TermName
-          ) = {
-            val effectiveCall = if (isOption) callNullableWithDefault else callWithDefault
-            q"if($useDefaultValues) $jspathTree.$effectiveCall($defaultValue)($impl) else ${canBuild()}"
-          }
+          // - If we're an default value, invoke the withDefault version
+          // - If we're an option with default value,
+          //   invoke the nullableWithDefault version
+          (isOption, defaultValue) match {
+            case (true, Some(v)) => {
+              val nwd = TermName(s"${methodName}NullableWithDefault")
+              val n = TermName(s"${methodName}Nullable")
+              q"if ($useDefaultValues) $jspathTree.$nwd($v)($impl) else $jspathTree.$n($impl)"
+            }
 
-          (defaultValueMap get name, methodName) match {
-            case (Some(defaultValue), "read") =>
-              canBuildWithDefaults(defaultValue, readWithDefault, readNullableWithDefault)
+            case (true, _) =>
+              val c = TermName(s"${methodName}Nullable")
+              q"$jspathTree.$c($impl)"
 
-            case (Some(defaultValue), "format") =>
-              canBuildWithDefaults(defaultValue, formatWithDefault, formatNullableWithDefault)
+            case (false, Some(v)) =>
+              val wd = TermName(s"${methodName}WithDefault")
+              val c = TermName(methodName)
+              q"if ($useDefaultValues) $jspathTree.$wd($v)($impl) else $jspathTree.$c($impl)"
 
             case _ =>
-              canBuild()
-
+              q"$jspathTree.${TermName(methodName)}($impl)"
           }
       }.reduceLeft[Tree] { (acc, r) =>
         q"$acc.and($r)"
