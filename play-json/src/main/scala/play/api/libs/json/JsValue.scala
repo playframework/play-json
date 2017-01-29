@@ -29,9 +29,30 @@ object JsValue {
 case object JsNull extends JsValue
 
 /**
- * Represent a Json boolean value.
+ * Represents a Json boolean value.
  */
-sealed abstract class JsBoolean(val value: Boolean) extends JsValue
+sealed abstract class JsBoolean(
+    val value: Boolean) extends JsValue with Product with Serializable {
+
+  def canEqual(that: Any): Boolean = that.isInstanceOf[JsBoolean]
+
+  @deprecated("No longer a case class", "2.6.0")
+  val productArity = 1
+
+  @deprecated("No longer a case class", "2.6.0")
+  def productElement(n: Int): Any = (n: @annotation.switch) match {
+    case 0 => value
+  }
+
+  @deprecated("No longer a case class", "2.6.0")
+  def copy(value: Boolean = this.value): JsBoolean =
+    if (value) JsTrue else JsFalse
+
+  override def equals(that: Any): Boolean =
+    canEqual(that) && (this.value == that.asInstanceOf[JsBoolean].value)
+
+  override def hashCode: Int = value.hashCode
+}
 
 /**
  * Represents Json Boolean True value.
@@ -43,11 +64,12 @@ case object JsTrue extends JsBoolean(true)
  */
 case object JsFalse extends JsBoolean(false)
 
-object JsBoolean {
-  def apply(value: Boolean) = value match {
+object JsBoolean extends scala.runtime.AbstractFunction1[Boolean, JsBoolean] {
+  def apply(value: Boolean): JsBoolean = value match {
     case true => JsTrue
     case false => JsFalse
   }
+
   def unapply(b: JsBoolean): Option[Boolean] = Some(b.value)
 }
 
