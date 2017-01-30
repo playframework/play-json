@@ -1,0 +1,433 @@
+/*
+ * Copyright (C) 2009-2016 Lightbend Inc. <https://www.lightbend.com>
+ */
+package play.api.libs.json
+
+import scala.annotation.implicitNotFound
+import scala.collection._
+import scala.language.higherKinds
+
+import reflect.ClassTag
+
+/**
+ * Json deserializer: write an implicit to define a deserializer for any type.
+ */
+@implicitNotFound(
+  "No Json deserializer found for type ${A}. Try to implement an implicit Reads or Format for this type."
+)
+trait Reads[A] { self =>
+  /**
+   * Convert the JsValue into a A
+   */
+  def reads(json: JsValue): JsResult[A]
+
+  /**
+   * @param f the function applied on the result of the current instance,
+   * if successful
+   */
+  def map[B](f: A => B): Reads[B] =
+    Reads[B] { json => self.reads(json).map(f) }
+
+  def flatMap[B](f: A => Reads[B]): Reads[B] = Reads[B] { json =>
+    // Do not flatMap result to avoid repath
+    self.reads(json) match {
+      case JsSuccess(a, _) => f(a).reads(json)
+      case error @ JsError(_) => error
+    }
+  }
+
+  def filter(f: A => Boolean): Reads[A] =
+    Reads[A] { json => self.reads(json).filter(f) }
+
+  def filter(error: JsonValidationError)(f: A => Boolean): Reads[A] =
+    Reads[A] { json => self.reads(json).filter(JsError(error))(f) }
+
+  def filterNot(f: A => Boolean): Reads[A] =
+    Reads[A] { json => self.reads(json).filterNot(f) }
+
+  def filterNot(error: JsonValidationError)(f: A => Boolean): Reads[A] =
+    Reads[A] { json => self.reads(json).filterNot(JsError(error))(f) }
+
+  def collect[B](error: JsonValidationError)(f: PartialFunction[A, B]): Reads[B] =
+    Reads[B] { json => self.reads(json).collect(error)(f) }
+
+  def orElse(v: Reads[A]): Reads[A] =
+    Reads[A] { json => self.reads(json).orElse(v.reads(json)) }
+
+  def compose[B <: JsValue](rb: Reads[B]): Reads[A] = Reads[A] { js =>
+    rb.reads(js) match {
+      case JsSuccess(b, p) => this.reads(b).repath(p)
+      case JsError(e) => JsError(e)
+    }
+  }
+
+  def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
+    rb.compose(this.map(witness))
+
+}
+
+/**
+ * Default deserializer type classes.
+ */
+object Reads extends ConstraintReads with PathReads with DefaultReads {
+
+  val constraints: ConstraintReads = this
+
+  val path: PathReads = this
+
+  /** Returns a `JsSuccess(a)` (with root path) for any JSON value read. */
+  def pure[A](a: A): Reads[A] = Reads[A] { _ => JsSuccess(a) }
+
+  import play.api.libs.functional._
+
+  implicit def applicative(implicit applicativeJsResult: Applicative[JsResult]): Applicative[Reads] = new Applicative[Reads] {
+
+    def pure[A](a: A): Reads[A] = Reads.pure(a)
+
+    def map[A, B](m: Reads[A], f: A => B): Reads[B] = m.map(f)
+
+    def apply[A, B](mf: Reads[A => B], ma: Reads[A]): Reads[B] = new Reads[B] { def reads(js: JsValue) = applicativeJsResult(mf.reads(js), ma.reads(js)) }
+
+  }
+
+  implicit def alternative(implicit a: Applicative[Reads]): Alternative[Reads] = new Alternative[Reads] {
+    val app = a
+    def |[A, B >: A](alt1: Reads[A], alt2: Reads[B]): Reads[B] = new Reads[B] {
+      def reads(js: JsValue) = alt1.reads(js) match {
+        case r @ JsSuccess(_, _) => r
+        case JsError(es1) => alt2.reads(js) match {
+          case r2 @ JsSuccess(_, _) => r2
+          case JsError(es2) => JsError(JsError.merge(es1, es2))
+        }
+      }
+    }
+
+    def empty: Reads[Nothing] =
+      new Reads[Nothing] { def reads(js: JsValue) = JsError(Seq()) }
+
+  }
+
+  def apply[A](f: JsValue => JsResult[A]): Reads[A] =
+    new Reads[A] { def reads(json: JsValue) = f(json) }
+
+  implicit def functorReads(implicit a: Applicative[Reads]) = new Functor[Reads] {
+    def fmap[A, B](reads: Reads[A], f: A => B): Reads[B] = a.map(reads, f)
+  }
+
+  implicit object JsObjectMonoid extends Monoid[JsObject] {
+    def append(o1: JsObject, o2: JsObject) = o1 deepMerge o2
+    def identity = JsObject(Seq.empty)
+  }
+
+  implicit val JsObjectReducer = Reducer[JsObject, JsObject](o => o)
+
+  implicit object JsArrayMonoid extends Monoid[JsArray] {
+    def append(a1: JsArray, a2: JsArray) = a1 ++ a2
+    def identity = JsArray()
+  }
+
+  implicit val JsArrayReducer = Reducer[JsValue, JsArray](js => JsArray(Seq(js)))
+}
+
+/**
+ * Low priority reads.
+ *
+ * This exists as a compiler performance optimization, so that the compiler doesn't have to rule them out when
+ * DefaultReads provides a simple match.
+ *
+ * See https://github.com/playframework/playframework/issues/4313 for more details.
+ */
+trait LowPriorityDefaultReads extends EnvReads {
+
+  /**
+   * Generic deserializer for collections types.
+   */
+  implicit def traversableReads[F[_], A](implicit bf: generic.CanBuildFrom[F[_], A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
+    def reads(json: JsValue) = json match {
+      case JsArray(ts) =>
+
+        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+        def locate(e: Errors, idx: Int) = e.map { case (p, valerr) => (JsPath(idx)) ++ p -> valerr }
+
+        ts.iterator.zipWithIndex.foldLeft(Right(Vector.empty): Either[Errors, Vector[A]]) {
+          case (acc, (elt, idx)) => (acc, ra.reads(elt)) match {
+            case (Right(vs), JsSuccess(v, _)) => Right(vs :+ v)
+            case (Right(_), JsError(e)) => Left(locate(e, idx))
+            case (Left(e), _: JsSuccess[_]) => Left(e)
+            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, idx))
+          }
+        }.fold(JsError.apply, { res =>
+          val builder = bf()
+          builder.sizeHint(res)
+          builder ++= res
+          JsSuccess(builder.result())
+        })
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsarray"))))
+    }
+  }
+}
+
+/**
+ * Default deserializer type classes.
+ */
+trait DefaultReads extends LowPriorityDefaultReads {
+  import scala.language.implicitConversions
+
+  /**
+   * builds a JsErrorObj JsObject
+   * {
+   *    __VAL__ : "current known erroneous jsvalue",
+   *    __ERR__ : "the i18n key of the error msg",
+   *    __ARGS__ : "the args for the error msg" (JsArray)
+   * }
+   */
+  def JsErrorObj(knownValue: JsValue, key: String, args: JsValue*): JsObject = {
+    JsObject(Seq(
+      "__VAL__" -> knownValue,
+      "__ERR__" -> JsString(key),
+      "__ARGS__" -> args.foldLeft(JsArray())((acc: JsArray, arg: JsValue) => acc :+ arg)
+    ))
+  }
+
+  /**
+   * Deserializer for Int types.
+   */
+  implicit object IntReads extends Reads[Int] {
+    def reads(json: JsValue) = json match {
+      case JsNumber(n) if n.isValidInt => JsSuccess(n.toInt)
+      case JsNumber(n) => JsError("error.expected.int")
+      case _ => JsError("error.expected.jsnumber")
+    }
+  }
+
+  /**
+   * Deserializer for Short types.
+   */
+  implicit object ShortReads extends Reads[Short] {
+    def reads(json: JsValue) = json match {
+      case JsNumber(n) if n.isValidShort => JsSuccess(n.toShort)
+      case JsNumber(n) => JsError("error.expected.short")
+      case _ => JsError("error.expected.jsnumber")
+    }
+  }
+
+  /**
+   * Deserializer for Byte types.
+   */
+  implicit object ByteReads extends Reads[Byte] {
+    def reads(json: JsValue) = json match {
+      case JsNumber(n) if n.isValidByte => JsSuccess(n.toByte)
+      case JsNumber(n) => JsError("error.expected.byte")
+      case _ => JsError("error.expected.jsnumber")
+    }
+  }
+
+  /**
+   * Deserializer for Long types.
+   */
+  implicit object LongReads extends Reads[Long] {
+    def reads(json: JsValue) = json match {
+      case JsNumber(n) if n.isValidLong => JsSuccess(n.toLong)
+      case JsNumber(n) => JsError("error.expected.long")
+      case _ => JsError("error.expected.jsnumber")
+    }
+  }
+
+  /**
+   * Deserializer for Float types.
+   */
+  implicit object FloatReads extends Reads[Float] {
+    def reads(json: JsValue) = json match {
+      case JsNumber(n) => JsSuccess(n.toFloat)
+      case _ => JsError("error.expected.jsnumber")
+    }
+  }
+
+  /**
+   * Deserializer for Double types.
+   */
+  implicit object DoubleReads extends Reads[Double] {
+    def reads(json: JsValue) = json match {
+      case JsNumber(n) => JsSuccess(n.toDouble)
+      case _ => JsError("error.expected.jsnumber")
+    }
+  }
+
+  /**
+   * Deserializer for BigDecimal
+   */
+  implicit val bigDecReads = Reads[BigDecimal](js => js match {
+    case JsString(s) =>
+      scala.util.control.Exception.catching(classOf[NumberFormatException])
+        .opt(JsSuccess(BigDecimal(new java.math.BigDecimal(s))))
+        .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
+    case JsNumber(d) => JsSuccess(d.underlying)
+    case _ => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
+  })
+
+  /**
+   * Deserializer for BigDecimal
+   */
+  implicit val javaBigDecReads = Reads[java.math.BigDecimal](js => js match {
+    case JsString(s) =>
+      scala.util.control.Exception.catching(classOf[NumberFormatException])
+        .opt(JsSuccess(new java.math.BigDecimal(s)))
+        .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
+    case JsNumber(d) => JsSuccess(d.underlying)
+    case _ => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
+  })
+
+  /**
+   * Reads for `scala.Enumeration` types using the name.
+   *
+   * @param enum a `scala.Enumeration`.
+   */
+  def enumNameReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
+    def reads(json: JsValue) = json match {
+      case JsString(str) =>
+        enum.values
+          .find(_.toString == str)
+          .map(JsSuccess(_))
+          .getOrElse(JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.validenumvalue")))))
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.enumstring"))))
+    }
+  }
+
+  /**
+   * Deserializer for Boolean types.
+   */
+  implicit object BooleanReads extends Reads[Boolean] {
+    def reads(json: JsValue) = json match {
+      case JsBoolean(b) => JsSuccess(b)
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsboolean"))))
+    }
+  }
+
+  /**
+   * Deserializer for String types.
+   */
+  implicit object StringReads extends Reads[String] {
+    def reads(json: JsValue) = json match {
+      case JsString(s) => JsSuccess(s)
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsstring"))))
+    }
+  }
+
+  /**
+   * Deserializer for JsObject.
+   */
+  implicit object JsObjectReads extends Reads[JsObject] {
+    def reads(json: JsValue) = json match {
+      case o: JsObject => JsSuccess(o)
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsobject"))))
+    }
+  }
+
+  /**
+   * Deserializer for JsArray.
+   */
+  implicit object JsArrayReads extends Reads[JsArray] {
+    def reads(json: JsValue) = json match {
+      case o: JsArray => JsSuccess(o)
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsarray"))))
+    }
+  }
+
+  /**
+   * Deserializer for JsValue.
+   */
+  implicit object JsValueReads extends Reads[JsValue] {
+    def reads(json: JsValue) = JsSuccess(json)
+  }
+
+  /**
+   * Deserializer for JsString.
+   */
+  implicit object JsStringReads extends Reads[JsString] {
+    def reads(json: JsValue) = json match {
+      case s: JsString => JsSuccess(s)
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsstring"))))
+    }
+  }
+
+  /**
+   * Deserializer for JsNumber.
+   */
+  implicit object JsNumberReads extends Reads[JsNumber] {
+    def reads(json: JsValue) = json match {
+      case n: JsNumber => JsSuccess(n)
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsnumber"))))
+    }
+  }
+
+  /**
+   * Deserializer for JsBoolean.
+   */
+  implicit object JsBooleanReads extends Reads[JsBoolean] {
+    def reads(json: JsValue) = json match {
+      case b: JsBoolean => JsSuccess(b)
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsboolean"))))
+    }
+  }
+
+  /**
+   * Deserializer for Map[String,V] types.
+   */
+  implicit def mapReads[V](implicit fmtv: Reads[V]): Reads[collection.immutable.Map[String, V]] = new Reads[collection.immutable.Map[String, V]] {
+    def reads(json: JsValue) = json match {
+      case JsObject(m) => {
+
+        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+        def locate(e: Errors, key: String) = e.map {
+          case (p, valerr) => (JsPath \ key) ++ p -> valerr
+        }
+
+        m.foldLeft(Right(Map.empty): Either[Errors, Map[String, V]]) {
+          case (acc, (key, value)) => (acc, fmtv.reads(value)) match {
+            case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
+            case (Right(_), JsError(e)) => Left(locate(e, key))
+            case (Left(e), _: JsSuccess[_]) => Left(e)
+            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
+          }
+        }.fold(JsError.apply, res => JsSuccess(res.toMap))
+      }
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsobject"))))
+    }
+  }
+
+  /**
+   * Deserializer for Array[T] types.
+   */
+  implicit def ArrayReads[T: Reads: ClassTag]: Reads[Array[T]] = new Reads[Array[T]] {
+    def reads(json: JsValue) = json.validate[List[T]].map(_.toArray)
+  }
+
+  /**
+   * Deserializer for java.util.UUID
+   */
+  class UUIDReader(checkValidity: Boolean) extends Reads[java.util.UUID] {
+    import java.util.UUID
+
+    import scala.util.Try
+
+    def check(s: String)(u: UUID): Boolean = (u != null && s == u.toString())
+    def parseUuid(s: String): Option[UUID] = {
+      val uncheckedUuid = Try(UUID.fromString(s)).toOption
+
+      if (checkValidity) {
+        uncheckedUuid filter check(s)
+      } else {
+        uncheckedUuid
+      }
+    }
+
+    def reads(json: JsValue) = json match {
+      case JsString(s) => {
+        parseUuid(s).map(JsSuccess(_)).getOrElse(JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.uuid")))))
+      }
+      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.uuid"))))
+    }
+  }
+
+  implicit val uuidReads: Reads[java.util.UUID] = new UUIDReader(false)
+}

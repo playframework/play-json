@@ -16,7 +16,6 @@ val specsBuild = Seq(
   "specs2-core"
 ).map("org.specs2" %% _ % specsVersion)
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
 val jacksonVersion = "2.8.5"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
@@ -32,9 +31,8 @@ val joda = Seq(
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
-  "org.scala-lang" % "scala-reflect" % scalaVersion,
-  logback % Test
-) ++ joda ++ jacksons ++ specsBuild.map(_ % Test)
+  "org.scala-lang" % "scala-reflect" % scalaVersion
+)
 
 // Common settings 
 import com.typesafe.sbt.SbtScalariform._
@@ -60,8 +58,9 @@ lazy val commonSettings = mimaDefaultSettings ++ (
 
 lazy val root = project
   .in(file("."))
-  .enablePlugins(PlayRootProject)
-  .aggregate(`play-json`, `play-functional`)
+  .enablePlugins(PlayRootProject, ScalaJSPlugin)
+  .aggregate(`play-jsonJS`, `play-jsonJVM`,
+    `play-functionalJS`, `play-functionalJVM`)
 
 val isNew = implicitly[ProblemFilter](
   _.ref.isInstanceOf[ReversedMissingMethodProblem])
@@ -95,23 +94,37 @@ val compatFilters = {
   )
 }
 
-lazy val `play-json` = project
+lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(PlayLibrary)
   .settings(commonSettings)
   .settings(
-  mimaBinaryIssueFilters ++= {
-    if (scalaVersion.value startsWith "2.11") {
-      compatFilters ++ filtersNew :+ isNew
-    } else Seq(isNew)
-  },
-    libraryDependencies ++= jsonDependencies(scalaVersion.value))
+    mimaBinaryIssueFilters ++= {
+      if (scalaVersion.value startsWith "2.11") {
+        compatFilters ++ filtersNew :+ isNew
+      } else Seq(isNew)
+    },
+    libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
+      "org.scalatest" %%% "scalatest" % "3.0.0" % Test
+    )
+  )
   .dependsOn(`play-functional`)
 
-lazy val `play-functional` = project
+lazy val `play-jsonJVM` = `play-json`.jvm.
+  settings(
+    libraryDependencies ++= joda ++ jacksons ++ specsBuild.map(_ % Test) :+ (
+      "ch.qos.logback" % "logback-classic" % "1.1.7" % Test
+    ))
+
+lazy val `play-jsonJS` = `play-json`.js
+
+lazy val `play-functional` = crossProject.crossType(CrossType.Pure)
   .in(file("play-functional"))
   .settings(commonSettings)
   .enablePlugins(PlayLibrary)
+
+lazy val `play-functionalJVM` = `play-functional`.jvm
+lazy val `play-functionalJS` = `play-functional`.js
 
 playBuildRepoName in ThisBuild := "play-json"
 
