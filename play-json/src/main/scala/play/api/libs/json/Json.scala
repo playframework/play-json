@@ -60,6 +60,14 @@ object Json {
    */
   def stringify(json: JsValue): String = JacksonJson.generateFromJsValue(json)
 
+  /**
+   * Convert a JsValue directly to an array of bytes (using UTF-8 encoding)
+   *
+   * @param json the JsValue to convert
+   * @return an Array[Byte] with the UTF-8-encoded JSON representation
+   */
+  def toBytes(json: JsValue): Array[Byte] = JacksonJson.jsValueToBytes(json)
+
   //We use unicode \u005C for a backlash in comments, because Scala will replace unicode escapes during lexing
   //anywhere in the program.
   /**
