@@ -40,6 +40,7 @@ import scalariform.formatter.preferences._
 
 val previousVersion = Def.setting[Option[String]] {
   if (scalaVersion.value startsWith "2.11") Some("2.5.12")
+  else if (scalaVersion.value startsWith "2.10") None
   else Some("2.6.0-M1")
 }
 
