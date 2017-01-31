@@ -105,7 +105,10 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       } else Seq(isNew)
     },
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.0" % Test
+      "org.scalatest" %%% "scalatest" % "3.0.0" % Test,
+      "org.typelevel" %% "macro-compat" % "1.1.1",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
+      compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
     )
   )
   .dependsOn(`play-functional`)
