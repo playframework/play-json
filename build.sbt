@@ -40,6 +40,7 @@ import scalariform.formatter.preferences._
 
 val previousVersion = Def.setting[Option[String]] {
   if (scalaVersion.value startsWith "2.11") Some("2.5.12")
+  else if (scalaVersion.value startsWith "2.10") None
   else Some("2.6.0-M1")
 }
 
@@ -105,7 +106,10 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       } else Seq(isNew)
     },
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.0" % Test
+      "org.scalatest" %%% "scalatest" % "3.0.0" % Test,
+      "org.typelevel" %% "macro-compat" % "1.1.1",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
+      compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
     )
   )
   .dependsOn(`play-functional`)

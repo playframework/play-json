@@ -10,7 +10,9 @@ import scala.reflect.macros.blackbox
 /**
  * Implementation for the JSON macro.
  */
-object JsMacroImpl {
+@macrocompat.bundle class JsMacroImpl(val c: blackbox.Context) {
+  import c.universe._
+
   /** Only for internal purposes */
   final class Placeholder {}
 
@@ -23,17 +25,17 @@ object JsMacroImpl {
     }
   }
 
-  def formatImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[OFormat[A]] =
+  def formatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] =
     macroImpl[A, OFormat, Format](
-      c, "format", "inmap", reads = true, writes = true
+      "format", "inmap", reads = true, writes = true
     )
 
-  def readsImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[Reads[A]] =
-    macroImpl[A, Reads, Reads](c, "read", "map", reads = true, writes = false)
+  def readsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
+    macroImpl[A, Reads, Reads]("read", "map", reads = true, writes = false)
 
-  def writesImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[OWrites[A]] =
+  def writesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] =
     macroImpl[A, OWrites, Writes](
-      c, "write", "contramap", reads = false, writes = true
+      "write", "contramap", reads = false, writes = true
     )
 
   /**
@@ -54,8 +56,7 @@ object JsMacroImpl {
    * @param matag The class of the reads/writes/format.
    * @param natag The class of the reads/writes/format.
    */
-  private def macroImpl[A, M[_], N[_]](c: blackbox.Context, methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
-    import c.universe._
+  private def macroImpl[A, M[_], N[_]](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
 
     // All these can be sort of thought as imports
     // that can then be used later in quasi quote interpolation
@@ -111,7 +112,7 @@ object JsMacroImpl {
         }
 
         case _ => {
-          val tpe = appliedType(base, out.reverse)
+          val tpe = appliedType(base.toTypeConstructor, out.reverse)
 
           tail match {
             case (x, y, more) :: ts =>
@@ -280,7 +281,7 @@ object JsMacroImpl {
           }
 
           case Some((a, b)) =>
-            conforms((a.typeArgs, b.typeArgs).zipped ++: types.tail)
+            conforms(new scala.runtime.Tuple2Zipped(a.typeArgs, b.typeArgs) ++: types.tail)
 
           case _ => true
         }
@@ -338,11 +339,11 @@ object JsMacroImpl {
 
         case (apply: MethodSymbol) if {
           val applyParams = apply.paramLists.headOption.
-            toList.flatten.map(_.typeSignature)
-          val unapplyParams = unapplyReturnTypes.toList.flatten
+            toList.flatMap(identity).map(_.typeSignature)
+          val unapplyParams = unapplyReturnTypes.toList.flatMap(identity)
 
           (applyParams.size == unapplyParams.size &&
-            conforms((applyParams, unapplyParams).zipped.toSeq))
+            conforms(new scala.runtime.Tuple2Zipped(applyParams, unapplyParams).toSeq))
 
         } => apply
       }
@@ -546,7 +547,7 @@ object JsMacroImpl {
         // https://groups.google.com/forum/#!topic/scala-language/ZE83TvSWpT4
 
         q"""{ v: ${atag.tpe} => 
-          val ${term.name} = "eliminatedImplicit"
+          val ${term.name.asInstanceOf[TermName]} = "eliminatedImplicit"
           $cases 
         }"""
       }
