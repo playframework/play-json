@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 import interplay.ScalaVersions
 import ReleaseTransformations._
 
@@ -97,7 +101,7 @@ val compatFilters = {
 
 lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .in(file("play-json"))
-  .enablePlugins(PlayLibrary)
+  .enablePlugins(PlayLibrary, Playdoc)
   .settings(commonSettings)
   .settings(
     mimaBinaryIssueFilters ++= {
@@ -118,7 +122,9 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
     libraryDependencies ++= joda ++ jacksons ++ specsBuild.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.1.7" % Test
-    ))
+    ),
+    unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
+  )
 
 lazy val `play-jsonJS` = `play-json`.js
 
