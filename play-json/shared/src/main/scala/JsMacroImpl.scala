@@ -600,14 +600,6 @@ import scala.reflect.macros.blackbox
 
       // ---
 
-      // The call is the term name, either "read", "write" or "format",
-      // that gets invoked on JsPath (e.g. `(__ \ "foo").read`)
-      val call = TermName(methodName)
-
-      // callNullable is the equivalent of call for options
-      // e.g. `(__ \ "foo").readNullable`
-      val callNullable = TermName(s"${methodName}Nullable")
-
       // combines all reads into CanBuildX
       val cfgName = TermName(c.freshName("config"))
       val resolver = new ImplicitResolver({
