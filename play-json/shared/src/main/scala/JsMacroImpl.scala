@@ -25,16 +25,16 @@ import scala.reflect.macros.blackbox
     }
   }
 
-  def formatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] =
-    macroImpl[A, OFormat, Format](
+  def formatImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[OFormat[A]] =
+    macroImpl[A, OFormat, Format, O](
       "format", "inmap", reads = true, writes = true
     )
 
-  def readsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
-    macroImpl[A, Reads, Reads]("read", "map", reads = true, writes = false)
+  def readsImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[Reads[A]] =
+    macroImpl[A, Reads, Reads, O]("read", "map", reads = true, writes = false)
 
-  def writesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] =
-    macroImpl[A, OWrites, Writes](
+  def writesImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[OWrites[A]] =
+    macroImpl[A, OWrites, Writes, O](
       "write", "contramap", reads = false, writes = true
     )
 
@@ -56,7 +56,7 @@ import scala.reflect.macros.blackbox
    * @param matag The class of the reads/writes/format.
    * @param natag The class of the reads/writes/format.
    */
-  private def macroImpl[A, M[_], N[_]](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
+  private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
 
     // All these can be sort of thought as imports
     // that can then be used later in quasi quote interpolation

@@ -30,12 +30,21 @@ object TestFormats {
 }
 
 import org.scalatest._
+import org.scalacheck.Gen
 
-class MacroSpec extends WordSpec with MustMatchers {
+class MacroSpec extends WordSpec with MustMatchers
+    with org.scalatest.prop.PropertyChecks {
+
   "Reads" should {
     "be generated for simple case class" in {
-      Json.reads[Simple].reads(Json.obj("bar" -> "lorem")).
-        get mustEqual Simple("lorem")
+      val json = Json.obj("bar" -> "lorem")
+      val expected = Simple("lorem")
+
+      forAll(Gen.oneOf(
+        Json.reads[Simple],
+        Json.configured.reads[Simple],
+        Json.using[Json.MacroOptions].reads[Simple]
+      )) { _.reads(json).get mustEqual expected }
     }
 
     "as Format for a simple generic case class" in {
