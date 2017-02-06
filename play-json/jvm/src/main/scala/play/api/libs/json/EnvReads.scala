@@ -15,7 +15,10 @@ import java.time.{
   ZonedDateTime
 }
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
-import java.time.temporal.UnsupportedTemporalTypeException
+import java.time.temporal.{
+  Temporal => JTemporal,
+  UnsupportedTemporalTypeException
+}
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
@@ -136,7 +139,7 @@ trait EnvReads {
   implicit val DefaultSqlDateReads = sqlDateReads("yyyy-MM-dd")
 
   /** Typeclass to implement way of parsing string as Java8 temporal types. */
-  trait TemporalParser[T <: java.time.temporal.Temporal] {
+  trait TemporalParser[T <: JTemporal] {
     def parse(input: String): Option[T]
   }
 
@@ -215,6 +218,28 @@ trait EnvReads {
   }
 
   /**
+   * @tparam A the parsing type
+   * @tparam B the temporal type
+   */
+  private final class TemporalReads[A, B <: JTemporal](
+      parsing: A,
+      corrector: String => String,
+      p: A => TemporalParser[B],
+      epoch: Long => B
+  ) extends Reads[B] {
+    def reads(json: JsValue): JsResult[B] = json match {
+      case JsNumber(d) => JsSuccess(epoch(d.toLong))
+      case JsString(s) => p(parsing).parse(corrector(s)) match {
+        case Some(d) => JsSuccess(d)
+        case None => JsError(Seq(JsPath ->
+          Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
+      }
+      case _ => JsError(Seq(JsPath ->
+        Seq(JsonValidationError("error.expected.date"))))
+    }
+  }
+
+  /**
    * Reads for the `java.time.LocalDateTime` type.
    *
    * @tparam T Type of argument to instantiate date/time parser
@@ -232,22 +257,9 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_DATE_TIME, _.drop(1))
    * }}}
    */
-  def localDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[LocalDateTime]): Reads[LocalDateTime] = new Reads[LocalDateTime] {
-    def reads(json: JsValue): JsResult[LocalDateTime] = json match {
-      case JsNumber(d) => JsSuccess(epoch(d.toLong))
-      case JsString(s) => p(parsing).parse(corrector(s)) match {
-        case Some(d) => JsSuccess(d)
-        case None => JsError(Seq(JsPath ->
-          Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
-      }
-      case _ => JsError(Seq(JsPath ->
-        Seq(JsonValidationError("error.expected.date"))))
-    }
-
-    @inline def epoch(millis: Long): LocalDateTime = LocalDateTime.ofInstant(
-      Instant.ofEpochMilli(millis), ZoneOffset.UTC
-    )
-  }
+  def localDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[LocalDateTime]): Reads[LocalDateTime] = new TemporalReads[T, LocalDateTime](parsing, corrector, p, { millis: Long =>
+    LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+  })
 
   /**
    * The default typeclass to reads `java.time.LocalDateTime` from JSON.
@@ -262,10 +274,10 @@ trait EnvReads {
    * Note: it is intentionally not supported to read an OffsetDateTime from a
    * number.
    *
-   * @tparam T Type of argument to instantiate date/time parser
-   * @param parsing Argument to instantiate date/time parser. Actually either a pattern (string) or a formatter (`java.time.format.DateTimeFormatter`)
+   * @tparam T the type of argument to instantiate date/time parser
+   * @param parsing The argument to instantiate date/time parser. Actually either a pattern (string) or a formatter (`java.time.format.DateTimeFormatter`)
    * @param corrector a simple string transformation function that can be used to transform input String before parsing. Useful when standards are not exactly respected and require a few tweaks. Function `identity` can be passed if no correction is needed.
-   * @param p Typeclass instance based on `parsing`
+   * @param p the implicit conversion based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
    *
    * {{{
@@ -313,22 +325,9 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_DATE_TIME, _.drop(1))
    * }}}
    */
-  def zonedDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[ZonedDateTime]): Reads[ZonedDateTime] = new Reads[ZonedDateTime] {
-    def reads(json: JsValue): JsResult[ZonedDateTime] = json match {
-      case JsNumber(d) => JsSuccess(epoch(d.toLong))
-      case JsString(s) => p(parsing).parse(corrector(s)) match {
-        case Some(d) => JsSuccess(d)
-        case None => JsError(Seq(JsPath ->
-          Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
-      }
-      case _ => JsError(Seq(JsPath ->
-        Seq(JsonValidationError("error.expected.date"))))
-    }
-
-    @inline def epoch(millis: Long): ZonedDateTime = ZonedDateTime.ofInstant(
-      Instant.ofEpochMilli(millis), ZoneOffset.UTC
-    )
-  }
+  def zonedDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[ZonedDateTime]): Reads[ZonedDateTime] = new TemporalReads[T, ZonedDateTime](parsing, corrector, p, { millis: Long =>
+    ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+  })
 
   /**
    * The default typeclass to reads `java.time.ZonedDateTime` from JSON.
@@ -394,19 +393,7 @@ trait EnvReads {
    * val customReads3 = instantReads(DateTimeFormatter.ISO_INSTANT, _.drop(1))
    * }}}
    */
-  def instantReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[Instant]): Reads[Instant] =
-    new Reads[Instant] {
-      def reads(json: JsValue): JsResult[Instant] = json match {
-        case JsNumber(d) => JsSuccess(Instant ofEpochMilli d.toLong)
-        case JsString(s) => p(parsing).parse(corrector(s)) match {
-          case Some(d) => JsSuccess(d)
-          case None => JsError(Seq(JsPath ->
-            Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
-        }
-        case _ => JsError(Seq(JsPath ->
-          Seq(JsonValidationError("error.expected.date"))))
-      }
-    }
+  def instantReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[Instant]): Reads[Instant] = new TemporalReads[T, Instant](parsing, corrector, p, Instant.ofEpochMilli(_))
 
   /**
    * The default typeclass to reads `java.time.Instant` from JSON.
