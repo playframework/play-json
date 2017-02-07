@@ -228,4 +228,9 @@ object Json {
    */
   def format[A]: OFormat[A] = macro JsMacroImpl.formatImpl[A]
 
+  /**
+   * Compile-time base options for macro usage.
+   */
+  sealed trait MacroOptions // TODO: option for default values support
+
 }

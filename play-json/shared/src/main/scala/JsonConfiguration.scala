@@ -3,18 +3,35 @@
  */
 package play.api.libs.json
 
-case class JsonConfiguration(
-  naming: JsonNaming = JsonNaming.Identity,
-  useDefaultValues: Boolean = false
-)
+/** JSON configuration */
+sealed trait JsonConfiguration {
+  /** Compile-time options for the JSON macros */
+  type Opts <: Json.MacroOptions
 
-trait LowPriorityDefaultJsonConfigurationImplicit {
-
-  implicit val defaultConfiguration: JsonConfiguration = JsonConfiguration()
-
+  /** Naming strategy */
+  def naming: JsonNaming
 }
 
-object JsonConfiguration extends LowPriorityDefaultJsonConfigurationImplicit
+object JsonConfiguration {
+  type Aux[O <: Json.MacroOptions] = JsonConfiguration { type Opts = O }
+
+  private final class Impl[O <: Json.MacroOptions](
+      val naming: JsonNaming = JsonNaming.Identity
+  ) extends JsonConfiguration {
+    type Opts = O
+  }
+
+  /**
+   * @tparam O the options for the JSON macros
+   * @param naming the naming strategy
+   */
+  def apply[O <: Json.MacroOptions](
+    naming: JsonNaming = JsonNaming.Identity
+  ): JsonConfiguration.Aux[O] = new Impl(naming)
+
+  /** Default configuration instance */
+  implicit def default[Opts <: Json.MacroOptions] = apply[Opts]()
+}
 
 /**
  * Naming strategy, to map each class property to the corresponding column.
