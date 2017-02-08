@@ -225,7 +225,7 @@ class JsonSharedSpec extends WordSpec
       js.toJson(Map("k" -> "v")).toString mustEqual """{"k":"v"}"""
     }
 
-    "can parse recursive object" in {
+    "can parse recursive object" in json { js =>
       val recursiveJson = """{"foo": {"foo":["bar"]}, "bar": {"foo":["bar"]}}"""
       val expectedJson = JsObject(List(
         "foo" -> JsObject(List(
@@ -236,29 +236,29 @@ class JsonSharedSpec extends WordSpec
         ))
       ))
 
-      Json.parse(recursiveJson) mustEqual expectedJson
+      js.parse(recursiveJson) mustEqual expectedJson
     }
 
-    "can parse null values in Object" in {
-      Json.parse("""{"foo": null}""") mustEqual JsObject(List("foo" -> JsNull))
+    "can parse null values in Object" in json { js =>
+      js.parse("""{"foo": null}""") mustEqual JsObject(List("foo" -> JsNull))
     }
 
-    "can parse null values in Array" in {
-      Json.parse("[null]") mustEqual JsArray(List(JsNull))
+    "can parse null values in Array" in json { js =>
+      js.parse("[null]") mustEqual JsArray(List(JsNull))
     }
 
     "null root object should be parsed as JsNull" in json { js =>
       js.parse("null") mustEqual JsNull
     }
 
-    "JSON pretty print" in {
-      val js = Json.obj(
+    "JSON pretty print" in json { js =>
+      def jo = js.obj(
         "key1" -> "toto",
-        "key2" -> Json.obj("key21" -> "tata", "key22" -> 123),
-        "key3" -> Json.arr(1, "tutu")
+        "key2" -> js.obj("key21" -> "tata", "key22" -> 123),
+        "key3" -> js.arr(1, "tutu")
       )
 
-      Json.prettyPrint(js) mustEqual ("""{
+      js.prettyPrint(jo) mustEqual ("""{
   "key1" : "toto",
   "key2" : {
     "key21" : "tata",
@@ -268,15 +268,15 @@ class JsonSharedSpec extends WordSpec
 }""")
     }
 
-    "asciiStringify should escape non-ascii characters" in {
-      val js = Json.obj(
+    "asciiStringify should escape non-ascii characters" in json { js =>
+      def jo = js.obj(
         "key1" -> "\u2028\u2029\u2030",
         "key2" -> "\u00E1\u00E9\u00ED\u00F3\u00FA",
         "key3" -> "\u00A9\u00A3",
         "key4" -> "\u6837\u54C1"
       )
 
-      Json.asciiStringify(js) mustEqual (
+      js.asciiStringify(jo) mustEqual (
         "{\"key1\":\"\\u2028\\u2029\\u2030\"," +
         "\"key2\":\"\\u00E1\\u00E9\\u00ED\\u00F3\\u00FA\"," +
         "\"key3\":\"\\u00A9\\u00A3\"," + "" +
@@ -284,15 +284,13 @@ class JsonSharedSpec extends WordSpec
       )
     }
 
-    "asciiStringify should escape ascii characters properly" in {
-      def js = Json.obj(
+    "asciiStringify should escape ascii characters properly" in json { js =>
+      def jo = Json.obj(
         "key1" -> "ab\n\tcd",
         "key2" -> "\"\r"
       )
 
-      Json.asciiStringify(js) mustEqual (
-        """{"key1":"ab\n\tcd","key2":"\"\r"}"""
-      )
+      js.asciiStringify(jo) mustEqual """{"key1":"ab\n\tcd","key2":"\"\r"}"""
     }
   }
 
@@ -327,10 +325,10 @@ class JsonSharedSpec extends WordSpec
       )
     }
 
-    "write in 2nd level" in {
+    "write in 2nd level" in json { js =>
       case class TestCase(id: String, attr1: String, attr2: String)
 
-      val js = Json.obj(
+      def jo = Json.obj(
         "id" -> "my-id",
         "data" -> Json.obj(
           "attr1" -> "foo",
@@ -344,11 +342,11 @@ class JsonSharedSpec extends WordSpec
         (__ \ "data" \ "attr2").write[String]
       )(unlift(TestCase.unapply))
 
-      Json.toJson(TestCase("my-id", "foo", "bar")) mustEqual js
+      js.toJson(TestCase("my-id", "foo", "bar")) mustEqual jo
     }
 
-    "keep the insertion order on ListMap" in {
-      val test = Json.toJson(
+    "keep the insertion order on ListMap" in json { js =>
+      def test = js.toJson(
         ListMap(
           "name" -> "foo",
           "zip" -> "foo",
@@ -357,12 +355,12 @@ class JsonSharedSpec extends WordSpec
       )
       val req = """{"name":"foo", "zip":"foo", "city":"foo"}"""
 
-      test.toString mustEqual Json.parse(req).toString
+      test.toString mustEqual js.parse(req).toString
       //must be(equalIgnoringSpace(Json.parse(req).toString))
     }
 
-    "keep insertion order on large ListMap" in {
-      def test = Json.toJson(
+    "keep insertion order on large ListMap" in json { js =>
+      def test = js.toJson(
         ListMap(
           "name" -> "a", "zip" -> "foo", "city" -> "foo",
           "address" -> "foo", "phone" -> "foo", "latitude" -> "foo",
@@ -381,7 +379,7 @@ class JsonSharedSpec extends WordSpec
 
       def req = """{"name": "a", "zip": "foo", "city": "foo", "address": "foo", "phone": "foo", "latitude": "foo", "longitude": "foo", "hny": "foo", "hz": "foo", "hek": "foo", "hev": "foo", "kny": "foo", "kz": "foo", "kek": "foo", "kev": "foo", "szeny": "foo", "szez": "foo", "szeek": "foo", "szeev": "foo", "csny": "foo", "csz": "foo", "csek": "foo", "csev": "foo", "pny": "foo", "pz": "foo", "pek": "foo", "pev": "foo", "szony": "foo", "szoz": "foo", "szoek": "foo", "szoev": "foo", "vny": "foo", "vz": "foo", "vek": "foo", "vev": "foo"}"""
 
-      test.toString mustEqual Json.parse(req).toString //).ignoreSpace
+      test.toString mustEqual js.parse(req).toString //).ignoreSpace
     }
   }
 
