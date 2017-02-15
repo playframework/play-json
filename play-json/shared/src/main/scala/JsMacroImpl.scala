@@ -11,7 +11,6 @@ import scala.reflect.macros.blackbox
  * Implementation for the JSON macro.
  */
 @macrocompat.bundle class JsMacroImpl(val c: blackbox.Context) {
-  import c.universe._
 
   /** Only for internal purposes */
   final class Placeholder {}
