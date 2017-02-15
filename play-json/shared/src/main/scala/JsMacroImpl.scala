@@ -11,6 +11,7 @@ import scala.reflect.macros.blackbox
  * Implementation for the JSON macro.
  */
 @macrocompat.bundle class JsMacroImpl(val c: blackbox.Context) {
+  import c.universe._
 
   /** Only for internal purposes */
   final class Placeholder {}
@@ -49,7 +50,6 @@ import scala.reflect.macros.blackbox
    * @param natag The class of the reads/writes/format.
    */
   private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]], otag: c.WeakTypeTag[O]): c.Expr[M[A]] = {
-    import c.universe._
 
     // All these can be sort of thought as imports
     // that can then be used later in quasi quote interpolation
