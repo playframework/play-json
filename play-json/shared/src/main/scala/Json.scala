@@ -118,6 +118,7 @@ sealed trait JsonFacade {
    *
    * A value is writeable if a [[Writes]] implicit is available for its type.
    *
+   * @tparam T the type of the value to be written as JSON
    * @param o the value to convert as JSON
    */
   def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue
@@ -147,12 +148,9 @@ sealed trait JsonFacade {
 /**
  * Helper functions to handle JsValues.
  *
+ * @define macroOptions @tparam Opts the compile-time options
  * @define macroTypeParam @tparam A the type for which the handler must be materialized
- * @define macroOptions @tparam O the compile-time options
  * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
- * @define readDescription Creates a `Reads[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
- * @define writesDescription Creates a `OWrites[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
- * @define formatDescription Creates a `OFormat[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
  */
 object Json extends JsonFacade {
 
@@ -211,7 +209,8 @@ object Json extends JsonFacade {
   import language.experimental.macros
 
   /**
-   * $readsDescription
+   * Creates a `Reads[T]` by resolving, at compile-time, 
+   * the case class fields or sealed family, and the required implicits.
    *
    * $macroWarning
    *
@@ -234,7 +233,8 @@ object Json extends JsonFacade {
   def reads[A]: Reads[A] = macro JsMacroImpl.readsImpl[A, MacroOptions]
 
   /**
-   * $writesDescription
+   * Creates a `OWrites[T]` by resolving, at compile-time, 
+   * the case class fields or sealed family, and the required implicits.
    *
    * $macroWarning
    *
@@ -257,7 +257,8 @@ object Json extends JsonFacade {
   def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
 
   /**
-   * $formatDescription
+   * Creates a `OFormat[T]` by resolving, at compile-time, 
+   * the case class fields or sealed family, and the required implicits.
    *
    * $macroWarning
    *
@@ -279,7 +280,14 @@ object Json extends JsonFacade {
    */
   def format[A]: OFormat[A] = macro JsMacroImpl.formatImpl[A, MacroOptions]
 
-  /** JSON facade with some macro options. */
+  /** 
+   * JSON facade with some macro options. 
+   * 
+   * $macroOptions
+   * 
+   * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
+   * @define macroTypeParam @tparam A the type for which the handler must be materialized
+   */
   final class WithOptions[Opts <: MacroOptions]() extends JsonFacade {
     @inline def parse(input: String): JsValue = Json.parse(input)
     @inline def parse(input: InputStream): JsValue = Json.parse(input)
@@ -301,7 +309,8 @@ object Json extends JsonFacade {
     @inline def arr(items: JsValueWrapper*): JsArray = Json.arr(items: _*)
 
     /**
-     * $readsDescription
+     * Creates a `Reads[T]` by resolving, at compile-time, 
+     * the case class fields or sealed family, and the required implicits.
      *
      * $macroWarning
      *
@@ -319,7 +328,8 @@ object Json extends JsonFacade {
     def reads[A]: Reads[A] = macro JsMacroImpl.readsImpl[A, Opts]
 
     /**
-     * $writesDescription
+     * Creates a `OWrites[T]` by resolving, at compile-time, 
+     * the case class fields or sealed family, and the required implicits.
      *
      * $macroWarning
      *
@@ -337,7 +347,8 @@ object Json extends JsonFacade {
     def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
 
     /**
-     * $formatDescription
+     * Creates a `OFormat[T]` by resolving, at compile-time, 
+     * the case class fields or sealed family, and the required implicits.
      *
      * $macroWarning
      *
@@ -356,14 +367,23 @@ object Json extends JsonFacade {
   }
 
   /**
-   * Returns an inference context to call the JSON macros,
-   * using the current JSON configuration.
+   * Returns a [[JsonFacade]] using the current JSON configuration.
+   * 
+   * @tparam C the type of compile-time configuration
+   * 
+   * {{{
+   * // Materializes a `Reads[Foo]`,
+   * // with the configuration resolved at compile time
+   * val r: Reads[Foo] = Json.configured.reads[Foo]
+   * }}}
    */
   def configured[C <: JsonConfiguration.Aux[_ <: MacroOptions]](implicit config: C) = new WithOptions[config.Opts]()
 
   /**
    * Returns an inference context to call the JSON macros,
    * using explicit compile-time options.
+   * 
+   * $macroOptions
    */
   def using[Opts <: MacroOptions] = new WithOptions[Opts]()
 
@@ -371,7 +391,7 @@ object Json extends JsonFacade {
    * Compile-time base options for macro usage.
    *
    * {{{
-   * Json.formatOpts[Foo, Json.MacroOptions]
+   * Json.using[Json.MacroOptions].format[Foo]
    * // equivalent to Json.format[Foo]
    * }}}
    */
@@ -382,10 +402,18 @@ object Json extends JsonFacade {
    * (e.g. default values for the case class parameters)
    * when applicable.
    *
-   * {{{MacroOptions with DefaultValues}}}
+   * {{{
+   * MacroOptions with DefaultValues
+   * }}}
    */
   trait DefaultValues { _: MacroOptions => }
 
-  /** Alias for {{{MacroOptions with DefaultValues}}} */
+  /** 
+   * Alias for `MacroOptions with DefaultValues`
+   * 
+   * {{{
+   * Json.using[WithDefaultValues]
+   * }}}
+   */
   type WithDefaultValues = MacroOptions with DefaultValues
 }
