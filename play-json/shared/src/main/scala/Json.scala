@@ -25,7 +25,7 @@ sealed trait JsonFacade {
   def parse(input: InputStream): JsValue
 
   /**
-   * Parses some bytes representing a JSON input, 
+   * Parses some bytes representing a JSON input,
    * and returns it as a [[JsValue]].
    *
    * The character encoding used will be automatically detected as UTF-8,
