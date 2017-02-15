@@ -25,21 +25,14 @@ import scala.reflect.macros.blackbox
     }
   }
 
-  def formatImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[OFormat[A]] =
-    macroImpl[A, OFormat, Format, O](
-      "format", "inmap", reads = true, writes = true
-    )
+  def readsImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads, O]("read", "map", reads = true, writes = false)
 
-  def readsImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[Reads[A]] =
-    macroImpl[A, Reads, Reads, O]("read", "map", reads = true, writes = false)
+  def writesImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes, O]("write", "contramap", reads = false, writes = true)
 
-  def writesImpl[A: c.WeakTypeTag, O <: Json.MacroOptions]: c.Expr[OWrites[A]] =
-    macroImpl[A, OWrites, Writes, O](
-      "write", "contramap", reads = false, writes = true
-    )
+  def formatImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format, O]("format", "inmap", reads = true, writes = true)
 
   /**
-   * Generic implementation of the macro
+   * Generic implementation of the macro.
    *
    * The reads/writes flags are used to say whether a reads/writes is being generated (in the case format,
    * these are both true).  This is also used to determine what arguments should be passed to various
@@ -56,7 +49,7 @@ import scala.reflect.macros.blackbox
    * @param matag The class of the reads/writes/format.
    * @param natag The class of the reads/writes/format.
    */
-  private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
+  private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]], otag: c.WeakTypeTag[O]): c.Expr[M[A]] = {
 
     // All these can be sort of thought as imports
     // that can then be used later in quasi quote interpolation
@@ -83,10 +76,14 @@ import scala.reflect.macros.blackbox
     val optTpeCtor = typeOf[Option[_]].typeConstructor
     val forwardName = TermName(c.freshName("forward"))
 
+    // MacroOptions
+    val options = c.weakTypeOf[O]
+    def hasOption[Flag: c.TypeTag]: Boolean = options <:< typeOf[Flag]
+
     /* Utility for implicit resolution - can hardly be moved outside
      * (due to dependent types).
-     * 
-     * @param resolvedType Per each symbol of the type parameters, 
+     *
+     * @param resolvedType Per each symbol of the type parameters,
      * which type is bound to
      */
     class ImplicitResolver(resolvedType: Type => Type) {
@@ -349,9 +346,17 @@ import scala.reflect.macros.blackbox
       }
 
       // Parameters symbols -> Function tree
-      lazy val applyFunction: Option[(Tree, List[TypeSymbol], List[Symbol])] =
+      lazy val applyFunction: Option[(Tree, List[TypeSymbol], List[Symbol], List[Option[Tree]])] =
         maybeApply.flatMap { app =>
           app.paramLists.headOption.map { params =>
+            val defaultValues = params.map(_.asTerm).zipWithIndex map {
+              case (p, i) =>
+                if (!p.isParamWithDefault) None else {
+                  val getter = TermName("apply$default$" + (i + 1))
+                  Some(q"$companionObject.$getter")
+                }
+            }
+
             val tree = if (hasVarArgs) {
               val applyParams = params.foldLeft(List.empty[Tree]) { (l, e) =>
                 l :+ Ident(TermName(e.name.encodedName.toString))
@@ -365,7 +370,7 @@ import scala.reflect.macros.blackbox
               q"$companionObject.apply _"
             } else q"$companionObject.apply[..$tpeArgs] _"
 
-            (tree, app.typeParams.map(_.asType), params)
+            (tree, app.typeParams.map(_.asType), params, defaultValues)
           }
         }
 
@@ -374,7 +379,7 @@ import scala.reflect.macros.blackbox
       } else q"$unlift($companionObject.$effectiveUnapply[..$tpeArgs])"
 
       @inline private def params: List[(Name, Type)] = applyFunction match {
-        case Some((_, _, ps)) => {
+        case Some((_, _, ps, _)) => {
           val base = if (hasVarArgs) ps.init else ps
           val defs = base.map { p => p.name -> p.typeSignature }.toList
           val end = if (!hasVarArgs) List.empty[(Name, Type)] else {
@@ -410,7 +415,7 @@ import scala.reflect.macros.blackbox
 
       lazy val boundTypes: Map[String, Type] =
         applyFunction.fold(Map.empty[String, Type]) {
-          case (_, tparams, _) => tparams.zip(tpeArgs).map {
+          case (_, tparams, _, _) => tparams.zip(tpeArgs).map {
             case (sym, ty) => sym.fullName -> ty
           }.toMap
         }
@@ -581,7 +586,7 @@ import scala.reflect.macros.blackbox
 
       }
 
-      val (applyFunction, tparams, params) = utility.applyFunction match {
+      val (applyFunction, tparams, params, defaultValues) = utility.applyFunction match {
         case Some(info) => info
 
         case _ => c.abort(
@@ -592,14 +597,6 @@ import scala.reflect.macros.blackbox
 
       // ---
 
-      // The call is the term name, either "read", "write" or "format",
-      // that gets invoked on JsPath (e.g. `(__ \ "foo").read`)
-      val call = TermName(methodName)
-
-      // callNullable is the equivalent of call for options
-      // e.g. `(__ \ "foo").readNullable`
-      val callNullable = TermName(s"${methodName}Nullable")
-
       // combines all reads into CanBuildX
       val cfgName = TermName(c.freshName("config"))
       val resolver = new ImplicitResolver({
@@ -609,6 +606,13 @@ import scala.reflect.macros.blackbox
           boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
         }
       })
+      val defaultValueMap: Map[Name, Tree] =
+        if (!hasOption[Json.DefaultValues]) Map.empty else {
+          params.zip(defaultValues).collect {
+            case (p, Some(dv)) => p.name.encodedName -> dv
+          }.toMap
+        }
+
       val resolvedImplicits = utility.implicits(resolver)
       val canBuild = resolvedImplicits.map {
         case (name, Implicit(pt, impl, _, _)) =>
@@ -617,15 +621,30 @@ import scala.reflect.macros.blackbox
           val cn = c.Expr[String](
             q"$cfgName.naming(${name.decodedName.toString})"
           )
+          val jspathTree = q"$JsPath \ $cn"
+          val isOption = pt.typeConstructor <:< optTpeCtor
 
-          val jspathTree = q"""$JsPath \ $cn"""
+          val defaultValue = // not applicable for 'write' only
+            defaultValueMap.get(name).filter(_ => methodName != "write")
 
-          // If we're not recursive, simple, just invoke read/write/format
-          // If we're an option, invoke the nullable version
-          if (pt.typeConstructor <:< optTpeCtor) {
-            q"$jspathTree.$callNullable($impl)"
-          } else {
-            q"$jspathTree.$call($impl)"
+          // - If we're an default value, invoke the withDefault version
+          // - If we're an option with default value,
+          //   invoke the nullableWithDefault version
+          (isOption, defaultValue) match {
+            case (true, Some(v)) =>
+              val c = TermName(s"${methodName}NullableWithDefault")
+              q"$jspathTree.$c($v)($impl)"
+
+            case (true, _) =>
+              val c = TermName(s"${methodName}Nullable")
+              q"$jspathTree.$c($impl)"
+
+            case (false, Some(v)) =>
+              val c = TermName(s"${methodName}WithDefault")
+              q"$jspathTree.$c($v)($impl)"
+
+            case _ =>
+              q"$jspathTree.${TermName(methodName)}($impl)"
           }
       }.reduceLeft[Tree] { (acc, r) =>
         q"$acc.and($r)"

@@ -16,8 +16,14 @@ trait PathFormat {
   def at[A](path: JsPath)(implicit f: Format[A]): OFormat[A] =
     OFormat[A](Reads.at(path)(f), Writes.at(path)(f))
 
+  def withDefault[A](path: JsPath, defaultValue: => A)(implicit f: Format[A]): OFormat[A] =
+    OFormat[A](Reads.withDefault(path, defaultValue)(f), Writes.at(path)(f))
+
   def nullable[A](path: JsPath)(implicit f: Format[A]): OFormat[Option[A]] =
     OFormat(Reads.nullable(path)(f), Writes.nullable(path)(f))
+
+  def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit f: Format[A]): OFormat[Option[A]] =
+    OFormat(Reads.nullableWithDefault(path, defaultValue)(f), Writes.nullable(path)(f))
 
 }
 
@@ -25,6 +31,9 @@ trait PathReads {
   def required(path: JsPath)(implicit reads: Reads[JsValue]): Reads[JsValue] = at(path)(reads)
 
   def at[A](path: JsPath)(implicit reads: Reads[A]): Reads[A] = Reads[A](js => path.asSingleJsResult(js).flatMap(reads.reads(_).repath(path)))
+
+  def withDefault[A](path: JsPath, defaultValue: => A)(implicit reads: Reads[A]): Reads[A] =
+    at[A](path) orElse Reads.pure(defaultValue)
 
   /**
    * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
@@ -37,18 +46,30 @@ trait PathReads {
    *   - If last node is found with value "null" => returns None
    *   - If last node is found => applies implicit Reads[T]
    */
-  def nullable[A](path: JsPath)(implicit reads: Reads[A]) = Reads[Option[A]] { json =>
-    path.applyTillLast(json).fold(
-      jserr => jserr,
-      jsres => jsres.fold(
-        _ => JsSuccess(None),
-        a => a match {
+  def nullable[A](path: JsPath)(implicit reads: Reads[A]): Reads[Option[A]] =
+    nullableWithDefault(path, None)
+
+  /**
+   * Reads a Option[T] search nullable field at JsPath (null is None
+   * and other cases are Error).
+   *
+   * It runs through JsValue following all JsPath nodes on JsValue except last node:
+   * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
+   * - If all nodes are found till last node, it runs through JsValue with last node =>
+   *   - If last node if not found => returns JsError( "missing-path" )
+   *   - If last node is found with value "null" => returns None
+   *   - If last node is found => applies implicit Reads[T]
+   */
+  def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]): Reads[Option[A]] =
+    Reads[Option[A]] { json =>
+      path.applyTillLast(json).fold(identity, _.fold(
+        _ => JsSuccess(defaultValue),
+        _ match {
           case JsNull => JsSuccess(None)
           case js => reads.reads(js).repath(path).map(Some(_))
         }
-      )
-    )
-  }
+      ))
+    }
 
   def jsPick[A <: JsValue](path: JsPath)(implicit reads: Reads[A]): Reads[A] = at(path)(reads)
 

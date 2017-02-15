@@ -87,6 +87,9 @@ object CustomApply {
   def apply(): CustomApply = apply(10, "foo")
 }
 
+case class WithDefault1(a: String = "a", b: Option[String] = Some("b"))
+case class WithDefault2(a: String = "a", bar: Option[WithDefault1] = Some(WithDefault1()))
+
 class JsonExtensionSpec extends WordSpec with MustMatchers {
   "JsonExtension" should {
     "create a reads[User]" in {
@@ -651,6 +654,63 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
 
       Json.fromJson[UserProfileHolder](Json.obj("holder" -> "Christian", "profile" -> UserProfile.json1)) mustEqual (JsSuccess(UserProfileHolder("Christian", UserProfile.obj1)))
       Json.toJson(UserProfileHolder("Christian", UserProfile.obj1)) mustEqual (Json.obj("holder" -> "Christian", "profile" -> UserProfile.json1))
+    }
+
+    "manage default values" should {
+      import play.api.libs.json.Json
+      import play.api.libs.functional.syntax._
+
+      def functionalReads: Reads[WithDefault2] = {
+        implicit val barReads = {
+          (
+            (__ \ "a").readWithDefault("a") and
+            (__ \ "b").readNullableWithDefault(Some("b"))
+          )(WithDefault1)
+        }
+
+        (
+          (__ \ "a").readWithDefault("a") and
+          (__ \ "bar").readNullableWithDefault(Some(WithDefault1()))
+        )(WithDefault2)
+      }
+
+      def functionalFormat: Format[WithDefault2] = {
+        implicit val barReads: Format[WithDefault1] = {
+          (
+            (__ \ "a").formatWithDefault("a") and
+            (__ \ "b").formatNullableWithDefault(Some("b"))
+          )(WithDefault1.apply, unlift(WithDefault1.unapply))
+        }
+
+        (
+          (__ \ "a").formatWithDefault("a") and
+          (__ \ "bar").formatNullableWithDefault(Some(WithDefault1()))
+        )(WithDefault2.apply, unlift(WithDefault2.unapply))
+      }
+
+      def macroReads: Reads[WithDefault2] = {
+        implicit val br = Json.using[Json.WithDefaultValues].reads[WithDefault1]
+        Json.using[Json.MacroOptions with Json.DefaultValues].reads[WithDefault2]
+      }
+
+      def macroFormat: Format[WithDefault2] = {
+        val jsWithDefaults = Json.using[Json.WithDefaultValues]
+        implicit val bf = jsWithDefaults.format[WithDefault1]
+
+        jsWithDefaults.format[WithDefault2]
+      }
+
+      def validateReads(fooReads: Reads[WithDefault2]) = {
+        fooReads.reads(Json.obj()) mustEqual JsSuccess(WithDefault2())
+        fooReads.reads(Json.obj("bar" -> JsNull)) mustEqual JsSuccess(WithDefault2(bar = None))
+        fooReads.reads(Json.obj("a" -> "z")) mustEqual JsSuccess(WithDefault2(a = "z"))
+        fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) mustEqual JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z")))))
+      }
+
+      "by functional reads" in validateReads(functionalReads)
+      "by functional formats" in validateReads(functionalFormat)
+      "by reads macro" in validateReads(macroReads)
+      "by format macro" in validateReads(macroFormat)
     }
   }
 }

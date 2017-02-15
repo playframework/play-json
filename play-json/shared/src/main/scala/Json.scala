@@ -8,8 +8,6 @@ import java.io.InputStream
 /**
  * @define jsonParam @param json the JsValue to convert
  * @define returnStringRepr A String with the json representation
- * @define readDescription Creates a `Reads[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
- * @define handlerTypeParam @tparam A the type for which the handler must be materialized
  */
 sealed trait JsonFacade {
   /**
@@ -27,7 +25,8 @@ sealed trait JsonFacade {
   def parse(input: InputStream): JsValue
 
   /**
-   * Parses some bytes representing a JSON input, and returns it as a [[JsValue]].
+   * Parses some bytes representing a JSON input,
+   * and returns it as a [[JsValue]].
    *
    * The character encoding used will be automatically detected as UTF-8,
    * UTF-16 or UTF-32, as per the heuristics in RFC-4627.
@@ -148,8 +147,11 @@ sealed trait JsonFacade {
 /**
  * Helper functions to handle JsValues.
  *
+ * @define macroTypeParam @tparam A the type for which the handler must be materialized
  * @define macroOptions @tparam O the compile-time options
  * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
+ * @define readDescription Creates a `Reads[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
+ * @define writesDescription Creates a `OWrites[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
  * @define formatDescription Creates a `OFormat[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
  */
 object Json extends JsonFacade {
@@ -213,7 +215,7 @@ object Json extends JsonFacade {
    *
    * $macroWarning
    *
-   * $handlerTypeParam
+   * $macroTypeParam
    *
    * {{{
    * import play.api.libs.json.Json
@@ -230,6 +232,52 @@ object Json extends JsonFacade {
    * }}}
    */
   def reads[A]: Reads[A] = macro JsMacroImpl.readsImpl[A, MacroOptions]
+
+  /**
+   * $writesDescription
+   *
+   * $macroWarning
+   *
+   * $macroTypeParam
+   *
+   * {{{
+   *   import play.api.libs.json.Json
+   *
+   *   case class User(userName: String, age: Int)
+   *
+   *   implicit val userWrites = Json.writes[User]
+   *   // macro-compiler replaces Json.writes[User] by injecting into compile chain
+   *   // the exact code you would write yourself. This is strictly equivalent to:
+   *   implicit val userWrites = (
+   *      (__ \ implicitly[JsonConfiguration].naming("userName")).write[String] and
+   *      (__ \ implicitly[JsonConfiguration].naming("age")).write[Int]
+   *   )(unlift(User.unapply))
+   * }}}
+   */
+  def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
+
+  /**
+   * $formatDescription
+   *
+   * $macroWarning
+   *
+   * $macroTypeParam
+   *
+   * {{{
+   * import play.api.libs.json.Json
+   *
+   * case class User(userName: String, age: Int)
+   *
+   * implicit val userWrites = Json.format[User]
+   * // macro-compiler replaces Json.format[User] by injecting into compile chain
+   * // the exact code you would write yourself. This is strictly equivalent to:
+   * implicit val userWrites = (
+   *    (__ \ implicitly[JsonConfiguration].naming("userName")).format[String] and
+   *    (__ \ implicitly[JsonConfiguration].naming("age")).format[Int]
+   * )(User.apply, unlift(User.unapply))
+   * }}}
+   */
+  def format[A]: OFormat[A] = macro JsMacroImpl.formatImpl[A, MacroOptions]
 
   /** JSON facade with some macro options. */
   final class WithOptions[Opts <: MacroOptions]() extends JsonFacade {
@@ -257,7 +305,7 @@ object Json extends JsonFacade {
      *
      * $macroWarning
      *
-     * $handlerTypeParam
+     * $macroTypeParam
      *
      * {{{
      * import play.api.libs.json.Json
@@ -266,8 +314,45 @@ object Json extends JsonFacade {
      *
      * implicit val userReads: Reads[User] =
      *   Json.using[Json.MacroOptions with Json.DefaultValues].reads[User]
+     * }}}
      */
     def reads[A]: Reads[A] = macro JsMacroImpl.readsImpl[A, Opts]
+
+    /**
+     * $writesDescription
+     *
+     * $macroWarning
+     *
+     * $macroTypeParam
+     *
+     * {{{
+     * import play.api.libs.json.Json
+     *
+     * case class User(userName: String, age: Int)
+     *
+     * implicit val userWrites: OWrites[User] =
+     *   Json.using[Json.MacroOptions].writes[User]
+     * }}}
+     */
+    def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
+
+    /**
+     * $formatDescription
+     *
+     * $macroWarning
+     *
+     * $macroTypeParam
+     *
+     * {{{
+     * import play.api.libs.json.Json
+     *
+     * case class User(userName: String, age: Int)
+     *
+     * implicit val userFormat: OFormat[User] =
+     *   Json.using[Json.WithDefaultValues].format[User]
+     * }}}
+     */
+    def format[A]: OFormat[A] = macro JsMacroImpl.formatImpl[A, Opts]
   }
 
   /**
@@ -283,52 +368,6 @@ object Json extends JsonFacade {
   def using[Opts <: MacroOptions] = new WithOptions[Opts]()
 
   /**
-   * Creates a `OWrites[T]` by resolving, at compile-time, the case class fields or sealed family, and the required implicits.
-   *
-   * $macroWarning
-   *
-   * $handlerTypeParam
-   *
-   * {{{
-   *   import play.api.libs.json.Json
-   *
-   *   case class User(userName: String, age: Int)
-   *
-   *   implicit val userWrites = Json.writes[User]
-   *   // macro-compiler replaces Json.writes[User] by injecting into compile chain
-   *   // the exact code you would write yourself. This is strictly equivalent to:
-   *   implicit val userWrites = (
-   *      (__ \ implicitly[JsonConfiguration].naming("userName")).write[String] and
-   *      (__ \ implicitly[JsonConfiguration].naming("age")).write[Int]
-   *   )(unlift(User.unapply))
-   * }}}
-   */
-  def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
-
-  /**
-   * $formatDescription
-   *
-   * $macroWarning
-   *
-   * $handlerTypeParam
-   *
-   * {{{
-   * import play.api.libs.json.Json
-   *
-   * case class User(userName: String, age: Int)
-   *
-   * implicit val userWrites = Json.format[User]
-   * // macro-compiler replaces Json.format[User] by injecting into compile chain
-   * // the exact code you would write yourself. This is strictly equivalent to:
-   * implicit val userWrites = (
-   *    (__ \ implicitly[JsonConfiguration].naming("userName")).format[String] and
-   *    (__ \ implicitly[JsonConfiguration].naming("age")).format[Int]
-   * )(User.apply, unlift(User.unapply))
-   * }}}
-   */
-  def format[A]: OFormat[A] = macro JsMacroImpl.formatImpl[A, MacroOptions]
-
-  /**
    * Compile-time base options for macro usage.
    *
    * {{{
@@ -338,4 +377,15 @@ object Json extends JsonFacade {
    */
   sealed trait MacroOptions
 
+  /**
+   * Flag to indicate the macros can use the type default values
+   * (e.g. default values for the case class parameters)
+   * when applicable.
+   *
+   * {{{MacroOptions with DefaultValues}}}
+   */
+  trait DefaultValues { _: MacroOptions => }
+
+  /** Alias for {{{MacroOptions with DefaultValues}}} */
+  type WithDefaultValues = MacroOptions with DefaultValues
 }
