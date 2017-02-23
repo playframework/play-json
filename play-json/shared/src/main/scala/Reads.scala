@@ -3,6 +3,7 @@
  */
 package play.api.libs.json
 
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.annotation.implicitNotFound
 
 import scala.collection._
@@ -10,8 +11,7 @@ import scala.collection.immutable.Map
 import scala.collection.mutable.Builder
 
 import scala.language.higherKinds
-
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 /**
  * Json deserializer: write an implicit to define a deserializer for any type.
@@ -437,8 +437,57 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for Array[T] types.
    */
-  implicit def ArrayReads[T: Reads: ClassTag]: Reads[Array[T]] = new Reads[Array[T]] {
-    def reads(json: JsValue) = json.validate[List[T]].map(_.toArray)
+  implicit def ArrayReads[T: Reads: ClassTag]: Reads[Array[T]] =
+    Reads[Array[T]] { _.validate[List[T]].map(_.toArray) }
+
+  // If the number is decimal, considering it's /1000 of millis,
+  // otherwise considering it's directly in millis
+  private def numberDuration(n: BigDecimal): FiniteDuration = {
+    val millis = if (!n.ulp.isWhole) {
+      (n.toDouble * 1000).toLong
+    } else n.toLong
+
+    FiniteDuration(millis.toLong, "ms")
+  }
+
+  /**
+   * Deserializer for Scala FiniteDuration
+   */
+  implicit val finiteDurationWrites: Reads[FiniteDuration] =
+    Reads[FiniteDuration] {
+      case JsNumber(n) => JsSuccess(numberDuration(n))
+      case JsString("0") => JsSuccess(Duration.Zero)
+      case JsString("Undefined") => JsError("error.invalid.finiteDuration")
+      case JsString(input) => try {
+        val d = Duration(input)
+
+        if (d.isFinite) JsSuccess(FiniteDuration(d.length, d.unit))
+        else JsError("error.invalid.finiteDuration")
+      } catch {
+        case _: Throwable => JsError("error.invalid.duration")
+      }
+
+      case _ => JsError("error.expected.duration")
+    }
+
+  /**
+   * Deserializer for Scala Duration
+   */
+  implicit val durationReads: Reads[Duration] = Reads[Duration] {
+    case JsString("Inf") | JsString("PlusInf") | JsString("+Inf") =>
+      JsSuccess(Duration.Inf)
+
+    case JsString("MinusInf") | JsString("-Inf") => JsSuccess(Duration.MinusInf)
+    case JsString("0") => JsSuccess(Duration.Zero)
+    case JsNumber(n) => JsSuccess(numberDuration(n))
+    case JsString("Undefined") => JsSuccess(Duration.Undefined)
+    case JsString(finite) => try {
+      JsSuccess(Duration(finite))
+    } catch {
+      case cause: Throwable => JsError("error.invalid.duration")
+    }
+
+    case _ => JsError("error.expected.duration")
   }
 
   /**

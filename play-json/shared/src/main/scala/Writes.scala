@@ -5,6 +5,7 @@ package play.api.libs.json
 
 import play.api.libs.functional.ContravariantFunctor
 
+import scala.concurrent.duration.Duration
 import scala.annotation.implicitNotFound
 import scala.collection._
 import scala.reflect.ClassTag
@@ -240,6 +241,20 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   def sqlDateWrites(pattern: String): Writes[java.sql.Date] = new Writes[java.sql.Date] {
     def writes(d: java.sql.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
+  }
+
+  /**
+   * Serializer for Scala Duration
+   */
+  implicit val durationWrites: Writes[Duration] = Writes[Duration] {
+    case Duration.Inf => JsString("Inf")
+    case Duration.MinusInf => JsString("MinusInf")
+    case Duration.Zero => JsString("0")
+
+    case undefined if (undefined eq Duration.Undefined) =>
+      JsString("Undefined")
+
+    case finite => JsString(finite.toString)
   }
 
   /**
