@@ -8,6 +8,7 @@ import java.time.temporal.Temporal
 import java.time.{
   Instant,
   LocalDate,
+  LocalTime,
   LocalDateTime,
   OffsetDateTime,
   ZoneOffset,
@@ -68,8 +69,14 @@ trait EnvWrites {
       def format(temporal: Instant): String = formatter.format(temporal)
     }
 
-    implicit def PatternInstantFormatter(pattern: String): TemporalFormatter[Instant] =
-      DefaultInstantFormatter(DateTimeFormatter.ofPattern(pattern).withZone(ZoneOffset.UTC))
+    implicit def PatternInstantFormatter(pattern: String): TemporalFormatter[Instant] = DefaultInstantFormatter(DateTimeFormatter.ofPattern(pattern).withZone(ZoneOffset.UTC))
+
+    implicit def DefaultLocalTimeFormatter(formatter: DateTimeFormatter): TemporalFormatter[LocalTime] = new TemporalFormatter[LocalTime] {
+      def format(temporal: LocalTime): String = formatter.format(temporal)
+    }
+
+    implicit def PatternLocalTimeFormatter(pattern: String): TemporalFormatter[LocalTime] = DefaultLocalTimeFormatter(DateTimeFormatter.ofPattern(pattern).withZone(ZoneOffset.UTC))
+
   }
 
   /**
@@ -134,14 +141,35 @@ trait EnvWrites {
    * The default typeclass to write a `java.time.Instant`,
    * using '2011-12-03T10:15:30Z' format.
    */
-  implicit val DefaultInstantWrites = new Writes[Instant] {
-    def writes(i: Instant): JsValue = JsString(i.toString)
+  implicit val DefaultInstantWrites: Writes[Instant] =
+    Writes[Instant] { i => JsString(i.toString) }
+
+  /**
+   * The default typeclass to write a `java.time.LocalTime`,
+   * using '10:15:30' format.
+   */
+  implicit val DefaultLocalTimeWrites: Writes[LocalTime] =
+    temporalWrites[LocalTime, DateTimeFormatter](DateTimeFormatter.ISO_TIME)
+
+  /**
+   * Serializer for `java.time.LocalTime` as JSON number.
+   *
+   * {{{
+   * import java.time.LocalTime
+   * import play.api.libs.json.Writes
+   *
+   * implicit val ltnWrites = Writes.LocalTimeNumberWrites
+   * }}}
+   */
+  val LocalTimeNumberWrites: Writes[LocalTime] = Writes[LocalTime] { t =>
+    JsNumber(BigDecimal valueOf t.toNanoOfDay)
   }
 
   /**
    * Serializer for `java.time.ZoneId` as JSON string.
    */
-  implicit val ZoneIdWrites: Writes[ZoneId] = Writes[ZoneId](zone => JsString(zone.getId))
+  implicit val ZoneIdWrites: Writes[ZoneId] =
+    Writes[ZoneId](zone => JsString(zone.getId))
 
   /**
    * Serializer for `java.time.LocalDateTime` as JSON number.
@@ -154,8 +182,8 @@ trait EnvWrites {
    * }}}
    */
   val LocalDateTimeNumberWrites: Writes[LocalDateTime] =
-    new Writes[LocalDateTime] {
-      def writes(t: LocalDateTime): JsValue = JsNumber(BigDecimal.valueOf(
+    Writes[LocalDateTime] { t =>
+      JsNumber(BigDecimal.valueOf(
         t.toInstant(ZoneOffset.UTC).toEpochMilli
       ))
     }

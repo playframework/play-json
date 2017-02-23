@@ -8,6 +8,7 @@ import java.time.{
   DateTimeException,
   Instant,
   LocalDate,
+  LocalTime,
   LocalDateTime,
   OffsetDateTime,
   ZoneId,
@@ -203,13 +204,25 @@ trait EnvReads {
     }
 
     /** Instance of zoned date/time based on specified pattern. */
-    implicit def ZonedDateTimePatternParser(pattern: String): TemporalParser[ZonedDateTime] =
-      ZonedDateTimeFormatterParser(DateTimeFormatter.ofPattern(pattern))
+    implicit def ZonedDateTimePatternParser(pattern: String): TemporalParser[ZonedDateTime] = ZonedDateTimeFormatterParser(DateTimeFormatter.ofPattern(pattern))
 
     /** Instance of zoned date/time based on formatter. */
     implicit def ZonedDateTimeFormatterParser(formatter: DateTimeFormatter): TemporalParser[ZonedDateTime] = new TemporalParser[ZonedDateTime] {
       def parse(input: String): Option[ZonedDateTime] = try {
         Some(ZonedDateTime.parse(input, formatter))
+      } catch {
+        case _: DateTimeParseException => None
+        case _: UnsupportedTemporalTypeException => None
+      }
+    }
+
+    /** Instance of LocalTime parser based on specified pattern. */
+    implicit def LocalTimePatternParser(pattern: String): TemporalParser[LocalTime] = LocalTimeFormatterParser(DateTimeFormatter.ofPattern(pattern))
+
+    /** Instance of LocalTime parser based on formatter. */
+    implicit def LocalTimeFormatterParser(formatter: DateTimeFormatter): TemporalParser[LocalTime] = new TemporalParser[LocalTime] {
+      def parse(input: String): Option[LocalTime] = try {
+        Some(LocalTime.from(formatter.parse(input)))
       } catch {
         case _: DateTimeParseException => None
         case _: UnsupportedTemporalTypeException => None
@@ -401,6 +414,49 @@ trait EnvReads {
    */
   implicit val DefaultInstantReads =
     instantReads(DateTimeFormatter.ISO_DATE_TIME)
+
+  // ---
+
+  /**
+   * Reads for the `java.time.LocalTime` type.
+   *
+   * @tparam T Type of argument to instantiate time parser
+   * @param parsing Argument to instantiate time parser. Actually either a pattern (string) or a formatter (`java.time.format.DateTimeFormatter`)
+   * @param corrector a simple string transformation function that can be used to transform input String before parsing. Useful when standards are not exactly respected and require a few tweaks. Function `identity` can be passed if no correction is needed.
+   * @param p Typeclass instance based on `parsing`
+   * @see [[DefaultWrites.TemporalFormatter]]
+   * {{{
+   * import play.api.libs.json.Java8Reads.localTimeReads
+   *
+   * val customReads1 = localTimeReads("dd/MM/yyyy, HH:mm:ss")
+   * val customReads2 = localTimeReads(DateTimeFormatter.ISO_TIME)
+   * val customReads3 = localTimeReads(DateTimeFormatter.ISO_TIME, _.drop(1))
+   * }}}
+   */
+  def localTimeReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[LocalTime]): Reads[LocalTime] =
+    new Reads[LocalTime] {
+      def reads(json: JsValue): JsResult[LocalTime] = json match {
+        case JsNumber(d) => JsSuccess(epoch(d.toLong))
+        case JsString(s) => p(parsing).parse(corrector(s)) match {
+          case Some(d) => JsSuccess(d)
+          case None => JsError(Seq(JsPath ->
+            Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
+        }
+        case _ => JsError(Seq(JsPath ->
+          Seq(JsonValidationError("error.expected.date"))))
+      }
+
+      @inline def epoch(nanos: Long): LocalTime = LocalTime.ofNanoOfDay(nanos)
+    }
+
+  /**
+   * The default typeclass to reads `java.time.LocalTime` from JSON.
+   * Accepts date formats as '10:15:30' (or '10:15').
+   */
+  implicit val DefaultLocalTimeReads =
+    localTimeReads(DateTimeFormatter.ISO_TIME)
+
+  // ---
 
   /**
    * Reads for the `java.time.ZoneId` type.

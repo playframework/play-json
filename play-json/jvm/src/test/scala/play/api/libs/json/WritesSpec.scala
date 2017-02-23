@@ -7,6 +7,7 @@ import java.time.{
   Instant,
   LocalDateTime,
   LocalDate,
+  LocalTime,
   OffsetDateTime,
   ZonedDateTime,
   ZoneOffset,
@@ -126,6 +127,29 @@ class WritesSpec extends org.specs2.mutable.Specification {
     "be written with custom pattern as '03/12/2011'" in {
       CustomWrites1.writes(date("2011-12-03")).
         aka("written date") must_== JsString("03/12/2011")
+    }
+  }
+
+  "Local time" should {
+    val DefaultWrites = implicitly[Writes[LocalTime]]
+    import DefaultWrites.writes
+
+    @inline def time(input: String) = LocalTime.parse(input)
+
+    val CustomWrites1 = Writes.temporalWrites[LocalTime, String]("HH.mm.ss")
+
+    "be written as number" in {
+      Writes.LocalTimeNumberWrites.writes(
+        LocalTime ofNanoOfDay 1234567890L
+      ) aka "written time" must_== JsNumber(BigDecimal valueOf 1234567890L)
+    }
+
+    "be written with default implicit as '10:15:30'" in {
+      writes(time("10:15:30")) must_== JsString("10:15:30")
+    }
+
+    "be written with custom pattern as '10.15.30'" in {
+      CustomWrites1.writes(time("10:15:30")) must_== JsString("10.15.30")
     }
   }
 
