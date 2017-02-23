@@ -134,8 +134,6 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val DefaultWrites = implicitly[Writes[LocalTime]]
     import DefaultWrites.writes
 
-    @inline def time(input: String) = LocalTime.parse(input)
-
     val CustomWrites1 = Writes.temporalWrites[LocalTime, String]("HH.mm.ss")
 
     "be written as number" in {
@@ -145,11 +143,12 @@ class WritesSpec extends org.specs2.mutable.Specification {
     }
 
     "be written with default implicit as '10:15:30'" in {
-      writes(time("10:15:30")) must_== JsString("10:15:30")
+      writes(LocalTime.of(10, 15, 30)) must_== JsString("10:15:30")
     }
 
     "be written with custom pattern as '10.15.30'" in {
-      CustomWrites1.writes(time("10:15:30")) must_== JsString("10.15.30")
+      CustomWrites1.writes(
+        LocalTime.of(10, 15, 30)) must_== JsString("10.15.30")
     }
   }
 

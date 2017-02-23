@@ -345,8 +345,6 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     val CustomReads1 = Reads.localTimeReads("HH.mm.ss")
 
-    @inline def time(input: String) = LocalTime.parse(input)
-
     lazy val correctedReads = Reads.localTimeReads(
       DateTimeFormatter.ISO_TIME, _.drop(1)
     )
@@ -370,12 +368,12 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
 
     "be successfully read with default implicit from '10:15:30'" in {
-      reads(JsString("10:15:30")) must_== JsSuccess(time("10:15:30"))
+      reads(JsString("10:15:30")) must_== JsSuccess(LocalTime.of(10, 15, 30))
     }
 
     "be successfully read with custom pattern from '10.15.30'" in {
       CustomReads1.reads(JsString("10.15.30")).
-        aka("read time") must_== JsSuccess(time("10:15:30"))
+        aka("read time") must_== JsSuccess(LocalTime.of(10, 15, 30))
     }
 
     "not be read from invalid corrected string" >> {
@@ -395,7 +393,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
 
     "be successfully read from corrected string" >> {
-      lazy val d = time("10:15:30")
+      lazy val d = LocalTime.of(10, 15, 30)
 
       "with default implicit" in {
         correctedReads.reads(JsString("_10:15:30")) must_== JsSuccess(d)
