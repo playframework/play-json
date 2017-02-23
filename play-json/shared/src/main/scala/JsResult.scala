@@ -162,7 +162,7 @@ sealed trait JsResult[+A] { self =>
     case JsError(es) => JsError(es.map { case (p, s) => path ++ p -> s })
   }
 
-  /** Not recommanded */
+  /** Not recommended */
   def get: A
 
   def getOrElse[AA >: A](t: => AA): AA = this match {
@@ -175,12 +175,12 @@ sealed trait JsResult[+A] { self =>
     case JsError(_) => t
   }
 
-  def asOpt = this match {
+  def asOpt: Option[A] = this match {
     case JsSuccess(v, _) => Some(v)
     case JsError(_) => None
   }
 
-  def asEither = this match {
+  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], A] = this match {
     case JsSuccess(v, _) => Right(v)
     case JsError(e) => Left(e)
   }
