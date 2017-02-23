@@ -447,7 +447,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
       (n.toDouble * 1000).toLong
     } else n.toLong
 
-    FiniteDuration(millis.toLong, "ms")
+    FiniteDuration(millis, "ms")
   }
 
   /**
