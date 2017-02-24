@@ -31,7 +31,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
       temporalWrites[LocalDateTime, String]("dd/MM/yyyy, HH:mm:ss")
 
     "be written as number" in {
-      Writes.LocalDateTimeNumberWrites.writes(LocalDateTime.ofInstant(
+      Writes.LocalDateTimeEpochMilliWrites.writes(LocalDateTime.ofInstant(
         Instant.ofEpochMilli(1234567890L), ZoneOffset.UTC
       )).
         aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
@@ -78,7 +78,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
       temporalWrites[ZonedDateTime, String]("dd/MM/yyyy, HH:mm:ss")
 
     "be written as number" in {
-      Writes.ZonedDateTimeNumberWrites.writes(ZonedDateTime.ofInstant(
+      Writes.ZonedDateTimeEpochMilliWrites.writes(ZonedDateTime.ofInstant(
         Instant.ofEpochMilli(1234567890L), ZoneOffset.UTC
       )).
         aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
@@ -111,7 +111,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val CustomWrites1 = Writes.temporalWrites[LocalDate, String]("dd/MM/yyyy")
 
     "be written as number" in {
-      Writes.LocalDateNumberWrites.writes(
+      Writes.LocalDateEpochMilliWrites.writes(
         LocalDate ofEpochDay 1234567890L
       ) aka "written date" must_== JsNumber(
           BigDecimal valueOf 106666665696000000L
@@ -137,7 +137,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val CustomWrites1 = Writes.temporalWrites[LocalTime, String]("HH.mm.ss")
 
     "be written as number" in {
-      Writes.LocalTimeNumberWrites.writes(
+      Writes.LocalTimeNanoOfDayWrites.writes(
         LocalTime ofNanoOfDay 1234567890L
       ) aka "written time" must_== JsNumber(BigDecimal valueOf 1234567890L)
     }
@@ -162,7 +162,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val CustomWrites1 = Writes.temporalWrites[Instant, String](customPattern1)
 
     "be written as number" in {
-      Writes.InstantNumberWrites.writes(Instant ofEpochMilli 1234567890L).
+      Writes.InstantEpochMilliWrites.writes(Instant ofEpochMilli 1234567890L).
         aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
     }
 

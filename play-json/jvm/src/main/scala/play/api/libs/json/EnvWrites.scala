@@ -62,8 +62,7 @@ trait EnvWrites {
       def format(temporal: LocalDate): String = formatter.format(temporal)
     }
 
-    implicit def PatternDateFormatter(pattern: String): TemporalFormatter[LocalDate] =
-      DefaultDateFormatter(DateTimeFormatter.ofPattern(pattern))
+    implicit def PatternDateFormatter(pattern: String): TemporalFormatter[LocalDate] = DefaultDateFormatter(DateTimeFormatter.ofPattern(pattern))
 
     implicit def DefaultInstantFormatter(formatter: DateTimeFormatter): TemporalFormatter[Instant] = new TemporalFormatter[Instant] {
       def format(temporal: Instant): String = formatter.format(temporal)
@@ -153,6 +152,7 @@ trait EnvWrites {
 
   /**
    * Serializer for `java.time.LocalTime` as JSON number.
+   * The nano of day is written.
    *
    * {{{
    * import java.time.LocalTime
@@ -161,7 +161,7 @@ trait EnvWrites {
    * implicit val ltnWrites = Writes.LocalTimeNumberWrites
    * }}}
    */
-  val LocalTimeNumberWrites: Writes[LocalTime] = Writes[LocalTime] { t =>
+  val LocalTimeNanoOfDayWrites: Writes[LocalTime] = Writes[LocalTime] { t =>
     JsNumber(BigDecimal valueOf t.toNanoOfDay)
   }
 
@@ -173,15 +173,16 @@ trait EnvWrites {
 
   /**
    * Serializer for `java.time.LocalDateTime` as JSON number.
+   * The number of milliseconds since epoch is used.
    *
    * {{{
    * import java.time.LocalDateTime
    * import play.api.libs.json.Writes
    *
-   * implicit val ldtnWrites = Writes.LocalDateTimeNumberWrites
+   * implicit val ldtnWrites = Writes.LocalDateTimeEpochMilliWrites
    * }}}
    */
-  val LocalDateTimeNumberWrites: Writes[LocalDateTime] =
+  val LocalDateTimeEpochMilliWrites: Writes[LocalDateTime] =
     Writes[LocalDateTime] { t =>
       JsNumber(BigDecimal.valueOf(
         t.toInstant(ZoneOffset.UTC).toEpochMilli
@@ -190,15 +191,16 @@ trait EnvWrites {
 
   /**
    * Serializer for `java.time.ZonedDateTime` as JSON number.
+   * The number of milliseconds since epoch is used.
    *
    * {{{
    * import java.time.ZonedDateTime
    * import play.api.libs.json.Writes
    *
-   * implicit val zdtnWrites = Writes.ZonedDateTimeNumberWrites
+   * implicit val zdtnWrites = Writes.ZonedDateTimeEpochMilliWrites
    * }}}
    */
-  val ZonedDateTimeNumberWrites: Writes[ZonedDateTime] =
+  val ZonedDateTimeEpochMilliWrites: Writes[ZonedDateTime] =
     new Writes[ZonedDateTime] {
       def writes(t: ZonedDateTime): JsValue =
         JsNumber(BigDecimal valueOf t.toInstant.toEpochMilli)
@@ -206,22 +208,24 @@ trait EnvWrites {
 
   /**
    * Serializer for `java.time.LocalDate` as JSON number.
+   * The number of milliseconds since epoch is used.
    *
    * {{{
    * import java.time.LocalDate
    * import play.api.libs.json.Writes
    *
-   * implicit val ldnWrites = Writes.LocalDateNumberWrites
+   * implicit val ldnWrites = Writes.LocalDateEpochMilliWrites
    * }}}
    */
-  val LocalDateNumberWrites: Writes[LocalDate] = new Writes[LocalDate] {
-    def writes(t: LocalDate): JsValue = JsNumber(BigDecimal.valueOf(
+  val LocalDateEpochMilliWrites: Writes[LocalDate] = Writes[LocalDate] { t =>
+    JsNumber(BigDecimal.valueOf(
       t.atStartOfDay.toInstant(ZoneOffset.UTC).toEpochMilli
     ))
   }
 
   /**
    * Serializer for `java.time.Instant` as JSON number.
+   * The number of milliseconds since epoch is used.
    *
    * {{{
    * import java.time.Instant
@@ -230,7 +234,7 @@ trait EnvWrites {
    * implicit val inWrites = Writes.InstantNumberWrites
    * }}}
    */
-  val InstantNumberWrites: Writes[Instant] = new Writes[Instant] {
+  val InstantEpochMilliWrites: Writes[Instant] = new Writes[Instant] {
     def writes(t: Instant): JsValue =
       JsNumber(BigDecimal valueOf t.toEpochMilli)
   }

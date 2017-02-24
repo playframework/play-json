@@ -284,8 +284,8 @@ trait EnvReads {
   /**
    * Reads for the `java.time.OffsetDateTime` type.
    *
-   * Note: it is intentionally not supported to read an OffsetDateTime from a
-   * number.
+   * Note: it is intentionally not supported to read an OffsetDateTime 
+   * from a number.
    *
    * @tparam T the type of argument to instantiate date/time parser
    * @param parsing The argument to instantiate date/time parser. Actually either a pattern (string) or a formatter (`java.time.format.DateTimeFormatter`)
