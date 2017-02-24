@@ -29,8 +29,12 @@ trait Reads[A] { self =>
    * @param f the function applied on the result of the current instance,
    * if successful
    */
-  def map[B](f: A => B): Reads[B] =
-    Reads[B] { json => self.reads(json).map(f) }
+  def map[B](f: A => B): Reads[B] = Reads[B] {
+    self.reads(_) match {
+      case JsSuccess(a, _) => JsSuccess(f(a))
+      case error @ JsError(_) => error
+    }
+  }
 
   def flatMap[B](f: A => Reads[B]): Reads[B] = Reads[B] { json =>
     // Do not flatMap result to avoid repath
@@ -440,35 +444,44 @@ trait DefaultReads extends LowPriorityDefaultReads {
   implicit def ArrayReads[T: Reads: ClassTag]: Reads[Array[T]] =
     Reads[Array[T]] { _.validate[List[T]].map(_.toArray) }
 
-  // If the number is decimal, considering it's /1000 of millis,
-  // otherwise considering it's directly in millis
-  private def numberDuration(n: BigDecimal): FiniteDuration = {
-    val millis = if (!n.ulp.isWhole) {
-      (n.toDouble * 1000).toLong
-    } else n.toLong
+  private def finiteDurationNumberReads(esuffix: String) =
+    Reads[FiniteDuration] {
+      case JsNumber(n) => JsSuccess {
+        val millis = if (!n.ulp.isWhole) {
+          (n.toDouble * 1000).toLong
+        } else n.toLong
 
-    FiniteDuration(millis, "ms")
-  }
+        FiniteDuration(millis, "ms")
+      }
+
+      case j => JsError(s"error.expected.$esuffix")
+    }
+
+  /**
+   * If the number is decimal, considering it's /1000 of milliseconds,
+   * otherwise considering it's directly in milliseconds.
+   */
+  val finiteDurationNumberReads: Reads[FiniteDuration] =
+    finiteDurationNumberReads("finiteDuration")
 
   /**
    * Deserializer for Scala FiniteDuration
    */
-  implicit val finiteDurationWrites: Reads[FiniteDuration] =
+  implicit val finiteDurationReads: Reads[FiniteDuration] =
     Reads[FiniteDuration] {
-      case JsNumber(n) => JsSuccess(numberDuration(n))
       case JsString("0") => JsSuccess(Duration.Zero)
-      case JsString("Undefined") => JsError("error.invalid.finiteDuration")
+      case JsString("Undefined") => JsError(s"error.invalid.finiteDuration")
       case JsString(input) => try {
         val d = Duration(input)
 
         if (d.isFinite) JsSuccess(FiniteDuration(d.length, d.unit))
         else JsError("error.invalid.finiteDuration")
       } catch {
-        case _: Throwable => JsError("error.invalid.duration")
+        case _: Throwable => JsError("error.invalid.finiteDuration")
       }
 
-      case _ => JsError("error.expected.duration")
-    }
+      case _ => JsError("error.expected.finiteDuration")
+    }.orElse(finiteDurationNumberReads("finiteDuration"))
 
   /**
    * Deserializer for Scala Duration
@@ -479,7 +492,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
 
     case JsString("MinusInf") | JsString("-Inf") => JsSuccess(Duration.MinusInf)
     case JsString("0") => JsSuccess(Duration.Zero)
-    case JsNumber(n) => JsSuccess(numberDuration(n))
     case JsString("Undefined") => JsSuccess(Duration.Undefined)
     case JsString(finite) => try {
       JsSuccess(Duration(finite))
@@ -488,7 +500,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
     }
 
     case _ => JsError("error.expected.duration")
-  }
+  }.orElse(finiteDurationNumberReads("duration").map(identity[Duration]))
 
   /**
    * Deserializer for java.util.UUID

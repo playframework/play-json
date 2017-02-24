@@ -74,12 +74,38 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
         JsNumber(BigDecimal(0D)) -> JsSuccess(Duration.Zero),
         JsString("1 second") -> JsSuccess(FiniteDuration(1L, "second")),
         JsString("5 seconds") -> JsSuccess(Duration("5seconds")),
-        JsString("foo") -> JsError("error.invalid.duration"),
-        JsNumber(BigDecimal(1.23D)) -> JsSuccess(Duration("1230ms")),
-        JsNull -> JsError("error.expected.duration")
+        JsNumber(BigDecimal(1.23D)) -> JsSuccess(Duration("1230ms"))
       )) { (json, expected) =>
         Json.fromJson[Duration](json) mustEqual expected
-        Json.fromJson[FiniteDuration](json) mustEqual (expected)
+        Json.fromJson[FiniteDuration](json) mustEqual expected
+      }
+    }
+
+    "fail for invalid input as Duration" in {
+      forAll(Table[JsValue]("json", JsString("foo"), JsNull)) { json =>
+        Json.fromJson[Duration](json) mustEqual (
+          JsError("error.expected.duration"))
+      }
+    }
+
+    "fail for invalid input as FiniteDuration" in {
+      forAll(Table[JsValue]("json", JsString("foo"), JsNull)) { json =>
+        Json.fromJson[FiniteDuration](json) mustEqual (
+          JsError("error.expected.finiteDuration"))
+      }
+    }
+
+    "be successful for number as FiniteDuration" in {
+      implicit val r = Reads.finiteDurationNumberReads
+
+      forAll(Table(
+        "json" -> "expected",
+        JsString("0") -> JsError("error.expected.finiteDuration"),
+        JsNumber(BigDecimal(0D)) -> JsSuccess(Duration.Zero),
+        JsNumber(BigDecimal(1.23D)) -> JsSuccess(Duration("1230ms")),
+        JsNull -> JsError("error.expected.finiteDuration")
+      )) { (json, expected) =>
+        Json.fromJson[FiniteDuration](json) mustEqual expected
       }
     }
 
@@ -95,7 +121,7 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
       Json.fromJson[Duration](JsString(repr)) mustEqual JsSuccess(duration)
 
       Json.fromJson[FiniteDuration](JsString(repr)) mustEqual (
-        JsError("error.invalid.finiteDuration")
+        JsError("error.expected.finiteDuration")
       )
     }
   }
