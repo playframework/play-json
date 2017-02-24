@@ -5,7 +5,7 @@ package play.api.libs.json
 
 import play.api.libs.functional.ContravariantFunctor
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.annotation.implicitNotFound
 import scala.collection._
 import scala.reflect.ClassTag
@@ -256,6 +256,14 @@ trait DefaultWrites extends LowPriorityWrites {
 
     case finite => JsString(finite.toString)
   }
+
+  /**
+   * NumberSerializer for Scala FiniteDuration
+   */
+  val finiteDurationNumberWrites: Writes[FiniteDuration] =
+    Writes[FiniteDuration] { finite =>
+      JsNumber(BigDecimal(finite.toMillis))
+    }
 
   /**
    * Serializer for java.util.UUID

@@ -458,6 +458,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
     }
 
   /**
+   * Number deserializer for Scala FiniteDuration:
    * If the number is decimal, considering it's /1000 of milliseconds,
    * otherwise considering it's directly in milliseconds.
    */
