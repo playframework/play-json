@@ -3,6 +3,8 @@
  */
 package play.api.libs.json
 
+import java.util.concurrent.TimeUnit
+
 import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.annotation.implicitNotFound
 
@@ -94,29 +96,31 @@ object Reads extends ConstraintReads with PathReads with DefaultReads {
 
     def map[A, B](m: Reads[A], f: A => B): Reads[B] = m.map(f)
 
-    def apply[A, B](mf: Reads[A => B], ma: Reads[A]): Reads[B] = new Reads[B] { def reads(js: JsValue) = applicativeJsResult(mf.reads(js), ma.reads(js)) }
+    def apply[A, B](mf: Reads[A => B], ma: Reads[A]): Reads[B] =
+      Reads[B] { js => applicativeJsResult(mf.reads(js), ma.reads(js)) }
 
   }
 
   implicit def alternative(implicit a: Applicative[Reads]): Alternative[Reads] = new Alternative[Reads] {
     val app = a
-    def |[A, B >: A](alt1: Reads[A], alt2: Reads[B]): Reads[B] = new Reads[B] {
-      def reads(js: JsValue) = alt1.reads(js) match {
-        case r @ JsSuccess(_, _) => r
-        case JsError(es1) => alt2.reads(js) match {
-          case r2 @ JsSuccess(_, _) => r2
-          case JsError(es2) => JsError(JsError.merge(es1, es2))
+    def |[A, B >: A](alt1: Reads[A], alt2: Reads[B]): Reads[B] =
+      Reads[B] { js =>
+        alt1.reads(js) match {
+          case r @ JsSuccess(_, _) => r
+          case JsError(es1) => alt2.reads(js) match {
+            case r2 @ JsSuccess(_, _) => r2
+            case JsError(es2) => JsError(JsError.merge(es1, es2))
+          }
         }
       }
-    }
 
-    def empty: Reads[Nothing] =
-      new Reads[Nothing] { def reads(js: JsValue) = JsError(Seq()) }
-
+    def empty: Reads[Nothing] = Reads[Nothing] { _ => JsError(Seq()) }
   }
 
-  def apply[A](f: JsValue => JsResult[A]): Reads[A] =
-    new Reads[A] { def reads(json: JsValue) = f(json) }
+  /** Functional factory */
+  def apply[A](f: JsValue => JsResult[A]): Reads[A] = new Reads[A] {
+    def reads(json: JsValue) = f(json)
+  }
 
   implicit def functorReads(implicit a: Applicative[Reads]) = new Functor[Reads] {
     def fmap[A, B](reads: Reads[A], f: A => B): Reads[B] = a.map(reads, f)
@@ -150,28 +154,28 @@ trait LowPriorityDefaultReads extends EnvReads {
   /**
    * Generic deserializer for collections types.
    */
-  implicit def traversableReads[F[_], A](implicit bf: generic.CanBuildFrom[F[_], A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
-    def reads(json: JsValue) = json match {
-      case JsArray(ts) =>
+  implicit def traversableReads[F[_], A](implicit bf: generic.CanBuildFrom[F[_], A, F[A]], ra: Reads[A]) = Reads[F[A]] {
+    case JsArray(ts) => {
+      type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+      def locate(e: Errors, idx: Int) = e.map { case (p, valerr) => (JsPath(idx)) ++ p -> valerr }
 
-        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
-        def locate(e: Errors, idx: Int) = e.map { case (p, valerr) => (JsPath(idx)) ++ p -> valerr }
-
-        ts.iterator.zipWithIndex.foldLeft(Right(Vector.empty): Either[Errors, Vector[A]]) {
-          case (acc, (elt, idx)) => (acc, ra.reads(elt)) match {
-            case (Right(vs), JsSuccess(v, _)) => Right(vs :+ v)
-            case (Right(_), JsError(e)) => Left(locate(e, idx))
-            case (Left(e), _: JsSuccess[_]) => Left(e)
-            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, idx))
-          }
-        }.fold(JsError.apply, { res =>
-          val builder = bf()
-          builder.sizeHint(res)
-          builder ++= res
-          JsSuccess(builder.result())
-        })
-      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsarray"))))
+      ts.iterator.zipWithIndex.foldLeft(Right(Vector.empty): Either[Errors, Vector[A]]) {
+        case (acc, (elt, idx)) => (acc, ra.reads(elt)) match {
+          case (Right(vs), JsSuccess(v, _)) => Right(vs :+ v)
+          case (Right(_), JsError(e)) => Left(locate(e, idx))
+          case (Left(e), _: JsSuccess[_]) => Left(e)
+          case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, idx))
+        }
+      }.fold(JsError.apply, { res =>
+        val builder = bf()
+        builder.sizeHint(res)
+        builder ++= res
+        JsSuccess(builder.result())
+      })
     }
+
+    case _ => JsError(Seq(JsPath -> Seq(
+      JsonValidationError("error.expected.jsarray"))))
   }
 }
 
@@ -290,16 +294,16 @@ trait DefaultReads extends LowPriorityDefaultReads {
    *
    * @param enum a `scala.Enumeration`.
    */
-  def enumNameReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
-    def reads(json: JsValue) = json match {
-      case JsString(str) =>
-        enum.values
-          .find(_.toString == str)
-          .map(JsSuccess(_))
-          .getOrElse(JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.validenumvalue")))))
-      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.enumstring"))))
+  def enumNameReads[E <: Enumeration](enum: E): Reads[E#Value] =
+    Reads[E#Value] {
+      case JsString(str) => enum.values
+        .find(_.toString == str)
+        .map(JsSuccess(_))
+        .getOrElse(JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.validenumvalue")))))
+
+      case _ => JsError(Seq(JsPath -> Seq(
+        JsonValidationError("error.expected.enumstring"))))
     }
-  }
 
   /**
    * Deserializer for Boolean types.
@@ -417,16 +421,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
     case _ => JsError("error.expected.jsobject")
   }
 
-  /* TODO: Remove
-  def mapReads[K, V]()(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
-    case JsObject(fields) =>
-      mapObj[K, V](key, fields.toList, Map.newBuilder)
-
-    case _ => JsError(Seq(JsPath -> Seq(
-      JsonValidationError("error.expected.jsobject"))))
-  }
-   */
-
   /** Deserializer for a `Map[String,V]` */
   implicit def mapReads[V](implicit fmtv: Reads[V]): Reads[Map[String, V]] =
     mapReads[String, V](JsSuccess(_))
@@ -446,13 +440,8 @@ trait DefaultReads extends LowPriorityDefaultReads {
 
   private def finiteDurationNumberReads(esuffix: String) =
     Reads[FiniteDuration] {
-      case JsNumber(n) => JsSuccess {
-        val millis = if (!n.ulp.isWhole) {
-          (n.toDouble * 1000).toLong
-        } else n.toLong
-
-        FiniteDuration(millis, "ms")
-      }
+      case JsNumber(n) if n.isValidLong =>
+        JsSuccess(FiniteDuration(n.toLong, TimeUnit.MILLISECONDS))
 
       case j => JsError(s"error.expected.$esuffix")
     }

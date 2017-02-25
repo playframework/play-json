@@ -73,10 +73,9 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
         JsNumber(BigDecimal(0D)) -> JsSuccess(Duration.Zero),
         JsString("1 second") -> JsSuccess(FiniteDuration(1L, "second")),
         JsString("5 seconds") -> JsSuccess(Duration("5seconds")),
-        JsNumber(BigDecimal(1.23D)) -> JsSuccess(Duration("1230ms"))
+        JsNumber(BigDecimal(1.23D)) -> JsError("error.expected.duration")
       )) { (json, expected) =>
         Json.fromJson[Duration](json) mustEqual expected
-        Json.fromJson[FiniteDuration](json) mustEqual expected
       }
     }
 
@@ -88,7 +87,12 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
     }
 
     "fail for invalid input as FiniteDuration" in {
-      forAll(Table[JsValue]("json", JsString("foo"), JsNull)) { json =>
+      forAll(Table[JsValue](
+        "json",
+        JsString("foo"),
+        JsNull,
+        JsNumber(BigDecimal(1.23D))
+      )) { json =>
         Json.fromJson[FiniteDuration](json) mustEqual (
           JsError("error.expected.finiteDuration"))
       }
@@ -99,9 +103,9 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
 
       forAll(Table(
         "json" -> "expected",
-        JsString("0s") -> JsError("error.expected.finiteDuration")
+        JsString("0s") -> JsError("error.expected.finiteDuration"),
         JsNumber(BigDecimal(0D)) -> JsSuccess(Duration.Zero),
-        JsNumber(BigDecimal(1.23D)) -> JsSuccess(Duration("1230ms")),
+        JsNumber(BigDecimal(1.23D)) -> JsError("error.expected.finiteDuration"),
         JsNull -> JsError("error.expected.finiteDuration")
       )) { (json, expected) =>
         Json.fromJson[FiniteDuration](json) mustEqual expected

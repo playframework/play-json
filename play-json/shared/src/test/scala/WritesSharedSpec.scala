@@ -27,18 +27,19 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
 
     "be successful for finite Duration" in forAll(Table(
       "duration" -> "json",
-      Duration.Zero -> "0",
-      FiniteDuration(1L, "second") -> "1 second",
-      Duration("5seconds") -> "5 seconds")) { (duration, json) =>
-      Json.toJson(duration) mustEqual JsString(json)
+      Duration.Zero -> JsNumber(BigDecimal(0D)),
+      FiniteDuration(1L, "second") -> JsString("1 second"),
+      Duration("5seconds") -> JsString("5 seconds"))) { (duration, json) =>
+      Json.toJson(duration) mustEqual json
     }
 
-    "be successful for FiniteDuration" in forAll(Table(
+    "be successful as millis for FiniteDuration" in forAll(Table(
       "duration" -> "json",
-      Duration.Zero -> "0",
-      FiniteDuration(1L, "second") -> "1 second")) { (duration, json) =>
+      Duration.Zero -> 0L,
+      FiniteDuration(1L, "second") -> 1000L
+    )) { (duration, millis) =>
       Json.toJson(duration)(Writes.finiteDurationNumberWrites) mustEqual (
-        JsNumber(duration.toMillis))
+        JsNumber(BigDecimal(millis)))
     }
 
     "be successful for infinite Duration" in forAll(Table(

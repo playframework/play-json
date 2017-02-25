@@ -99,6 +99,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites {
         Writes[B](b => wa.writes(f(b)))
     }
 
+  /** Functional factory */
   def apply[A](f: A => JsValue): Writes[A] = new Writes[A] {
     def writes(a: A): JsValue = f(a)
   }
@@ -213,20 +214,20 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for Option.
    */
-  implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] = new Writes[Option[T]] {
-    def writes(o: Option[T]) = o match {
+  implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] =
+    Writes[Option[T]] {
       case Some(value) => fmt.writes(value)
-      case None => JsNull
+      case _ => JsNull
     }
-  }
 
   /**
    * Serializer for java.util.Date
    * @param pattern the pattern used by SimpleDateFormat
    */
-  def dateWrites(pattern: String): Writes[java.util.Date] = new Writes[java.util.Date] {
-    def writes(d: java.util.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
-  }
+  def dateWrites(pattern: String): Writes[java.util.Date] =
+    Writes[java.util.Date] { d =>
+      JsString(new java.text.SimpleDateFormat(pattern).format(d))
+    }
 
   /**
    * Default Serializer java.util.Date -> JsNumber(d.getTime (nb of ms))
@@ -239,9 +240,10 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for java.sql.Date
    * @param pattern the pattern used by SimpleDateFormat
    */
-  def sqlDateWrites(pattern: String): Writes[java.sql.Date] = new Writes[java.sql.Date] {
-    def writes(d: java.sql.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
-  }
+  def sqlDateWrites(pattern: String): Writes[java.sql.Date] =
+    Writes[java.sql.Date] { d =>
+      JsString(new java.text.SimpleDateFormat(pattern).format(d))
+    }
 
   /**
    * Serializer for Scala Duration
