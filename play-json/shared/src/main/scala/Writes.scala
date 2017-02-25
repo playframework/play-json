@@ -249,7 +249,7 @@ trait DefaultWrites extends LowPriorityWrites {
   implicit val durationWrites: Writes[Duration] = Writes[Duration] {
     case Duration.Inf => JsString("Inf")
     case Duration.MinusInf => JsString("MinusInf")
-    case Duration.Zero => JsString("0")
+    case Duration.Zero => JsNumber(0)
 
     case undefined if (undefined eq Duration.Undefined) =>
       JsString("Undefined")
