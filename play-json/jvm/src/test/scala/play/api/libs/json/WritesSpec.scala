@@ -5,6 +5,8 @@ package play.api.libs.json
 
 import java.time.{
   Instant,
+  Duration => JDuration,
+  Period,
   LocalDateTime,
   LocalDate,
   LocalTime,
@@ -13,6 +15,7 @@ import java.time.{
   ZoneOffset,
   ZoneId
 }
+import java.time.temporal.ChronoUnit
 import java.time.format.DateTimeFormatter
 
 import org.specs2.specification.core.Fragment
@@ -177,7 +180,6 @@ class WritesSpec extends org.specs2.mutable.Specification {
   }
 
   "ZoneId" should {
-
     val DefaultWrites = implicitly[Writes[ZoneId]]
     import DefaultWrites.writes
 
@@ -254,6 +256,34 @@ class WritesSpec extends org.specs2.mutable.Specification {
       case (locale, tag) =>
         s"be ${locale.toLanguageTag} and be written as JSON string (tag)" in {
           Json.toJson(locale) must_== JsString(tag)
+        }
+    }
+  }
+
+  "Java Duration" should {
+    "be written as milliseconds" in {
+      Json.toJson(JDuration.of(1L, ChronoUnit.SECONDS))(
+        Writes.javaDurationMillisWrites) mustEqual JsNumber(BigDecimal(1000L))
+    }
+
+    "be written as ISO string" in {
+      Json.toJson(JDuration.of(2L, ChronoUnit.DAYS)) mustEqual JsString("PT48H")
+    }
+  }
+
+  "Java Period" should {
+    val twoDays = Period.ofDays(2)
+    val period1 = Period.ofWeeks(3).minus(twoDays)
+    val period2 = Period.ofMonths(4).plus(period1)
+
+    Fragment.foreach[(Period, String)](Seq(
+      twoDays -> "P2D",
+      period1 -> "P19D",
+      period2 -> "P4M19D"
+    )) {
+      case (period, repr) =>
+        s"be written as ISO string '$repr'" in {
+          Json.toJson(period) mustEqual JsString(repr)
         }
     }
   }

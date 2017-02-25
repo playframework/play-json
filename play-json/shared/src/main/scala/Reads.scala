@@ -29,8 +29,7 @@ trait Reads[A] { self =>
    * @param f the function applied on the result of the current instance,
    * if successful
    */
-  def map[B](f: A => B): Reads[B] =
-    Reads[B] { json => self.reads(json).map(f) }
+  def map[B](f: A => B): Reads[B] = Reads[B] { self.reads(_).map(f) }
 
   def flatMap[B](f: A => Reads[B]): Reads[B] = Reads[B] { json =>
     // Do not flatMap result to avoid repath
@@ -40,8 +39,7 @@ trait Reads[A] { self =>
     }
   }
 
-  def filter(f: A => Boolean): Reads[A] =
-    Reads[A] { json => self.reads(json).filter(f) }
+  def filter(f: A => Boolean): Reads[A] = Reads[A] { self.reads(_).filter(f) }
 
   def filter(error: JsonValidationError)(f: A => Boolean): Reads[A] =
     Reads[A] { json => self.reads(json).filter(JsError(error))(f) }
