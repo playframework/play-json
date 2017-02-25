@@ -262,7 +262,7 @@ trait EnvReads {
    * @see [[DefaultWrites.TemporalFormatter]]
    *
    * {{{
-   * import play.api.libs.json.Java8Reads.localDateTimeReads
+   * import play.api.libs.json.Reads.localDateTimeReads
    *
    * val customReads1 = localDateTimeReads("dd/MM/yyyy, HH:mm:ss")
    * val customReads2 = localDateTimeReads(DateTimeFormatter.ISO_DATE_TIME)
@@ -284,7 +284,7 @@ trait EnvReads {
   /**
    * Reads for the `java.time.OffsetDateTime` type.
    *
-   * Note: it is intentionally not supported to read an OffsetDateTime 
+   * Note: it is intentionally not supported to read an OffsetDateTime
    * from a number.
    *
    * @tparam T the type of argument to instantiate date/time parser
@@ -330,7 +330,7 @@ trait EnvReads {
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
    * {{{
-   * import play.api.libs.json.Java8Reads.zonedDateTimeReads
+   * import play.api.libs.json.Reads.zonedDateTimeReads
    *
    * val customReads1 = zonedDateTimeReads("dd/MM/yyyy, HH:mm:ss")
    * val customReads2 = zonedDateTimeReads(DateTimeFormatter.ISO_DATE_TIME)
@@ -358,7 +358,7 @@ trait EnvReads {
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
    * {{{
-   * import play.api.libs.json.Java8Reads.localDateReads
+   * import play.api.libs.json.Reads.localDateReads
    *
    * val customReads1 = localDateReads("dd/MM/yyyy, HH:mm:ss")
    * val customReads2 = localDateReads(DateTimeFormatter.ISO_DATE)
@@ -399,7 +399,7 @@ trait EnvReads {
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
    * {{{
-   * import play.api.libs.json.Java8Reads.instantReads
+   * import play.api.libs.json.Reads.instantReads
    *
    * val customReads1 = instantReads("dd/MM/yyyy, HH:mm:ss")
    * val customReads2 = instantReads(DateTimeFormatter.ISO_INSTANT)
@@ -426,7 +426,7 @@ trait EnvReads {
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
    * {{{
-   * import play.api.libs.json.Java8Reads.localTimeReads
+   * import play.api.libs.json.Reads.localTimeReads
    *
    * val customReads1 = localTimeReads("dd/MM/yyyy, HH:mm:ss")
    * val customReads2 = localTimeReads(DateTimeFormatter.ISO_TIME)
