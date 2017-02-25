@@ -470,7 +470,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit val finiteDurationReads: Reads[FiniteDuration] =
     Reads[FiniteDuration] {
-      case JsString("0") => JsSuccess(Duration.Zero)
       case JsString("Undefined") => JsError(s"error.invalid.finiteDuration")
       case JsString(input) => try {
         val d = Duration(input)
