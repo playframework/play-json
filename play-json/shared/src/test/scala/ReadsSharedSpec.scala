@@ -70,7 +70,6 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
     "be successful for FiniteDuration" in {
       forAll(Table(
         "json" -> "expected",
-        JsString("0") -> JsSuccess(Duration.Zero),
         JsNumber(BigDecimal(0D)) -> JsSuccess(Duration.Zero),
         JsString("1 second") -> JsSuccess(FiniteDuration(1L, "second")),
         JsString("5 seconds") -> JsSuccess(Duration("5seconds")),
@@ -100,7 +99,7 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
 
       forAll(Table(
         "json" -> "expected",
-        JsString("0") -> JsError("error.expected.finiteDuration"),
+        JsString("0s") -> JsError("error.expected.finiteDuration")
         JsNumber(BigDecimal(0D)) -> JsSuccess(Duration.Zero),
         JsNumber(BigDecimal(1.23D)) -> JsSuccess(Duration("1230ms")),
         JsNull -> JsError("error.expected.finiteDuration")
