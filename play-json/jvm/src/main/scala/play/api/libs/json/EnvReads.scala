@@ -3,6 +3,8 @@
  */
 package play.api.libs.json
 
+import java.util.Locale
+
 import java.time.{
   Clock,
   DateTimeException,
@@ -469,6 +471,61 @@ trait EnvReads {
     }
 
     case _ => JsError(JsonValidationError("error.expected.jsstring"))
+  }
+
+  /** Deserializer for a `Locale` from a IETF BCP 47 string representation */
+  implicit val localeReads: Reads[Locale] =
+    Reads[Locale] { _.validate[String].map(Locale.forLanguageTag(_)) }
+
+  /** Deserializer for a `Locale` from an object representation */
+  val localeObjectReads: Reads[Locale] = Reads[Locale] { json =>
+    def base: JsResult[Locale] = (for {
+      l <- (json \ "language").validate[String]
+      c <- (json \ "country").validateOpt[String]
+      v <- (json \ "variant").validateOpt[String]
+    } yield (l, c, v)).flatMap {
+      case (l, Some(country), Some(variant)) =>
+        JsSuccess(new Locale(l, country, variant))
+
+      case (l, Some(country), _) =>
+        JsSuccess(new Locale(l, country))
+
+      case (l, _, Some(_)) =>
+        JsError("error.invalid.locale")
+
+      case (l, _, _) => JsSuccess(new Locale(l))
+    }
+
+    base.flatMap { baseLocale =>
+      for {
+        ats <- (json \ "attributes").validateOpt[Set[String]]
+        kws <- (json \ "keywords").validateOpt[Map[String, String]]
+        spt <- (json \ "script").validateOpt[String]
+        ext <- (json \ "extension").validateOpt(
+          Reads.mapReads[Char, String] { s =>
+            if (s.size == 1) JsSuccess(s.charAt(0))
+            else JsError("error.invalid.character")
+          })
+      } yield {
+        val builder = new Locale.Builder()
+
+        builder.setLocale(baseLocale)
+
+        ats.foreach(_.foreach { builder.addUnicodeLocaleAttribute(_) })
+
+        kws.foreach(_.foreach {
+          case (key, typ) => builder.setUnicodeLocaleKeyword(key, typ)
+        })
+
+        ext.foreach(_.foreach {
+          case (key, value) => builder.setExtension(key, value)
+        })
+
+        spt.foreach { builder.setScript(_) }
+
+        builder.build()
+      }
+    }
   }
 
   // TODO: Move to a separate module + deprecation

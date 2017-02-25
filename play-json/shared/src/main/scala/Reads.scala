@@ -4,7 +4,11 @@
 package play.api.libs.json
 
 import scala.annotation.implicitNotFound
+
 import scala.collection._
+import scala.collection.immutable.Map
+import scala.collection.mutable.Builder
+
 import scala.language.higherKinds
 
 import reflect.ClassTag
@@ -370,30 +374,38 @@ trait DefaultReads extends LowPriorityDefaultReads {
     }
   }
 
-  /**
-   * Deserializer for Map[String,V] types.
-   */
-  implicit def mapReads[V](implicit fmtv: Reads[V]): Reads[collection.immutable.Map[String, V]] = new Reads[collection.immutable.Map[String, V]] {
-    def reads(json: JsValue) = json match {
-      case JsObject(m) => {
+  @annotation.tailrec
+  private def mapObj[K, V](key: String => JsResult[K], in: List[(String, JsValue)], out: Builder[(K, V), Map[K, V]])(implicit vr: Reads[V]): JsResult[Map[K, V]] = in match {
+    case (k, v) :: entries => key(k).flatMap(
+      vk => v.validate[V].map(vk -> _)) match {
+        case JsError(details) => JsError(details)
 
-        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
-        def locate(e: Errors, key: String) = e.map {
-          case (p, valerr) => (JsPath \ key) ++ p -> valerr
-        }
-
-        m.foldLeft(Right(Map.empty): Either[Errors, Map[String, V]]) {
-          case (acc, (key, value)) => (acc, fmtv.reads(value)) match {
-            case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
-            case (Right(_), JsError(e)) => Left(locate(e, key))
-            case (Left(e), _: JsSuccess[_]) => Left(e)
-            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
-          }
-        }.fold(JsError.apply, res => JsSuccess(res.toMap))
+        case JsSuccess((vk, value), _) =>
+          mapObj[K, V](key, entries, out += (vk -> value))
       }
-      case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsobject"))))
-    }
+
+    case _ => JsSuccess(out.result())
   }
+
+  /** Deserializer for a `Map[K,V]` */
+  def mapReads[K, V](key: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
+    case JsObject(fields) =>
+      mapObj[K, V](key, fields.toList, Map.newBuilder)
+
+    case _ => JsError(Seq(JsPath -> Seq(
+      JsonValidationError("error.expected.jsobject"))))
+  }
+
+  /** Deserializer for a `Map[String,V]` */
+  implicit def mapReads[V](implicit fmtv: Reads[V]): Reads[Map[String, V]] =
+    mapReads[String, V](JsSuccess(_))
+
+  /** Deserializer for a `Map[Char, V]` */
+  def charMapReads[V](implicit vr: Reads[V]): Reads[Map[Char, V]] =
+    mapReads[Char, V] { str =>
+      if (str.size == 1) JsSuccess(str charAt 0)
+      else JsError("error.invalid.character")
+    }
 
   /**
    * Deserializer for Array[T] types.

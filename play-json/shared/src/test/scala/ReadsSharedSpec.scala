@@ -3,6 +3,8 @@
  */
 package play.api.libs.json
 
+import java.util.Locale
+
 import org.scalatest._
 
 class ReadsSharedSpec extends WordSpec with MustMatchers {
@@ -27,6 +29,19 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
             JsonValidationError("error.expected.jsnumber")
           )))))
       }
+    }
+  }
+
+  "Map" should {
+    "be successfully read with string keys" in {
+      Json.fromJson[Map[String, Int]](
+        Json.obj("foo" -> 1, "bar" -> 2)) mustEqual (
+          JsSuccess(Map("foo" -> 1, "bar" -> 2)))
+    }
+
+    "be successfully read with character keys" in {
+      Json.fromJson[Map[Char, Int]](Json.obj("a" -> 1, "b" -> 2))(
+        Reads.charMapReads) mustEqual JsSuccess(Map('a' -> 1, 'b' -> 2))
     }
   }
 
