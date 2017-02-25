@@ -492,7 +492,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
       JsSuccess(Duration.Inf)
 
     case JsString("MinusInf") | JsString("-Inf") => JsSuccess(Duration.MinusInf)
-    case JsString("0") => JsSuccess(Duration.Zero)
     case JsString("Undefined") => JsSuccess(Duration.Undefined)
     case JsString(finite) => try {
       JsSuccess(Duration(finite))
