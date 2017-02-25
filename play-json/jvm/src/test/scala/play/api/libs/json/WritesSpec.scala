@@ -7,6 +7,7 @@ import java.time.{
   Instant,
   LocalDateTime,
   LocalDate,
+  LocalTime,
   OffsetDateTime,
   ZonedDateTime,
   ZoneOffset,
@@ -30,7 +31,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
       temporalWrites[LocalDateTime, String]("dd/MM/yyyy, HH:mm:ss")
 
     "be written as number" in {
-      Writes.LocalDateTimeNumberWrites.writes(LocalDateTime.ofInstant(
+      Writes.LocalDateTimeEpochMilliWrites.writes(LocalDateTime.ofInstant(
         Instant.ofEpochMilli(1234567890L), ZoneOffset.UTC
       )).
         aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
@@ -77,7 +78,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
       temporalWrites[ZonedDateTime, String]("dd/MM/yyyy, HH:mm:ss")
 
     "be written as number" in {
-      Writes.ZonedDateTimeNumberWrites.writes(ZonedDateTime.ofInstant(
+      Writes.ZonedDateTimeEpochMilliWrites.writes(ZonedDateTime.ofInstant(
         Instant.ofEpochMilli(1234567890L), ZoneOffset.UTC
       )).
         aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
@@ -110,7 +111,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val CustomWrites1 = Writes.temporalWrites[LocalDate, String]("dd/MM/yyyy")
 
     "be written as number" in {
-      Writes.LocalDateNumberWrites.writes(
+      Writes.LocalDateEpochMilliWrites.writes(
         LocalDate ofEpochDay 1234567890L
       ) aka "written date" must_== JsNumber(
           BigDecimal valueOf 106666665696000000L
@@ -129,6 +130,28 @@ class WritesSpec extends org.specs2.mutable.Specification {
     }
   }
 
+  "Local time" should {
+    val DefaultWrites = implicitly[Writes[LocalTime]]
+    import DefaultWrites.writes
+
+    val CustomWrites1 = Writes.temporalWrites[LocalTime, String]("HH.mm.ss")
+
+    "be written as number" in {
+      Writes.LocalTimeNanoOfDayWrites.writes(
+        LocalTime ofNanoOfDay 1234567890L
+      ) aka "written time" must_== JsNumber(BigDecimal valueOf 1234567890L)
+    }
+
+    "be written with default implicit as '10:15:30'" in {
+      writes(LocalTime.of(10, 15, 30)) must_== JsString("10:15:30")
+    }
+
+    "be written with custom pattern as '10.15.30'" in {
+      CustomWrites1.writes(
+        LocalTime.of(10, 15, 30)) must_== JsString("10.15.30")
+    }
+  }
+
   "Instant" should {
     val DefaultWrites = implicitly[Writes[Instant]]
     import DefaultWrites.writes
@@ -139,7 +162,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val CustomWrites1 = Writes.temporalWrites[Instant, String](customPattern1)
 
     "be written as number" in {
-      Writes.InstantNumberWrites.writes(Instant ofEpochMilli 1234567890L).
+      Writes.InstantEpochMilliWrites.writes(Instant ofEpochMilli 1234567890L).
         aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
     }
 

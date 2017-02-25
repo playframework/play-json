@@ -9,6 +9,7 @@ import java.time.{
   Clock,
   Instant,
   LocalDate,
+  LocalTime,
   LocalDateTime,
   OffsetDateTime,
   ZoneId,
@@ -334,6 +335,72 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with custom formatter" in {
         CustomReads2.reads(JsString("# 03/12/2011")).
           aka("read date") must_== JsSuccess(d)
+      }
+    }
+  }
+
+  "Local time" should {
+    val DefaultReads = implicitly[Reads[LocalTime]]
+    import DefaultReads.reads
+
+    val CustomReads1 = Reads.localTimeReads("HH.mm.ss")
+
+    lazy val correctedReads = Reads.localTimeReads(
+      DateTimeFormatter.ISO_TIME, _.drop(1)
+    )
+
+    val CustomReads2 = Reads.localTimeReads(
+      DateTimeFormatter.ofPattern("HH.mm.ss"), _.drop(2)
+    )
+
+    "be successfully read from number" in {
+      val d = LocalTime.parse("10:15")
+
+      reads(JsNumber(BigDecimal valueOf d.toNanoOfDay)).
+        aka("read time") must_== JsSuccess(d)
+    }
+
+    "not be read from invalid string" in {
+      reads(JsString("invalid")) aka "read time" must beLike {
+        case JsError((_, JsonValidationError(
+          "error.expected.date.isoformat" :: Nil, _) :: Nil) :: Nil) => ok
+      }
+    }
+
+    "be successfully read with default implicit from '10:15:30'" in {
+      reads(JsString("10:15:30")) must_== JsSuccess(LocalTime.of(10, 15, 30))
+    }
+
+    "be successfully read with custom pattern from '10.15.30'" in {
+      CustomReads1.reads(JsString("10.15.30")).
+        aka("read time") must_== JsSuccess(LocalTime.of(10, 15, 30))
+    }
+
+    "not be read from invalid corrected string" >> {
+      "with default implicit" in {
+        correctedReads.reads(JsString("0:15:30")) must beLike {
+          case JsError((_, JsonValidationError(
+            "error.expected.date.isoformat" :: Nil, _) :: Nil) :: Nil) => ok
+        }
+      }
+
+      "with custom formatter" in {
+        CustomReads2.reads(JsString("10:15:30")) must beLike {
+          case JsError((_, JsonValidationError(
+            "error.expected.date.isoformat" :: Nil, _) :: Nil) :: Nil) => ok
+        }
+      }
+    }
+
+    "be successfully read from corrected string" >> {
+      lazy val d = LocalTime.of(10, 15, 30)
+
+      "with default implicit" in {
+        correctedReads.reads(JsString("_10:15:30")) must_== JsSuccess(d)
+      }
+
+      "with custom formatter" in {
+        CustomReads2.reads(JsString("# 10.15.30")) must_== JsSuccess(d)
       }
     }
   }
