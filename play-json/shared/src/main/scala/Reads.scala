@@ -388,13 +388,40 @@ trait DefaultReads extends LowPriorityDefaultReads {
   }
 
   /** Deserializer for a `Map[K,V]` */
-  def mapReads[K, V](key: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
+  implicit def mapReads[K, V](k: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
+    case JsObject(m) => {
+      type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+      def locate(e: Errors, key: String) = e.map {
+        case (p, valerr) => (JsPath \ key) ++ p -> valerr
+      }
+
+      // !! Keep accumulating the error after the first one
+      m.foldLeft(Right(Map.empty): Either[Errors, Map[K, V]]) {
+        case (acc, (key, value)) => (acc, fmtv.reads(value)) match {
+          case (Right(vs), JsSuccess(v, _)) => k(key) match {
+            case JsSuccess(vk, _) => Right(vs + (vk -> v))
+            case JsError(ve) => acc.left.map { _ ++ locate(ve, key) }
+          }
+
+          case (Right(_), JsError(e)) => Left(locate(e, key))
+          case (Left(e), _: JsSuccess[_]) => Left(e)
+          case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
+        }
+      }.fold(JsError.apply, res => JsSuccess(res.toMap))
+    }
+
+    case _ => JsError("error.expected.jsobject")
+  }
+
+  /* TODO: Remove
+  def mapReads[K, V]()(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
     case JsObject(fields) =>
       mapObj[K, V](key, fields.toList, Map.newBuilder)
 
     case _ => JsError(Seq(JsPath -> Seq(
       JsonValidationError("error.expected.jsobject"))))
   }
+   */
 
   /** Deserializer for a `Map[String,V]` */
   implicit def mapReads[V](implicit fmtv: Reads[V]): Reads[Map[String, V]] =
