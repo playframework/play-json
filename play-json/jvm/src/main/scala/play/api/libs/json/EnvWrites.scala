@@ -247,7 +247,7 @@ trait EnvWrites {
 
   /** Serializer for a `Locale` using a object representation */
   val localeObjectWrites: OWrites[Locale] = {
-    import scala.collection.convert.ImplicitConversionsToScala.`set asScala`
+    import scala.collection.JavaConverters.asScalaSetConverter
 
     OWrites[Locale] { l =>
       val fields = Map.newBuilder[String, JsValue]
@@ -266,12 +266,12 @@ trait EnvWrites {
         fields += "script" -> Json.toJson(script)
       }
 
-      val attrs = l.getUnicodeLocaleAttributes
+      val attrs = l.getUnicodeLocaleAttributes.asScala
       if (attrs.nonEmpty) {
         fields += "attributes" -> Json.toJson(attrs.toSet)
       }
 
-      val keywords = l.getUnicodeLocaleKeys
+      val keywords = l.getUnicodeLocaleKeys.asScala
       if (keywords.nonEmpty) {
         fields += "keywords" -> Json.toJson({
           val ks = Map.newBuilder[String, String]
@@ -286,7 +286,7 @@ trait EnvWrites {
         })
       }
 
-      val extension = l.getExtensionKeys
+      val extension = l.getExtensionKeys.asScala
       if (extension.nonEmpty) {
         fields += "extension" -> Json.toJson({
           val ext = Map.newBuilder[String, String]
