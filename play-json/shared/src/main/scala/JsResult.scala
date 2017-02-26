@@ -201,7 +201,7 @@ object JsResult {
   import play.api.libs.functional._
 
   case class Exception(cause: JsError)
-    extends IllegalArgumentException(Json stringify JsError.toJson(cause))
+    extends java.lang.Exception(Json stringify JsError.toJson(cause))
     with scala.util.control.NoStackTrace
 
   /**
