@@ -197,7 +197,32 @@ sealed trait JsResult[+A] { self =>
 }
 
 object JsResult {
+  import scala.util.{ Failure, Try, Success }
   import play.api.libs.functional._
+
+  case class Exception(cause: JsError)
+    extends java.lang.Exception(Json stringify JsError.toJson(cause))
+    with scala.util.control.NoStackTrace
+
+  /**
+   * Returns a JSON validation as a [[scala.util.Try]].
+   *
+   * @tparam T the type for the parsing
+   * @param result the JSON validation result
+   * @param err the function to be applied if the results is an error
+   *
+   * {{{
+   * import scala.concurrent.Future
+   * import play.api.libs.json.JsResult
+   *
+   * def toFuture[T](res: JsResult[T]): Future[T] =
+   *   Future.fromTry(JsResult.toTry(res))
+   * }}}
+   */
+  def toTry[T](result: JsResult[T], err: JsError => Throwable = Exception(_)): Try[T] = result match {
+    case e @ JsError(_) => Failure(err(e))
+    case s @ JsSuccess(v, _) => Success(v)
+  }
 
   implicit def alternativeJsResult(implicit a: Applicative[JsResult]): Alternative[JsResult] = new Alternative[JsResult] {
     val app = a
