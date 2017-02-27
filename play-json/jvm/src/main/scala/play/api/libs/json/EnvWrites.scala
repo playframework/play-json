@@ -3,6 +3,8 @@
  */
 package play.api.libs.json
 
+import java.util.Locale
+
 import java.time.format.DateTimeFormatter
 import java.time.temporal.Temporal
 import java.time.{
@@ -237,6 +239,70 @@ trait EnvWrites {
   val InstantEpochMilliWrites: Writes[Instant] = new Writes[Instant] {
     def writes(t: Instant): JsValue =
       JsNumber(BigDecimal valueOf t.toEpochMilli)
+  }
+
+  /** Serializer for a `Locale` using the IETF BCP 47 string representation */
+  implicit val localeWrites: Writes[Locale] =
+    Writes[Locale] { l => JsString(l.toLanguageTag) }
+
+  /** Serializer for a `Locale` using a object representation */
+  val localeObjectWrites: OWrites[Locale] = {
+    import scala.collection.JavaConverters.asScalaSetConverter
+
+    OWrites[Locale] { l =>
+      val fields = Map.newBuilder[String, JsValue]
+
+      fields += "language" -> Json.toJson(l.getLanguage)
+
+      Option(l.getCountry).filter(_.nonEmpty).foreach { country =>
+        fields += "country" -> Json.toJson(country)
+      }
+
+      Option(l.getVariant).filter(_.nonEmpty).foreach { variant =>
+        fields += "variant" -> Json.toJson(variant)
+      }
+
+      Option(l.getScript).filter(_.nonEmpty).foreach { script =>
+        fields += "script" -> Json.toJson(script)
+      }
+
+      val attrs = l.getUnicodeLocaleAttributes.asScala
+      if (attrs.nonEmpty) {
+        fields += "attributes" -> Json.toJson(attrs.toSet)
+      }
+
+      val keywords = l.getUnicodeLocaleKeys.asScala
+      if (keywords.nonEmpty) {
+        fields += "keywords" -> Json.toJson({
+          val ks = Map.newBuilder[String, String]
+
+          keywords.foreach { key =>
+            Option(l.getUnicodeLocaleType(key)).foreach { typ =>
+              ks += (key -> typ)
+            }
+          }
+
+          ks.result()
+        })
+      }
+
+      val extension = l.getExtensionKeys.asScala
+      if (extension.nonEmpty) {
+        fields += "extension" -> Json.toJson({
+          val ext = Map.newBuilder[String, String]
+
+          extension.foreach { key =>
+            Option(l.getExtension(key)).foreach { v =>
+              ext += (key.toString -> v)
+            }
+          }
+
+          ext.result()
+        })
+      }
+
+      JsObject(fields.result())
+    }
   }
 
   // TODO: Move to a separate module + deprecation
