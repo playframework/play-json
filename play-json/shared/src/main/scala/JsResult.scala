@@ -11,6 +11,28 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
 
   val isSuccess = true
   val isError = false
+
+  def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: T => U): U = valid(value)
+
+  def map[U](f: T => U): JsResult[U] = copy(value = f(value))
+
+  def flatMap[U](f: T => JsResult[U]): JsResult[U] = f(value).repath(path)
+
+  def foreach(f: T => Unit): Unit = f(value)
+
+  def repath(path: JsPath): JsResult[T] = JsSuccess(value, path ++ this.path)
+
+  def getOrElse[U >: T](t: => U): U = value
+
+  def orElse[U >: T](t: => JsResult[U]): JsResult[U] = this
+
+  def asOpt: Option[T] = Some(value)
+
+  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], T] = Right(value)
+
+  def recover[U >: T](errManager: PartialFunction[JsError, U]): JsResult[U] = this
+
+  def recoverTotal[U >: T](errManager: JsError => U): U = value
 }
 
 /**
@@ -29,6 +51,29 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
 
   val isSuccess = false
   val isError = true
+
+  def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: Nothing => U): U = invalid(errors)
+
+  def map[U](f: Nothing => U): JsResult[U] = this
+
+  def flatMap[U](f: Nothing => JsResult[U]): JsResult[U] = this
+
+  def foreach(f: Nothing => Unit): Unit = ()
+
+  def repath(path: JsPath): JsResult[Nothing] =
+    JsError(errors.map { case (p, s) => path ++ p -> s })
+
+  def getOrElse[U >: Nothing](t: => U): U = t
+
+  def orElse[U >: Nothing](t: => JsResult[U]): JsResult[U] = t
+
+  val asOpt = None
+
+  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], Nothing] = Left(errors)
+
+  def recover[U >: Nothing](errManager: PartialFunction[JsError, U]): JsResult[U] = JsSuccess(errManager(this))
+
+  def recoverTotal[U >: Nothing](errManager: JsError => U): U = errManager(this)
 }
 
 object JsError {
@@ -94,41 +139,42 @@ sealed trait JsResult[+A] { self =>
   def isSuccess: Boolean
   def isError: Boolean
 
-  def fold[B](invalid: Seq[(JsPath, Seq[JsonValidationError])] => B, valid: A => B): B = this match {
-    case JsSuccess(v, _) => valid(v)
-    case JsError(e) => invalid(e)
-  }
+  /**
+   * Either applies the `invalid` function if this result is an error,
+   * or applies the `valid` function on the successful value.
+   */
+  def fold[B](invalid: Seq[(JsPath, Seq[JsonValidationError])] => B, valid: A => B): B
 
-  def map[B](f: A => B): JsResult[B] = this match {
-    case JsSuccess(v, path) => JsSuccess(f(v), path)
-    case e @ JsError(_) => e
-  }
+  /**
+   * If this result is successful, applies the function `f` on the parsed value.
+   */
+  def map[B](f: A => B): JsResult[B]
+
+  /**
+   * If this result is successful, applies the function `f` on the parsed value.
+   */
+  def flatMap[B](f: A => JsResult[B]): JsResult[B]
+
+  /**
+   * If this result is successful, applies the function `f` on the parsed value.
+   */
+  def foreach(f: A => Unit): Unit
 
   def filterNot(error: JsError)(p: A => Boolean): JsResult[A] =
-    this.flatMap { a => if (p(a)) error else JsSuccess(a) }
+    flatMap { a => if (p(a)) error else JsSuccess(a) }
 
   def filterNot(p: A => Boolean): JsResult[A] =
-    this.flatMap { a => if (p(a)) JsError() else JsSuccess(a) }
+    flatMap { a => if (p(a)) JsError() else JsSuccess(a) }
 
   def filter(p: A => Boolean): JsResult[A] =
-    this.flatMap { a => if (p(a)) JsSuccess(a) else JsError() }
+    flatMap { a => if (p(a)) JsSuccess(a) else JsError() }
 
   def filter(otherwise: JsError)(p: A => Boolean): JsResult[A] =
-    this.flatMap { a => if (p(a)) JsSuccess(a) else otherwise }
+    flatMap { a => if (p(a)) JsSuccess(a) else otherwise }
 
   def collect[B](otherwise: JsonValidationError)(p: PartialFunction[A, B]): JsResult[B] = flatMap {
     case t if p.isDefinedAt(t) => JsSuccess(p(t))
     case _ => JsError(otherwise)
-  }
-
-  def flatMap[B](f: A => JsResult[B]): JsResult[B] = this match {
-    case JsSuccess(v, path) => f(v).repath(path)
-    case e: JsError => e
-  }
-
-  def foreach(f: A => Unit): Unit = this match {
-    case JsSuccess(a, _) => f(a)
-    case _ => ()
   }
 
   def withFilter(p: A => Boolean) = new WithFilter(p)
@@ -138,14 +184,14 @@ sealed trait JsResult[+A] { self =>
       case JsSuccess(a, path) =>
         if (p(a)) JsSuccess(f(a), path)
         else JsError()
-      case e: JsError => e
+      case e @ JsError(_) => e
     }
 
     def flatMap[B](f: A => JsResult[B]): JsResult[B] = self match {
       case JsSuccess(a, path) =>
         if (p(a)) f(a).repath(path)
         else JsError()
-      case e: JsError => e
+      case e @ JsError(_) => e
     }
 
     def foreach(f: A => Unit): Unit = self match {
@@ -156,44 +202,43 @@ sealed trait JsResult[+A] { self =>
     def withFilter(q: A => Boolean) = new WithFilter(a => p(a) && q(a))
   }
 
-  //def rebase(json: JsValue): JsResult[A] = fold(valid = JsSuccess(_), invalid = (_, e, g) => JsError(json, e, g))
-  def repath(path: JsPath): JsResult[A] = this match {
-    case JsSuccess(a, p) => JsSuccess(a, path ++ p)
-    case JsError(es) => JsError(es.map { case (p, s) => path ++ p -> s })
-  }
+  /** Updates the JSON path */
+  def repath(path: JsPath): JsResult[A]
 
   /** Not recommended */
   def get: A
 
-  def getOrElse[AA >: A](t: => AA): AA = this match {
-    case JsSuccess(a, _) => a
-    case JsError(_) => t
-  }
+  /** Either returns the successful value, or the value from `t`. */
+  def getOrElse[AA >: A](t: => AA): AA
 
-  def orElse[AA >: A](t: => JsResult[AA]): JsResult[AA] = this match {
-    case s @ JsSuccess(_, _) => s
-    case JsError(_) => t
-  }
+  /**
+   * Either returns this result if successful, or the result from `t`.
+   */
+  def orElse[AA >: A](t: => JsResult[AA]): JsResult[AA]
 
-  def asOpt: Option[A] = this match {
-    case JsSuccess(v, _) => Some(v)
-    case JsError(_) => None
-  }
+  /**
+   * Transforms this result either `Some` option with the successful value,
+   * or as `None` in case of JSON error.
+   */
+  def asOpt: Option[A]
 
-  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], A] = this match {
-    case JsSuccess(v, _) => Right(v)
-    case JsError(e) => Left(e)
-  }
+  /**
+   * Returns either the result errors (at `Left`),
+   * or the successful value (at `Right`).
+   */
+  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], A]
 
-  def recover[AA >: A](errManager: PartialFunction[JsError, AA]): JsResult[AA] = this match {
-    case JsSuccess(v, p) => JsSuccess(v, p)
-    case e @ JsError(_) => if (errManager isDefinedAt e) JsSuccess(errManager(e)) else this
-  }
+  /**
+   * If this result is not successful,
+   * recovers the errors with the given function.
+   */
+  def recover[AA >: A](errManager: PartialFunction[JsError, AA]): JsResult[AA]
 
-  def recoverTotal[AA >: A](errManager: JsError => AA): AA = this match {
-    case JsSuccess(v, p) => v
-    case e @ JsError(_) => errManager(e)
-  }
+  /**
+   * If this result is not successful,
+   * recovers the errors with the given function.
+   */
+  def recoverTotal[AA >: A](errManager: JsError => AA): AA
 }
 
 object JsResult {
