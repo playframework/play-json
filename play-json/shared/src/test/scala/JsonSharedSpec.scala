@@ -123,6 +123,17 @@ class JsonSharedSpec extends WordSpec
       js.toJson(mario).as[User] mustEqual mario
     }
 
+    "convert to a json object" in json { js =>
+      val peach = User(1, "Peach", List())
+      val writes: Writes[User] = Json.writes[User]
+      val owrites: OWrites[User] = Json.writes[User]
+
+      js.toJsObject(peach)(owrites) mustBe an[JsObject]
+      js.toJsObject(peach)(owrites) mustEqual js.toJson(peach)(writes)
+      shapeless.test.illTyped("js.toJsObject(1)")
+      shapeless.test.illTyped("js.toJsObject(peach)(writes)")
+    }
+
     "convert to a byte array containing the UTF-8 representation" in json { js =>
       val json = js.parse(
         """
