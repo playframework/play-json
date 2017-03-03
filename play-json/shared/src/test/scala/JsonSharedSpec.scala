@@ -130,6 +130,7 @@ class JsonSharedSpec extends WordSpec
 
       js.toJsObject(peach)(owrites) mustBe an[JsObject]
       js.toJsObject(peach)(owrites) mustEqual js.toJson(peach)(writes)
+      shapeless.test.illTyped("js.toJsObject(1)")
       shapeless.test.illTyped("js.toJsObject(peach)(writes)")
     }
 
