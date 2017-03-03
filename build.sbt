@@ -38,7 +38,7 @@ def jsonDependencies(scalaVersion: String) = Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion
 )
 
-// Common settings 
+// Common settings
 import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 
@@ -112,6 +112,7 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
       "org.scalatest" %%% "scalatest" % "3.0.0" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.13.4" % Test,
+      "com.chuusai" %% "shapeless" % "2.3.2" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
       compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)

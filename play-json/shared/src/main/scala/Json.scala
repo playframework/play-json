@@ -124,6 +124,17 @@ sealed trait JsonFacade {
   def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue
 
   /**
+   * Converts any object writeable value to a [[JsObject]].
+   *
+   * A value is object writeable if a [[OWrites]] implicit is available for
+   * its type.
+   *
+   * @tparam T the type of the value to be written as JsObject
+   * @param o the value to convert as JsObject
+   */
+  def toJsObject[T](o: T)(implicit tjs: OWrites[T]): JsObject
+
+  /**
    * Converts a [[JsValue]] to a value of requested type `T`.
    *
    * @tparam T The type of conversion result,
@@ -173,6 +184,8 @@ object Json extends JsonFacade {
   def prettyPrint(json: JsValue): String = StaticBinding.prettyPrint(json)
 
   def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue = tjs.writes(o)
+
+  def toJsObject[T](o: T)(implicit tjs: OWrites[T]): JsObject = tjs.writes(o)
 
   def fromJson[T](json: JsValue)(implicit fjs: Reads[T]): JsResult[T] = fjs.reads(json)
 
@@ -301,6 +314,9 @@ object Json extends JsonFacade {
     @inline def prettyPrint(json: JsValue): String = Json.prettyPrint(json)
     @inline def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue =
       Json.toJson[T](o)
+
+    @inline def toJsObject[T](o: T)(implicit tjs: OWrites[T]): JsObject =
+      Json.toJsObject[T](o)
 
     @inline def fromJson[T](json: JsValue)(implicit fjs: Reads[T]): JsResult[T] = Json.fromJson[T](json)
 
