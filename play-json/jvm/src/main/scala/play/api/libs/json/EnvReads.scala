@@ -377,7 +377,7 @@ trait EnvReads {
         case JsNumber(d) => JsSuccess(epoch(d.toLong))
         case JsString(s) => p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
-          case None => JsError(Seq(JsPath ->
+          case _ => JsError(Seq(JsPath ->
             Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
         }
         case _ => JsError(Seq(JsPath ->
@@ -445,7 +445,7 @@ trait EnvReads {
         case JsNumber(d) => JsSuccess(epoch(d.toLong))
         case JsString(s) => p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
-          case None => JsError(Seq(JsPath ->
+          case _ => JsError(Seq(JsPath ->
             Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
         }
         case _ => JsError(Seq(JsPath ->
@@ -538,7 +538,7 @@ trait EnvReads {
         JsError("error.invalid.longDuration")
 
       case JsNumber(n) => JsSuccess(JDuration.of(n.toLong, unit))
-      case _ => JsError("error.expected.duration")
+      case _ => JsError("error.expected.lonDuration")
     }
 
   /**
@@ -561,7 +561,7 @@ trait EnvReads {
     case JsString(repr) => try {
       JsSuccess(JDuration.parse(repr))
     } catch {
-      case _: Exception => JsError("error.invalid.duration")
+      case _: DateTimeParseException => JsError("error.invalid.duration")
     }
 
     case js => javaDurationMillisReads.reads(js)
@@ -646,7 +646,7 @@ trait EnvReads {
     def reads(json: JsValue): JsResult[LocalDate] = json match {
       case JsString(s) => parseDate(corrector(s)) match {
         case Some(d) => JsSuccess(d)
-        case None => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+        case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
       }
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
     }
