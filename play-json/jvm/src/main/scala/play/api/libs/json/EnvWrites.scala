@@ -8,7 +8,9 @@ import java.util.Locale
 import java.time.format.DateTimeFormatter
 import java.time.temporal.Temporal
 import java.time.{
+  Duration => JDuration,
   Instant,
+  Period,
   LocalDate,
   LocalTime,
   LocalDateTime,
@@ -304,6 +306,24 @@ trait EnvWrites {
       JsObject(fields.result())
     }
   }
+
+  /** Serializer of Java Duration as a number of milliseconds. */
+  val javaDurationMillisWrites: Writes[JDuration] =
+    Writes[JDuration] { d => JsNumber(d.toMillis) }
+
+  /**
+   * Serializer of Java Duration using ISO representation
+   * (e.g. PT1S for 1 second).
+   */
+  implicit val javaDurationWrites: Writes[JDuration] =
+    Writes[JDuration] { d => JsString(d.toString) }
+
+  /**
+   * Serializer of Java Period using ISO representation
+   * (e.g. P2D for 2 days).
+   */
+  implicit val javaPeriodWrites: Writes[Period] =
+    Writes[Period] { d => JsString(d.toString) }
 
   // TODO: Move to a separate module + deprecation
   import org.joda.time.{ DateTime, LocalDate, LocalTime }
