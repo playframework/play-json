@@ -126,11 +126,11 @@ sealed trait JsonFacade {
   /**
    * Converts any object writeable value to a [[JsObject]].
    *
-   * A value is object writeable if a [[OWrites]] implicit is available for
-   * its type.
+   * A value is writeable as an object,
+   * if a [[OWrites]] implicit is available for its type.
    *
-   * @tparam T the type of the value to be written as JsObject
-   * @param o the value to convert as JsObject
+   * @tparam T the type of the value to be written as `JsObject`
+   * @param o the value to convert as JSON object
    */
   def toJsObject[T](o: T)(implicit tjs: OWrites[T]): JsObject
 

@@ -8,10 +8,12 @@ import java.util.Locale
 import java.time.{
   Clock,
   DateTimeException,
+  Duration => JDuration,
   Instant,
   LocalDate,
   LocalTime,
   LocalDateTime,
+  Period,
   OffsetDateTime,
   ZoneId,
   ZoneOffset,
@@ -19,6 +21,8 @@ import java.time.{
 }
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 import java.time.temporal.{
+  ChronoUnit,
+  TemporalUnit,
   Temporal => JTemporal,
   UnsupportedTemporalTypeException
 }
@@ -373,7 +377,7 @@ trait EnvReads {
         case JsNumber(d) => JsSuccess(epoch(d.toLong))
         case JsString(s) => p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
-          case None => JsError(Seq(JsPath ->
+          case _ => JsError(Seq(JsPath ->
             Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
         }
         case _ => JsError(Seq(JsPath ->
@@ -441,7 +445,7 @@ trait EnvReads {
         case JsNumber(d) => JsSuccess(epoch(d.toLong))
         case JsString(s) => p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
-          case None => JsError(Seq(JsPath ->
+          case _ => JsError(Seq(JsPath ->
             Seq(JsonValidationError("error.expected.date.isoformat", parsing))))
         }
         case _ => JsError(Seq(JsPath ->
@@ -528,6 +532,72 @@ trait EnvReads {
     }
   }
 
+  private def jdurationNumberReads(unit: TemporalUnit) =
+    Reads[JDuration] {
+      case JsNumber(n) if !n.ulp.isValidLong =>
+        JsError("error.invalid.longDuration")
+
+      case JsNumber(n) => JsSuccess(JDuration.of(n.toLong, unit))
+      case _ => JsError("error.expected.lonDuration")
+    }
+
+  /**
+   * Deserializer of Java Duration from an integer (long) number,
+   * using the specified temporal unit.
+   */
+  def javaDurationNumberReads(unit: TemporalUnit): Reads[JDuration] =
+    jdurationNumberReads(unit)
+
+  /** Deserializer of Java Duration from a number of milliseconds. */
+  val javaDurationMillisReads: Reads[JDuration] =
+    javaDurationNumberReads(ChronoUnit.MILLIS)
+
+  /**
+   * Deserializer of Java Duration, from either a time-based amount of time
+   * (string representation such as '34.5 seconds'),
+   * or from a number of milliseconds (see [[javaDurationMillisReads]]).
+   */
+  implicit val DefaultJavaDurationReads: Reads[JDuration] = Reads[JDuration] {
+    case JsString(repr) => try {
+      JsSuccess(JDuration.parse(repr))
+    } catch {
+      case _: DateTimeParseException => JsError("error.invalid.duration")
+    }
+
+    case js => javaDurationMillisReads.reads(js)
+  }
+
+  /** Deserializer of Java Period from a number (integer) of days. */
+  val javaPeriodDaysReads: Reads[Period] =
+    Reads.IntReads.map(Period.ofDays(_))
+
+  /** Deserializer of Java Period from a number (integer) of weeks. */
+  val javaPeriodWeeksReads: Reads[Period] =
+    Reads.IntReads.map(Period.ofWeeks(_))
+
+  /** Deserializer of Java Period from a number (integer) of months. */
+  val javaPeriodMonthsReads: Reads[Period] =
+    Reads.IntReads.map(Period.ofMonths(_))
+
+  /** Deserializer of Java Period from a number (integer) of years. */
+  val javaPeriodYearsReads: Reads[Period] =
+    Reads.IntReads.map(Period.ofYears(_))
+
+  /**
+   * Deserializer of Java Period, from either a time-based amount of time
+   * (string representation such as '34.5 seconds'),
+   * or from a number of milliseconds (see [[javaPeriodMillisReads]]).
+   */
+  implicit val DefaultJavaPeriodReads: Reads[Period] = Reads[Period] {
+    case JsString(repr) => try {
+      JsSuccess(Period.parse(repr))
+    } catch {
+      case _: DateTimeParseException => JsError("error.invalid.stringPeriod")
+    }
+
+    case js => javaPeriodDaysReads.reads(js)
+  }
+
   // TODO: Move to a separate module + deprecation
   import org.joda.time.{ DateTime, LocalTime }
   import org.joda.time.format.DateTimeFormat
@@ -545,7 +615,7 @@ trait EnvReads {
       case JsNumber(d) => JsSuccess(new DateTime(d.toLong))
       case JsString(s) => parseDate(corrector(s)) match {
         case Some(d) => JsSuccess(d)
-        case None => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+        case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
       }
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
     }
@@ -576,7 +646,7 @@ trait EnvReads {
     def reads(json: JsValue): JsResult[LocalDate] = json match {
       case JsString(s) => parseDate(corrector(s)) match {
         case Some(d) => JsSuccess(d)
-        case None => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+        case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
       }
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
     }

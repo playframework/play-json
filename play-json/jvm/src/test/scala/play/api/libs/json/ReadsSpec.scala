@@ -3,7 +3,7 @@
  */
 package play.api.libs.json
 
-import java.math.BigDecimal
+import java.math.{ BigDecimal => JBigDec }
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
 
@@ -11,7 +11,9 @@ import java.util.Locale
 
 import java.time.{
   Clock,
+  Duration => JDuration,
   Instant,
+  Period,
   LocalDate,
   LocalTime,
   LocalDateTime,
@@ -20,6 +22,7 @@ import java.time.{
   ZonedDateTime,
   ZoneOffset
 }
+import java.time.temporal.ChronoUnit
 import java.time.format.DateTimeFormatter
 
 import org.specs2.specification.core.Fragment
@@ -47,7 +50,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     )
 
     "be successfully read from number" in {
-      reads(JsNumber(BigDecimal valueOf 123L)).
+      reads(JsNumber(JBigDec valueOf 123L)).
         aka("read date") must_== JsSuccess(LocalDateTime.ofInstant(
           Instant.ofEpochMilli(123L), ZoneOffset.UTC
         ))
@@ -207,7 +210,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     )
 
     "be successfully read from number" in {
-      reads(JsNumber(BigDecimal valueOf 123L)).
+      reads(JsNumber(JBigDec valueOf 123L)).
         aka("read date") must_== JsSuccess(ZonedDateTime.ofInstant(
           Instant.ofEpochMilli(123L), ZoneOffset.UTC
         ))
@@ -291,7 +294,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       val beforeMidnight = Instant.parse("1970-01-01T23:55:00Z")
       val d = LocalDate.parse("1970-01-01")
 
-      reads(JsNumber(BigDecimal valueOf beforeMidnight.toEpochMilli)).
+      reads(JsNumber(JBigDec valueOf beforeMidnight.toEpochMilli)).
         aka("read date") must_== JsSuccess(d)
     }
 
@@ -424,7 +427,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     )
 
     "be successfully read from number" in {
-      reads(JsNumber(BigDecimal valueOf 123L)).
+      reads(JsNumber(JBigDec valueOf 123L)).
         aka("read date") must_== JsSuccess(Instant ofEpochMilli 123L)
     }
 
@@ -560,6 +563,72 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         s"be ${locale.toLanguageTag} and be read from JSON string (tag)" in {
           Json.fromJson[Locale](JsString(tag)) must_== JsSuccess(locale)
         }
+    }
+  }
+
+  "Java Duration" should {
+    val oneSec = JDuration.of(1L, ChronoUnit.SECONDS)
+
+    Fragment.foreach[(JsValue, JsResult[JDuration])](Seq(
+      JsString("PT1S") -> JsSuccess(oneSec),
+      JsString("1 seconds") -> JsError("error.invalid.duration"),
+      JsString("foo") -> JsError("error.invalid.duration"),
+      JsNumber(BigDecimal(1000L)) -> JsSuccess(oneSec),
+      JsNumber(BigDecimal(1.234D)) -> JsError("error.invalid.longDuration")
+    )) {
+      case (input, result) =>
+        s"be parsed from ${Json stringify input} as $result" in {
+          Json.fromJson[JDuration](input) mustEqual result
+        }
+    }
+  }
+
+  "Java Period" should {
+    val twoDays = Period.ofDays(2)
+    val period1 = Period.ofWeeks(3).minus(twoDays)
+    val period2 = Period.ofMonths(2).plus(period1)
+
+    Fragment.foreach[(JsValue, JsResult[Period])](Seq(
+      JsString("P2D") -> JsSuccess(twoDays),
+      JsNumber(BigDecimal(2L)) -> JsSuccess(twoDays),
+      JsString("2 days") -> JsError("error.invalid.stringPeriod"),
+      JsString("P2W") -> JsSuccess(Period.ofWeeks(2)),
+      JsString("P19D") -> JsSuccess(period1),
+      JsNumber(BigDecimal(19L)) -> JsSuccess(period1),
+      JsString("P2M19D") -> JsSuccess(period2),
+      JsString("foo") -> JsError("error.invalid.stringPeriod"),
+      JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.int")
+    )) {
+      case (input, result) =>
+        s"be parsed from ${Json stringify input} as $result" in {
+          Json.fromJson[Period](input) mustEqual result
+        }
+    }
+
+    Fragment.foreach[(Long, Period)](Seq(
+      2L -> twoDays,
+      19L -> period1
+    )) {
+      case (days, result) =>
+        s"be parsed as days from '$days' as $result" in {
+          Json.fromJson[Period](JsNumber(days))(
+            Reads.javaPeriodDaysReads) mustEqual JsSuccess(result)
+        }
+    }
+
+    "be parsed as weeks" in {
+      Json.fromJson[Period](JsNumber(3))(
+        Reads.javaPeriodWeeksReads) must_== JsSuccess(Period.ofWeeks(3))
+    }
+
+    "be parsed as months" in {
+      Json.fromJson[Period](JsNumber(4))(
+        Reads.javaPeriodMonthsReads) must_== JsSuccess(Period.ofMonths(4))
+    }
+
+    "be parsed as years" in {
+      Json.fromJson[Period](JsNumber(5))(
+        Reads.javaPeriodYearsReads) must_== JsSuccess(Period.ofYears(5))
     }
   }
 }
