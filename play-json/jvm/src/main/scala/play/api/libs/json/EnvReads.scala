@@ -592,7 +592,7 @@ trait EnvReads {
     case JsString(repr) => try {
       JsSuccess(Period.parse(repr))
     } catch {
-      case _: Exception => JsError("error.invalid.stringPeriod")
+      case _: DateTimeParseException => JsError("error.invalid.stringPeriod")
     }
 
     case js => javaPeriodDaysReads.reads(js)
@@ -615,7 +615,7 @@ trait EnvReads {
       case JsNumber(d) => JsSuccess(new DateTime(d.toLong))
       case JsString(s) => parseDate(corrector(s)) match {
         case Some(d) => JsSuccess(d)
-        case None => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+        case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
       }
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
     }
