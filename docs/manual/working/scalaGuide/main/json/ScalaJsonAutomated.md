@@ -35,12 +35,14 @@ The above example can be made even more concise by using body parsers with a typ
 ### Requirements
 
 These macros rely on a few assumptions about the type they're working with :
+
 - It must have a companion object having `apply` and `unapply` methods
 - The return types of the `unapply` must match the argument types of the `apply` method.
 - The parameter names of the `apply` method must be the same as the property names desired in the JSON.
 
-Case classes natively meet these requirements. For more custom classes or traits, you might
-have to implement them.
+Case classes natively meet these requirements. For more custom classes or traits, you might have to implement them.
+
+A trait can also supported, if and only if it's a sealed one and if the sub-types comply with the previous requirements.
 
 ## Custom Naming Strategies
 
