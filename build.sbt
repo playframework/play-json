@@ -22,21 +22,24 @@ def jsonDependencies(scalaVersion: String) = Seq(
   logback % Test
 ) ++ jacksons ++ specsBuild.map(_ % Test)
 
+val commonSettings = Seq(
+  scalaVersion := "2.12.1",
+  crossScalaVersions := Seq("2.12.1", "2.11.8", "2.10.6")
+)
 
 lazy val root = project
   .in(file("."))
-  .enablePlugins(PlayRootProject)
   .aggregate(`play-json`, `play-functional`)
 
 lazy val `play-json` = project
   .in(file("play-json"))
-  .enablePlugins(PlayLibrary)
+  .settings(commonSettings)
   .settings(libraryDependencies ++= jsonDependencies(scalaVersion.value))
   .dependsOn(`play-functional`)
 
 lazy val `play-functional` = project
   .in(file("play-functional"))
-  .enablePlugins(PlayLibrary)
+  .settings(commonSettings)
 
 playBuildRepoName in ThisBuild := "play-json"
 
