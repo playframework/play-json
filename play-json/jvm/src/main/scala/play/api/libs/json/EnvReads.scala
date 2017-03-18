@@ -556,6 +556,9 @@ trait EnvReads {
    * Deserializer of Java Duration, from either a time-based amount of time
    * (string representation such as '34.5 seconds'),
    * or from a number of milliseconds (see [[javaDurationMillisReads]]).
+   *
+   * @see [[java.time.Duration]]
+   * @see [[DefaultJavaPeriodReads]] if you want to use [[java.time.Period]] instead.
    */
   implicit val DefaultJavaDurationReads: Reads[JDuration] = Reads[JDuration] {
     case JsString(repr) => try {
@@ -569,24 +572,27 @@ trait EnvReads {
 
   /** Deserializer of Java Period from a number (integer) of days. */
   val javaPeriodDaysReads: Reads[Period] =
-    Reads.IntReads.map(Period.ofDays(_))
+    Reads.IntReads.map(Period.ofDays)
 
   /** Deserializer of Java Period from a number (integer) of weeks. */
   val javaPeriodWeeksReads: Reads[Period] =
-    Reads.IntReads.map(Period.ofWeeks(_))
+    Reads.IntReads.map(Period.ofWeeks)
 
   /** Deserializer of Java Period from a number (integer) of months. */
   val javaPeriodMonthsReads: Reads[Period] =
-    Reads.IntReads.map(Period.ofMonths(_))
+    Reads.IntReads.map(Period.ofMonths)
 
   /** Deserializer of Java Period from a number (integer) of years. */
   val javaPeriodYearsReads: Reads[Period] =
-    Reads.IntReads.map(Period.ofYears(_))
+    Reads.IntReads.map(Period.ofYears)
 
   /**
    * Deserializer of Java Period, from either a time-based amount of time
-   * (string representation such as '34.5 seconds'),
-   * or from a number of milliseconds (see [[javaPeriodMillisReads]]).
+   * in the ISO-8601 calendar system, such as '2 years, 3 months and 4 days'
+   * or from a number of days (see [[javaPeriodDaysReads]]).
+   *
+   * @see [[java.time.Period]]
+   * @see [[DefaultJavaDurationReads]] if you want to use [[java.time.Duration]] instead.
    */
   implicit val DefaultJavaPeriodReads: Reads[Period] = Reads[Period] {
     case JsString(repr) => try {
