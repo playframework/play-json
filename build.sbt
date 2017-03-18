@@ -30,8 +30,8 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion)
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.9.6"
-    //"org.joda" % "joda-convert" % "1.8.1")
+  "joda-time" % "joda-time" % "2.9.6",
+  "org.joda" % "joda-convert" % "1.8.1"
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
