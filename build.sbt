@@ -5,15 +5,13 @@
 import interplay.ScalaVersions
 import ReleaseTransformations._
 
-import com.typesafe.tools.mima.core._, ProblemFilters._
+import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{
   mimaBinaryIssueFilters, mimaPreviousArtifacts
 }
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
-
-scalaVersion := ScalaVersions.scala212
 
 val specsVersion = "3.8.6"
 val specsBuild = Seq(
@@ -48,11 +46,15 @@ val previousVersion = Def.setting[Option[String]] {
   else Some("2.6.0-M1")
 }
 
-lazy val commonSettings = mimaDefaultSettings ++ (
-  SbtScalariform.scalariformSettings) ++ Seq(
-    mimaPreviousArtifacts := previousVersion.value.map { v =>
-      organization.value %% moduleName.value % v
-    }.toSet,
+lazy val playJsonMimaSettings = mimaDefaultSettings ++ Seq(
+  mimaPreviousArtifacts := previousVersion.value.map { v =>
+    organization.value %% moduleName.value % v
+  }.toSet
+)
+
+lazy val commonSettings = SbtScalariform.scalariformSettings ++ Seq(
+    scalaVersion := ScalaVersions.scala212,
+    crossScalaVersions := Seq(ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
@@ -64,8 +66,12 @@ lazy val commonSettings = mimaDefaultSettings ++ (
 lazy val root = project
   .in(file("."))
   .enablePlugins(PlayRootProject, ScalaJSPlugin)
-  .aggregate(`play-jsonJS`, `play-jsonJVM`,
-    `play-functionalJS`, `play-functionalJVM`)
+  .aggregate(
+    `play-jsonJS`,
+    `play-jsonJVM`,
+    `play-functionalJS`,
+    `play-functionalJVM`
+  ).settings(commonSettings: _*)
 
 val isNew = implicitly[ProblemFilter](
   _.ref.isInstanceOf[ReversedMissingMethodProblem])
@@ -103,6 +109,7 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(PlayLibrary, Playdoc)
   .settings(commonSettings)
+  .settings(playJsonMimaSettings)
   .settings(
     mimaBinaryIssueFilters ++= {
       if (scalaVersion.value startsWith "2.11") {
@@ -133,6 +140,7 @@ lazy val `play-jsonJS` = `play-json`.js
 lazy val `play-functional` = crossProject.crossType(CrossType.Pure)
   .in(file("play-functional"))
   .settings(commonSettings)
+  .settings(playJsonMimaSettings)
   .enablePlugins(PlayLibrary)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm
