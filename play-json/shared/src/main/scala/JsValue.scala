@@ -111,7 +111,7 @@ case class JsArray(value: Seq[JsValue] = List()) extends JsValue {
   def prepend(el: JsValue): JsArray = this.+:(el)
 }
 
-object JsArray {
+object JsArray extends scala.runtime.AbstractFunction1[Seq[JsValue], JsArray] {
   def empty = JsArray(Seq.empty)
 }
 
@@ -196,7 +196,7 @@ case class JsObject(
   override def hashCode: Int = fieldSet.hashCode()
 }
 
-object JsObject {
+object JsObject extends scala.runtime.AbstractFunction1[Seq[(String, JsValue)], JsObject] {
   /**
    * Construct a new JsObject, with the order of fields in the Seq.
    */
