@@ -395,17 +395,19 @@ trait DefaultReads extends LowPriorityDefaultReads {
 
       // !! Keep accumulating the error after the first one
       m.foldLeft(Right(Map.empty): Either[Errors, Map[K, V]]) {
-        case (acc, (key, value)) => (acc, fmtv.reads(value)) match {
-          case (Right(vs), JsSuccess(v, _)) => k(key) match {
-            case JsSuccess(vk, _) => Right(vs + (vk -> v))
-            case JsError(ve) => acc.left.map { _ ++ locate(ve, key) }
-          }
+        case (acc, (key, value)) =>
+          val result = for {
+            rv <- fmtv.reads(value)
+            rk <- k(key)
+          } yield rk -> rv
 
-          case (Right(_), JsError(e)) => Left(locate(e, key))
-          case (Left(e), _: JsSuccess[_]) => Left(e)
-          case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
-        }
-      }.fold(JsError.apply, res => JsSuccess(res.toMap))
+          (acc, result) match {
+            case (Right(vs), JsSuccess(v, _)) => Right(vs + v)
+            case (Right(_), JsError(e)) => Left(locate(e, key))
+            case (Left(e), _: JsSuccess[_]) => Left(e)
+            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
+          }
+      }.fold(JsError.apply, res => JsSuccess(res))
     }
 
     case _ => JsError("error.expected.jsobject")
