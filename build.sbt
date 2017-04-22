@@ -41,9 +41,12 @@ import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 
 val previousVersion = Def.setting[Option[String]] {
-  if (scalaVersion.value startsWith "2.11") Some("2.5.12")
-  else if (scalaVersion.value startsWith "2.10") None
-  else Some("2.6.0-M1")
+  scalaVersion.value.split('.')(1) match {
+    case "10" => Some("2.6.0-M6")
+    case "11" => Some("2.5.14")
+    case "12" => Some("2.6.0-M1")
+    case _ => None
+  }
 }
 
 lazy val playJsonMimaSettings = mimaDefaultSettings ++ Seq(
@@ -90,7 +93,6 @@ val compatFilters = {
   Seq(
     validationFilter,
     ProblemFilters.exclude[MissingClassProblem]("play.libs.Json"),
-    ProblemFilters.exclude[AbstractClassProblem]("play.api.libs.json.JsBoolean"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.ConstraintReads.min"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.ConstraintReads.max"),
     ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.min"),

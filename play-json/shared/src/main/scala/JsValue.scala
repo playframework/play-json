@@ -68,7 +68,7 @@ case object JsTrue extends JsBoolean(true)
  */
 case object JsFalse extends JsBoolean(false)
 
-object JsBoolean extends scala.runtime.AbstractFunction1[Boolean, JsBoolean] {
+object JsBoolean extends Function1[Boolean, JsBoolean] {
   def apply(value: Boolean): JsBoolean = value match {
     case true => JsTrue
     case false => JsFalse
