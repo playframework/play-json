@@ -4,7 +4,7 @@
 package scalaguide.json
 
 import org.specs2.mutable.Specification
-import play.api.libs.json.{JsNumber, JsString, Json}
+import play.api.libs.json.{ JsNumber, JsString, Json }
 
 class ScalaJsonSpec extends Specification {
 
@@ -224,7 +224,6 @@ class ScalaJsonSpec extends Specification {
       )
       bigwig mustEqual expected
 
-
       lat === JsNumber(51.235685)
 
       //#traverse-recursive-path
@@ -257,20 +256,23 @@ class ScalaJsonSpec extends Specification {
       try {
         json("residents")(3)
         assert(false)
-      } catch { case e: IndexOutOfBoundsException =>
-        assert(e.getMessage == "3")
+      } catch {
+        case e: IndexOutOfBoundsException =>
+          assert(e.getMessage == "3")
       }
       try {
         json("residents")(5)
         assert(false)
-      } catch { case e: IndexOutOfBoundsException =>
-        assert(e.getMessage == "5")
+      } catch {
+        case e: IndexOutOfBoundsException =>
+          assert(e.getMessage == "5")
       }
 
       try {
         json("bogus")
         assert(false)
-      } catch { case e: NoSuchElementException =>
+      } catch {
+        case e: NoSuchElementException =>
 
       }
 
