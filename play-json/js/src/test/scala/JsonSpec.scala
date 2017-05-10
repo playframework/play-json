@@ -3,7 +3,6 @@
  */
 package play.api.libs.json
 
-import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
 
 import org.scalatest._
