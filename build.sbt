@@ -13,12 +13,12 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val specsVersion = "3.8.6"
+val specsVersion = "3.8.9"
 val specsBuild = Seq(
   "specs2-core"
 ).map("org.specs2" %% _ % specsVersion)
 
-val jacksonVersion = "2.8.5"
+val jacksonVersion = "2.8.8"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
@@ -28,7 +28,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion)
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.9.6"
+  "joda-time" % "joda-time" % "2.9.9"
     //"org.joda" % "joda-convert" % "1.8.1")
 )
 
@@ -119,8 +119,8 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       } else Seq(isNew)
     },
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.0" % Test,
-      "org.scalacheck" %%% "scalacheck" % "1.13.4" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.3" % Test,
+      "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
       "com.chuusai" %% "shapeless" % "2.3.2" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
@@ -132,7 +132,7 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
 lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
     libraryDependencies ++= joda ++ jacksons ++ specsBuild.map(_ % Test) :+ (
-      "ch.qos.logback" % "logback-classic" % "1.1.7" % Test
+      "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
     unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
   )
