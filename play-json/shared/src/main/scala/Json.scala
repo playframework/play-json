@@ -217,7 +217,7 @@ object Json extends JsonFacade {
   def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map(f => (f._1, f._2.asInstanceOf[JsValueWrapperImpl].field)))
 
   def arr(items: JsValueWrapper*): JsArray =
-    JsArray(items.map(_.asInstanceOf[JsValueWrapperImpl].field))
+    JsArray(items.iterator.map(_.asInstanceOf[JsValueWrapperImpl].field).toArray[JsValue])
 
   import language.experimental.macros
 

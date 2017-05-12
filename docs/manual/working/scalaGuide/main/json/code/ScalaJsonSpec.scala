@@ -56,7 +56,7 @@ class ScalaJsonSpec extends Specification {
       val json: JsValue = JsObject(Seq(
         "name" -> JsString("Watership Down"),
         "location" -> JsObject(Seq("lat" -> JsNumber(51.235685), "long" -> JsNumber(-1.309197))),
-        "residents" -> JsArray(Seq(
+        "residents" -> JsArray(IndexedSeq(
           JsObject(Seq(
             "name" -> JsString("Fiver"),
             "age" -> JsNumber(4),

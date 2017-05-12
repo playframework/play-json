@@ -30,7 +30,7 @@ class JsonRichSpec extends WordSpec with MustMatchers {
           )),
           "key2" -> JsNumber(123),
           "key3" -> JsTrue,
-          "key4" -> JsArray(Seq(
+          "key4" -> JsArray(Array(
             JsString("value41"), JsNumber(345.6),
             JsString("test"), JsObject(Seq("key411" -> JsObject(Seq("key4111" -> JsNumber(987.654)))))
           ))

@@ -101,7 +101,6 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
         ))
       )
     }
-
     "validate JsArray of stream to List" in {
       JsArray(Stream("alpha", "beta", "delta") map JsString.apply).validate[List[String]] mustEqual (JsSuccess(List("alpha", "beta", "delta")))
     }
