@@ -4,6 +4,7 @@
 package scalaguide.json
 
 import org.specs2.mutable.Specification
+import play.api.libs.json.{JsNumber, JsString, Json}
 
 class ScalaJsonSpec extends Specification {
 
@@ -213,7 +214,16 @@ class ScalaJsonSpec extends Specification {
       //#traverse-simple-path
       val lat = (json \ "location" \ "lat").get
       // returns JsNumber(51.235685)
+      val bigwig = (json \ "residents" \ 1).get
+      // returns {"name":"Bigwig","age":6,"role":"Owsla"}
+
       //#traverse-simple-path
+
+      val expected = Json.parse(
+        """{"name":"Bigwig","age":6,"role":"Owsla"}"""
+      )
+      bigwig mustEqual expected
+
 
       lat === JsNumber(51.235685)
 
@@ -224,9 +234,46 @@ class ScalaJsonSpec extends Specification {
       names === Seq(JsString("Watership Down"), JsString("Fiver"), JsString("Bigwig"))
 
       //#traverse-array-index
-      val bigwig = (json \ "residents")(1)
+      val name = json("name")
+      // returns JsString("Watership Down")
+
+      val bigwig2 = json("residents")(1)
       // returns {"name":"Bigwig","age":6,"role":"Owsla"}
+
+      // (json("residents")(3)
+      // throws an IndexOutOfBoundsException
+
+      // json("bogus")
+      // throws a NoSuchElementException
       //#traverse-array-index
+
+      name mustEqual JsString("Watership Down")
+
+      val expected2 = Json.parse(
+        """{"name":"Bigwig","age":6,"role":"Owsla"}"""
+      )
+      bigwig2 mustEqual expected2
+
+      try {
+        json("residents")(3)
+        assert(false)
+      } catch { case e: IndexOutOfBoundsException =>
+        assert(e.getMessage == "3")
+      }
+      try {
+        json("residents")(5)
+        assert(false)
+      } catch { case e: IndexOutOfBoundsException =>
+        assert(e.getMessage == "5")
+      }
+
+      try {
+        json("bogus")
+        assert(false)
+      } catch { case e: NoSuchElementException =>
+
+      }
+
       (bigwig \ "name").get === JsString("Bigwig")
     }
 
