@@ -128,7 +128,7 @@ object Reads extends ConstraintReads with PathReads with DefaultReads {
     def identity = JsArray()
   }
 
-  implicit val JsArrayReducer = Reducer[JsValue, JsArray](js => JsArray(Seq(js)))
+  implicit val JsArrayReducer = Reducer[JsValue, JsArray](js => JsArray(Array(js)))
 }
 
 /**

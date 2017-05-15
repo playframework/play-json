@@ -190,7 +190,7 @@ trait DefaultWrites extends LowPriorityWrites {
   implicit def arrayWrites[T: ClassTag: Writes]: Writes[Array[T]] = {
     val w = implicitly[Writes[T]]
 
-    Writes[Array[T]] { ts => JsArray(ts.map(w.writes(_)).toSeq) }
+    Writes[Array[T]] { ts => JsArray(ts.map(w.writes(_)).toArray[JsValue]) }
   }
 
   /**
@@ -264,7 +264,7 @@ sealed trait LowPriorityWrites extends EnvWrites {
   implicit def traversableWrites[A: Writes] = {
     val w = implicitly[Writes[A]]
 
-    Writes[Traversable[A]] { as => JsArray(as.map(w.writes(_)).toSeq) }
+    Writes[Traversable[A]] { as => JsArray(as.map(w.writes(_)).toArray[JsValue]) }
     // Avoid resolution ambiguity with more specific Traversable Writes,
     // such as OWrites.map
   }

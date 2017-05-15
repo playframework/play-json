@@ -17,7 +17,8 @@ import com.fasterxml.jackson.databind.ser.Serializers
 import play.api.libs.json._
 
 import scala.annotation.{ switch, tailrec }
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
+import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 /**
  * The Play JSON module for Jackson.
@@ -99,7 +100,7 @@ private[jackson] sealed trait DeserializerContext {
   def addValue(value: JsValue): DeserializerContext
 }
 
-private[jackson] case class ReadingList(content: ListBuffer[JsValue]) extends DeserializerContext {
+private[jackson] case class ReadingList(content: mutable.ArrayBuffer[JsValue]) extends DeserializerContext {
   override def addValue(value: JsValue): DeserializerContext = {
     ReadingList(content += value)
   }
@@ -149,7 +150,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 
       case JsonTokenId.ID_NULL => (Some(JsNull), parserContext)
 
-      case JsonTokenId.ID_START_ARRAY => (None, ReadingList(ListBuffer()) +: parserContext)
+      case JsonTokenId.ID_START_ARRAY => (None, ReadingList(ArrayBuffer()) +: parserContext)
 
       case JsonTokenId.ID_END_ARRAY => parserContext match {
         case ReadingList(content) :: stack => (Some(JsArray(content)), stack)

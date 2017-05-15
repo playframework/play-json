@@ -90,7 +90,7 @@ case class JsString(value: String) extends JsValue
 /**
  * Represent a Json array value.
  */
-case class JsArray(value: Seq[JsValue] = List()) extends JsValue {
+case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValue {
 
   /**
    * Concatenates this array with the elements of an other array.
@@ -111,8 +111,10 @@ case class JsArray(value: Seq[JsValue] = List()) extends JsValue {
   def prepend(el: JsValue): JsArray = this.+:(el)
 }
 
-object JsArray extends scala.runtime.AbstractFunction1[Seq[JsValue], JsArray] {
-  def empty = JsArray(Seq.empty)
+object JsArray extends scala.runtime.AbstractFunction1[IndexedSeq[JsValue], JsArray] {
+  def apply(value: Seq[JsValue]) = new JsArray(value.toArray[JsValue])
+
+  def empty = JsArray(Array.empty[JsValue])
 }
 
 /**

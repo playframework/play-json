@@ -108,12 +108,12 @@ object JsError {
     errors.foldLeft(JsObject.empty) { (obj, error) =>
       obj ++ JsObject(Seq(error._1.toJsonString -> error._2.foldLeft(JsArray.empty) { (arr, err) =>
         val msg = JsArray({
-          if (flat) Seq(JsString(err.message))
-          else err.messages.map(JsString(_))
+          if (flat) Array(JsString(err.message))
+          else err.messages.map(JsString(_)).toArray[JsValue]
         })
         arr :+ JsObject(Seq(
           "msg" -> msg,
-          "args" -> JsArray(err.args.map(toJson))
+          "args" -> JsArray(err.args.map(toJson).toArray[JsValue])
         ))
       }))
     }

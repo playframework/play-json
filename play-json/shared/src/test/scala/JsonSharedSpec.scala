@@ -240,10 +240,10 @@ class JsonSharedSpec extends WordSpec
       val recursiveJson = """{"foo": {"foo":["bar"]}, "bar": {"foo":["bar"]}}"""
       val expectedJson = JsObject(List(
         "foo" -> JsObject(List(
-          "foo" -> JsArray(List[JsValue](JsString("bar")))
+          "foo" -> JsArray(Array[JsValue](JsString("bar")))
         )),
         "bar" -> JsObject(List(
-          "foo" -> JsArray(List[JsValue](JsString("bar")))
+          "foo" -> JsArray(Array[JsValue](JsString("bar")))
         ))
       ))
 
@@ -255,7 +255,7 @@ class JsonSharedSpec extends WordSpec
     }
 
     "can parse null values in Array" in json { js =>
-      js.parse("[null]") mustEqual JsArray(List(JsNull))
+      js.parse("[null]") mustEqual JsArray(Array(JsNull))
     }
 
     "null root object should be parsed as JsNull" in json { js =>
