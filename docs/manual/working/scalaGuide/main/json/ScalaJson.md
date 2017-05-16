@@ -101,9 +101,14 @@ You can traverse a `JsValue` structure and extract specific values. The syntax a
 
 ### Simple path `\`
 
-Applying the `\` operator to a `JsValue` will return the property corresponding to the field argument, supposing this is a `JsObject`.
+Applying the `\` operator to a `JsValue` will return the property corresponding to the field argument in a `JsObject`, or the item at that index in a `JsArray`
 
 @[traverse-simple-path](code/ScalaJsonSpec.scala)
+
+
+The `\` operator returns a `JsLookupResult`, which is either `JsDefined` or `JsUndefined`. You can chain multiple `\` operators, and the result will be `JsUndefined` if any intermediate value cannot be found. Calling `get` on a `JsLookupResult` attempts to get the value if it is defined and throws an exception if it is not.
+
+You can also use the Direct lookup `apply` method (below) to get a field in an object or index in an array. Like `get`, this method will throw an exception if the value does not exist.
 
 ### Recursive path `\\`
 
@@ -111,11 +116,13 @@ Applying the `\\` operator will do a lookup for the field in the current object 
 
 @[traverse-recursive-path](code/ScalaJsonSpec.scala)
 
-### Index lookup (for JsArrays)
+### Direct lookup
 
-You can retrieve a value in a `JsArray` using an apply operator with the index number.
+You can retrieve a value in a `JsArray` or `JsObject` using an `.apply` operator, which is identical to the Simple path `\` operator except it returns the value directly (rather than wrapping it in a `JsLookupResult`) and throws an exception if the index or key is not found:
 
 @[traverse-array-index](code/ScalaJsonSpec.scala)
+
+This is useful if you are writing quick-and-dirty code and are accessing some JSON values you *know* to exist, for example in one-off scripts or in the REPL.
 
 ## Converting from a JsValue
 

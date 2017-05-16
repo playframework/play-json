@@ -94,7 +94,7 @@ case class KeyPathNode(key: String) extends PathNode {
 
 case class IdxPathNode(idx: Int) extends PathNode {
   def apply(json: JsValue): List[JsValue] = json match {
-    case arr: JsArray => List(arr(idx)).flatMap(_.toOption)
+    case arr: JsArray => List(arr \ idx).flatMap(_.toOption)
     case _ => List()
   }
 

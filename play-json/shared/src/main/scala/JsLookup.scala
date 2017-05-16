@@ -43,20 +43,47 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    *
    * @param index Element index.
    */
-  def apply(index: Int): JsLookupResult = result match {
+  def apply(index: Int): JsValue = result match {
+    case JsDefined(x) => x match {
+      case arr: JsArray => arr.value.lift(index) match {
+        case Some(x) => x
+        case None => throw new IndexOutOfBoundsException(String.valueOf(index))
+      }
+      case _ =>
+        throw new Exception(x + " is not a JsArray")
+    }
+    case x: JsUndefined =>
+      throw new Exception(String.valueOf(x.error))
+  }
+  /**
+   * Access a value of this array.
+   *
+   * @param fieldName Element index.
+   */
+  def apply(fieldName: String): JsValue = result match {
+    case JsDefined(x) => x match {
+      case arr: JsObject => arr.value.lift(fieldName) match {
+        case Some(x) => x
+        case None => throw new NoSuchElementException(String.valueOf(fieldName))
+      }
+      case _ =>
+        throw new Exception(x + " is not a JsObject")
+    }
+    case x: JsUndefined =>
+      throw new Exception(String.valueOf(x.error))
+  }
+  /**
+   * Access a value of this array.
+   *
+   * @param index Element index
+   */
+  def \(index: Int): JsLookupResult = result match {
     case JsDefined(arr: JsArray) =>
       arr.value.lift(index).map(JsDefined.apply).getOrElse(JsUndefined(s"Array index out of bounds in $arr"))
     case JsDefined(o) =>
       JsUndefined(s"$o is not an array")
     case undef => undef
   }
-
-  /**
-   * Access a value of this array.
-   *
-   * @param index Element index
-   */
-  def \(index: Int): JsLookupResult = apply(index)
 
   /**
    * Return the property corresponding to the fieldName, supposing we have a JsObject.

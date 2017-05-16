@@ -73,6 +73,13 @@ val lat = (json \ "location" \ "lat").get
 
 The `(json \ "location" \ "lat")` returns a `JsLookupResult` which may or may not contain a value. Note that the `get` operation is not always safe; it throws an exception if the path doesn't exist.
 
+You can also use `\` to look up indices within a `JsArray`:
+
+```scala
+val bigwig = (json \ "residents" \ 1).get
+// returns {"name":"Bigwig","age":6,"role":"Owsla"}
+```
+
 ### Recursive path \\
 Applying the `\\` operator will do a lookup for the field in the current object and all descendants.
 
@@ -81,15 +88,18 @@ val names = json \\ "name"
 // returns Seq(JsString("Watership Down"), JsString("Fiver"), JsString("Bigwig"))
 ```
 
-### Index lookup (for JsArrays)
-You can retrieve a value in a JsArray using an apply operator with the index number.
+### Index lookup
+You can retrieve a value in a JsObject or JsArray using an apply operator with the index number or key.
 
 ```scala
-val bigwig = (json \ "residents")(1)
+val name = json("name")
+// returns JsString("Watership Down")
+
+val bigwig = json("residents")(1)
 // returns {"name":"Bigwig","age":6,"role":"Owsla"}
 ```
 
-Like `get`, this operation will throw an exception if the index doesn't exist. Use `validate` or one of the other methods described below to handle the result more safely.
+Like `get`, this will throw an exception if the index doesn't exist. Use the Simple Path `\` operator and `validate` or `asOpt` (described below) if you expect that they key may not be present.
 
 ## Reading and writing objects
 
@@ -116,6 +126,13 @@ val nameResult = (json \ "name").validate[String]
 
 val bogusResult = (json \ "bogus").validate[String]
 // JsError
+
+val unsafeName2 = json("name").as[String]
+// "Watership Down"
+
+val unsafeBogusName2 = json("bogus").as[String]
+// throws exception
+
 ```
 
 ### Automatic conversion
