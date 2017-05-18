@@ -3,25 +3,12 @@
  */
 package play.api.libs.json
 
-import java.util.Locale
-
 import java.time.format.DateTimeFormatter
 import java.time.temporal.Temporal
-import java.time.{
-  Duration => JDuration,
-  Instant,
-  Period,
-  LocalDate,
-  LocalTime,
-  LocalDateTime,
-  OffsetDateTime,
-  ZoneOffset,
-  ZonedDateTime,
-  ZoneId
-}
+import java.time.{ Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, Period, ZoneId, ZoneOffset, ZonedDateTime, Duration => JDuration }
+import java.util.Locale
 
 import com.fasterxml.jackson.databind.JsonNode
-
 import play.api.libs.json.jackson.JacksonJson
 
 trait EnvWrites {
@@ -325,53 +312,37 @@ trait EnvWrites {
   implicit val javaPeriodWrites: Writes[Period] =
     Writes[Period] { d => JsString(d.toString) }
 
-  // TODO: Move to a separate module + deprecation
+  // TODO: remove joda after 2.6.0
   import org.joda.time.{ DateTime, LocalDate, LocalTime }
 
-  /**
-   * Serializer for DateTime
-   * @param pattern the pattern used by SimpleDateFormat
-   */
+  @deprecated("Include play-json-joda as a dependency and use JodaWrites.jodaDateWrites", "2.6.0")
   def jodaDateWrites(pattern: String): Writes[DateTime] = new Writes[DateTime] {
     val df = org.joda.time.format.DateTimeFormat.forPattern(pattern)
     def writes(d: DateTime): JsValue = JsString(d.toString(df))
   }
 
-  /**
-   * Default Serializer DateTime -> JsNumber(d.getMillis (nb of ms))
-   */
-  implicit object DefaultJodaDateWrites extends Writes[DateTime] {
+  @deprecated("Include play-json-joda as a dependency and use JodaWrites.JodaDateNumberWrites", "2.6.0")
+  object DefaultJodaDateWrites extends Writes[DateTime] {
     def writes(d: DateTime): JsValue = JsNumber(d.getMillis)
   }
 
-  /**
-   * Serializer for LocalDate
-   * @param pattern the pattern used by org.joda.time.format.DateTimeFormat
-   */
+  @deprecated("Include play-json-joda as a dependency and use JodaWrites.jodaLocalDateWrites", "2.6.0")
   def jodaLocalDateWrites(pattern: String): Writes[LocalDate] = {
     val df = org.joda.time.format.DateTimeFormat.forPattern(pattern)
     Writes[LocalDate] { d => JsString(d.toString(df)) }
   }
 
-  /**
-   * Default Serializer LocalDate -> JsString(ISO8601 format (yyyy-MM-dd))
-   */
-  implicit object DefaultJodaLocalDateWrites extends Writes[LocalDate] {
+  @deprecated("Include play-json-joda as a dependency and use JodaWrites.DefaultJodaLocalDateWrites", "2.6.0")
+  object DefaultJodaLocalDateWrites extends Writes[LocalDate] {
     def writes(d: LocalDate): JsValue = JsString(d.toString)
   }
 
-  /**
-   * Serializer for LocalTime
-   * @param pattern the pattern used by org.joda.time.format.DateTimeFormat
-   */
+  @deprecated("Include play-json-joda as a dependency and use JodaWrites.jodaLocalTimeWrites", "2.6.0")
   def jodaLocalTimeWrites(pattern: String): Writes[LocalTime] =
     Writes[LocalTime] { d => JsString(d.toString(pattern)) }
 
-  /**
-   * Default Serializer LocalDate -> JsString(ISO8601 format (HH:mm:ss.SSS))
-   */
-  implicit object DefaultJodaLocalTimeWrites extends Writes[LocalTime] {
+  @deprecated("Include play-json-joda as a dependency and use JodaWrites.DefaultJodaLocalTimeWrites", "2.6.0")
+  object DefaultJodaLocalTimeWrites extends Writes[LocalTime] {
     def writes(d: LocalTime): JsValue = JsString(d.toString)
   }
-  // _Joda
 }

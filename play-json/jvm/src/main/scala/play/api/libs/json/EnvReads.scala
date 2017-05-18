@@ -3,33 +3,13 @@
  */
 package play.api.libs.json
 
-import java.util.Locale
-
-import java.time.{
-  Clock,
-  DateTimeException,
-  Duration => JDuration,
-  Instant,
-  LocalDate,
-  LocalTime,
-  LocalDateTime,
-  Period,
-  OffsetDateTime,
-  ZoneId,
-  ZoneOffset,
-  ZonedDateTime
-}
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
-import java.time.temporal.{
-  ChronoUnit,
-  TemporalUnit,
-  Temporal => JTemporal,
-  UnsupportedTemporalTypeException
-}
+import java.time.temporal.{ ChronoUnit, TemporalUnit, UnsupportedTemporalTypeException, Temporal => JTemporal }
+import java.time.{ Clock, DateTimeException, Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, Period, ZoneId, ZoneOffset, ZonedDateTime, Duration => JDuration }
+import java.util.Locale
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
-
 import play.api.libs.json.jackson.JacksonJson
 
 trait EnvReads {
@@ -604,16 +584,11 @@ trait EnvReads {
     case js => javaPeriodDaysReads.reads(js)
   }
 
-  // TODO: Move to a separate module + deprecation
-  import org.joda.time.{ DateTime, LocalTime }
-  import org.joda.time.format.DateTimeFormat
+  // TODO: remove joda after 2.6.0
+  import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
+  import org.joda.time.{ DateTime, LocalDate, LocalTime }
 
-  /**
-   * Reads for the `org.joda.time.DateTime` type.
-   *
-   * @param pattern a date pattern, as specified in `java.text.SimpleDateFormat`.
-   * @param corrector a simple string transformation function that can be used to transform input String before parsing. Useful when standards are not exactly respected and require a few tweaks
-   */
+  @deprecated("Include play-json-joda as a dependency and use JodaReads.jodaDateReads", "2.6.0")
   def jodaDateReads(pattern: String, corrector: String => String = identity): Reads[DateTime] = new Reads[DateTime] {
     val df = DateTimeFormat.forPattern(pattern)
 
@@ -631,21 +606,11 @@ trait EnvReads {
 
   }
 
-  /**
-   * the default implicit JodaDate reads
-   */
-  implicit val DefaultJodaDateReads = jodaDateReads("yyyy-MM-dd")
+  @deprecated("Include play-json-joda as a dependency and use JodaReads.DefaultJodaDateTimeReads", "2.6.0")
+  val DefaultJodaDateReads = jodaDateReads("yyyy-MM-dd")
 
-  /**
-   * Reads for the `org.joda.time.LocalDate` type.
-   *
-   * @param pattern a date pattern, as specified in `org.joda.time.format.DateTimeFormat`.
-   * @param corrector string transformation function (See jodaDateReads)
-   */
+  @deprecated("Include play-json-joda as a dependency and use JodaReads.jodaLocalDateReads", "2.6.0")
   def jodaLocalDateReads(pattern: String, corrector: String => String = identity): Reads[org.joda.time.LocalDate] = new Reads[org.joda.time.LocalDate] {
-
-    import org.joda.time.LocalDate
-    import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
 
     val df = if (pattern == "") ISODateTimeFormat.localDateParser else DateTimeFormat.forPattern(pattern)
 
@@ -661,19 +626,11 @@ trait EnvReads {
       scala.util.control.Exception.allCatch[LocalDate] opt (LocalDate.parse(input, df))
   }
 
-  /**
-   * the default implicit joda.time.LocalDate reads
-   */
-  implicit val DefaultJodaLocalDateReads = jodaLocalDateReads("")
+  @deprecated("Include play-json-joda as a dependency and use JodaReads.DefaultJodaLocalDateReads", "2.6.0")
+  val DefaultJodaLocalDateReads = jodaLocalDateReads("")
 
-  /**
-   * Reads for the `org.joda.time.LocalTime` type.
-   *
-   * @param pattern a date pattern, as specified in `org.joda.time.format.DateTimeFormat`.
-   * @param corrector string transformation function (See jodaTimeReads)
-   */
+  @deprecated("Include play-json-joda as a dependency and use JodaReads.jodaLocalTimeReads", "2.6.0")
   def jodaLocalTimeReads(pattern: String, corrector: String => String = identity): Reads[LocalTime] = new Reads[LocalTime] {
-    import org.joda.time.format.{ ISODateTimeFormat }
 
     val df = if (pattern == "") ISODateTimeFormat.localTimeParser else DateTimeFormat.forPattern(pattern)
 
@@ -690,9 +647,6 @@ trait EnvReads {
       scala.util.control.Exception.allCatch[LocalTime] opt (LocalTime.parse(input, df))
   }
 
-  /**
-   * the default implicit joda.time.LocalTime reads
-   */
-  implicit val DefaultJodaLocalTimeReads = jodaLocalTimeReads("")
-  // _Joda
+  @deprecated("Include play-json-joda as a dependency and use JodaReads.DefaultJodaLocalTimeReads", "2.6.0")
+  val DefaultJodaLocalTimeReads = jodaLocalTimeReads("")
 }

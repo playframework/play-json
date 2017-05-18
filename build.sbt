@@ -73,7 +73,8 @@ lazy val root = project
     `play-jsonJS`,
     `play-jsonJVM`,
     `play-functionalJS`,
-    `play-functionalJVM`
+    `play-functionalJVM`,
+    `play-json-joda`
   ).settings(commonSettings: _*)
 
 val isNew = implicitly[ProblemFilter](
@@ -129,9 +130,20 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
   )
   .dependsOn(`play-functional`)
 
+lazy val `play-json-joda` = project
+  .in(file("play-json-joda"))
+  .enablePlugins(PlayLibrary)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= joda ++ specsBuild.map(_ % Test)
+  )
+  .dependsOn(`play-jsonJVM`)
+
 lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
-    libraryDependencies ++= joda ++ jacksons ++ specsBuild.map(_ % Test) :+ (
+    libraryDependencies ++=
+      joda ++ // TODO: remove joda after 2.6.0
+      jacksons ++ specsBuild.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
     unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
