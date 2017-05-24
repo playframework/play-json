@@ -55,10 +55,50 @@ trait OWrites[-A] extends Writes[A] {
 object OWrites extends PathWrites with ConstraintWrites {
   import play.api.libs.functional._
 
+  /**
+   * An `OWrites` merging the results of two separate `OWrites`.
+   */
+  private object MergedOWrites {
+    def apply[A, B](wa: OWrites[A], wb: OWrites[B]): OWrites[A ~ B] =
+      new OWritesFromFields[A ~ B] {
+        def writeFields(fieldsMap: mutable.Map[String, JsValue], obj: A ~ B): Unit = {
+          val a ~ b = obj
+          mergeIn(fieldsMap, wa, a)
+          mergeIn(fieldsMap, wb, b)
+        }
+      }
+
+    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: Writes[A], a: A): Unit = wa match {
+      case wff: OWritesFromFields[A] =>
+        wff.writeFields(fieldsMap, a)
+      case w: OWrites[A] =>
+        w.writes(a).underlying.foreach {
+          case (key, value: JsObject) =>
+            fieldsMap.put(key, fieldsMap.get(key) match {
+              case Some(o: JsObject) => o deepMerge value
+              case _ => value
+            })
+          case (key, value) =>
+            fieldsMap.put(key, value)
+        }
+    }
+  }
+
+  /**
+   * An `OWrites` capable of writing an object incrementally to a mutable map
+   */
+  private trait OWritesFromFields[A] extends OWrites[A] {
+    def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A)
+
+    def writes(a: A): JsObject = {
+      val fieldsMap = new mutable.LinkedHashMap[String, JsValue]()
+      writeFields(fieldsMap, a)
+      JsObject(fieldsMap)
+    }
+  }
+
   implicit val functionalCanBuildOWrites: FunctionalCanBuild[OWrites] = new FunctionalCanBuild[OWrites] {
-
-    def apply[A, B](wa: OWrites[A], wb: OWrites[B]): OWrites[A ~ B] = OWrites[A ~ B] { case a ~ b => wa.writes(a).deepMerge(wb.writes(b)) }
-
+    def apply[A, B](wa: OWrites[A], wb: OWrites[B]): OWrites[A ~ B] = MergedOWrites[A, B](wa, wb)
   }
 
   implicit val contravariantfunctorOWrites: ContravariantFunctor[OWrites] = new ContravariantFunctor[OWrites] {
