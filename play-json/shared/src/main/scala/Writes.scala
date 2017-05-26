@@ -87,7 +87,7 @@ object OWrites extends PathWrites with ConstraintWrites {
 /**
  * Default Serializers.
  */
-object Writes extends PathWrites with ConstraintWrites with DefaultWrites {
+object Writes extends PathWrites with ConstraintWrites with DefaultWrites with GeneratedWrites {
 
   val constraints: ConstraintWrites = this
   val path: PathWrites = this
