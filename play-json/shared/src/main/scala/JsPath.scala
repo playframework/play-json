@@ -134,7 +134,7 @@ case class IdxPathNode(idx: Int) extends PathNode {
  */
 object JsPath extends JsPath(List.empty) {
   // TODO implement it correctly (doesn't merge )
-  def createObj(pathValues: (JsPath, JsValue)*) = {
+  def createObj(pathValues: (JsPath, JsValue)*): JsObject = {
 
     def buildSubPath(path: JsPath, value: JsValue) = {
       def step(path: List[PathNode], value: JsValue): JsObject = {
@@ -157,9 +157,22 @@ object JsPath extends JsPath(List.empty) {
       step(path.path, value)
     }
 
-    pathValues.foldLeft(JsObject.empty) {
-      case (obj, (path, value)) =>
-        obj.deepMerge(buildSubPath(path, value))
+    // optimize fast path
+    val objectMap = new scala.collection.mutable.LinkedHashMap[String, JsValue]()
+    val isSimpleObject = pathValues.forall {
+      case (JsPath(KeyPathNode(key) :: Nil), value) =>
+        objectMap.put(key, value)
+        true
+      case _ =>
+        false
+    }
+    if (isSimpleObject) {
+      JsObject(objectMap)
+    } else {
+      pathValues.foldLeft(JsObject.empty) {
+        case (obj, (path, value)) =>
+          obj.deepMerge(buildSubPath(path, value))
+      }
     }
   }
 }

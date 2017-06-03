@@ -160,6 +160,13 @@ lazy val `play-functional` = crossProject.crossType(CrossType.Pure)
 lazy val `play-functionalJVM` = `play-functional`.jvm
 lazy val `play-functionalJS` = `play-functional`.js
 
+import pl.project13.scala.sbt.JmhPlugin
+lazy val benchmarks = project
+  .in(file("benchmarks"))
+  .enablePlugins(JmhPlugin, PlayNoPublish)
+  .settings(commonSettings)
+  .dependsOn(`play-jsonJVM`)
+
 playBuildRepoName in ThisBuild := "play-json"
 
 releaseProcess := Seq[ReleaseStep](

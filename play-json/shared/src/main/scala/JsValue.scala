@@ -121,7 +121,7 @@ object JsArray extends scala.runtime.AbstractFunction1[IndexedSeq[JsValue], JsAr
  * Represent a Json object value.
  */
 case class JsObject(
-    private val underlying: Map[String, JsValue]
+    private[json] val underlying: Map[String, JsValue]
 ) extends JsValue {
 
   /**
