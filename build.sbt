@@ -126,7 +126,50 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       "org.typelevel" %% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
       compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-    )
+    ),
+    sourceGenerators in Compile += Def.task{
+      val dir = (sourceManaged in Compile).value
+
+      val file = dir / "upickle" / "Generated.scala"
+      val (writes, reads) = (1 to 22).map{ i =>
+        def commaSeparated(s: Int => String) = (1 to i).map(s).mkString(", ")
+        def newlineSeparated(s: Int => String) = (1 to i).map(s).mkString("\n")
+        val writerTypes = commaSeparated(j => s"T$j: Writes")
+        val readerTypes = commaSeparated(j => s"T$j: Reads")
+        val typeTuple = commaSeparated(j => s"T$j")
+        val written = commaSeparated(j => s"implicitly[Writes[T$j]].writes(x._$j)")
+        val readValues = commaSeparated(j => s"t$j")
+        val readGenerators = newlineSeparated(j => s"t$j <- implicitly[Reads[T$j]].reads(arr(${j-1}))")
+        (s"""
+          implicit def Tuple${i}W[$writerTypes]: Writes[Tuple${i}[$typeTuple]] = Writes[Tuple${i}[$typeTuple]](
+            x => JsArray(Array($written))
+          )
+          """,s"""
+          implicit def Tuple${i}R[$readerTypes]: Reads[Tuple${i}[$typeTuple]] = Reads[Tuple${i}[$typeTuple]]{
+            case JsArray(arr) if arr.size == $i =>
+              for{
+                $readGenerators
+              } yield Tuple$i($readValues)
+
+            case _ =>
+              JsError(Seq(JsPath() -> Seq(JsonValidationError("Expected array of $i elements"))))
+          }
+        """)
+      }.unzip
+
+      IO.write(file, s"""
+          package play.api.libs.json
+
+          trait GeneratedReads {
+            ${reads.mkString("\n")}
+          }
+
+          trait GeneratedWrites{
+            ${writes.mkString("\n")}
+          }
+        """)
+      Seq(file)
+    }.taskValue
   )
   .dependsOn(`play-functional`)
 
