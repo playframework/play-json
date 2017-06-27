@@ -240,9 +240,10 @@ import scala.reflect.macros.blackbox
           case Some((TypeRef(NoPrefix, a, _),
             TypeRef(NoPrefix, b, _))) => { // for generic parameter
             if (a.fullName != b.fullName) {
-              c.warning(
+              c.info(
                 c.enclosingPosition,
-                s"Type symbols are not compatible: $a != $b"
+                s"Type symbols are not compatible: $a != $b",
+                force = false
               )
 
               false
@@ -250,9 +251,10 @@ import scala.reflect.macros.blackbox
           }
 
           case Some((a, b)) if (a.typeArgs.size != b.typeArgs.size) => {
-            c.warning(
+            c.info(
               c.enclosingPosition,
-              s"Type parameters are not matching: $a != $b"
+              s"Type parameters are not matching: $a != $b",
+              force = false
             )
 
             false
@@ -260,18 +262,20 @@ import scala.reflect.macros.blackbox
 
           case Some((a, b)) if a.typeArgs.isEmpty =>
             if (a =:= b) conforms(types.tail) else {
-              c.warning(
+              c.info(
                 c.enclosingPosition,
-                s"Types are not compatible: $a != $b"
+                s"Types are not compatible: $a != $b",
+                force = false
               )
 
               false
             }
 
           case Some((a, b)) if (a.baseClasses != b.baseClasses) => {
-            c.warning(
+            c.info(
               c.enclosingPosition,
-              s"Generic types are not compatible: $a != $b"
+              s"Generic types are not compatible: $a != $b",
+              force = false
             )
 
             false
@@ -551,9 +555,9 @@ import scala.reflect.macros.blackbox
         // from the implicit scope, due to the contravariant/implicit issue:
         // https://groups.google.com/forum/#!topic/scala-language/ZE83TvSWpT4
 
-        q"""{ v: ${atag.tpe} => 
+        q"""{ v: ${atag.tpe} =>
           val ${term.name.asInstanceOf[TermName]} = "eliminatedImplicit"
-          $cases 
+          $cases
         }"""
       }
 
