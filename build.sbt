@@ -40,19 +40,17 @@ def jsonDependencies(scalaVersion: String) = Seq(
 import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 
-val previousVersion = Def.setting[Option[String]] {
+val previousVersions = Def.setting[Seq[String]] {
   scalaVersion.value.split('.')(1) match {
-    case "10" => Some("2.6.0-M6")
-    case "11" => Some("2.5.14")
-    case "12" => Some("2.6.0-M1")
-    case _ => None
+    case "10" => Seq("2.6.0")
+    case "11" => Seq("2.6.0")
+    case "12" => Seq("2.6.0")
+    case _ => Nil
   }
 }
 
-lazy val playJsonMimaSettings = mimaDefaultSettings ++ Seq(
-  mimaPreviousArtifacts := previousVersion.value.map { v =>
-    organization.value %% moduleName.value % v
-  }.toSet
+def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
+  mimaPreviousArtifacts := previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
 )
 
 lazy val commonSettings = SbtScalariform.scalariformSettings ++ Seq(
@@ -77,48 +75,16 @@ lazy val root = project
     `play-json-joda`
   ).settings(commonSettings: _*)
 
-val isNew = implicitly[ProblemFilter](
-  _.ref.isInstanceOf[ReversedMissingMethodProblem])
-
-val filtersNew = Seq(
-  // Macro/compile-time
-  ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.JsMacroImpl$ImplicitResolver$2$ImplicitTransformer$"),
-  ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.JsMacroImpl$ImplicitResolver$2$Implicit$"),
-  ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.JsMacroImpl$ImplicitResolver$2$Implicit")
-)
-
-val compatFilters = {
-  val validationFilter: ProblemFilter =
-    !_.ref.toString.contains("validation.ValidationError")
-
-  Seq(
-    validationFilter,
-    ProblemFilters.exclude[MissingClassProblem]("play.libs.Json"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.ConstraintReads.min"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.ConstraintReads.max"),
-    ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.min"),
-    ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.max"),
-    ProblemFilters.exclude[UpdateForwarderBodyProblem]("play.api.libs.json.DefaultWrites.traversableWrites"),
-
-    // Was deprecated
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.Json.toJson"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.Json.fromJson"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsError.toFlatJson"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsError.toFlatJson")
-  )
-}
-
 lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(PlayLibrary, Playdoc)
   .settings(commonSettings)
   .settings(playJsonMimaSettings)
   .settings(
-    mimaBinaryIssueFilters ++= {
-      if (scalaVersion.value startsWith "2.11") {
-        compatFilters ++ filtersNew :+ isNew
-      } else Seq(isNew)
-    },
+    mimaBinaryIssueFilters ++= Seq(
+      // AbstractFunction1 is in scala.runtime and isn't meant to be used by end users
+      ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$")
+    ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
       "org.scalatest" %%% "scalatest" % "3.0.3" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,

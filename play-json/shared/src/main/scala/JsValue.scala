@@ -68,11 +68,8 @@ case object JsTrue extends JsBoolean(true)
  */
 case object JsFalse extends JsBoolean(false)
 
-object JsBoolean extends Function1[Boolean, JsBoolean] {
-  def apply(value: Boolean): JsBoolean = value match {
-    case true => JsTrue
-    case false => JsFalse
-  }
+object JsBoolean extends (Boolean => JsBoolean) {
+  def apply(value: Boolean): JsBoolean = if (value) JsTrue else JsFalse
 
   def unapply(b: JsBoolean): Option[Boolean] = Some(b.value)
 }
@@ -91,6 +88,9 @@ case class JsString(value: String) extends JsValue
  * Represent a Json array value.
  */
 case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValue {
+
+  // keeping this method will also help bincompat with older play-json versions
+  private[json] def this(value: Seq[JsValue]) = this(value.toArray[JsValue])
 
   /**
    * Concatenates this array with the elements of an other array.
@@ -111,7 +111,7 @@ case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValu
   def prepend(el: JsValue): JsArray = this.+:(el)
 }
 
-object JsArray extends scala.runtime.AbstractFunction1[IndexedSeq[JsValue], JsArray] {
+object JsArray extends (IndexedSeq[JsValue] => JsArray) {
   def apply(value: Seq[JsValue]) = new JsArray(value.toArray[JsValue])
 
   def empty = JsArray(Array.empty[JsValue])
