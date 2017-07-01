@@ -21,8 +21,7 @@ import java.time.format.DateTimeFormatter
 import org.specs2.specification.core.Fragment
 
 class WritesSpec extends org.specs2.mutable.Specification {
-
-  title("JSON Writes")
+  "JSON Writes" title
 
   "Local date/time" should {
     val DefaultWrites = implicitly[Writes[LocalDateTime]]

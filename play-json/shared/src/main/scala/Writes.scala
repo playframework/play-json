@@ -5,6 +5,7 @@ package play.api.libs.json
 
 import play.api.libs.functional.ContravariantFunctor
 
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.annotation.implicitNotFound
 import scala.collection._
 import scala.reflect.ClassTag
@@ -138,6 +139,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
         Writes[B](b => wa.writes(f(b)))
     }
 
+  /** Functional factory */
   def apply[A](f: A => JsValue): Writes[A] = new Writes[A] {
     def writes(a: A): JsValue = f(a)
   }
@@ -252,20 +254,20 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for Option.
    */
-  implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] = new Writes[Option[T]] {
-    def writes(o: Option[T]) = o match {
+  implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] =
+    Writes[Option[T]] {
       case Some(value) => fmt.writes(value)
-      case None => JsNull
+      case _ => JsNull
     }
-  }
 
   /**
    * Serializer for java.util.Date
    * @param pattern the pattern used by SimpleDateFormat
    */
-  def dateWrites(pattern: String): Writes[java.util.Date] = new Writes[java.util.Date] {
-    def writes(d: java.util.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
-  }
+  def dateWrites(pattern: String): Writes[java.util.Date] =
+    Writes[java.util.Date] { d =>
+      JsString(new java.text.SimpleDateFormat(pattern).format(d))
+    }
 
   /**
    * Default Serializer java.util.Date -> JsNumber(d.getTime (nb of ms))
@@ -278,9 +280,32 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for java.sql.Date
    * @param pattern the pattern used by SimpleDateFormat
    */
-  def sqlDateWrites(pattern: String): Writes[java.sql.Date] = new Writes[java.sql.Date] {
-    def writes(d: java.sql.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
+  def sqlDateWrites(pattern: String): Writes[java.sql.Date] =
+    Writes[java.sql.Date] { d =>
+      JsString(new java.text.SimpleDateFormat(pattern).format(d))
+    }
+
+  /**
+   * Serializer for Scala Duration
+   */
+  implicit val durationWrites: Writes[Duration] = Writes[Duration] {
+    case Duration.Inf => JsString("Inf")
+    case Duration.MinusInf => JsString("MinusInf")
+    case Duration.Zero => JsNumber(0)
+
+    case undefined if (undefined eq Duration.Undefined) =>
+      JsString("Undefined")
+
+    case finite => JsString(finite.toString)
   }
+
+  /**
+   * NumberSerializer for Scala FiniteDuration
+   */
+  val finiteDurationNumberWrites: Writes[FiniteDuration] =
+    Writes[FiniteDuration] { finite =>
+      JsNumber(BigDecimal(finite.toMillis))
+    }
 
   /**
    * Serializer for java.util.UUID
