@@ -83,7 +83,8 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .settings(
     mimaBinaryIssueFilters ++= Seq(
       // AbstractFunction1 is in scala.runtime and isn't meant to be used by end users
-      ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$")
+      ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$"),
+      ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
       "org.scalatest" %%% "scalatest" % "3.0.3" % Test,

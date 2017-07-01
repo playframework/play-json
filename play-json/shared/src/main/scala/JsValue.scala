@@ -198,7 +198,7 @@ case class JsObject(
   override def hashCode: Int = fieldSet.hashCode()
 }
 
-object JsObject extends scala.runtime.AbstractFunction1[Seq[(String, JsValue)], JsObject] {
+object JsObject extends (Seq[(String, JsValue)] => JsObject) {
   /**
    * Construct a new JsObject, with the order of fields in the Seq.
    */
