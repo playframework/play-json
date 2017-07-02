@@ -18,6 +18,12 @@ class ScalaJsonAutomatedSpec extends Specification {
   case class PlayUser(name: String, firstName: String, userAge: Int)
   //#model2
 
+  //#model3
+  sealed trait Role
+  case object Admin extends Role
+  case class Contributor(organization: String) extends Role
+  //#model3
+
   val sampleJson = Json.parse(
     """{
       "name" : "Fiver",
@@ -52,7 +58,6 @@ class ScalaJsonAutomatedSpec extends Specification {
 
   "Scala JSON automated" should {
     "produce a working Reads" in {
-
       //#auto-reads
       import play.api.libs.json._
 
@@ -61,8 +66,8 @@ class ScalaJsonAutomatedSpec extends Specification {
 
       sampleJson.as[Resident] must_=== sampleData
     }
-    "do the same thing as a manual Reads" in {
 
+    "do the same thing as a manual Reads" in {
       //#manual-reads
       import play.api.libs.json._
       import play.api.libs.functional.syntax._
@@ -76,8 +81,8 @@ class ScalaJsonAutomatedSpec extends Specification {
 
       sampleJson.as[Resident] must_=== sampleData
     }
-    "produce a working Writes" in {
 
+    "produce a working Writes" in {
       //#auto-writes
       import play.api.libs.json._
 
@@ -86,8 +91,8 @@ class ScalaJsonAutomatedSpec extends Specification {
 
       Json.toJson(sampleData) must_=== sampleJson
     }
-    "produce a working Format" in {
 
+    "produce a working Format" in {
       //#auto-format
       import play.api.libs.json._
 
@@ -184,15 +189,68 @@ class ScalaJsonAutomatedSpec extends Specification {
         }"""
       )
 
-      val residentFromJson: JsResult[Resident] = Json.fromJson[Resident](jsonString)
+      val residentFromJson: JsResult[Resident] =
+        Json.fromJson[Resident](jsonString)
 
       residentFromJson match {
-        case JsSuccess(r: Resident, path: JsPath) => println("Name: " + r.name)
-        case e: JsError => println("Errors: " + JsError.toJson(e).toString())
+        case JsSuccess(r: Resident, path: JsPath) =>
+          println("Name: " + r.name)
+
+        case e @ JsError(_) =>
+          println("Errors: " + JsError.toJson(e).toString())
       }
       //#auto-JSON-to-case-class
 
       residentFromJson.get must_=== sampleData
+    }
+
+    "automatically convert JSON to a sealed family" in {
+      //#trait-representation
+      val adminJson = Json.parse("""
+        { "_type": "scalaguide.json.ScalaJsonAutomatedSpec.Admin" }
+      """)
+
+      val contributorJson = Json.parse("""
+        {
+          "_type":"scalaguide.json.ScalaJsonAutomatedSpec.Contributor",
+          "organization":"Foo"
+        }
+      """)
+
+      // Each JSON objects is marked with the _type,
+      // indicating the fully-qualified name of sub-type
+      //#trait-representation
+
+      //#auto-JSON-sealed-trait
+      import play.api.libs.json._
+
+      // First provide instance for each sub-types 'Admin' and 'Contributor':
+      implicit val adminFormat = OFormat[Admin.type](
+        Reads[Admin.type] {
+          case JsObject(_) => JsSuccess(Admin)
+          case _ => JsError("Empty object expected")
+        },
+        OWrites[Admin.type] { _ => Json.obj() })
+
+      implicit val contributorFormat = Json.format[Contributor]
+
+      // Finally able to generate format for the sealed family 'Role'
+      implicit val roleFormat: OFormat[Role] = Json.format[Role]
+      //#auto-JSON-sealed-trait
+
+      def writeAnyRole(role: Role) = Json.toJson(role)
+
+      def readAnyRole(input: JsValue): JsResult[Role] = input.validate[Role]
+
+      val sampleContributor = Contributor("Foo")
+
+      writeAnyRole(Admin) must_=== adminJson and {
+        writeAnyRole(sampleContributor) must_=== contributorJson
+      } and {
+        readAnyRole(adminJson) must_=== JsSuccess(Admin)
+      } and {
+        readAnyRole(contributorJson) must_=== JsSuccess(sampleContributor)
+      }
     }
 
     "produce a json object with nulls" in {
@@ -206,7 +264,6 @@ class ScalaJsonAutomatedSpec extends Specification {
       val resident = Resident(name = "Fiver", age = 4, role = None)
 
       Json.toJson(resident) must_=== sampleJson4
-
     }
   }
 }
