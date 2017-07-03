@@ -13,7 +13,7 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val specsVersion = "3.8.9"
+val specsVersion = "3.9.1"
 val specsBuild = Seq(
   "specs2-core"
 ).map("org.specs2" %% _ % specsVersion)
@@ -55,7 +55,7 @@ def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
 
 lazy val commonSettings = SbtScalariform.scalariformSettings ++ Seq(
     scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212),
+    crossScalaVersions := Seq(ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, "2.13.0-M1"),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
