@@ -266,6 +266,12 @@ class MacroSpec extends WordSpec with MustMatchers
       )
     }
 
+    "handle case class with default values, format defined in companion object" in {
+      val json = Json.obj("id" -> 15)
+      val expected = WithDefaultInCompanion(15, "a")
+      Json.fromJson[WithDefaultInCompanion](json).get mustEqual expected
+    }
+
     "handle case class with default values inner optional case class containing default values" when {
       implicit val cfg = JsonConfiguration(JsonNaming.Identity)
       implicit val withDefaultFormat = Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
@@ -488,4 +494,9 @@ class MacroSpec extends WordSpec with MustMatchers
     seq: Seq[B],
     scores: Map[String, Float]
   )
+
+  case class WithDefaultInCompanion(id: Int, a: String = "a")
+  object WithDefaultInCompanion {
+    implicit val format: OFormat[WithDefaultInCompanion] = Json.using[Json.WithDefaultValues].format[WithDefaultInCompanion]
+  }
 }
