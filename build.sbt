@@ -53,6 +53,13 @@ def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
   mimaPreviousArtifacts := previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
 )
 
+// Workaround for https://github.com/scala-js/scala-js/issues/2378
+// Use "sbt -DscalaJSStage=full" in .travis.yml
+scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
+  case Some("full") => FullOptStage
+  case _ => FastOptStage
+})
+
 lazy val commonSettings = SbtScalariform.scalariformSettings ++ Seq(
     scalaVersion := ScalaVersions.scala212,
     crossScalaVersions := Seq(ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212),
