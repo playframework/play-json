@@ -14,7 +14,14 @@ import scala.language.higherKinds
 import reflect.ClassTag
 
 /**
- * Json deserializer: write an implicit to define a deserializer for any type.
+ * A `Reads` object describes how to decode JSON into a value.
+ * `Reads` objects are typically provided as implicit values. When `Reads`
+ * implicit values are in scope, a program is able to deserialize JSON
+ * into values of the right type.
+ *
+ * The inverse of a `Reads` object is a [[Writes]] object, which describes
+ * how to encode a value into JSON. If you combine a `Reads` and a `Writes`
+ * then you get a [[Format]].
  */
 @implicitNotFound(
   "No Json deserializer found for type ${A}. Try to implement an implicit Reads or Format for this type."
@@ -26,6 +33,9 @@ trait Reads[A] { self =>
   def reads(json: JsValue): JsResult[A]
 
   /**
+   * Create a new `Reads` which maps the value produced by this `Reads`.
+   *
+   * @tparam B The type of the value produced by the new `Reads`.
    * @param f the function applied on the result of the current instance,
    * if successful
    */
@@ -53,6 +63,14 @@ trait Reads[A] { self =>
   def collect[B](error: JsonValidationError)(f: PartialFunction[A, B]): Reads[B] =
     Reads[B] { json => self.reads(json).collect(error)(f) }
 
+  /**
+   * Creates a new `Reads`, based on this one, which first executes this
+   * `Reads`' logic then, if this `Reads` resulted in a `JsError`, runs
+   * the second `Reads` on the [[JsValue]].
+   * 
+   * @param v The `Reads` to run if this one gets a `JsError`.
+   * @return A new `Reads` with the updated behavior.
+   */
   def orElse(v: Reads[A]): Reads[A] =
     Reads[A] { json => self.reads(json).orElse(v.reads(json)) }
 
