@@ -60,3 +60,9 @@ A strategy other than the default one can be used as following:
 To implement your own Naming Strategy you just need to implement the `JsonNaming` trait:
 
 @[auto-custom-naming-format](code/ScalaJsonAutomatedSpec.scala)
+
+## Failing on unknown properties
+
+The JSON macros support a `StrictProperties` option that allows you to fail when unknown properties are encountered. This can be enabled like so:
+
+@[strict-properties](code/ScalaJsonAutomatedSpec.scala)

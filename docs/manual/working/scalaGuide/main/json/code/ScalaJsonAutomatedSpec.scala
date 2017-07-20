@@ -185,5 +185,18 @@ class ScalaJsonAutomatedSpec extends Specification {
 
       residentFromJson.get must_=== sampleData
     }
+
+    "allow strict properties" in {
+      //#strict-properties
+      import play.api.libs.json._
+
+      implicit val residentReads: Reads[Resident] =
+        Json.using[Json.WithStrictProperties].reads[Resident]
+      //#strict-properties
+
+      sampleJson.as[Resident] must_== sampleData
+      Json.fromJson(sampleJson.as[JsObject] + ("other" -> JsString("none"))) must beAnInstanceOf[JsError]
+    }
+
   }
 }
