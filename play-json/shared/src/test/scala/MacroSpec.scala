@@ -31,9 +31,10 @@ object TestFormats {
 
 import org.scalatest._
 import org.scalacheck.Gen
+import play.api.libs.json.Json.WithStrictProperties
 
 class MacroSpec extends WordSpec with MustMatchers
-    with org.scalatest.prop.PropertyChecks {
+    with org.scalatest.prop.PropertyChecks with EitherValues {
 
   "Reads" should {
     "be generated for simple case class" in {
@@ -115,6 +116,34 @@ class MacroSpec extends WordSpec with MustMatchers
         jsSimple.validate[Family].get mustEqual simple
         jsOptional.validate[Family].get mustEqual optional
       }
+    }
+    "support strict properties" when {
+      val reads = Json.using[WithStrictProperties].reads[Simple]
+
+      "when all properties are present" in {
+        reads.reads(Json.obj("bar" -> "lorem")) mustEqual JsSuccess(Simple("lorem"))
+      }
+
+      "when an unexpected property is present" in {
+        val errors = reads.reads(Json.obj("bar" -> "lorem", "foo" -> "nope", "baz" -> "nope"))
+          .asEither.left.value
+
+        errors must contain only (
+          JsPath \ "foo" -> List(JsonValidationError("error.unexpected.property")),
+          JsPath \ "baz" -> List(JsonValidationError("error.unexpected.property"))
+        )
+      }
+
+      "merge errors when an unexpected property is present" in {
+        val errors = reads.reads(Json.obj("bar" -> 2, "foo" -> "nope"))
+          .asEither.left.value
+
+        errors must contain only (
+          JsPath \ "foo" -> List(JsonValidationError("error.unexpected.property")),
+          JsPath \ "bar" -> List(JsonValidationError("error.expected.jsstring"))
+        )
+      }
+
     }
   }
 

@@ -360,7 +360,7 @@ object Json extends JsonFacade {
      *   Json.using[Json.MacroOptions].writes[User]
      * }}}
      */
-    def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
+    def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, Opts]
 
     /**
      * Creates a `OFormat[T]` by resolving, at compile-time,
@@ -432,4 +432,19 @@ object Json extends JsonFacade {
    * }}}
    */
   type WithDefaultValues = MacroOptions with DefaultValues
+
+  /**
+   * Flag to indicate that the macros should generate reads
+   * that fail on unknown properties.
+   */
+  trait StrictProperties { _: MacroOptions => }
+
+  /**
+   * Alias for `MacroOptions with StrictProperties`
+   *
+   * {{{
+   * Json.using[WithStrictProperties]
+   * }}}
+   */
+  type WithStrictProperties = MacroOptions with StrictProperties
 }

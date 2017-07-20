@@ -192,6 +192,22 @@ trait DefaultReads extends LowPriorityDefaultReads {
   }
 
   /**
+   * A reads that fails if any of the objects properties are not present in the passed in known properties list.
+   */
+  def failOnUnknownProperties(knownProperties: immutable.Seq[String]): Reads[JsObject] = Reads { jsValue =>
+    JsObjectReads.reads(jsValue).flatMap { jsObject =>
+      val unknown = jsObject.keys -- knownProperties
+      if (unknown.isEmpty) {
+        JsSuccess(jsObject)
+      } else {
+        JsError(unknown.map { prop =>
+          __ \ prop -> Seq(JsonValidationError("error.unexpected.property"))
+        }.toSeq)
+      }
+    }
+  }
+
+  /**
    * Deserializer for Int types.
    */
   implicit object IntReads extends Reads[Int] {

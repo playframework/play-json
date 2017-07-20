@@ -3,6 +3,8 @@
  */
 package play.api.libs.json
 
+import play.api.libs.json.Json.StrictProperties
+
 import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
@@ -617,14 +619,19 @@ import scala.reflect.macros.blackbox
           }.toMap
         }
 
+      // Determine the JSON property name for a given symbol name
+      def configNaming(name: Name): c.Expr[String] = {
+        c.Expr[String](
+          q"$cfgName.naming(${name.decodedName.toString})"
+        )
+      }
+
       val resolvedImplicits = utility.implicits(resolver)
       val canBuild = resolvedImplicits.map {
         case (name, Implicit(pt, impl, _, _)) =>
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
-          val cn = c.Expr[String](
-            q"$cfgName.naming(${name.decodedName.toString})"
-          )
+          val cn = configNaming(name)
           val jspathTree = q"$JsPath \ $cn"
           val isOption = pt.typeConstructor <:< optTpeCtor
 
@@ -667,33 +674,49 @@ import scala.reflect.macros.blackbox
 
       val syntaxImport = if (!multiParam && !writes) q"" else q"import $syntax._"
       @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
-      def readResult =
-        if (multiParam) q"underlying.reads(obj)"
-        else q"underlying.flatMap[${atag.tpe}]($json.Reads.pure(_)).reads(obj)"
+      def finalReads(underlying: TermName) = {
+        val theReads = {
+          if (multiParam) q"$underlying"
+          else q"$underlying.flatMap[${atag.tpe}]($json.Reads.pure(_))"
+        }
+        if (hasOption[StrictProperties]) {
+          val properties = resolvedImplicits.map(ri => configNaming(ri._1))
+          // Directly instantiate FunctionalBuilderOps because we can't rely on function syntax being imported
+          q"""{
+            new $libs.functional.FunctionalBuilderOps($json.Reads.failOnUnknownProperties(
+              _root_.scala.collection.immutable.Seq(..$properties)
+            )).and($theReads: $json.Reads[${atag.tpe}]).apply((_, result) => result)
+          }"""
+        } else {
+          theReads
+        }
+      }
 
       val canBuildCall = methodName match {
-        case "read" => {
+        case "read" =>
+          val underlying = TermName(c.freshName("underlying"))
+          val obj = TermName(c.freshName("obj"))
           q"""{
-          val underlying = $buildCall
+          val $underlying = $buildCall
 
           $json.Reads[${atag.tpe}] {
-            case obj @ $json.JsObject(_) => $readResult
+            case $obj @ $json.JsObject(_) => ${finalReads(underlying)}.reads($obj)
             case _ => $json.JsError("error.expected.jsobject")
           }
         }"""
-        }
 
-        case "format" => {
+        case "format" =>
+          val underlying = TermName(c.freshName("underlying"))
+          val obj = TermName(c.freshName("obj"))
           q"""{
-          val underlying = $buildCall
+          val $underlying = $buildCall
           val rfn: $json.JsValue => $json.JsResult[${atag.tpe}] = {
-            case obj @ $json.JsObject(_) => $readResult
+            case $obj @ $json.JsObject(_) => ${finalReads(underlying)}.reads($obj)
             case _ => $json.JsError("error.expected.jsobject")
           }
 
-          $json.OFormat[${atag.tpe}](rfn, underlying.writes _)
+          $json.OFormat[${atag.tpe}](rfn, $underlying.writes _)
         }"""
-        }
 
         case _ => buildCall
       }
