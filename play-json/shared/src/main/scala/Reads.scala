@@ -129,6 +129,22 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
   }
 
   implicit val JsArrayReducer = Reducer[JsValue, JsArray](js => JsArray(Array(js)))
+
+  /**
+   * A reads that fails if any of the objects properties are not present in the passed in known properties list.
+   */
+  def failOnUnknownProperties(knownProperties: immutable.Seq[String]): Reads[JsObject] = Reads { jsValue =>
+    JsObjectReads.reads(jsValue).flatMap { jsObject =>
+      val unknown = jsObject.keys -- knownProperties
+      if (unknown.isEmpty) {
+        JsSuccess(jsObject)
+      } else {
+        JsError(unknown.map { prop =>
+          __ \ prop -> Seq(JsonValidationError("error.unexpected.property"))
+        }.toSeq)
+      }
+    }
+  }
 }
 
 /**
@@ -189,22 +205,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
       "__ERR__" -> JsString(key),
       "__ARGS__" -> args.foldLeft(JsArray())((acc: JsArray, arg: JsValue) => acc :+ arg)
     ))
-  }
-
-  /**
-   * A reads that fails if any of the objects properties are not present in the passed in known properties list.
-   */
-  def failOnUnknownProperties(knownProperties: immutable.Seq[String]): Reads[JsObject] = Reads { jsValue =>
-    JsObjectReads.reads(jsValue).flatMap { jsObject =>
-      val unknown = jsObject.keys -- knownProperties
-      if (unknown.isEmpty) {
-        JsSuccess(jsObject)
-      } else {
-        JsError(unknown.map { prop =>
-          __ \ prop -> Seq(JsonValidationError("error.unexpected.property"))
-        }.toSeq)
-      }
-    }
   }
 
   /**
