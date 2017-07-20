@@ -6,6 +6,8 @@ package play.api.libs.json
 
 import java.io.InputStream
 
+import play.api.libs.json.Json.MacroOptions
+
 /**
  * @define jsonParam @param json the JsValue to convert
  * @define returnStringRepr A String with the json representation
@@ -244,7 +246,7 @@ object Json extends JsonFacade {
    * )(User)
    * }}}
    */
-  def reads[A]: Reads[A] = macro JsMacroImpl.readsImpl[A, MacroOptions]
+  def reads[A]: Reads[A] = macro JsMacroImpl.implicitConfigReadsImpl[A]
 
   /**
    * Creates a `OWrites[T]` by resolving, at compile-time,
@@ -268,7 +270,7 @@ object Json extends JsonFacade {
    *   )(unlift(User.unapply))
    * }}}
    */
-  def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
+  def writes[A]: OWrites[A] = macro JsMacroImpl.implicitConfigWritesImpl[A]
 
   /**
    * Creates a `OFormat[T]` by resolving, at compile-time,
@@ -292,7 +294,7 @@ object Json extends JsonFacade {
    * )(User.apply, unlift(User.unapply))
    * }}}
    */
-  def format[A]: OFormat[A] = macro JsMacroImpl.formatImpl[A, MacroOptions]
+  def format[A]: OFormat[A] = macro JsMacroImpl.implicitConfigFormatImpl[A]
 
   /**
    * JSON facade with some macro options.
@@ -302,7 +304,10 @@ object Json extends JsonFacade {
    * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
    * @define macroTypeParam @tparam A the type for which the handler must be materialized
    */
-  final class WithOptions[Opts <: MacroOptions]() extends JsonFacade {
+  final class WithOptions[Opts <: MacroOptions](val config: JsonConfiguration.Aux[Opts]) extends JsonFacade {
+
+    def this() = this(JsonConfiguration.default)
+
     @inline def parse(input: String): JsValue = Json.parse(input)
     @inline def parse(input: InputStream): JsValue = Json.parse(input)
     @inline def parse(input: Array[Byte]): JsValue = Json.parse(input)
@@ -342,7 +347,7 @@ object Json extends JsonFacade {
      *   Json.using[Json.MacroOptions with Json.DefaultValues].reads[User]
      * }}}
      */
-    def reads[A]: Reads[A] = macro JsMacroImpl.readsImpl[A, Opts]
+    def reads[A]: Reads[A] = macro JsMacroImpl.withOptionsReadsImpl[A]
 
     /**
      * Creates a `OWrites[T]` by resolving, at compile-time,
@@ -361,7 +366,7 @@ object Json extends JsonFacade {
      *   Json.using[Json.MacroOptions].writes[User]
      * }}}
      */
-    def writes[A]: OWrites[A] = macro JsMacroImpl.writesImpl[A, MacroOptions]
+    def writes[A]: OWrites[A] = macro JsMacroImpl.withOptionsWritesImpl[A]
 
     /**
      * Creates a `OFormat[T]` by resolving, at compile-time,
@@ -380,7 +385,7 @@ object Json extends JsonFacade {
      *   Json.using[Json.WithDefaultValues].format[User]
      * }}}
      */
-    def format[A]: OFormat[A] = macro JsMacroImpl.formatImpl[A, Opts]
+    def format[A]: OFormat[A] = macro JsMacroImpl.withOptionsFormatImpl[A]
   }
 
   /**
@@ -394,7 +399,7 @@ object Json extends JsonFacade {
    * val r: Reads[Foo] = Json.configured.reads[Foo]
    * }}}
    */
-  def configured[C <: JsonConfiguration.Aux[_ <: MacroOptions]](implicit config: C) = new WithOptions[config.Opts]()
+  def configured[Opts <: MacroOptions](implicit config: JsonConfiguration.Aux[Opts]) = new WithOptions[Opts](config)
 
   /**
    * Returns an inference context to call the JSON macros,
@@ -402,7 +407,7 @@ object Json extends JsonFacade {
    *
    * $macroOptions
    */
-  def using[Opts <: MacroOptions] = new WithOptions[Opts]()
+  def using[Opts <: MacroOptions] = new WithOptions[Opts](JsonConfiguration[Opts]())
 
   /**
    * Compile-time base options for macro usage.
@@ -413,6 +418,31 @@ object Json extends JsonFacade {
    * }}}
    */
   sealed trait MacroOptions
+
+  object MacroOptions {
+    /**
+     * Defines the default macro options if no type is supplied.
+     *
+     * Since you can't have defaults for a type parameter (unless it's a contravariant type, it will default to
+     * Nothing), we supply the default via an implicit parameter.
+     */
+    trait Default[O <: Json.MacroOptions]
+
+    trait LowPriorityDefaultImplicits {
+      /**
+       * Low priority implicit used when some explicit Json.MacroOptions instance is passed.
+       */
+      implicit def lowPriorityDefault[O <: Json.MacroOptions]: Default[O] = new Default[O] {}
+    }
+
+    object Default extends LowPriorityDefaultImplicits {
+
+      /**
+       * This will be the default that's passed when no MacroOptions is passed.
+       */
+      implicit object macroOptionsDefault extends Default[Json.MacroOptions]
+    }
+  }
 
   /**
    * Flag to indicate the macros can use the type default values

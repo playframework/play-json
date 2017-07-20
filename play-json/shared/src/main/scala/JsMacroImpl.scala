@@ -26,11 +26,42 @@ import scala.reflect.macros.blackbox
     }
   }
 
-  def readsImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads, O]("read", "map", reads = true, writes = false)
+  def withOptionsReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
+    withOptionsConfig, "read", "map", reads = true, writes = false)
 
-  def writesImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes, O]("write", "contramap", reads = false, writes = true)
+  def withOptionsWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
+    withOptionsConfig, "write", "contramap", reads = false, writes = true)
 
-  def formatImpl[A: c.WeakTypeTag, O <: Json.MacroOptions: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format, O]("format", "inmap", reads = true, writes = true)
+  def withOptionsFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
+    withOptionsConfig, "format", "inmap", reads = true, writes = true)
+
+  def implicitConfigReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
+    implicitOptionsConfig, "read", "map", reads = true, writes = false)
+
+  def implicitConfigWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
+    implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
+
+  def implicitConfigFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
+    implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
+
+  // because binary compatibility...
+  @deprecated("Use implicitConfigReadsImpl or withOptionsReadsImpl", "2.6.6")
+  protected def readsImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
+    implicitOptionsConfig, "read", "map", reads = true, writes = false)
+  @deprecated("Use implicitConfigWritesImpl or withOptionsWritesImpl", "2.6.6")
+  protected def writesImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
+    implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
+  @deprecated("Use implicitConfigFormatImpl or withOptionsFormatImpl", "2.6.6")
+  protected def formatImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
+    implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
+
+  private def withOptionsConfig: c.Expr[JsonConfiguration] = {
+    c.Expr[JsonConfiguration](c.typecheck(q"${c.prefix}.config"))
+  }
+
+  private def implicitOptionsConfig: c.Expr[JsonConfiguration] = {
+    c.Expr[JsonConfiguration](c.inferImplicitValue(c.typeOf[JsonConfiguration]))
+  }
 
   /**
    * Generic implementation of the macro.
@@ -40,7 +71,7 @@ import scala.reflect.macros.blackbox
    * functions, for example, if the apply, unapply, or both should be passed to the functional builder apply
    * method.
    *
-   * @param c The context
+   * @param config The configuration tree
    * @param methodName The name of the method on JsPath that gets called, ie, read/write/format
    * @param mapLikeMethod The method that's used to map the type of thing being built, used in case there is
    * only one field in the case class.
@@ -50,7 +81,8 @@ import scala.reflect.macros.blackbox
    * @param matag The class of the reads/writes/format.
    * @param natag The class of the reads/writes/format.
    */
-  private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]], otag: c.WeakTypeTag[O]): c.Expr[M[A]] = {
+  private def macroImpl[A, M[_], N[_]](config: c.Expr[JsonConfiguration], methodName: String, mapLikeMethod: String,
+    reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
 
     def debug(msg: => String): Unit = {
       if (debugEnabled) {
@@ -84,7 +116,7 @@ import scala.reflect.macros.blackbox
     val forwardName = TermName(c.freshName("forward"))
 
     // MacroOptions
-    val options = c.weakTypeOf[O]
+    val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
     def hasOption[Flag: c.TypeTag]: Boolean = options <:< typeOf[Flag]
 
     /* Utility for implicit resolution - can hardly be moved outside
@@ -604,7 +636,6 @@ import scala.reflect.macros.blackbox
       // ---
 
       // combines all reads into CanBuildX
-      val cfgName = TermName(c.freshName("config"))
       val resolver = new ImplicitResolver({
         import utility.boundTypes
 
@@ -626,7 +657,7 @@ import scala.reflect.macros.blackbox
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
           val cn = c.Expr[String](
-            q"$cfgName.naming(${name.decodedName.toString})"
+            q"$config.naming(${name.decodedName.toString})"
           )
           val jspathTree = q"$JsPath \ $cn"
           val isOption = pt.typeConstructor <:< optTpeCtor
@@ -707,8 +738,6 @@ import scala.reflect.macros.blackbox
           q"""
         $syntaxImport
 
-        val $cfgName = implicitly[$json.JsonConfiguration]
-
         $canBuildCall
         """
         } else {
@@ -730,7 +759,7 @@ import scala.reflect.macros.blackbox
           val generated = TypeName(c.freshName("Generated"))
 
           q"""
-        final class $generated()(implicit $cfgName: $json.JsonConfiguration) {
+        final class $generated() {
           // wrap there for self reference
 
           $syntaxImport
