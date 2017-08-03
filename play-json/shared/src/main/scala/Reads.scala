@@ -67,7 +67,7 @@ trait Reads[A] { self =>
    * Creates a new `Reads`, based on this one, which first executes this
    * `Reads`' logic then, if this `Reads` resulted in a `JsError`, runs
    * the second `Reads` on the [[JsValue]].
-   * 
+   *
    * @param v The `Reads` to run if this one gets a `JsError`.
    * @return A new `Reads` with the updated behavior.
    */
