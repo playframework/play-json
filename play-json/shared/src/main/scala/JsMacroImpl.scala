@@ -51,6 +51,12 @@ import scala.reflect.macros.blackbox
    */
   private def macroImpl[A, M[_], N[_], O <: Json.MacroOptions](methodName: String, mapLikeMethod: String, reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]], otag: c.WeakTypeTag[O]): c.Expr[M[A]] = {
 
+    def debug(msg: => String): Unit = {
+      if (debugEnabled) {
+        c.info(c.enclosingPosition, msg, force = false)
+      }
+    }
+
     // All these can be sort of thought as imports
     // that can then be used later in quasi quote interpolation
     val libs = q"_root_.play.api.libs"
@@ -240,44 +246,25 @@ import scala.reflect.macros.blackbox
           case Some((TypeRef(NoPrefix, a, _),
             TypeRef(NoPrefix, b, _))) => { // for generic parameter
             if (a.fullName != b.fullName) {
-              c.info(
-                c.enclosingPosition,
-                s"Type symbols are not compatible: $a != $b",
-                force = false
-              )
+              debug(s"Type symbols are not compatible: $a != $b")
 
               false
             } else conforms(types.tail)
           }
 
           case Some((a, b)) if (a.typeArgs.size != b.typeArgs.size) => {
-            c.info(
-              c.enclosingPosition,
-              s"Type parameters are not matching: $a != $b",
-              force = false
-            )
-
+            debug(s"Type parameters are not matching: $a != $b")
             false
           }
 
           case Some((a, b)) if a.typeArgs.isEmpty =>
             if (a =:= b) conforms(types.tail) else {
-              c.info(
-                c.enclosingPosition,
-                s"Types are not compatible: $a != $b",
-                force = false
-              )
-
+              debug(s"Types are not compatible: $a != $b")
               false
             }
 
           case Some((a, b)) if (a.baseClasses != b.baseClasses) => {
-            c.info(
-              c.enclosingPosition,
-              s"Generic types are not compatible: $a != $b",
-              force = false
-            )
-
+            debug(s"Generic types are not compatible: $a != $b")
             false
           }
 
@@ -741,9 +728,7 @@ import scala.reflect.macros.blackbox
         """
         }
 
-      if (debugEnabled) {
-        c.info(c.enclosingPosition, showCode(finalTree), force = true)
-      }
+      debug(showCode(finalTree))
 
       c.Expr[M[A]](finalTree)
     }
