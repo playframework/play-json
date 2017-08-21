@@ -56,26 +56,47 @@ class MacroSpec extends WordSpec with MustMatchers
     }
 
     "refuse value other than JsObject when properties are optional" in {
-      val r = Json.reads[Optional]
-      val f = Json.format[Optional]
+      forAll(Gen.oneOf(Json.reads[Optional], Json.format[Optional])) { r =>
+        r.reads(Json.obj()).get mustEqual Optional(None)
 
-      r.reads(Json.obj()).get mustEqual Optional(None)
+        (r.reads(JsString("foo")).asEither match {
+          case Left((_, Seq(err)) :: Nil) =>
+            err.message == "error.expected.jsobject"
 
-      (r.reads(JsString("foo")).asEither match {
-        case Left((_, Seq(err)) :: Nil) =>
-          err.message == "error.expected.jsobject"
+          case _ => false
+        }) mustEqual true
+      }
+    }
 
-        case _ => false
-      }) mustEqual true
+    "ignore Option alias" in {
+      def a = {
+        implicit def ignored: Reads[OptionalInt] = ???
 
-      f.reads(Json.obj()).get mustEqual Optional(None)
+        Json.reads[UsingAlias]
+      }
 
-      (f.reads(JsString("foo")).asEither match {
-        case Left((_, Seq(err)) :: Nil) =>
-          err.message == "error.expected.jsobject"
+      def b = {
+        implicit def ignored: Format[OptionalInt] = ???
 
-        case _ => false
-      }) mustEqual true
+        Json.reads[UsingAlias]
+      }
+
+      def c = {
+        implicit def ignored: Reads[OptionalInt] = ???
+
+        Json.format[UsingAlias]
+      }
+
+      def d = {
+        implicit def ignored: Format[OptionalInt] = ???
+
+        Json.format[UsingAlias]
+      }
+
+      forAll(Gen.oneOf(a, b, c, d)) { r =>
+        r.reads(Json.obj("v" -> 1)).get mustEqual UsingAlias(Some(1))
+        r.reads(Json.obj()).get mustEqual UsingAlias(None)
+      }
     }
 
     "be generated for a sealed family" when {
@@ -129,6 +150,37 @@ class MacroSpec extends WordSpec with MustMatchers
       fmt.writes(Lorem(2.34F, 2)) mustEqual Json.obj(
         "ipsum" -> 2.34F, "age" -> 2
       )
+    }
+
+    "ignore Option alias" in {
+      def a = {
+        implicit def ignored: Writes[OptionalInt] = ???
+
+        Json.writes[UsingAlias]
+      }
+
+      def b = {
+        implicit def ignored: Format[OptionalInt] = ???
+
+        Json.writes[UsingAlias]
+      }
+
+      def c = {
+        implicit def ignored: Writes[OptionalInt] = ???
+
+        Json.format[UsingAlias]
+      }
+
+      def d = {
+        implicit def ignored: Format[OptionalInt] = ???
+
+        Json.format[UsingAlias]
+      }
+
+      forAll(Gen.oneOf(a, b, c, d)) { r =>
+        r.writes(UsingAlias(Some(1))) mustEqual Json.obj("v" -> 1)
+        r.writes(UsingAlias(None)) mustEqual Json.obj()
+      }
     }
 
     "be generated for a sealed family" in {
@@ -488,4 +540,7 @@ class MacroSpec extends WordSpec with MustMatchers
     seq: Seq[B],
     scores: Map[String, Float]
   )
+
+  type OptionalInt = Option[Int]
+  case class UsingAlias(v: OptionalInt)
 }

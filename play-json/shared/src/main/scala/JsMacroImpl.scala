@@ -67,12 +67,12 @@ import scala.reflect.macros.blackbox
     val Reads = q"$json.Reads"
     val Writes = q"$json.Writes"
     val unlift = q"$syntax.unlift"
+    val atpe = atag.tpe.dealias
 
     // ---
 
     // Now we find all the implicits that we need
     final case class Implicit(
-      //paramName: Name,
       paramType: Type,
       neededImplicit: Tree,
       tpe: Type,
@@ -130,15 +130,16 @@ import scala.reflect.macros.blackbox
        * Replaces any reference to the type itself by the Placeholder type.
        * @return the normalized type + whether any self reference has been found
        */
-      private def normalized(subject: Type, tpe: Type): (Type, Boolean) = resolvedType(tpe) match {
-        case t if (t =:= subject) => PlaceholderType -> true
+      private def normalized(subject: Type, tpe: Type): (Type, Boolean) =
+        resolvedType(tpe) match {
+          case t if (t =:= subject) => PlaceholderType -> true
 
-        case TypeRef(_, sym, args) if args.nonEmpty =>
-          refactor(args, sym.asType, List.empty, List.empty,
-            _ =:= subject, PlaceholderType, false)
+          case TypeRef(_, sym, args) if args.nonEmpty =>
+            refactor(args, sym.asType, List.empty, List.empty,
+              _ =:= subject, PlaceholderType, false)
 
-        case t => t -> false
-      }
+          case t => t.dealias -> false
+        }
 
       private class ImplicitTransformer[T](
           subject: Type
@@ -157,7 +158,7 @@ import scala.reflect.macros.blackbox
 
         override def transform(tree: Tree): Tree = tree match {
           case tt: TypeTree =>
-            super.transform(TypeTree(denormalized(tt.tpe)))
+            super.transform(TypeTree(denormalized(tt.tpe).dealias))
 
           case Select(Select(This(TypeName("JsMacroImpl")), t), sym) if (
             t.toString == "Placeholder" && sym.toString == "Format"
@@ -168,14 +169,24 @@ import scala.reflect.macros.blackbox
       }
 
       def createImplicit(subject: Type, ctag: Type)(ptype: Type): Implicit = {
-        val tpe = ptype match {
-          case TypeRef(_, _, targ :: _) =>
+        val (isOpt, tpe) = ptype.dealias match {
+          case t @ TypeRef(_, _, targ :: _) => {
             // Option[_] needs special treatment because we need to use XXXOpt
-            if (ptype.typeConstructor <:< optTpeCtor) {
-              targ
-            } else ptype
+            if (t.typeConstructor <:< optTpeCtor) {
+              true -> targ.dealias
+            } else false -> t
+          }
 
-          case SingleType(_, _) | TypeRef(_, _, _) => ptype
+          case t @ (SingleType(_, _) | TypeRef(_, _, _)) => false -> t
+        }
+
+        if (isOpt) { // Option special case was applied
+          val it = c.inferImplicitValue(
+            appliedType(ctag.typeConstructor, ptype), silent = true)
+
+          if (it != EmptyTree) {
+            c.warning(c.enclosingPosition, s"Ignore instance of ${ctag.typeSymbol.fullName} for ${ptype} (${it.pos.source}:${it.pos.line}:${it.pos.column}); Alias for Option[$tpe] will be handled by the nullable operations.")
+          }
         }
 
         val (ntpe, selfRef) = normalized(subject, tpe)
@@ -193,7 +204,7 @@ import scala.reflect.macros.blackbox
           )
         )
 
-        Implicit(ptype, neededImplicit, tpe, selfRef)
+        Implicit(ptype.dealias, neededImplicit, tpe.dealias, selfRef)
       }
     }
 
@@ -384,7 +395,9 @@ import scala.reflect.macros.blackbox
       }
 
       def implicits(resolver: ImplicitResolver): List[(Name, Implicit)] = {
-        val createImplicit = resolver.createImplicit(atag.tpe, natag.tpe) _
+        val createImplicit = resolver.createImplicit(
+          atpe, natag.tpe) _
+
         val effectiveImplicits = params.map {
           case (n, t) => n -> createImplicit(t)
         }
@@ -413,7 +426,7 @@ import scala.reflect.macros.blackbox
 
       // To print the implicit types in the compiler messages
       private def prettyType(t: Type): String =
-        boundTypes.getOrElse(t.typeSymbol.fullName, t) match {
+        boundTypes.getOrElse(t.typeSymbol.fullName, t).dealias match {
           case TypeRef(_, base, args) if args.nonEmpty => s"""${base.asType.fullName}[${args.map(prettyType(_)).mkString(", ")}]"""
 
           case t => t.typeSymbol.fullName
@@ -482,7 +495,7 @@ import scala.reflect.macros.blackbox
             subTypes.foldLeft(List.empty[CaseDef]) { (out, t) =>
               val rtpe = appliedType(readsType, List(t))
               val reader = resolver.createImplicit(
-                atag.tpe, rtpe
+                atpe, rtpe
               )(t).neededImplicit
 
               if (reader.isEmpty) {
@@ -542,15 +555,15 @@ import scala.reflect.macros.blackbox
         // from the implicit scope, due to the contravariant/implicit issue:
         // https://groups.google.com/forum/#!topic/scala-language/ZE83TvSWpT4
 
-        q"""{ v: ${atag.tpe} =>
+        q"""{ v: ${atpe} =>
           val ${term.name.asInstanceOf[TermName]} = "eliminatedImplicit"
           $cases
         }"""
       }
 
       def tree = methodName match {
-        case "read" => q"$json.Reads[${atag.tpe}]($readLambda)"
-        case "write" => q"$json.OWrites[${atag.tpe}]($writeLambda)"
+        case "read" => q"$json.Reads[${atpe}]($readLambda)"
+        case "write" => q"$json.OWrites[${atpe}]($writeLambda)"
         case _ => q"$json.OFormat($readLambda, $writeLambda)"
       }
 
@@ -558,7 +571,7 @@ import scala.reflect.macros.blackbox
     }
 
     def macroCaseImpl: c.Expr[M[A]] = {
-      val tpeArgs: List[Type] = atag.tpe match {
+      val tpeArgs: List[Type] = atpe match {
         case TypeRef(_, _, args) => args
 
         case t => c.abort(
@@ -656,14 +669,14 @@ import scala.reflect.macros.blackbox
       @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
       def readResult =
         if (multiParam) q"underlying.reads(obj)"
-        else q"underlying.flatMap[${atag.tpe}]($json.Reads.pure(_)).reads(obj)"
+        else q"underlying.flatMap[${atpe}]($json.Reads.pure(_)).reads(obj)"
 
       val canBuildCall = methodName match {
         case "read" => {
           q"""{
           val underlying = $buildCall
 
-          $json.Reads[${atag.tpe}] {
+          $json.Reads[${atpe}] {
             case obj @ $json.JsObject(_) => $readResult
             case _ => $json.JsError("error.expected.jsobject")
           }
@@ -673,12 +686,12 @@ import scala.reflect.macros.blackbox
         case "format" => {
           q"""{
           val underlying = $buildCall
-          val rfn: $json.JsValue => $json.JsResult[${atag.tpe}] = {
+          val rfn: $json.JsValue => $json.JsResult[${atpe}] = {
             case obj @ $json.JsObject(_) => $readResult
             case _ => $json.JsError("error.expected.jsobject")
           }
 
-          $json.OFormat[${atag.tpe}](rfn, underlying.writes _)
+          $json.OFormat[${atpe}](rfn, underlying.writes _)
         }"""
         }
 
@@ -700,13 +713,13 @@ import scala.reflect.macros.blackbox
 
           val forward: Tree = methodName match {
             case "read" =>
-              q"$json.Reads[${atag.tpe}](instance.reads(_))"
+              q"$json.Reads[${atpe}](instance.reads(_))"
 
             case "write" =>
-              q"$json.OWrites[${atag.tpe}](instance.writes(_))"
+              q"$json.OWrites[${atpe}](instance.writes(_))"
 
             case _ =>
-              q"$json.OFormat[${atag.tpe}](instance.reads(_), instance.writes(_))"
+              q"$json.OFormat[${atpe}](instance.reads(_), instance.writes(_))"
           }
           val forwardCall =
             q"private val $forwardName = $forward"
@@ -721,7 +734,7 @@ import scala.reflect.macros.blackbox
 
           $forwardCall
 
-          def instance: ${matag.tpe.typeSymbol}[${atag.tpe}] = $canBuildCall
+          def instance: ${matag.tpe.typeSymbol}[${atpe}] = $canBuildCall
         }
 
         new $generated().instance
