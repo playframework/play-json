@@ -301,10 +301,16 @@ sealed trait LowPriorityWrites extends EnvWrites {
   /**
    * Serializer for Traversables types.
    */
-  implicit def traversableWrites[A: Writes] = {
+  implicit def traversableWrites[A: Writes]: Writes[Traversable[A]] = {
     val w = implicitly[Writes[A]]
 
-    Writes[Traversable[A]] { as => JsArray(as.map(w.writes(_)).toArray[JsValue]) }
+    Writes[Traversable[A]] { as =>
+      val builder = mutable.ArrayBuilder.make[JsValue]()
+      as.foreach { a =>
+        builder += w.writes(a)
+      }
+      JsArray(builder.result())
+    }
     // Avoid resolution ambiguity with more specific Traversable Writes,
     // such as OWrites.map
   }
