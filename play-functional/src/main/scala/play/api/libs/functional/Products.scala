@@ -8,9 +8,7 @@ import scala.language.higherKinds
 case class ~[A, B](_1: A, _2: B)
 
 trait FunctionalCanBuild[M[_]] {
-
   def apply[A, B](ma: M[A], mb: M[B]): M[A ~ B]
-
 }
 
 object FunctionalCanBuild {
@@ -725,11 +723,11 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 @(i: Int)
 
 @mk(i: Int, c: String, sep: String) = @{
-  Range(1,i+1).map(c+_).mkString(sep) 
+  Range(1,i+1).map(c+_).mkString(sep)
 }
 
 @mk2(i: Int, c: String, sep: String) = @{
-  Range(1,i+1).map(i => c.format(i, i)).mkString(sep) 
+  Range(1,i+1).map(i => c.format(i, i)).mkString(sep)
 }
 
 @canBuild(i: Int) = {
@@ -739,30 +737,30 @@ class CanBuild@(i)[@mk(i, "A", ", ")](m1: M[@mk(i-1, "A", " ~ ")], m2: M[A@(i)])
 
   def and[A@(i+1)](m3: M[A@(i+1)]) = this.~(m3)
 
-  def apply[B](f: (@mk(i, "A", ", ")) => B)(implicit fu: Functor[M]): M[B] =  
+  def apply[B](f: (@mk(i, "A", ", ")) => B)(implicit fu: Functor[M]): M[B] =
     fu.fmap[@mk(i, "A", " ~ "), B](canBuild(m1, m2), { case @mk(i, "a", " ~ ") => f(@mk(i, "a", ", ")) })
 
-  def apply[B](f: B => (@mk(i, "A", ", ")))(implicit fu:ContravariantFunctor[M]): M[B] = 
+  def apply[B](f: B => (@mk(i, "A", ", ")))(implicit fu:ContravariantFunctor[M]): M[B] =
     fu.contramap(canBuild(m1, m2), (b: B) => { val (@mk(i, "a", ", ")) = f(b); @controllers.Application.recJsonGenerate(i)})
 
-  def apply[B](f1: (@mk(i, "A", ", ")) => B, f2: B => (@mk(i, "A", ", ")))(implicit fu:InvariantFunctor[M]): M[B] =  
+  def apply[B](f1: (@mk(i, "A", ", ")) => B, f2: B => (@mk(i, "A", ", ")))(implicit fu:InvariantFunctor[M]): M[B] =
     fu.inmap[@mk(i, "A", " ~ "), B](
-      canBuild(m1, m2),  {case @mk(i, "a", " ~ ") => f1(@mk(i, "a", ", "))}, 
+      canBuild(m1, m2),  {case @mk(i, "a", " ~ ") => f1(@mk(i, "a", ", "))},
       (b: B) => { val (@mk(i, "a", ", ")) = f2(b); @controllers.Application.recJsonGenerate(i) }
     )
 
-  def join[A >: A1](implicit @mk2(i, "witness%d: <:<[A, A%d]", ", "), fu: ContravariantFunctor[M]): M[A] = 
+  def join[A >: A1](implicit @mk2(i, "witness%d: <:<[A, A%d]", ", "), fu: ContravariantFunctor[M]): M[A] =
     apply[A]( (a: A) => (@mk(i, "a: A", ", ")) )(fu)
 
-  def reduce[A >: A1, B](implicit @mk2(i, "witness%d: <:<[A%d, A]", ", "), fu: Functor[M], reducer: Reducer[A, B]): M[B] = 
+  def reduce[A >: A1, B](implicit @mk2(i, "witness%d: <:<[A%d, A]", ", "), fu: Functor[M], reducer: Reducer[A, B]): M[B] =
     apply[B]( (@mk2(i, "a%d: A%d", ", ")) => @controllers.Application.recJsonGenerate2(i) )(fu)
 
-  def tupled(implicit v:VariantExtractor[M]): M[(@mk(i, "A", ", "))] = 
+  def tupled(implicit v:VariantExtractor[M]): M[(@mk(i, "A", ", "))] =
     v match {
       case FunctorExtractor(fu) => apply{ (@mk2(i, "a%d: A%d", ", ")) => (@mk(i, "a", ", ")) }(fu)
       case ContravariantFunctorExtractor(fu) => apply[(@mk(i, "A", ", "))]{ (a: (@mk(i, "A", ","))) => (@mk(i, "a._", ", ")) }(fu)
       case InvariantFunctorExtractor(fu) => apply[(@mk(i, "A", ", "))]({ (@mk2(i, "a%d: A%d", ", ")) => (@mk(i, "a", ", ")) }, { (a: (@mk(i, "A", ", "))) => (@mk(i, "a._", ", ")) })(fu)
-    } 
+    }
 
 }
 }
@@ -772,7 +770,7 @@ class CanBuild@(i)[@mk(i, "A", ", ")](m1: M[@mk(i-1, "A", " ~ ")], m2: M[A@(i)])
 
 /* the terrific Controller to generate code
 object Application extends Controller {
-  
+
   def index = Action {
     Ok(views.html.index("Your new application is ready."))
   }
@@ -780,7 +778,7 @@ object Application extends Controller {
   def jsonUtil = Action {
     Ok(views.txt.jsonUtil(21))
   }
-  
+
   def recJsonGenerate(i: Int) = {
     def step(idx: Int, c: String): String = {
       if(idx < i) {
@@ -788,11 +786,11 @@ object Application extends Controller {
       } else {
         c
       }
-    } 
+    }
 
     step(1, "a1")
   }
-  
+
   // reducer.append(reducer.unit(a1: A), a2: A)
   def recJsonGenerate2(max: Int) = {
     def step(idx: Int, c: String): String = {
@@ -801,7 +799,7 @@ object Application extends Controller {
       } else {
         c
       }
-    } 
+    }
 
     step(1, "reducer.unit(a1: A)")
   }

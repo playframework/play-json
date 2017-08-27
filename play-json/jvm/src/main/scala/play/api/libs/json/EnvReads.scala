@@ -221,10 +221,10 @@ trait EnvReads {
    * @tparam B the temporal type
    */
   private final class TemporalReads[A, B <: JTemporal](
-      parsing: A,
-      corrector: String => String,
-      p: A => TemporalParser[B],
-      epoch: Long => B
+    parsing: A,
+    corrector: String => String,
+    p: A => TemporalParser[B],
+    epoch: Long => B
   ) extends Reads[B] {
     def reads(json: JsValue): JsResult[B] = json match {
       case JsNumber(d) => JsSuccess(epoch(d.toLong))

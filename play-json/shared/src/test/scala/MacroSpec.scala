@@ -33,7 +33,7 @@ import org.scalatest._
 import org.scalacheck.Gen
 
 class MacroSpec extends WordSpec with MustMatchers
-    with org.scalatest.prop.PropertyChecks {
+  with org.scalatest.prop.PropertyChecks {
 
   "Reads" should {
     "be generated for simple case class" in {

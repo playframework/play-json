@@ -36,7 +36,7 @@ case object JsNull extends JsValue
  * Represents a Json boolean value.
  */
 sealed abstract class JsBoolean(
-    val value: Boolean) extends JsValue with Product with Serializable {
+  val value: Boolean) extends JsValue with Product with Serializable {
 
   def canEqual(that: Any): Boolean = that.isInstanceOf[JsBoolean]
 
@@ -121,7 +121,7 @@ object JsArray extends (IndexedSeq[JsValue] => JsArray) {
  * Represent a Json object value.
  */
 case class JsObject(
-    private[json] val underlying: Map[String, JsValue]
+  private[json] val underlying: Map[String, JsValue]
 ) extends JsValue {
 
   /**

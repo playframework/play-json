@@ -39,7 +39,7 @@ def jsonDependencies(scalaVersion: String) = Seq(
 )
 
 // Common settings
-import com.typesafe.sbt.SbtScalariform._
+import com.typesafe.sbt.SbtScalariform, SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 val previousVersions = Def.setting[Seq[String]] {
@@ -62,7 +62,7 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
   case _ => FastOptStage
 })
 
-lazy val commonSettings = SbtScalariform.scalariformSettings ++ Seq(
+lazy val commonSettings = scalariformSettings(autoformat = true) ++ Seq(
     scalaVersion := ScalaVersions.scala212,
     crossScalaVersions := Seq(
       ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
@@ -72,7 +72,7 @@ lazy val commonSettings = SbtScalariform.scalariformSettings ++ Seq(
       .setPreference(SpaceInsideParentheses, false)
       .setPreference(DanglingCloseParenthesis, Preserve)
       .setPreference(PreserveSpaceBeforeArguments, true)
-      .setPreference(DoubleIndentClassDeclaration, true)
+      .setPreference(DoubleIndentConstructorArguments, false)
   )
 
 lazy val root = project

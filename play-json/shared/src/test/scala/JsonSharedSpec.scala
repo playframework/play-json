@@ -11,7 +11,7 @@ import org.scalatest._
 import org.scalacheck.Gen
 
 class JsonSharedSpec extends WordSpec
-    with MustMatchers with org.scalatest.prop.PropertyChecks {
+  with MustMatchers with org.scalatest.prop.PropertyChecks {
 
   case class User(id: Long, name: String, friends: List[User])
 
@@ -399,7 +399,7 @@ class JsonSharedSpec extends WordSpec
   def equalIgnoringSpace(x: String) = new IgnoreSpaceMatcher(x)
 
   class IgnoreSpaceMatcher(
-      expected: String
+    expected: String
   ) extends org.scalatest.matchers.BeMatcher[String] {
 
     val right = expected.replaceAll("\\s", "")

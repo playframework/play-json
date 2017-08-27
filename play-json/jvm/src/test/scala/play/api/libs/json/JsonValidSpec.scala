@@ -40,7 +40,7 @@ class JsonValidSpec extends Specification {
         (__ \ 'data).read(
           Reads.verifyingIf[JsObject] { case JsObject(fields) => !fields.isEmpty }(
             ((__ \ "title").read[String] and
-            (__ \ "created").read[java.util.Date]).tupled
+              (__ \ "created").read[java.util.Date]).tupled
           )
         )
       ).tupled
