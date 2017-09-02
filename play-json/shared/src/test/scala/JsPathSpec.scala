@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2009-2016 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
  */
+
 package play.api.libs.json
 
 import play.api.libs.json._
@@ -262,7 +263,7 @@ class JsPathSpec extends WordSpec with MustMatchers {
     /*"set 1-level field in simple jsobject" in {
       val obj = Json.obj("key" -> "value")
 
-      (JsPath \ 'key ).set(obj, JsString("newvalue")) mustEqual(Json.obj("key" -> "newvalue"))
+      (JsPath \  'key ).set(obj, JsString("newvalue")) mustEqual(Json.obj("key" -> "newvalue"))
     }
 
     "set 2-level field in simple jsobject" in {
