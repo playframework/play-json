@@ -55,7 +55,7 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
     }
   }
 
-  "Functionnal Reads" should {
+  "Functional Reads" should {
     import play.api.libs.functional.syntax._
 
     implicit val reads: Reads[Owner] = (

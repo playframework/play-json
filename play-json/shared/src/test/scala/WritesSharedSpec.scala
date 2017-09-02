@@ -6,7 +6,7 @@ package play.api.libs.json
 import org.scalatest._
 
 class WritesSharedSpec extends WordSpec with MustMatchers {
-  "Functionnal Reads" should {
+  "Functional Writes" should {
     import play.api.libs.functional.syntax._
 
     implicit val locationWrites = Writes[Location] { location =>
@@ -20,6 +20,20 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
       Json.toJson(Location(0.123D, 0.456D)) mustEqual Json.obj(
         "lat" -> 0.123D, "long" -> 0.456D
       )
+    }
+  }
+
+  "Traversable Writes" should {
+    "write Seqs" in {
+      Json.toJson(Seq(5, 4, 3, 2, 1)) mustEqual Json.arr(5, 4, 3, 2, 1)
+    }
+    "write SortedSets" in {
+      import scala.collection.immutable.SortedSet
+      Json.toJson(SortedSet(1, 2, 3, 4, 5)) mustEqual Json.arr(1, 2, 3, 4, 5)
+    }
+    "write mutable SortedSets" in {
+      import scala.collection.mutable.SortedSet
+      Json.toJson(SortedSet(1, 2, 3, 4, 5)) mustEqual Json.arr(1, 2, 3, 4, 5)
     }
   }
 
