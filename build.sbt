@@ -63,6 +63,12 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
 })
 
 lazy val commonSettings = SbtScalariform.scalariformSettings ++ Seq(
+    headerLicense := {
+      val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
+      Some(HeaderLicense.Custom(
+        s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
+      ))
+    },
     scalaVersion := ScalaVersions.scala212,
     crossScalaVersions := Seq(
       ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
@@ -219,4 +225,4 @@ checkCodeFormat := {
   }
 }
 
-addCommandAlias("validateCode", ";scalariformFormat;checkCodeFormat")
+addCommandAlias("validateCode", ";scalariformFormat;test:scalariformFormat;headerCheck;test:headerCheck;checkCodeFormat")
