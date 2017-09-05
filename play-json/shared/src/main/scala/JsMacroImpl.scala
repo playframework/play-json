@@ -421,7 +421,7 @@ import scala.reflect.macros.blackbox
         applyFunction.fold(Map.empty[String, Type]) {
           case (_, tparams, _, _) => tparams.zip(tpeArgs).map {
             case (sym, ty) => sym.fullName -> ty
-          }.toMap
+          }(scala.collection.breakOut)
         }
 
       // To print the implicit types in the compiler messages
@@ -610,11 +610,12 @@ import scala.reflect.macros.blackbox
           boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
         }
       })
+
       val defaultValueMap: Map[Name, Tree] =
         if (!hasOption[Json.DefaultValues]) Map.empty else {
-          params.zip(defaultValues).collect {
+          (params, defaultValues).zipped.collect {
             case (p, Some(dv)) => p.name.encodedName -> dv
-          }.toMap
+          }(scala.collection.breakOut)
         }
 
       val resolvedImplicits = utility.implicits(resolver)
