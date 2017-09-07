@@ -487,6 +487,10 @@ import scala.reflect.macros.blackbox
     val readsType = c.typeOf[Reads[_]]
 
     def macroSealedFamilyImpl(subTypes: List[Type]): c.Expr[M[A]] = {
+      if (subTypes.isEmpty) {
+        c.abort(c.enclosingPosition, s"Sealed trait ${atpe} is not supported: no known subclasses")
+      }
+
       val typeNaming = (_: Type).typeSymbol.fullName
 
       def readLambda: Tree = {
