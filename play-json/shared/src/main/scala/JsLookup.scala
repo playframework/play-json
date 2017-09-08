@@ -63,7 +63,7 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    */
   def apply(fieldName: String): JsValue = result match {
     case JsDefined(x) => x match {
-      case arr: JsObject => arr.value.lift(fieldName) match {
+      case arr: JsObject => arr.underlying.get(fieldName) match {
         case Some(x) => x
         case None => throw new NoSuchElementException(String.valueOf(fieldName))
       }
@@ -95,7 +95,7 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    */
   def \(fieldName: String): JsLookupResult = result match {
     case JsDefined(obj @ JsObject(_)) =>
-      obj.value.get(fieldName).map(JsDefined.apply)
+      obj.underlying.get(fieldName).map(JsDefined.apply)
         .getOrElse(JsUndefined(s"'$fieldName' is undefined on object: $obj"))
     case JsDefined(o) =>
       JsUndefined(s"$o is not an object")
@@ -109,7 +109,7 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    */
   def \\(fieldName: String): Seq[JsValue] = result match {
     case JsDefined(obj: JsObject) =>
-      obj.value.foldLeft(Seq[JsValue]())((o, pair) => pair match {
+      obj.underlying.foldLeft(Seq[JsValue]())((o, pair) => pair match {
         case (key, value) if key == fieldName => o ++ (value +: (value \\ fieldName))
         case (_, value) => o ++ (value \\ fieldName)
       })

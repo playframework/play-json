@@ -12,14 +12,12 @@ import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind._
-import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
 import play.api.libs.json._
 
 import scala.annotation.{ switch, tailrec }
 import scala.collection.mutable
-import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 /**
  * The Play JSON module for Jackson.
@@ -108,12 +106,13 @@ private[jackson] case class ReadingList(content: mutable.ArrayBuffer[JsValue]) e
 }
 
 // Context for reading an Object
-private[jackson] case class KeyRead(content: ListBuffer[(String, JsValue)], fieldName: String) extends DeserializerContext {
+private[jackson] case class KeyRead(content: mutable.LinkedHashMap[String, JsValue], fieldName: String) extends DeserializerContext {
   def addValue(value: JsValue): DeserializerContext = ReadingMap(content += (fieldName -> value))
 }
 
 // Context for reading one item of an Object (we already red fieldName)
-private[jackson] case class ReadingMap(content: ListBuffer[(String, JsValue)]) extends DeserializerContext {
+// `LinkedHashMap` is used so the ordering of the keys is kept
+private[jackson] case class ReadingMap(content: mutable.LinkedHashMap[String, JsValue]) extends DeserializerContext {
 
   def setField(fieldName: String) = KeyRead(content, fieldName)
   def addValue(value: JsValue): DeserializerContext = throw new Exception("Cannot add a value on an object without a key, malformed JSON object!")
@@ -151,14 +150,14 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 
       case JsonTokenId.ID_NULL => (Some(JsNull), parserContext)
 
-      case JsonTokenId.ID_START_ARRAY => (None, ReadingList(ArrayBuffer()) +: parserContext)
+      case JsonTokenId.ID_START_ARRAY => (None, ReadingList(mutable.ArrayBuffer()) +: parserContext)
 
       case JsonTokenId.ID_END_ARRAY => parserContext match {
-        case ReadingList(content) :: stack => (Some(JsArray(content)), stack)
+        case ReadingList(content) :: stack => (Some(new JsArray(content)), stack)
         case _ => throw new RuntimeException("We should have been reading list, something got wrong")
       }
 
-      case JsonTokenId.ID_START_OBJECT => (None, ReadingMap(ListBuffer()) +: parserContext)
+      case JsonTokenId.ID_START_OBJECT => (None, ReadingMap(mutable.LinkedHashMap()) +: parserContext)
 
       case JsonTokenId.ID_FIELD_NAME => parserContext match {
         case (c: ReadingMap) :: stack => (None, c.setField(jp.getCurrentName) +: stack)
@@ -166,7 +165,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       }
 
       case JsonTokenId.ID_END_OBJECT => parserContext match {
-        case ReadingMap(content) :: stack => (Some(JsObject(content)), stack)
+        case ReadingMap(content) :: stack => (Some(new JsObject(content)), stack)
         case _ => throw new RuntimeException("We should have been reading an object, something got wrong")
       }
 
