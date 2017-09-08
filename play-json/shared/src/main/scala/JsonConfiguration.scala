@@ -17,7 +17,7 @@ object JsonConfiguration {
   type Aux[O <: Json.MacroOptions] = JsonConfiguration { type Opts = O }
 
   private final class Impl[O <: Json.MacroOptions](
-      val naming: JsonNaming = JsonNaming.Identity
+    val naming: JsonNaming = JsonNaming.Identity
   ) extends JsonConfiguration {
     type Opts = O
   }

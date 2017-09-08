@@ -31,20 +31,20 @@ class JsonTransSpec extends WordSpec with MustMatchers {
       js.transform(
         (__ \ 'field3).json.pick
       ).get mustEqual (
-        Json.obj(
-          "field31" -> "beta", "field32" -> 345
+          Json.obj(
+            "field31" -> "beta", "field32" -> 345
+          )
         )
-      )
     }
 
     "pick a branch" in {
       js.transform(
         (__ \ 'field3).json.pickBranch
       ).get mustEqual (
-        Json.obj(
-          "field3" -> Json.obj("field31" -> "beta", "field32" -> 345)
+          Json.obj(
+            "field3" -> Json.obj("field31" -> "beta", "field32" -> 345)
+          )
         )
-      )
     }
 
     "copy input JSON and update a branch (merge the updated branch with input JSON)" in {
@@ -110,12 +110,12 @@ class JsonTransSpec extends WordSpec with MustMatchers {
       js.transform(
         (__ \ 'field3).json.prune
       ).get mustEqual (
-        Json.obj(
-          "field1" -> "alpha",
-          "field2" -> 123L,
-          "field4" -> Json.arr("alpha", 2, true, Json.obj("field41" -> "toto", "field42" -> "tata"))
+          Json.obj(
+            "field1" -> "alpha",
+            "field2" -> 123L,
+            "field4" -> Json.arr("alpha", 2, true, Json.obj("field41" -> "toto", "field42" -> "tata"))
+          )
         )
-      )
     }
 
     "pick a single branch and prune a sub-branch" in {
