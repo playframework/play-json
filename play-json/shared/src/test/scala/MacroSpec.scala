@@ -110,6 +110,10 @@ class MacroSpec extends WordSpec with MustMatchers
       val simple = Simple("foo")
       val optional = Optional(None)
 
+      shapeless.test.illTyped("Json.reads[EmptyFamily]")
+      shapeless.test.illTyped("Json.writes[EmptyFamily]")
+      shapeless.test.illTyped("Json.format[EmptyFamily]")
+
       "using the _value syntax" in {
         val jsSimple = Json.obj(
           "_type" -> "play.api.libs.json.MacroSpec.Simple",
@@ -523,6 +527,8 @@ class MacroSpec extends WordSpec with MustMatchers
   case class Simple(bar: String) extends Family
   case class Lorem[T](ipsum: T, age: Int) extends Family
   case class Optional(prop: Option[String]) extends Family
+
+  sealed trait EmptyFamily
 
   case class Foo(id: Long, value: Option[Either[String, Foo]])
   case class Interval[T](base: T, other: Option[T])
