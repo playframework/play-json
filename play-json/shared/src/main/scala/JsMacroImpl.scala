@@ -143,7 +143,7 @@ import scala.reflect.macros.blackbox
         }
 
       private class ImplicitTransformer[T](
-          subject: Type
+        subject: Type
       ) extends Transformer {
 
         /* Restores reference to the type itself when Placeholder is found. */

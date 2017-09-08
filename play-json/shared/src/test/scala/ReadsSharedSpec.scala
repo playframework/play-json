@@ -49,9 +49,9 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
       "are not characters" in {
         Json.fromJson[Map[Char, Int]](Json.obj("foo" -> 1, "bar" -> 2))(
           Reads.charMapReads) mustEqual JsError(List(
-          (JsPath \ "foo", List(JsonValidationError("error.invalid.character"))),
-          (JsPath \ "bar", List(JsonValidationError("error.invalid.character")))
-        ))
+            (JsPath \ "foo", List(JsonValidationError("error.invalid.character"))),
+            (JsPath \ "bar", List(JsonValidationError("error.invalid.character")))
+          ))
       }
     }
   }
