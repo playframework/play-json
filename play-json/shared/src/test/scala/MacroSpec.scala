@@ -220,27 +220,26 @@ class MacroSpec extends WordSpec with MustMatchers
     "handle case class with self type as nested type parameter" when {
       import TestFormats._
 
-      val jsonNoValue = Json.obj("id" -> 1L)
-      val jsonStrValue = Json.obj("id" -> 2L, "value" -> "str")
-      val jsonFooValue = Json.obj("id" -> 3L, "value" -> jsonStrValue)
+      val jsonNoValue = Json.obj("id" -> "A")
+      val jsonStrValue = Json.obj("id" -> "B", "value" -> "str")
+      val jsonFooValue = Json.obj("id" -> "C", "value" -> jsonStrValue)
 
-      val fooStrValue = Foo(2L, Some(Left("str")))
-      val fooFooValue = Foo(3L, Some(Right(fooStrValue)))
+      val fooStrValue = Foo(Foo.id("B"), Some(Left("str")))
+      val fooFooValue = Foo(Foo.id("C"), Some(Right(fooStrValue)))
 
       def readSpec(r: Reads[Foo]) = {
-        r.reads(jsonNoValue).get mustEqual Foo(1L, None)
+        r.reads(jsonNoValue).get mustEqual Foo(Foo.id("A"), None)
         r.reads(jsonStrValue).get mustEqual fooStrValue
         r.reads(jsonFooValue).get mustEqual fooFooValue
-        r.reads(Json.obj("id" -> 4L, "value" -> jsonFooValue)).
-          get mustEqual Foo(4L, Some(Right(fooFooValue)))
+        r.reads(Json.obj("id" -> "D", "value" -> jsonFooValue)).
+          get mustEqual Foo(Foo.id("D"), Some(Right(fooFooValue)))
       }
 
       def writeSpec(w: Writes[Foo]) = {
-        w.writes(Foo(1L, None)) mustEqual jsonNoValue
+        w.writes(Foo(Foo.id("A"), None)) mustEqual jsonNoValue
         w.writes(fooStrValue) mustEqual jsonStrValue
         w.writes(fooFooValue) mustEqual jsonFooValue
-        w.writes(Foo(4L, Some(Right(fooFooValue)))) mustEqual Json.
-          obj("id" -> 4L, "value" -> jsonFooValue)
+        w.writes(Foo(Foo.id("D"), Some(Right(fooFooValue)))) mustEqual Json.obj("id" -> "D", "value" -> jsonFooValue)
       }
 
       "to generate Reads" in readSpec(Json.reads[Foo])
@@ -530,7 +529,17 @@ class MacroSpec extends WordSpec with MustMatchers
 
   sealed trait EmptyFamily
 
-  case class Foo(id: Long, value: Option[Either[String, Foo]])
+  object Foo {
+    import shapeless.tag.@@
+
+    type Id = String @@ Foo
+    def id(value: String): Id = value.asInstanceOf[Id]
+
+    implicit val idReads: Reads[Id] = implicitly[Reads[String]].asInstanceOf[Reads[Id]]
+    implicit val idWrites: Writes[Id] = implicitly[Writes[String]]
+  }
+  case class Foo(id: Foo.Id, value: Option[Either[String, Foo]])
+
   case class Interval[T](base: T, other: Option[T])
   case class Complex[T, U](id: Int, a: T, b: Either[T, String], c: U)
 
