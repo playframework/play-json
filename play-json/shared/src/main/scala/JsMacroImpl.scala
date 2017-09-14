@@ -171,14 +171,11 @@ import scala.reflect.macros.blackbox
 
       def createImplicit(subject: Type, ctag: Type)(ptype: Type): Implicit = {
         val (isOpt, tpe) = ptype.dealias match {
-          case t @ TypeRef(_, _, targ :: _) => {
+          case t @ TypeRef(_, _, targ :: _) if t.typeConstructor <:< optTpeCtor =>
             // Option[_] needs special treatment because we need to use XXXOpt
-            if (t.typeConstructor <:< optTpeCtor) {
-              true -> targ.dealias
-            } else false -> t
-          }
-
-          case t @ (SingleType(_, _) | TypeRef(_, _, _)) => false -> t
+            true -> targ.dealias
+          case t =>
+            false -> t
         }
 
         if (isOpt) { // Option special case was applied
@@ -186,7 +183,7 @@ import scala.reflect.macros.blackbox
             appliedType(ctag.typeConstructor, ptype), silent = true)
 
           if (it != EmptyTree) {
-            c.warning(c.enclosingPosition, s"Ignore instance of ${ctag.typeSymbol.fullName} for ${ptype} (${it.pos.source}:${it.pos.line}:${it.pos.column}); Alias for Option[$tpe] will be handled by the nullable operations.")
+            debug("Ignoring instance of ${ctag.typeSymbol.fullName} for ${ptype} (${it.pos.source}:${it.pos.line}:${it.pos.column}); Alias for Option[$tpe] will be handled by the nullable operations.")
           }
         }
 
