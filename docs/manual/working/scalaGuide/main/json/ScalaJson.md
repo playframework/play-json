@@ -1,7 +1,7 @@
 <!--- Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com> -->
 # JSON basics
 
-Modern web applications often need to parse and generate data in the JSON (JavaScript Object Notation) format. Play supports this via its [JSON library](api/libs/json/).
+Modern web applications often need to parse and generate data in the JSON (JavaScript Object Notation) format. Play supports this via its [JSON library](api/scala/play/api/libs/json/package.html).
 
 JSON is a lightweight data-interchange format and looks like this:
 
@@ -28,7 +28,7 @@ JSON is a lightweight data-interchange format and looks like this:
 
 ## The Play JSON library
 
-The [`play.api.libs.json`](api/libs/json/) package contains data structures for representing JSON data and utilities for converting between these data structures and other data representations. Some of the features of this package are:
+The [`play.api.libs.json`](api/scala/play/api/libs/json/package.html) package contains data structures for representing JSON data and utilities for converting between these data structures and other data representations. Some of the features of this package are:
 
  - [[Automatic conversion|ScalaJsonAutomated]] to and from case classes with minimal boilerplate. If you want to get up and running quickly with minimal code, this is probably the place to start.
  - [[Custom validation|ScalaJsonCombinators#Validation-with-Reads]] while parsing.
@@ -38,24 +38,24 @@ The [`play.api.libs.json`](api/libs/json/) package contains data structures for 
 
 The package provides the following types:
 
-### [`JsValue`](api/libs/json/JsValue.html)
+### [`JsValue`](api/scala/play/api/libs/json/JsValue.html)
 
 This is a trait representing any JSON value. The JSON library has a case class extending `JsValue` to represent each valid JSON type:
 
-- [`JsString`](api/libs/json/JsString.html)
-- [`JsNumber`](api/libs/json/JsNumber.html)
-- [`JsBoolean`](api/libs/json/JsBoolean.html)
-- [`JsObject`](api/libs/json/JsObject.html)
-- [`JsArray`](api/libs/json/JsArray.html)
-- [`JsNull`](api/libs/json/JsNull$.html)
+- [`JsString`](api/scala/play/api/libs/json/JsString.html)
+- [`JsNumber`](api/scala/play/api/libs/json/JsNumber.html)
+- [`JsBoolean`](api/scala/play/api/libs/json/JsBoolean.html)
+- [`JsObject`](api/scala/play/api/libs/json/JsObject.html)
+- [`JsArray`](api/scala/play/api/libs/json/JsArray.html)
+- [`JsNull`](api/scala/play/api/libs/json/JsNull$.html)
 
 Using the various `JsValue` types, you can construct a representation of any JSON structure.
 
-### [`Json`](api/libs/json/Json$.html)
+### [`Json`](api/scala/play/api/libs/json/Json$.html)
 
 The `Json` object provides utilities, primarily for conversion to and from `JsValue` structures.
 
-### [`JsPath`](api/libs/json/JsPath.html)
+### [`JsPath`](api/scala/play/api/libs/json/JsPath.html)
 
 Represents a path into a `JsValue` structure, analogous to XPath for XML. This is used for traversing `JsValue` structures and in patterns for implicit converters.
 
@@ -75,7 +75,7 @@ Represents a path into a `JsValue` structure, analogous to XPath for XML. This i
 
 ### Using Writes converters
 
-Scala to `JsValue` conversion is performed by the utility method `Json.toJson[T](T)(implicit writes: Writes[T])`. This functionality depends on a converter of type [`Writes[T]`](api/libs/json/Writes.html) which can convert a `T` to a `JsValue`.
+Scala to `JsValue` conversion is performed by the utility method `Json.toJson[T](T)(implicit writes: Writes[T])`. This functionality depends on a converter of type [`Writes[T]`](api/scala/play/api/libs/json/Writes.html) which can convert a `T` to a `JsValue`.
 
 The Play JSON API provides implicit `Writes` for most basic types, such as `Int`, `Double`, `String`, and `Boolean`. It also supports `Writes` for collections of any type `T` that a `Writes[T]` exists.
 
@@ -161,7 +161,7 @@ Readable:
 
 ### Using JsValue.as/asOpt
 
-The simplest way to convert a `JsValue` to another type is using `JsValue.as[T](implicit fjs: Reads[T]): T`. This requires an implicit converter of type [`Reads[T]`](api/libs/json/Reads.html) to convert a `JsValue` to `T` (the inverse of `Writes[T]`). As with `Writes`, the JSON API provides `Reads` for basic types.
+The simplest way to convert a `JsValue` to another type is using `JsValue.as[T](implicit fjs: Reads[T]): T`. This requires an implicit converter of type [`Reads[T]`](api/scala/play/api/libs/json/Reads.html) to convert a `JsValue` to `T` (the inverse of `Writes[T]`). As with `Writes`, the JSON API provides `Reads` for basic types.
 
 @[convert-to-type-as](code/ScalaJsonSpec.scala)
 
@@ -173,10 +173,10 @@ Although the `asOpt` method is safer, any error information is lost.
 
 ### Using validation
 
-The preferred way to convert from a `JsValue` to another type is by using its `validate` method (which takes an argument of type `Reads`). This performs both validation and conversion, returning a type of [`JsResult`](api/libs/json/JsResult.html). `JsResult` is implemented by two classes:
+The preferred way to convert from a `JsValue` to another type is by using its `validate` method (which takes an argument of type `Reads`). This performs both validation and conversion, returning a type of [`JsResult`](api/scala/play/api/libs/json/JsResult.html). `JsResult` is implemented by two classes:
 
-- [`JsSuccess`](api/libs/json/JsSuccess.html): Represents a successful validation/conversion and wraps the result.
-- [`JsError`](api/libs/json/JsError.html): Represents unsuccessful validation/conversion and contains a list of validation errors.
+- [`JsSuccess`](api/scala/play/api/libs/json/JsSuccess.html): Represents a successful validation/conversion and wraps the result.
+- [`JsError`](api/scala/play/api/libs/json/JsError.html): Represents unsuccessful validation/conversion and contains a list of validation errors.
 
 You can apply various patterns for handling a validation result:
 
