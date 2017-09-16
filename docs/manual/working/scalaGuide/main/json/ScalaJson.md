@@ -43,7 +43,7 @@ The package provides the following types:
 This is a trait representing any JSON value. The JSON library has a case class extending `JsValue` to represent each valid JSON type:
 
 - [`JsString`](api/scala/play/api/libs/json/JsString.html)
-- [`JsNumber`](api/scala/play/api/libs/json/JNumber.html)
+- [`JsNumber`](api/scala/play/api/libs/json/JsNumber.html)
 - [`JsBoolean`](api/scala/play/api/libs/json/JsBoolean.html)
 - [`JsObject`](api/scala/play/api/libs/json/JsObject.html)
 - [`JsArray`](api/scala/play/api/libs/json/JsArray.html)
