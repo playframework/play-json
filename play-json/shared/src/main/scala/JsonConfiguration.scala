@@ -22,16 +22,19 @@ object JsonConfiguration {
     type Opts = O
   }
 
+  // These methods exist for binary compatibility, since Scala protected methods are public from a binary perspective.
+  protected def apply(naming: JsonNaming): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming)
+  protected def default: JsonConfiguration.Aux[Json.MacroOptions] = apply()
+
   /**
-   * @tparam O the options for the JSON macros
    * @param naming the naming strategy
    */
-  def apply[O <: Json.MacroOptions](
+  def apply[Opts <: Json.MacroOptions: Json.MacroOptions.Default](
     naming: JsonNaming = JsonNaming.Identity
-  ): JsonConfiguration.Aux[O] = new Impl(naming)
+  ): JsonConfiguration.Aux[Opts] = new Impl(naming)
 
   /** Default configuration instance */
-  implicit def default[Opts <: Json.MacroOptions] = apply[Opts]()
+  implicit def default[Opts <: Json.MacroOptions: Json.MacroOptions.Default]: JsonConfiguration.Aux[Opts] = apply()
 }
 
 /**

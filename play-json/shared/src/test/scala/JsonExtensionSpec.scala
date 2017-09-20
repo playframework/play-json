@@ -91,6 +91,8 @@ object CustomApply {
 case class WithDefault1(a: String = "a", b: Option[String] = Some("b"))
 case class WithDefault2(a: String = "a", bar: Option[WithDefault1] = Some(WithDefault1()))
 
+case class WithDefaultSnake(firstProp: String, defaultProp: String = "the default")
+
 class JsonExtensionSpec extends WordSpec with MustMatchers {
   "JsonExtension" should {
     "create a reads[User]" in {
@@ -712,6 +714,21 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
       "by functional formats" in validateReads(functionalFormat)
       "by reads macro" in validateReads(macroReads)
       "by format macro" in validateReads(macroFormat)
+    }
+
+    "configuration methods" should {
+      val json = Json.obj("first_prop" -> "the first")
+      val data = WithDefaultSnake("the first")
+
+      "allow supplying configuration via implicit config" in {
+        implicit val config = JsonConfiguration[Json.WithDefaultValues](naming = SnakeCase)
+        json.as(Json.reads[WithDefaultSnake]) mustEqual data
+      }
+
+      "allow supplying configuration via WithOptions" in {
+        val config = JsonConfiguration[Json.WithDefaultValues](naming = SnakeCase)
+        json.as(Json.configured(config).reads[WithDefaultSnake]) mustEqual data
+      }
     }
   }
 }
