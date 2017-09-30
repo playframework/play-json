@@ -125,23 +125,14 @@ sealed trait JsLookupResult extends Any with JsReadable {
   /**
    * Tries to convert the node into a JsValue
    */
-  def toOption: Option[JsValue] = this match {
-    case JsDefined(v) => Some(v)
-    case _ => None
-  }
+  def toOption: Option[JsValue]
 
-  def toEither: Either[JsonValidationError, JsValue] = this match {
-    case JsDefined(v) => Right(v)
-    case undef: JsUndefined => Left(undef.validationError)
-  }
+  def toEither: Either[JsonValidationError, JsValue]
 
   def get: JsValue = toOption.get
 
   def getOrElse(v: => JsValue): JsValue = toOption.getOrElse(v)
-  def isEmpty: Boolean = this match {
-    case JsUndefined() => true
-    case JsDefined(_) => false
-  }
+  def isEmpty: Boolean
   def isDefined: Boolean = !isEmpty
 
   /**
@@ -150,20 +141,12 @@ sealed trait JsLookupResult extends Any with JsReadable {
   def orElse(alternative: => JsLookupResult): JsLookupResult =
     if (isDefined) this else alternative
 
-  def validate[A](implicit rds: Reads[A]): JsResult[A] = this match {
-    case JsDefined(v) => v.validate[A]
-    case undef: JsUndefined => JsError(undef.validationError)
-  }
-
   /**
    * If this result contains `JsNull` or is undefined, returns `JsSuccess(None)`.
    * Otherwise returns the result of validating as an `A` and wrapping the result in a `Some`.
    */
-  def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] =
-    this match {
-      case JsDefined(a) => Reads.optionWithNull(rds).reads(a)
-      case _ => JsSuccess(None)
-    }
+  def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]]
+
 }
 object JsLookupResult {
   import scala.language.implicitConversions
@@ -173,13 +156,37 @@ object JsLookupResult {
 /**
  * Wrapper for JsValue to represent an existing Json value.
  */
-case class JsDefined(value: JsValue) extends AnyVal with JsLookupResult
+case class JsDefined(value: JsValue) extends AnyVal with JsLookupResult {
+
+  override def toOption: Option[JsValue] = Some(value)
+
+  override def toEither: Either[JsonValidationError, JsValue] = Right(value)
+
+  override def isEmpty: Boolean = false
+
+  override def validate[A](implicit rds: Reads[A]): JsResult[A] = value.validate[A]
+
+  override def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] = Reads.optionWithNull(rds).reads(value)
+
+}
 
 /**
  * Represent a missing Json value.
  */
 final class JsUndefined(err: => String) extends JsLookupResult {
+
+  override def toOption: Option[JsValue] = None
+
+  override def toEither: Either[JsonValidationError, JsValue] = Left(validationError)
+
   override def asOpt[T](implicit fjs: Reads[T]): Option[T] = None
+
+  override def isEmpty: Boolean = true
+
+  override def validate[A](implicit rds: Reads[A]): JsResult[A] = JsError(validationError)
+
+  override def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] = JsSuccess(None)
+
   def error = err
   def validationError = JsonValidationError(error)
   override def toString = s"JsUndefined($err)"
