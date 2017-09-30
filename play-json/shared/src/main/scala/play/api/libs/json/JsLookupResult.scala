@@ -41,15 +41,15 @@ object JsLookupResult {
  */
 case class JsDefined(value: JsValue) extends AnyVal with JsLookupResult {
 
-  override def toOption: Option[JsValue] = Some(value)
+  def toOption: Option[JsValue] = Some(value)
 
-  override def toEither: Either[JsonValidationError, JsValue] = Right(value)
+  def toEither: Either[JsonValidationError, JsValue] = Right(value)
 
-  override def isEmpty: Boolean = false
+  def isEmpty: Boolean = false
 
-  override def validate[A](implicit rds: Reads[A]): JsResult[A] = value.validate[A]
+  def validate[A](implicit rds: Reads[A]): JsResult[A] = value.validate[A]
 
-  override def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] = Reads.optionWithNull(rds).reads(value)
+  def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] = Reads.optionWithNull(rds).reads(value)
 
 }
 
@@ -58,17 +58,17 @@ case class JsDefined(value: JsValue) extends AnyVal with JsLookupResult {
  */
 final class JsUndefined(err: => String) extends JsLookupResult {
 
-  override def toOption: Option[JsValue] = None
+  val toOption: Option[JsValue] = None
 
-  override def toEither: Either[JsonValidationError, JsValue] = Left(validationError)
+  val toEither: Either[JsonValidationError, JsValue] = Left(validationError)
 
   override def asOpt[T](implicit fjs: Reads[T]): Option[T] = None
 
-  override def isEmpty: Boolean = true
+  val isEmpty: Boolean = true
 
-  override def validate[A](implicit rds: Reads[A]): JsResult[A] = JsError(validationError)
+  def validate[A](implicit rds: Reads[A]): JsResult[A] = JsError(validationError)
 
-  override def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] = JsSuccess(None)
+  def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] = JsSuccess(None)
 
   def error = err
   def validationError = JsonValidationError(error)
