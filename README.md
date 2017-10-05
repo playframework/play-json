@@ -10,7 +10,7 @@ We've provided some documentation here on how to use Play JSON in your app (with
 To get started, you can add play-json as a dependency in SBT:
 
 ```scala
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.3"
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.6"
 ```
 
 ## JSON AST
