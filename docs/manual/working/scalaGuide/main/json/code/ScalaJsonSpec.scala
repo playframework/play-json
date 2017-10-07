@@ -345,7 +345,7 @@ class ScalaJsonSpec extends Specification {
 
       // Pattern matching
       nameResult match {
-        case s: JsSuccess[String] => println("Name: " + s.get)
+        case JsSuccess[String](name) => println("Name: " + name)
         case e: JsError => println("Errors: " + JsError.toJson(e).toString())
       }
 
