@@ -20,7 +20,7 @@ val specsBuild = Seq(
   "specs2-core"
 ).map("org.specs2" %% _ % specsVersion)
 
-val jacksonVersion = "2.8.9"
+val jacksonVersion = "2.9.1"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
