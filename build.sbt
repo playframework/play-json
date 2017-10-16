@@ -13,12 +13,12 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val scala213Version = "2.13.0-M1"
+val scala213Version = "2.13.0-M2"
 
-val specsVersion = "3.9.1"
-val specsBuild = Seq(
-  "specs2-core"
-).map("org.specs2" %% _ % specsVersion)
+def specsBuild(scalaVersion: String) = (CrossVersion.partialVersion(scalaVersion) match {
+  case Some((2, 10)) => Seq("org.specs2" %% "specs2-core" % "3.9.1" % Test)
+  case _ => Seq("org.specs2" %% "specs2-core" % "4.0.1" % Test)
+})
 
 val jacksonVersion = "2.9.1"
 val jacksons = Seq(
@@ -104,7 +104,7 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.3" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.4" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
       "com.chuusai" %% "shapeless" % "2.3.2" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
@@ -162,7 +162,7 @@ lazy val `play-json-joda` = project
   .enablePlugins(PlayLibrary)
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= joda ++ specsBuild.map(_ % Test)
+    libraryDependencies ++= joda ++ specsBuild(scalaVersion.value)
   )
   .dependsOn(`play-jsonJVM`)
 
@@ -170,7 +170,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
     libraryDependencies ++=
       joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specsBuild.map(_ % Test) :+ (
+      jacksons ++ specsBuild(scalaVersion.value) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
     unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
