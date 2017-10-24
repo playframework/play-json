@@ -89,15 +89,15 @@ case class JsDefined(value: JsValue) extends AnyVal with JsLookupResult {
  */
 final class JsUndefined(err: => String) extends JsLookupResult {
 
-  val toOption: Option[JsValue] = None
+  lazy val toOption: Option[JsValue] = None
 
-  val toEither: Either[JsonValidationError, JsValue] = Left(validationError)
+  lazy val toEither: Either[JsonValidationError, JsValue] = Left(validationError)
 
   def get: JsValue = throw new NoSuchElementException(err)
 
   override def asOpt[T](implicit fjs: Reads[T]): Option[T] = None
 
-  val isEmpty: Boolean = true
+  lazy val isEmpty: Boolean = true
 
   def orElse(alternative: => JsLookupResult): JsLookupResult = alternative
 
