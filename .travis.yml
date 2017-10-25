@@ -1,10 +1,11 @@
 language: scala
 scala:
-- 2.12.2
+- 2.12.4
 - 2.11.11
 - 2.10.6
 jdk:
 - oraclejdk8
+- oraclejdk9
 script:
 - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode mimaReportBinaryIssues testOnly
 cache:

@@ -13,8 +13,6 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val scala213Version = "2.13.0-M1"
-
 val specsVersion = "3.9.1"
 val specsBuild = Seq(
   "specs2-core"
@@ -71,7 +69,7 @@ lazy val commonSettings = scalariformSettings(autoformat = true) ++ Seq(
     },
     scalaVersion := ScalaVersions.scala212,
     crossScalaVersions := Seq(
-      ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
+      ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, ScalaVersions.scala213
     ),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
