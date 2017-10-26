@@ -49,7 +49,7 @@ class MacroSpec extends WordSpec with MustMatchers
     }
 
     "as Format for a simple generic case class" in {
-      val fmt = Json.format[Lorem[Double]]
+      val fmt: OFormat[Lorem[Double]] = Json.format
 
       fmt.reads(Json.obj("ipsum" -> 0.123D, "age" -> 1)).get mustEqual Lorem(
         0.123D, 1
@@ -104,8 +104,8 @@ class MacroSpec extends WordSpec with MustMatchers
       implicit val simpleReads = Reads[Simple] { js =>
         (js \ "bar").validate[String].map(Simple(_))
       }
-      implicit val optionalReads: Reads[Optional] = Json.reads[Optional]
-      implicit val familyReads: Reads[Family] = Json.reads[Family]
+      implicit val optionalReads: Reads[Optional] = Json.reads
+      implicit val familyReads: Reads[Family] = Json.reads
 
       val simple = Simple("foo")
       val optional = Optional(None)
@@ -150,7 +150,7 @@ class MacroSpec extends WordSpec with MustMatchers
     }
 
     "as Format for a generic case class" in {
-      val fmt = Json.format[Lorem[Float]]
+      val fmt: Format[Lorem[Float]] = Json.format
 
       fmt.writes(Lorem(2.34F, 2)) mustEqual Json.obj(
         "ipsum" -> 2.34F, "age" -> 2
@@ -192,7 +192,12 @@ class MacroSpec extends WordSpec with MustMatchers
       implicit val simpleWrites = Writes[Simple] { simple =>
         Json.obj("bar" -> simple.bar)
       }
-      implicit val optionalWrites: OWrites[Optional] = Json.writes[Optional]
+
+      implicit val optionalWrites = Json.writes[Optional]
+      // Following won't work due to inferrence issue (see #117)
+      // with inheritance/contravariance/implicit resolution
+      //val _: OWrites[Optional] = Json.writes
+
       implicit val familyWrites: OWrites[Family] = Json.writes[Family]
 
       val simple = Simple("foo")
