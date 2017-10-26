@@ -97,7 +97,6 @@ import scala.reflect.macros.blackbox
     val libs = q"_root_.play.api.libs"
     val json = q"$libs.json"
     val syntax = q"$libs.functional.syntax"
-    val utilPkg = q"$json.util"
     val JsPath = q"$json.JsPath"
     val unlift = q"$syntax.unlift"
     val atpe = atag.tpe.dealias
