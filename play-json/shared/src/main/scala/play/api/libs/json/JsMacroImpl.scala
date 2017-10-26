@@ -48,9 +48,11 @@ import scala.reflect.macros.blackbox
   @deprecated("Use implicitConfigReadsImpl or withOptionsReadsImpl", "2.6.6")
   protected def readsImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
     implicitOptionsConfig, "read", "map", reads = true, writes = false)
+
   @deprecated("Use implicitConfigWritesImpl or withOptionsWritesImpl", "2.6.6")
   protected def writesImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
     implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
+
   @deprecated("Use implicitConfigFormatImpl or withOptionsFormatImpl", "2.6.6")
   protected def formatImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
     implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
@@ -97,8 +99,6 @@ import scala.reflect.macros.blackbox
     val syntax = q"$libs.functional.syntax"
     val utilPkg = q"$json.util"
     val JsPath = q"$json.JsPath"
-    val Reads = q"$json.Reads"
-    val Writes = q"$json.Writes"
     val unlift = q"$syntax.unlift"
     val atpe = atag.tpe.dealias
 
@@ -577,11 +577,11 @@ import scala.reflect.macros.blackbox
           cq"""x: $t => {
             val xjs = implicitly[Writes[$t]].writes(x)
             @inline def jso = xjs match {
-              case xo @ JsObject(_) => xo
-              case jsv => JsObject(Seq("_value" -> jsv))
+              case xo @ $json.JsObject(_) => xo
+              case jsv => $json.JsObject(Seq("_value" -> jsv))
             }
 
-            jso + ("_type" -> JsString(${typeNaming(t)}))
+            jso + ("_type" -> $json.JsString(${typeNaming(t)}))
           }"""
         })
 
