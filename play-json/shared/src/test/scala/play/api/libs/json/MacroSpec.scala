@@ -529,6 +529,16 @@ class MacroSpec extends WordSpec with MustMatchers
 
   sealed trait EmptyFamily
 
+  object FamilyCodec {
+    implicit val simpleWrites = Json.writes[Simple]
+    implicit val optionalWrites = Json.writes[Optional]
+
+    implicit val familyWrites = Json.writes[Family] // Failing:
+    /* java.lang.IllegalArgumentException:
+     requirement failed: familyWrites  is not a valid identifier
+     */
+  }
+
   object Foo {
     import shapeless.tag.@@
 
