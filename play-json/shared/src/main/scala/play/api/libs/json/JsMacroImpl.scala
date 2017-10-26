@@ -589,8 +589,14 @@ import scala.reflect.macros.blackbox
         // from the implicit scope, due to the contravariant/implicit issue:
         // https://groups.google.com/forum/#!topic/scala-language/ZE83TvSWpT4
 
+        val shadowName = TermName(term.name.decodedName.toString.trim)
+        // DO NOT directly use `term.name` as for some reason,
+        // the TermName is provided within Scala.JS is appended with a final ' '
+
         q"""{ v: ${atpe} =>
-          val ${term.name.asInstanceOf[TermName]} = "eliminatedImplicit"
+          def ${shadowName}: $json.OWrites[${atpe}] =
+            sys.error("Invalid implicit resolution")
+
           $cases
         }"""
       }
