@@ -34,7 +34,7 @@ trait PathReads {
   def at[A](path: JsPath)(implicit reads: Reads[A]): Reads[A] = Reads[A](js => path.asSingleJsResult(js).flatMap(reads.reads(_).repath(path)))
 
   def withDefault[A](path: JsPath, defaultValue: => A)(implicit reads: Reads[A]): Reads[A] =
-    at[A](path) orElse Reads.pure(defaultValue)
+    nullable[A](path).map(_ getOrElse defaultValue)
 
   /**
    * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
