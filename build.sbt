@@ -15,10 +15,14 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 val scala213Version = "2.13.0-M2"
 
-def specsBuild(scalaVersion: String) = (CrossVersion.partialVersion(scalaVersion) match {
-  case Some((2, 10)) => Seq("org.specs2" %% "specs2-core" % "3.9.1" % Test)
-  case _ => Seq("org.specs2" %% "specs2-core" % "4.0.1" % Test)
-})
+val specsBuild = Def.setting[Seq[ModuleID]] {
+  val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 10)) => "3.9.1"
+    case _ => "4.0.1"
+  }
+
+  Seq("org.specs2" %% "specs2-core" % specsVersion)
+}
 
 val jacksonVersion = "2.9.1"
 val jacksons = Seq(
@@ -162,7 +166,7 @@ lazy val `play-json-joda` = project
   .enablePlugins(PlayLibrary)
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= joda ++ specsBuild(scalaVersion.value)
+    libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
   )
   .dependsOn(`play-jsonJVM`)
 
@@ -170,7 +174,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
     libraryDependencies ++=
       joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specsBuild(scalaVersion.value) :+ (
+      jacksons ++ specsBuild.value.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
     unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
