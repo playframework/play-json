@@ -97,6 +97,17 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
         jsNum.validate[BigInt] mustEqual JsSuccess(sb)
       }
     }
+
+    Seq("1.0", "A").foreach { repr =>
+      s"fails for '$repr'" in {
+        val jsStr = JsString(repr)
+        val jsErr = JsError(List((JsPath, List(
+          JsonValidationError("error.expected.numberformatexception")
+        ))))
+
+        jsStr.validate[BigInteger] mustEqual jsErr
+      }
+    }
   }
 
   // ---
