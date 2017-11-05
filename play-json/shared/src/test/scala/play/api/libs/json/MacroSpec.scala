@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import scala.util.control.NonFatal
+
 import org.scalatest.matchers.must.Matchers
 import Matchers._
 import org.scalatest.wordspec.AnyWordSpec
@@ -141,11 +143,47 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         jsOptional.validate[Family].mustEqual(JsSuccess(optional))
       }
     }
+
+    "fails due to forward reference to Reads" in {
+      implicit def reads: Reads[Lorem[Simple]] =
+        InvalidForwardResolution.simpleLoremReads
+
+      val jsLorem = Json.obj("age" -> 11, "ipsum" -> Json.obj("bar" -> "foo"))
+
+      try {
+        jsLorem.validate[Lorem[Simple]]
+      } catch {
+        case NonFatal(npe: NullPointerException) => {
+          val expected = "Invalid implicit resolution"
+          npe.getMessage.take(expected.size) mustEqual expected
+        }
+
+        case NonFatal(cause) => throw cause
+      }
+    }
+
+    "fails due to forward reference to Format" in {
+      implicit def format: Format[Lorem[Simple]] =
+        InvalidForwardResolution.simpleLoremFormat
+
+      val jsLorem = Json.obj("age" -> 11, "ipsum" -> Json.obj("bar" -> "foo"))
+
+      try {
+        jsLorem.validate[Lorem[Simple]]
+      } catch {
+        case NonFatal(npe: NullPointerException) => {
+          val expected = "Invalid implicit resolution"
+          npe.getMessage.take(expected.size) mustEqual expected
+        }
+
+        case NonFatal(cause) => throw cause
+      }
+    }
   }
 
   "Writes" should {
     "be generated for simple case class" in {
-      Json.writes[Simple].writes(Simple("lorem")).mustEqual(Json.obj("bar" -> "lorem"))
+      Json.writes[Simple].writes(Simple("lorem")) mustEqual Json.obj("bar" -> "lorem")
     }
 
     "as Format for a generic case class" in {
@@ -483,6 +521,38 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       formatter.writes(Obj).mustEqual(jsObj)
       formatter.reads(jsObj).mustEqual(JsSuccess(Obj))
     }
+
+    "fails due to forward reference to Writes" in {
+      implicit def writes: Writes[Lorem[Simple]] =
+        InvalidForwardResolution.simpleLoremWrites
+
+      try {
+        Json.toJson(Lorem(age = 11, ipsum = Simple(bar = "foo")))
+      } catch {
+        case NonFatal(npe: NullPointerException) => {
+          val expected = "Invalid implicit resolution"
+          npe.getMessage.take(expected.size) mustEqual expected
+        }
+
+        case NonFatal(cause) => throw cause
+      }
+    }
+
+    "fails due to forward reference to Format" in {
+      implicit def format: Format[Lorem[Simple]] =
+        InvalidForwardResolution.simpleLoremFormat
+
+      try {
+        Json.toJson(Lorem(age = 11, ipsum = Simple(bar = "foo")))
+      } catch {
+        case NonFatal(npe: NullPointerException) => {
+          val expected = "Invalid implicit resolution"
+          npe.getMessage.take(expected.size) mustEqual expected
+        }
+
+        case NonFatal(cause) => throw cause
+      }
+    }
   }
 }
 
@@ -510,6 +580,16 @@ object MacroSpec {
     /* java.lang.IllegalArgumentException:
      requirement failed: familyWrites  is not a valid identifier
    */
+  }
+
+  object InvalidForwardResolution {
+    // Invalids as forward references to `simpleX`
+    val simpleLoremReads = Json.reads[Lorem[Simple]]
+    val simpleLoremWrites = Json.writes[Lorem[Simple]]
+    val simpleLoremFormat = Json.format[Lorem[Simple]]
+
+    implicit val simpleReads: Reads[Simple] = Json.reads
+    implicit val simpleWrites: OWrites[Simple] = Json.writes[Simple]
   }
 
   object Foo {
