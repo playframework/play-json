@@ -112,7 +112,8 @@ import scala.reflect.macros.blackbox
     )
 
     val optTpeCtor = typeOf[Option[_]].typeConstructor
-    val forwardName = TermName(c.freshName("forward"))
+    val forwardPrefix = "play_jsmacro"
+    val forwardName = TermName(c.freshName(forwardPrefix))
 
     // MacroOptions
     val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
@@ -634,7 +635,7 @@ import scala.reflect.macros.blackbox
 
         case _ => c.abort(
           c.enclosingPosition,
-          s"No apply function found matching unapply parameters"
+          "No apply function found matching unapply parameters"
         )
       }
 
@@ -670,24 +671,36 @@ import scala.reflect.macros.blackbox
           val defaultValue = // not applicable for 'write' only
             defaultValueMap.get(name).filter(_ => methodName != "write")
 
+          val resolvedImpl = {
+            val implTpeName = Option(impl.tpe).fold("null")(_.toString)
+
+            if (implTpeName.startsWith(forwardPrefix) ||
+              (implTpeName.startsWith("play.api.libs.json") &&
+                !implTpeName.contains("MacroSpec"))) {
+              impl // Avoid extra check for builtin formats
+            } else {
+              q"""_root_.java.util.Objects.requireNonNull($impl, "Invalid implicit resolution (forward reference?) for '" + $cn + "': " + ${implTpeName})"""
+            }
+          }
+
           // - If we're an default value, invoke the withDefault version
           // - If we're an option with default value,
           //   invoke the nullableWithDefault version
           (isOption, defaultValue) match {
             case (true, Some(v)) =>
               val c = TermName(s"${methodName}NullableWithDefault")
-              q"$jspathTree.$c($v)($impl)"
+              q"$jspathTree.$c($v)($resolvedImpl)"
 
             case (true, _) =>
               val c = TermName(s"${methodName}Nullable")
-              q"$jspathTree.$c($impl)"
+              q"$jspathTree.$c($resolvedImpl)"
 
             case (false, Some(v)) =>
               val c = TermName(s"${methodName}WithDefault")
-              q"$jspathTree.$c($v)($impl)"
+              q"$jspathTree.$c($v)($resolvedImpl)"
 
             case _ =>
-              q"$jspathTree.${TermName(methodName)}($impl)"
+              q"$jspathTree.${TermName(methodName)}($resolvedImpl)"
           }
       }.reduceLeft[Tree] { (acc, r) =>
         q"$acc.and($r)"
@@ -758,6 +771,7 @@ import scala.reflect.macros.blackbox
             case _ =>
               q"$json.OFormat[${atpe}](instance.reads(_), instance.writes(_))"
           }
+
           val forwardCall =
             q"private val $forwardName = $forward"
 
