@@ -212,6 +212,20 @@ trait DefaultWrites extends LowPriorityWrites {
   }
 
   /**
+   * Serializer for BigInt type.
+   */
+  implicit object BigIntWrites extends Writes[BigInt] {
+    def writes(i: BigInt) = JsNumber(BigDecimal(i))
+  }
+
+  /**
+   * Serializer for BigInteger type.
+   */
+  implicit object BigIntegerWrites extends Writes[java.math.BigInteger] {
+    def writes(i: java.math.BigInteger) = JsNumber(BigDecimal(i))
+  }
+
+  /**
    * Serializer for Boolean types.
    */
   implicit object BooleanWrites extends Writes[Boolean] {

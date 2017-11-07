@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import java.math.BigInteger
+
 import java.util.Locale
 
 import org.scalatest._
@@ -73,6 +75,38 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
       )
 
       Json.parse(Json.stringify(jsObj)) mustEqual jsObj
+    }
+  }
+
+  "Big integer Reads" should {
+    Seq("123", "23").foreach { repr =>
+      val jb = new BigInteger(repr)
+      val sb = BigInt(jb)
+
+      s"""be successful for JsString("$repr")""" in {
+        val jsStr = JsString(repr)
+
+        jsStr.validate[BigInteger] mustEqual JsSuccess(jb)
+        jsStr.validate[BigInt] mustEqual JsSuccess(sb)
+      }
+
+      s"""be successful for JsNumber($sb)""" in {
+        val jsNum = JsNumber(BigDecimal(sb))
+
+        jsNum.validate[BigInteger] mustEqual JsSuccess(jb)
+        jsNum.validate[BigInt] mustEqual JsSuccess(sb)
+      }
+    }
+
+    Seq("1.0", "A").foreach { repr =>
+      s"fails for '$repr'" in {
+        val jsStr = JsString(repr)
+        val jsErr = JsError(List((JsPath, List(
+          JsonValidationError("error.expected.numberformatexception")
+        ))))
+
+        jsStr.validate[BigInteger] mustEqual jsErr
+      }
     }
   }
 
