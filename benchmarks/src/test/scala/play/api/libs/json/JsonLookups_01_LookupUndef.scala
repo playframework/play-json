@@ -25,7 +25,13 @@ class JsonLookups_01_LookupUndef {
   def asOpt(): Option[String] = (undefValue \ "missing").asOpt[String]
 
   @Benchmark
-  def as(): String = (undefValue \ "missing").as[String]
+  def as(): String = {
+    try {
+      (undefValue \ "missing").as[String]
+    } catch {
+      case e: JsResultException => e.getMessage
+    }
+  }
 
   @Benchmark
   def validate(): JsResult[String] = (undefValue \ "missing").validate[String]
