@@ -18,4 +18,4 @@ addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.0")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "3.0.1")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.19")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.20")
