@@ -6,13 +6,13 @@ package play.api.libs.json
 import org.openjdk.jmh.annotations._
 
 @State(Scope.Benchmark)
-class JsonLookups_01_LookupUndef {
+class JsonLookups_02_LookupDef {
 
-  var undefValue: JsValue = _
+  var defValue: JsValue = _
 
   @Setup(Level.Iteration)
   def setup(): Unit = {
-    undefValue = Json.obj(
+    defValue = Json.obj(
       "foobar01" -> "test",
       "foobar02" -> "test",
       "foobar03" -> "test",
@@ -22,15 +22,15 @@ class JsonLookups_01_LookupUndef {
   }
 
   @Benchmark
-  def asOpt(): Option[String] = (undefValue \ "missing").asOpt[String]
+  def asOpt(): Option[String] = (defValue \ "foobar03").asOpt[String]
 
   @Benchmark
-  def as(): String = (undefValue \ "missing").as[String]
+  def as(): String = (defValue \ "foobar03").as[String]
 
   @Benchmark
-  def validate(): JsResult[String] = (undefValue \ "missing").validate[String]
+  def validate(): JsResult[String] = (defValue \ "foobar03").validate[String]
 
   @Benchmark
-  def validateOpt(): JsResult[Option[String]] = (undefValue \ "missing").validateOpt[String]
+  def validateOpt(): JsResult[Option[String]] = (defValue \ "foobar03").validateOpt[String]
 
 }
