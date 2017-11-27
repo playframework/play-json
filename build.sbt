@@ -66,7 +66,14 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
   case _ => FastOptStage
 })
 
-lazy val commonSettings = scalariformSettings(autoformat = true) ++ Seq(
+lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
+    publishTo := Some(
+      if (isSnapshot.value)
+        Opts.resolver.sonatypeSnapshots
+      else
+        Opts.resolver.sonatypeStaging
+    ),
+    scalariformAutoformat := true,
     headerLicense := {
       val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
       Some(HeaderLicense.Custom(
@@ -94,7 +101,10 @@ lazy val root = project
     `play-functionalJS`,
     `play-functionalJVM`,
     `play-json-joda`
-  ).settings(commonSettings: _*)
+  ).settings(
+    commonSettings,
+    publishTo := None
+  )
 
 lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .in(file("play-json"))
