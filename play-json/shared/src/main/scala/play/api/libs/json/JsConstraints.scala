@@ -7,9 +7,6 @@ package play.api.libs.json
 trait ConstraintFormat {
   def of[A](implicit fmt: Format[A]): Format[A] = fmt
 
-  // Deleted because useless and troublesome (better to use nullable anyway)
-  //def optional[A](implicit fmt: Format[A]): Format[Option[A]] = Format[Option[A]]( Reads.optional(fmt), Writes.optional(fmt) )
-
   def optionWithNull[A](implicit fmt: Format[A]): Format[Option[A]] = Format[Option[A]](Reads.optionWithNull(fmt), Writes.optionWithNull(fmt))
 }
 
@@ -99,10 +96,6 @@ trait PathReads {
 trait ConstraintReads {
   /** The simpler of all Reads that just finds an implicit Reads[A] of the expected type */
   def of[A](implicit r: Reads[A]) = r
-
-  /** deleted because useless and troublesome (better to use nullable anyway) */
-  //def optional[A](implicit reads:Reads[A]):Reads[Option[A]] =
-  //  Reads[Option[A]](js => JsSuccess(reads.reads(js).asOpt))
 
   /** very simple optional field Reads that maps "null" to None */
   def optionWithNull[T](implicit rds: Reads[T]): Reads[Option[T]] = Reads(js => js match {
@@ -207,12 +200,6 @@ trait PathWrites {
 
 trait ConstraintWrites {
   def of[A](implicit w: Writes[A]) = w
-
-  // deleted because troublesome...
-  // def optional[A](implicit wa: Writes[A]): Writes[Option[A]] = Writes[Option[A]] { a => a match {
-  //  case None => Json.obj()
-  //  case Some(av) => wa.writes(av)
-  //}}
 
   def pure[A](fixed: => A)(implicit wrs: Writes[A]): Writes[JsValue] =
     Writes[JsValue] { js => wrs.writes(fixed) }
