@@ -97,6 +97,20 @@ object JsonNaming {
     override val toString = "SnakeCase"
   }
 
+  /**
+   * For each class property, use the pascal case equivalent
+   * to name its column (e.g. fooBar -> FooBar).
+   */
+  object PascalCase extends JsonNaming {
+    def apply(property: String): String =
+      if (property.length > 0)
+        property.updated(0, Character.toUpperCase(property.charAt(0)))
+      else
+        property
+
+    override val toString = "PascalCase"
+  }
+
   /** Naming using a custom transformation function. */
   def apply(transformation: String => String): JsonNaming = new JsonNaming {
     def apply(property: String): String = transformation(property)
