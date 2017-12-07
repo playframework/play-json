@@ -705,9 +705,11 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
 
       def validateReads(fooReads: Reads[WithDefault2]) = {
         fooReads.reads(Json.obj()) mustEqual JsSuccess(WithDefault2())
+        fooReads.reads(Json.obj("a" -> JsNull)) mustEqual JsSuccess(WithDefault2())
         fooReads.reads(Json.obj("bar" -> JsNull)) mustEqual JsSuccess(WithDefault2(bar = None))
         fooReads.reads(Json.obj("a" -> "z")) mustEqual JsSuccess(WithDefault2(a = "z"))
         fooReads.reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z"))) mustEqual JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z")))))
+        fooReads.reads(Json.obj("a" -> 1)) mustEqual JsError(List((JsPath \ "a") -> List(JsonValidationError("error.expected.jsstring"))))
       }
 
       "by functional reads" in validateReads(functionalReads)
