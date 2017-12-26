@@ -71,6 +71,7 @@ object JsonNaming {
       val result = new StringBuilder(length * 2)
       var resultLength = 0
       var wasPrevTranslated = false
+
       for (i <- 0 until length) {
         var c = property.charAt(i)
         if (i > 0 || i != '_') {
@@ -103,10 +104,11 @@ object JsonNaming {
    */
   object PascalCase extends JsonNaming {
     def apply(property: String): String =
-      if (property.length > 0)
-        property.updated(0, Character.toUpperCase(property.charAt(0)))
-      else
+      if (property.length > 0) {
+        property.updated(0, Character.toUpperCase(property charAt 0))
+      } else {
         property
+      }
 
     override val toString = "PascalCase"
   }
