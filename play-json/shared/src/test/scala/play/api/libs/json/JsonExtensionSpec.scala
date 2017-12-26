@@ -19,6 +19,7 @@ object UserProfile {
   def obj1 = UserProfile("Christian", "Schmitt", None, "Kenzingen")
   def json1 = Json.obj("first_name" -> "Christian", "last_name" -> "Schmitt", "city" -> "Kenzingen")
   def json2 = Json.obj("lightbend_firstName" -> "Christian", "lightbend_lastName" -> "Schmitt", "lightbend_city" -> "Kenzingen")
+  def json3 = Json.obj("FirstName" -> "Christian", "LastName" -> "Schmitt", "City" -> "Kenzingen")
 }
 case class UserProfileHolder(holder: String, profile: UserProfile)
 case class Cat(name: String)
@@ -603,6 +604,34 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
 
       Json.fromJson(UserProfile.json1) mustEqual (JsSuccess(UserProfile.obj1))
       Json.toJson(UserProfile.obj1) mustEqual (UserProfile.json1)
+    }
+
+    "create a writes[UserProfile] with PascalCase" in {
+      import play.api.libs.json.Json
+
+      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
+      implicit val writes = Json.writes[UserProfile]
+
+      Json.toJson(UserProfile.obj1) mustEqual (UserProfile.json3)
+    }
+
+    "create a reads[UserProfile] with PascalCase" in {
+      import play.api.libs.json.Json
+
+      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
+      implicit val reads = Json.reads[UserProfile]
+
+      Json.fromJson(UserProfile.json3) mustEqual (JsSuccess(UserProfile.obj1))
+    }
+
+    "create a format[UserProfile] with PascalCase" in {
+      import play.api.libs.json.Json
+
+      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
+      implicit val format = Json.format[UserProfile]
+
+      Json.fromJson(UserProfile.json3) mustEqual (JsSuccess(UserProfile.obj1))
+      Json.toJson(UserProfile.obj1) mustEqual (UserProfile.json3)
     }
 
     "create a writes[UserProfile] with CustomNaming" in {
