@@ -5,7 +5,7 @@
 package play.api.libs.json
 
 trait ConstraintFormat {
-  def of[A](implicit fmt: Format[A]): Format[A] = fmt
+  @inline def of[A](implicit fmt: Format[A]): Format[A] = fmt
 
   def optionWithNull[A](implicit fmt: Format[A]): Format[Option[A]] = Format[Option[A]](Reads.optionWithNull(fmt), Writes.optionWithNull(fmt))
 }
@@ -95,7 +95,7 @@ trait PathReads {
 
 trait ConstraintReads {
   /** The simpler of all Reads that just finds an implicit Reads[A] of the expected type */
-  def of[A](implicit r: Reads[A]) = r
+  @inline def of[A](implicit r: Reads[A]) = r
 
   /** very simple optional field Reads that maps "null" to None */
   def optionWithNull[T](implicit rds: Reads[T]): Reads[Option[T]] = Reads(js => js match {
