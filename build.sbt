@@ -13,12 +13,18 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val specsVersion = "3.9.1"
-val specsBuild = Seq(
-  "specs2-core"
-).map("org.specs2" %% _ % specsVersion)
+val scala213Version = "2.13.0-M2"
 
-val jacksonVersion = "2.9.1"
+val specsBuild = Def.setting[Seq[ModuleID]] {
+  val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 10)) => "3.9.1"
+    case _ => "4.0.1"
+  }
+
+  Seq("org.specs2" %% "specs2-core" % specsVersion)
+}
+
+val jacksonVersion = "2.9.3"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
@@ -60,7 +66,14 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
   case _ => FastOptStage
 })
 
-lazy val commonSettings = scalariformSettings(autoformat = true) ++ Seq(
+lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
+    publishTo := Some(
+      if (isSnapshot.value)
+        Opts.resolver.sonatypeSnapshots
+      else
+        Opts.resolver.sonatypeStaging
+    ),
+    scalariformAutoformat := true,
     headerLicense := {
       val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
       Some(HeaderLicense.Custom(
@@ -88,7 +101,10 @@ lazy val root = project
     `play-functionalJS`,
     `play-functionalJVM`,
     `play-json-joda`
-  ).settings(commonSettings: _*)
+  ).settings(
+    commonSettings,
+    publishTo := None
+  )
 
 lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .in(file("play-json"))
@@ -99,10 +115,18 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
     mimaBinaryIssueFilters ++= Seq(
       // AbstractFunction1 is in scala.runtime and isn't meant to be used by end users
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$"),
-      ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$")
+      ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.BigIntWrites"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.BigIntegerWrites"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntReads"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntegerReads"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.BigIntWrites"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.BigIntegerWrites"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntReads"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntegerReads")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.3" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.4" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
       "com.chuusai" %% "shapeless" % "2.3.2" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
@@ -160,7 +184,7 @@ lazy val `play-json-joda` = project
   .enablePlugins(PlayLibrary)
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= joda ++ specsBuild.map(_ % Test)
+    libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
   )
   .dependsOn(`play-jsonJVM`)
 
@@ -168,7 +192,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
     libraryDependencies ++=
       joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specsBuild.map(_ % Test) :+ (
+      jacksons ++ specsBuild.value.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
     unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get

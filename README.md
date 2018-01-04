@@ -7,11 +7,26 @@ We've provided some documentation here on how to use Play JSON in your app (with
 
 ## Getting Started
 
-To get started, you can add play-json as a dependency in SBT:
+To get started, you can add play-json as a dependency in your project:
 
-```scala
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.6"
-```
+* sbt
+  ```scala
+  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.7"
+  ```
+* Gradle
+  ```
+  compile group: 'com.typesafe.play', name: 'play-json_2.12', version: '2.6.7'
+  ```
+* Maven
+  ```xml
+  <dependency>
+    <groupId>com.typesafe.play</groupId>
+    <artifactId>play-json_2.12</artifactId>
+    <version>2.6.7</version>
+  </dependency>
+  ```
+ 
+Play JSON supports Scala 2.10, 2.11 and 2.12. Choosing the right JAR is automatically managed in sbt. If you're using Gradle or Maven then you need to use the correct version in the `artifactId`.
 
 ## JSON AST
 
