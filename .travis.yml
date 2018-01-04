@@ -2,12 +2,12 @@ language: scala
 scala:
 - 2.12.4
 - 2.11.11
-- 2.10.6
+- 2.10.7
 jdk:
 - oraclejdk8
 - oraclejdk9
 script:
-- sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode mimaReportBinaryIssues testOnly
+- sbt -DscalaJSStage=full -Dsbt.scala.version=2.10.7 ++$TRAVIS_SCALA_VERSION validateCode mimaReportBinaryIssues testOnly
 cache:
   directories:
   - "$HOME/.ivy2/cache"
