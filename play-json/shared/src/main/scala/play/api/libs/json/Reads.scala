@@ -71,21 +71,43 @@ trait Reads[A] { self =>
    * `Reads`' logic then, if this `Reads` resulted in a `JsError`, runs
    * the second `Reads` on the [[JsValue]].
    *
-   * @param v The `Reads` to run if this one gets a `JsError`.
+   * @param v the `Reads` to run if this one gets a `JsError`
    * @return A new `Reads` with the updated behavior.
    */
   def orElse(v: Reads[A]): Reads[A] =
     Reads[A] { json => self.reads(json).orElse(v.reads(json)) }
 
-  def compose[B <: JsValue](rb: Reads[B]): Reads[A] = Reads[A] { js =>
-    rb.reads(js) match {
+  @deprecated("Use [[composeWith]]", "2.7.0")
+  def compose[B <: JsValue](rb: Reads[B]): Reads[A] = composeWith[B](rb)
+
+  /**
+   * Creates a new `Reads`, which first passes the input JSON to `rb`,
+   * and then it executes this `Reads` on the pre-processed JSON
+   * (if `rb` has successfully handled the input JSON).
+   */
+  def composeWith[B <: JsValue](rb: Reads[B]): Reads[A] = Reads[A] {
+    rb.reads(_) match {
       case JsSuccess(b, p) => this.reads(b).repath(p)
       case JsError(e) => JsError(e)
     }
   }
 
+  /**
+   * Creates a new `Reads`, which first transforms the input JSON
+   * using the given `tranformer`, and then it executes this `Reads`
+   * on the pre-processed JSON.
+   *
+   * @param transformer the function to pre-process the input JSON
+   */
+  def compose(transformer: PartialFunction[JsValue, JsValue]): Reads[A] =
+    Reads[A] { input =>
+      val json = transformer.lift(input).getOrElse(input)
+
+      this.reads(json)
+    }
+
   def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
-    rb.compose(this.map(witness))
+    rb.composeWith(this.map(witness))
 
 }
 
