@@ -13,7 +13,7 @@ sealed trait JsonConfiguration {
   def naming: JsonNaming
 
   /** How options are handled by the macro */
-  def optionHandlers: OptionHandlers = OptionHandlers.Default
+  def optionHandlers: OptionHandlers
 }
 
 object JsonConfiguration {
@@ -21,7 +21,7 @@ object JsonConfiguration {
 
   private final class Impl[O <: Json.MacroOptions](
     val naming: JsonNaming = JsonNaming.Identity,
-    override val optionHandlers: OptionHandlers = OptionHandlers.Default
+    val optionHandlers: OptionHandlers = OptionHandlers.Default
   ) extends JsonConfiguration {
     type Opts = O
 
