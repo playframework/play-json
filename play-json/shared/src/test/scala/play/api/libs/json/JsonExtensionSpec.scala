@@ -94,6 +94,8 @@ case class WithDefault2(a: String = "a", bar: Option[WithDefault1] = Some(WithDe
 
 case class WithDefaultSnake(firstProp: String, defaultProp: String = "the default")
 
+case class Optional(props: Option[String])
+
 class JsonExtensionSpec extends WordSpec with MustMatchers {
   "JsonExtension" should {
     "create a reads[User]" in {
@@ -760,6 +762,22 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
         val config = JsonConfiguration[Json.WithDefaultValues](naming = SnakeCase)
         json.as(Json.configured(config).reads[WithDefaultSnake]) mustEqual data
       }
+    }
+
+    "create a Writes[Optional] with optionHandlers=WritesNull" in {
+      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      val writer = Json.writes[Optional]
+      writer.writes(Optional(None)) mustEqual Json.obj("props" -> JsNull)
+    }
+
+    "create a Format[Optional] with optionHandlers=WritesNull" in {
+      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      val formatter = Json.format[Optional]
+      formatter.writes(Optional(None)) mustEqual Json.obj("props" -> JsNull)
+
+      formatter.reads(Json.obj()) mustEqual JsSuccess(Optional(None))
+      formatter.reads(Json.obj("props" -> JsNull)) mustEqual JsSuccess(Optional(None))
+      formatter.reads(Json.obj("props" -> Some("foo"))) mustEqual JsSuccess(Optional(Some("foo")))
     }
   }
 }

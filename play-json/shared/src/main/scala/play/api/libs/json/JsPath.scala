@@ -357,6 +357,13 @@ case class JsPath(path: List[PathNode] = List()) {
   def writeNullable[T](implicit w: Writes[T]): OWrites[Option[T]] = Writes.nullable[T](this)(w)
 
   /**
+   * Writes a Option[T] at given JsPath
+   * If None => writes 'null'
+   * else => writes the field using implicit Writes[T]
+   */
+  def writeOptionWithNull[T](implicit w: Writes[T]): OWrites[Option[T]] = Writes.at[Option[T]](this)(Writes.optionWithNull[T](w))
+
+  /**
    * Writes a T at JsPath using the explicit Writes[T] passed by name which is useful in case of
    * recursive case classes for ex
    *

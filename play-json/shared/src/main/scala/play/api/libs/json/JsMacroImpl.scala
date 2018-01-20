@@ -679,8 +679,8 @@ import scala.reflect.macros.blackbox
               q"$jspathTree.$c($v)($impl)"
 
             case (true, _) =>
-              val c = TermName(s"${methodName}Nullable")
-              q"$jspathTree.$c($impl)"
+              val c = TermName(s"${methodName}Handler")
+              q"$config.optionHandlers.$c($jspathTree)($impl)"
 
             case (false, Some(v)) =>
               val c = TermName(s"${methodName}WithDefault")

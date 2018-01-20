@@ -60,3 +60,10 @@ A strategy other than the default one can be used as following:
 To implement your own Naming Strategy you just need to implement the `JsonNaming` trait:
 
 @[auto-custom-naming-format](code/ScalaJsonAutomatedSpec.scala)
+
+
+## Customize the macro to output null
+
+The macro can be configured to output `null` values in the Json instead of removing the empty fields:
+
+@[auto-writes-null](code/ScalaJsonAutomatedSpec.scala)
