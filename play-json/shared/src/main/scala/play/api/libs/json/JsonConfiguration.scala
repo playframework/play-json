@@ -142,9 +142,9 @@ object OptionHandlers {
    * Uses readNullable and writesNullable under the hood
    */
   object Default extends OptionHandlers {
-    override def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]] = jsPath.readNullable
-    override def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeNullable
-    override def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = jsPath.formatNullable
+    def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]] = jsPath.readNullable
+    def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeNullable
+    def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = jsPath.formatNullable
   }
 
   /**
@@ -152,9 +152,9 @@ object OptionHandlers {
    * Uses readNullable and writeOptionWithNull
    */
   object WritesNull extends OptionHandlers {
-    override def readHandler[T](jsPath: JsPath)(implicit reads: Reads[T]): Reads[Option[T]] = jsPath.readNullable
-    override def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeOptionWithNull
-    override def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
+    def readHandler[T](jsPath: JsPath)(implicit reads: Reads[T]): Reads[Option[T]] = jsPath.readNullable
+    def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeOptionWithNull
+    def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
       OFormat(jsPath.readNullable, jsPath.writeOptionWithNull)
     }
   }
