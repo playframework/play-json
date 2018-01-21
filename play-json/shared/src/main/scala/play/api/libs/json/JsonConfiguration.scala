@@ -131,7 +131,9 @@ object JsonNaming {
 trait OptionHandlers {
   def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]]
   def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]]
-  def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]]
+  final def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
+    OFormat(readHandler(jsPath), writeHandler(jsPath))
+  }
 }
 
 /** OptionHandlers companion */
@@ -139,12 +141,11 @@ object OptionHandlers {
 
   /**
    * Default Option Handlers
-   * Uses readNullable and writesNullable under the hood
+   * Uses readNullable and writesNullable
    */
   object Default extends OptionHandlers {
     def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]] = jsPath.readNullable
     def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeNullable
-    def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = jsPath.formatNullable
   }
 
   /**
@@ -154,8 +155,5 @@ object OptionHandlers {
   object WritesNull extends OptionHandlers {
     def readHandler[T](jsPath: JsPath)(implicit reads: Reads[T]): Reads[Option[T]] = jsPath.readNullable
     def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeOptionWithNull
-    def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
-      OFormat(jsPath.readNullable, jsPath.writeOptionWithNull)
-    }
   }
 }
