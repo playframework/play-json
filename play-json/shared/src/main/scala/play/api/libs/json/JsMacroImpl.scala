@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.json
@@ -679,8 +679,8 @@ import scala.reflect.macros.blackbox
               q"$jspathTree.$c($v)($impl)"
 
             case (true, _) =>
-              val c = TermName(s"${methodName}Nullable")
-              q"$jspathTree.$c($impl)"
+              val c = TermName(s"${methodName}Handler")
+              q"$config.optionHandlers.$c($jspathTree)($impl)"
 
             case (false, Some(v)) =>
               val c = TermName(s"${methodName}WithDefault")

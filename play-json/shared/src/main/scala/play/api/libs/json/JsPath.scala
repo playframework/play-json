@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.json
@@ -355,6 +355,13 @@ case class JsPath(path: List[PathNode] = List()) {
    * else => writes the field using implicit Writes[T]
    */
   def writeNullable[T](implicit w: Writes[T]): OWrites[Option[T]] = Writes.nullable[T](this)(w)
+
+  /**
+   * Writes a Option[T] at given JsPath
+   * If None => writes 'null'
+   * else => writes the field using implicit Writes[T]
+   */
+  def writeOptionWithNull[T](implicit w: Writes[T]): OWrites[Option[T]] = Writes.at[Option[T]](this)(Writes.optionWithNull[T](w))
 
   /**
    * Writes a T at JsPath using the explicit Writes[T] passed by name which is useful in case of

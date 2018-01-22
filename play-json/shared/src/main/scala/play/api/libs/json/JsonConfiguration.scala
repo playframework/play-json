@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.json
@@ -11,15 +11,21 @@ sealed trait JsonConfiguration {
 
   /** Naming strategy */
   def naming: JsonNaming
+
+  /** How options are handled by the macro */
+  def optionHandlers: OptionHandlers
 }
 
 object JsonConfiguration {
   type Aux[O <: Json.MacroOptions] = JsonConfiguration { type Opts = O }
 
   private final class Impl[O <: Json.MacroOptions](
-    val naming: JsonNaming = JsonNaming.Identity
+    val naming: JsonNaming = JsonNaming.Identity,
+    val optionHandlers: OptionHandlers = OptionHandlers.Default
   ) extends JsonConfiguration {
     type Opts = O
+
+    def this(naming: JsonNaming) = this(naming, OptionHandlers.Default)
   }
 
   // These methods exist for binary compatibility, since Scala protected methods are public from a binary perspective.
@@ -28,10 +34,12 @@ object JsonConfiguration {
 
   /**
    * @param naming the naming strategy
+   * @param optionHandlers handlers for option
    */
   def apply[Opts <: Json.MacroOptions: Json.MacroOptions.Default](
-    naming: JsonNaming = JsonNaming.Identity
-  ): JsonConfiguration.Aux[Opts] = new Impl(naming)
+    naming: JsonNaming = JsonNaming.Identity,
+    optionHandlers: OptionHandlers = OptionHandlers.Default
+  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers)
 
   /** Default configuration instance */
   implicit def default[Opts <: Json.MacroOptions: Json.MacroOptions.Default]: JsonConfiguration.Aux[Opts] = apply()
@@ -116,5 +124,36 @@ object JsonNaming {
   /** Naming using a custom transformation function. */
   def apply(transformation: String => String): JsonNaming = new JsonNaming {
     def apply(property: String): String = transformation(property)
+  }
+}
+
+/** Configure how options should be handled */
+trait OptionHandlers {
+  def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]]
+  def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]]
+  final def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
+    OFormat(readHandler(jsPath), writeHandler(jsPath))
+  }
+}
+
+/** OptionHandlers companion */
+object OptionHandlers {
+
+  /**
+   * Default Option Handlers
+   * Uses readNullable and writesNullable
+   */
+  object Default extends OptionHandlers {
+    def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]] = jsPath.readNullable
+    def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeNullable
+  }
+
+  /**
+   * Option Handlers to write JsNull when handling None
+   * Uses readNullable and writeOptionWithNull
+   */
+  object WritesNull extends OptionHandlers {
+    def readHandler[T](jsPath: JsPath)(implicit reads: Reads[T]): Reads[Option[T]] = jsPath.readNullable
+    def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeOptionWithNull
   }
 }

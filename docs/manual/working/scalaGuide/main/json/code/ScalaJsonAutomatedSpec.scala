@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package scalaguide.json
@@ -41,6 +41,14 @@ class ScalaJsonAutomatedSpec extends Specification {
     }"""
   )
   val sampleData2 = PlayUser("Schmitt", "Christian", 26)
+
+  val sampleJson4 = Json.parse(
+    """{
+      "name": "Fiver",
+      "age": 4,
+      "role": null
+    }"""
+  )
 
   "Scala JSON automated" should {
     "produce a working Reads" in {
@@ -185,6 +193,20 @@ class ScalaJsonAutomatedSpec extends Specification {
       //#auto-JSON-to-case-class
 
       residentFromJson.get must_=== sampleData
+    }
+
+    "produce a json object with nulls" in {
+      //#auto-writes-null
+      import play.api.libs.json._
+
+      implicit val config = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      implicit val residentWrites = Json.writes[Resident]
+      //#auto-writes-null
+
+      val resident = Resident(name = "Fiver", age = 4, role = None)
+
+      Json.toJson(resident) must_=== sampleJson4
+
     }
   }
 }
