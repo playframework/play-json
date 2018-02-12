@@ -297,6 +297,51 @@ object Json extends JsonFacade {
   def format[A]: OFormat[A] = macro JsMacroImpl.implicitConfigFormatImpl[A]
 
   /**
+    * Creates a `Format[E]` by automatically creating Reads[E] and Writes[E] for any EnumerationE
+    *
+    * {{{
+    * import play.api.libs.json.Json
+    *
+    * object DayOfWeek extends Enumeration {
+    *
+    *  type DayOfWeek = Value
+    *
+    *  val Mon = Value("Monday")
+    *  val Tue = Value("Tuesday")
+    *  val Wed = Value("Wednesday")
+    *  // etc.
+    *
+    *   implicit val format: Format[DayOfWeek] = Json.formatEnum(DayOfWeek)
+    *   // or 'this' if defining directly in Enum
+    *   implicit val format: Format[DayOfWeek] = Json.formatEnum(this)
+    * }
+    * }}}
+    *
+    * '''Json.toJson(Mon)''' will produce '''"Monday"'''
+    *
+    * @param enum Enumeration object
+    * @tparam E type of Enum
+    */
+  def formatEnum[E <: Enumeration](enum: E): Format[E#Value] = new Format[E#Value] {
+
+    private lazy val reads: Reads[E#Value] = {
+      case JsString(value) =>
+        enum.values
+          .find(_.toString == value)
+          .map(JsSuccess(_)).getOrElse(JsError(s"error.expected.validenumvalue: ${enum.values.mkString(", ")}"))
+
+      case _ => JsError(s"error.expected.validenumvalue: ${enum.values.mkString(", ")}")
+    }
+
+    private lazy val writes: Writes[E#Value] = x => JsString(x.toString)
+
+    override def writes(o: E#Value): JsValue = writes.writes(o)
+
+    override def reads(json: JsValue): JsResult[E#Value] = reads.reads(json)
+
+  }
+
+  /**
    * JSON facade with some macro options.
    *
    * $macroOptions
