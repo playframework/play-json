@@ -1,4 +1,4 @@
-<!--- Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com> -->
+<!--- Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com> -->
 # JSON Reads/Writes/Format Combinators
 
 [[JSON basics|ScalaJson]] introduced [`Reads`](api/libs/json/Reads.html) and [`Writes`](api/libs/json/Writes.html) converters which are used to convert between [`JsValue`](api/libs/json/JsValue.html) structures and other data types. This page covers in greater detail how to build these converters and how to use validation during conversion.

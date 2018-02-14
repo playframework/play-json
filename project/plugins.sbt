@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
@@ -18,4 +18,4 @@ addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.0")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "3.0.1")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.18")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.22")

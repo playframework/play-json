@@ -1,9 +1,9 @@
-<!--- Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com> -->
+<!--- Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com> -->
 # JSON transformers
 
 > Please note this documentation was initially published as an article by Pascal Voitot ([@mandubian](https://github.com/mandubian)) on [mandubian.com](http://mandubian.com/2012/10/29/unveiling-play-2-dot-1-json-api-part3-json-transformers/)
 
-Now you should know how to validate JSON and convert into any structure you can write in Scala and back to JSON. But as soon as I've begun to use those combinators to write web applications, I almost immediately encountered a case : read JSON from network, validate it and convert it into… JSON. 
+Now you should know how to validate JSON and convert into any structure you can write in Scala and back to JSON. But as soon as I've begun to use those combinators to write web applications, I almost immediately encountered a case : read JSON from network, validate it and convert it into… JSON.
 
 ## Introducing JSON _coast-to-coast_ design
 
@@ -16,10 +16,10 @@ For a few years now, in almost all web frameworks (except recent JavaScript serv
 
 ### Is OO conversion really the default use case?
 
-In many cases, you don't really need to perform any real business logic with data but validating/transforming before storing or after extracting. Let's take the CRUD case: 
+In many cases, you don't really need to perform any real business logic with data but validating/transforming before storing or after extracting. Let's take the CRUD case:
 
-- You just get the data from the network, validate them a bit and insert/update into DB. 
-- In the other way, you just retrieve data from DB and send them outside.  
+- You just get the data from the network, validate them a bit and insert/update into DB.
+- In the other way, you just retrieve data from DB and send them outside.
 
 So, generally, for CRUD ops, you convert JSON into a OO structure just because the frameworks are only able to speak OO.
 
@@ -27,17 +27,17 @@ So, generally, for CRUD ops, you convert JSON into a OO structure just because t
 
 ### New tech players change the way of manipulating JSON
 
-Besides this fact, we have some new DB types such as MongoDB (or CouchDB) accepting document structured data looking almost like JSON trees (_isn't BSON, Binary JSON?_).  
+Besides this fact, we have some new DB types such as MongoDB (or CouchDB) accepting document structured data looking almost like JSON trees (_isn't BSON, Binary JSON?_).
 
-With these DB types, we also have new great tools such as [ReactiveMongo](http://www.reactivemongo.org) which provides reactive environment to stream data to and from Mongo in a very natural way.  
+With these DB types, we also have new great tools such as [ReactiveMongo](http://www.reactivemongo.org) which provides reactive environment to stream data to and from Mongo in a very natural way.
 
-I've been working with Stephane Godbillon to integrate ReactiveMongo with Play2.1 while writing the [Play2-ReactiveMongo module](https://github.com/ReactiveMongo/Play-ReactiveMongo). Besides Mongo facilities for Play2.1, this module provides _Json To/From BSON conversion typeclasses_.  
+I've been working with Stephane Godbillon to integrate ReactiveMongo with Play2.1 while writing the [Play2-ReactiveMongo module](https://github.com/ReactiveMongo/Play-ReactiveMongo). Besides Mongo facilities for Play2.1, this module provides _Json To/From BSON conversion typeclasses_.
 
 > So it means you can manipulate JSON flows to and from DB directly without even converting into OO.
 
 ### JSON _coast-to-coast_ design
 
-Taking this into account, we can easily imagine the following: 
+Taking this into account, we can easily imagine the following:
 
 - Receive JSON.
 - Validate JSON.
@@ -50,26 +50,26 @@ This is exactly the same case when serving data from DB:
 - Filter/transform this JSON to send only mandatory data in the format expected by the client (e.g you don't want some secure info to go out).
 - Directly send JSON to the client.
 
-In this context, we can easily imagine **manipulating a flow of JSON data** from client to DB and back without any (explicit) transformation in anything else than JSON.  
-Naturally, when you plug this transformation flow on **reactive infrastructure provided by Play2.1**, it suddenly opens new horizons.  
+In this context, we can easily imagine **manipulating a flow of JSON data** from client to DB and back without any (explicit) transformation in anything else than JSON.
+Naturally, when you plug this transformation flow on **reactive infrastructure provided by Play2.1**, it suddenly opens new horizons.
 
-> This is the so-called (by me) **JSON coast-to-coast design**: 
-> 
+> This is the so-called (by me) **JSON coast-to-coast design**:
+>
 > - Don't consider JSON data chunk by chunk but as a **continuous flow of data from client to DB (or else) through server**,
 > - Treat the **JSON flow like a pipe that you connect to others pipes** while applying modifications, transformations alongside,
 > - Treat the flow in a **fully asynchronous/non-blocking** way.
 >
-> This is also one of the reason of being of Play2.1 reactive architecture…  
+> This is also one of the reason of being of Play2.1 reactive architecture…
 > I believe **considering your app through the prism of flows of data changes drastically the way you design** your web apps in general. It may also open new functional scopes that fit today's webapps requirements quite better than classic architecture. Anyway, this is not the subject here ;)
 
-So, as you have deduced by yourself, to be able to manipulate Json flows based on validation and transformation directly, we needed some new tools. JSON combinators were good candidates but they are a bit too generic.  
+So, as you have deduced by yourself, to be able to manipulate Json flows based on validation and transformation directly, we needed some new tools. JSON combinators were good candidates but they are a bit too generic.
 That's why we have created some specialized combinators and API called **JSON transformers** to do that.
 
 # JSON transformers are `Reads[T <: JsValue]`
 
-- You may tell JSON transformers are just `f:JSON => JSON`.  
-- So a JSON transformer could be simply a `Writes[A <: JsValue]`.  
-- But, a JSON transformer is not only a function: as we said, we also want to validate JSON while transforming it.  
+- You may tell JSON transformers are just `f:JSON => JSON`.
+- So a JSON transformer could be simply a `Writes[A <: JsValue]`.
+- But, a JSON transformer is not only a function: as we said, we also want to validate JSON while transforming it.
 - As a consequence, a JSON transformer is a `Reads[A <: JsValue]`.
 
 > Keep in mind that a `Reads[A <: JsValue]` is able to transform and not only to read/validate
@@ -112,7 +112,7 @@ import play.api.libs.json._
 val jsonTransformer = (__ \ 'key2 \ 'key23).json.pick
 
 scala> json.transform(jsonTransformer)
-res9: play.api.libs.json.JsResult[play.api.libs.json.JsValue] = 
+res9: play.api.libs.json.JsResult[play.api.libs.json.JsValue] =
   JsSuccess(
     ["alpha","beta","gamma"],
     /key2/key23
@@ -133,7 +133,7 @@ res9: play.api.libs.json.JsResult[play.api.libs.json.JsValue] =
 - For info, `/key2/key23` represents the JsPath where data were read but don't care about it, it's mainly used by Play API to compose `JsResult(s)`).
 - `["alpha","beta","gamma"]` is just due to the fact that we have overridden `toString`.
 
-> **Reminder** 
+> **Reminder**
 > `jsPath.json.pick` gets ONLY the value inside the JsPath
 
 ### Pick value as Type
@@ -144,14 +144,14 @@ import play.api.libs.json._
 val jsonTransformer = (__ \ 'key2 \ 'key23).json.pick[JsArray]
 
 scala> json.transform(jsonTransformer)
-res10: play.api.libs.json.JsResult[play.api.libs.json.JsArray] = 
+res10: play.api.libs.json.JsResult[play.api.libs.json.JsArray] =
   JsSuccess(
     ["alpha","beta","gamma"],
     /key2/key23
   )
 ```
 
-#### `(__ \ 'key2 \ 'key23).json.pick[JsArray]` 
+#### `(__ \ 'key2 \ 'key23).json.pick[JsArray]`
 
 - `pick[T]` is a `Reads[T <: JsValue]` which picks the value (as a `JsArray` in our case) **IN** the given `JsPath`
 
@@ -168,7 +168,7 @@ import play.api.libs.json._
 val jsonTransformer = (__ \ 'key2 \ 'key24 \ 'key241).json.pickBranch
 
 scala> json.transform(jsonTransformer)
-res11: play.api.libs.json.JsResult[play.api.libs.json.JsObject] = 
+res11: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   JsSuccess(
   {
     "key2": {
@@ -182,7 +182,7 @@ res11: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 ```
 
 #### `(__ \ 'key2 \ 'key23).json.pickBranch`
- 
+
 - `pickBranch` is a `Reads[JsValue]` which picks the branch from root to given `JsPath`
 
 #### `{"key2":{"key24":{"key242":"value242"}}}`
@@ -201,8 +201,8 @@ import play.api.libs.json._
 val jsonTransformer = (__ \ 'key25 \ 'key251).json.copyFrom( (__ \ 'key2 \ 'key21).json.pick )
 
 scala> json.transform(jsonTransformer)
-res12: play.api.libs.json.JsResult[play.api.libs.json.JsObject] 
-  JsSuccess( 
+res12: play.api.libs.json.JsResult[play.api.libs.json.JsObject]
+  JsSuccess(
     {
       "key25":{
         "key251":123
@@ -214,14 +214,14 @@ res12: play.api.libs.json.JsResult[play.api.libs.json.JsObject]
 ```
 
 #### `(__ \ 'key25 \ 'key251).json.copyFrom( reads: Reads[A <: JsValue] )`
- 
+
 - `copyFrom` is a `Reads[JsValue]`
 - `copyFrom` reads the JsValue from input JSON using provided Reads[A]
 - `copyFrom` copies this extracted JsValue as the leaf of a new branch corresponding to given JsPath
-  
+
 ####`{"key25":{"key251":123}}`
 
-- `copyFrom` reads value `123` 
+- `copyFrom` reads value `123`
 - `copyFrom` copies this value into new branch `(__ \ 'key25 \ 'key251)`
 
 > **Reminder:**
@@ -232,12 +232,12 @@ res12: play.api.libs.json.JsResult[play.api.libs.json.JsObject]
 ```scala
 import play.api.libs.json._
 
-val jsonTransformer = (__ \ 'key2 \ 'key24).json.update( 
+val jsonTransformer = (__ \ 'key2 \ 'key24).json.update(
   __.read[JsObject].map{ o => o ++ Json.obj( "field243" -> "coucou" ) }
 )
 
 scala> json.transform(jsonTransformer)
-res13: play.api.libs.json.JsResult[play.api.libs.json.JsObject] = 
+res13: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   JsSuccess(
     {
       "key1":"value1",
@@ -282,7 +282,7 @@ import play.api.libs.json._
 val jsonTransformer = (__ \ 'key24 \ 'key241).json.put(JsNumber(456))
 
 scala> json.transform(jsonTransformer)
-res14: play.api.libs.json.JsResult[play.api.libs.json.JsObject] = 
+res14: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   JsSuccess(
     {
       "key24":{
@@ -322,7 +322,7 @@ import play.api.libs.json._
 val jsonTransformer = (__ \ 'key2 \ 'key22).json.prune
 
 scala> json.transform(jsonTransformer)
-res15: play.api.libs.json.JsResult[play.api.libs.json.JsObject] = 
+res15: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   JsSuccess(
     {
       "key1":"value1",
@@ -341,7 +341,7 @@ res15: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 
 ```
 
-####`(__ \ 'key2 \ 'key22).json.prune` 
+####`(__ \ 'key2 \ 'key22).json.prune`
 
 - Is a `Reads[JsObject]` that works only with JsObject
 
@@ -352,8 +352,8 @@ res15: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 Please note the resulting `JsObject` hasn't same keys order as input `JsObject`. This is due to the implementation of `JsObject` and to the merge mechanism. But this is not important since we have overridden `JsObject.equals` method to take this into account.
 
 > **Reminder:**
-> `jsPath.json.prune` only works with JsObject and removes given JsPath form input JSON)  
-> 
+> `jsPath.json.prune` only works with JsObject and removes given JsPath form input JSON)
+>
 > Please note that:
 > - `prune` doesn't work for recursive JsPath for the time being
 > - if `prune` doesn't find any branch to delete, it doesn't generate any error and returns unchanged JSON.
@@ -367,16 +367,16 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 
 val jsonTransformer = (__ \ 'key2).json.pickBranch(
-  (__ \ 'key21).json.update( 
+  (__ \ 'key21).json.update(
     of[JsNumber].map{ case JsNumber(nb) => JsNumber(nb + 10) }
-  ) andThen 
-  (__ \ 'key23).json.update( 
+  ) andThen
+  (__ \ 'key23).json.update(
     of[JsArray].map{ case JsArray(arr) => JsArray(arr :+ JsString("delta")) }
   )
 )
 
 scala> json.transform(jsonTransformer)
-res16: play.api.libs.json.JsResult[play.api.libs.json.JsObject] = 
+res16: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   JsSuccess(
     {
       "key2":{
@@ -398,16 +398,16 @@ res16: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 
 - Extracts branch `__ \ 'key2` from input JSON and applies `reads` to the relative leaf of this branch (only to the content).
 
-#### `(__ \ 'key21).json.update(reads: Reads[A <: JsValue])` 
+#### `(__ \ 'key21).json.update(reads: Reads[A <: JsValue])`
 
 - Updates `(__ \ 'key21)` branch.
 
-#### `of[JsNumber]` 
+#### `of[JsNumber]`
 
-- Is just a `Reads[JsNumber]`. 
+- Is just a `Reads[JsNumber]`.
 - Extracts a JsNumber from `(__ \ 'key21)`.
 
-#### `of[JsNumber].map{ case JsNumber(nb) => JsNumber(nb + 10) }` 
+#### `of[JsNumber].map{ case JsNumber(nb) => JsNumber(nb + 10) }`
 
 - Reads a JsNumber (_value 123_ in `__ \ 'key21`).
 - Uses `Reads[A].map` to increase it by _10_ (in immutable way naturally).
@@ -417,7 +417,7 @@ res16: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 - Is just the composition of 2 `Reads[A]`.
 - First reads is applied and then result is piped to second reads.
 
-#### `of[JsArray].map{ case JsArray(arr) => JsArray(arr :+ JsString("delta")` 
+#### `of[JsArray].map{ case JsArray(arr) => JsArray(arr :+ JsString("delta")`
 
 - Reads a JsArray (_value [alpha, beta, gamma] in `__ \ 'key23`_).
 - Uses `Reads[A].map` to append `JsString("delta")` to it.
@@ -434,7 +434,7 @@ val jsonTransformer = (__ \ 'key2).json.pickBranch(
 )
 
 scala> json.transform(jsonTransformer)
-res18: play.api.libs.json.JsResult[play.api.libs.json.JsObject] = 
+res18: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   JsSuccess(
     {
       "key2":{
@@ -526,7 +526,7 @@ val gizmo2gremlin = (
 ) reduce
 
 scala> gizmo.transform(gizmo2gremlin)
-res22: play.api.libs.json.JsResult[play.api.libs.json.JsObject] = 
+res22: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   JsSuccess(
     {
       "name":"gremlin",
@@ -542,13 +542,13 @@ res22: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
   )
 ```
 
-Here we are ;)  
-I'm not going to explain all of this because you should be able to understand now.  
+Here we are ;)
+I'm not going to explain all of this because you should be able to understand now.
 Just remark:
 
 ####`(__ \ 'features).json.put(…)` is after `(__ \ 'size).json.update` so that it overwrites original `(__ \ 'features)`
 
-####`(Reads[JsObject] and Reads[JsObject]) reduce` 
+####`(Reads[JsObject] and Reads[JsObject]) reduce`
 
 - It merges results of both `Reads[JsObject]` (JsObject ++ JsObject)
 - It also applies the same JSON to both `Reads[JsObject]` unlike `andThen` which injects the result of the first reads into second one.
