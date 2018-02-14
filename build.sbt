@@ -10,12 +10,12 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{mimaBinaryIssueFilters, mimaPrev
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val scala213Version = "2.13.0-M2"
+val scala213Version = "2.13.0-M3"
 
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _ => "4.0.1"
+    case _ => "4.0.2"
   }
 
   Seq("org.specs2" %% "specs2-core" % specsVersion)
@@ -124,9 +124,9 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.optionHandlers")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.4" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.5-M1" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
-      "com.chuusai" %% "shapeless" % "2.3.2" % Test,
+      "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
       compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
