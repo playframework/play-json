@@ -523,6 +523,19 @@ class MacroSpec extends WordSpec with MustMatchers
       jsOptional.validate(Json.reads[Optional]).
         get mustEqual (optional)
     }
+
+    "handle case objects as empty JsObject" in {
+      case object Obj
+      val writer = Json.writes[Obj.type]
+      val reader = Json.reads[Obj.type]
+      val formatter = Json.format[Obj.type]
+
+      val jsObj = Json.obj()
+      writer.writes(Obj) mustEqual jsObj
+      reader.reads(jsObj) mustEqual JsSuccess(Obj)
+      formatter.writes(Obj) mustEqual jsObj
+      formatter.reads(jsObj) mustEqual JsSuccess(Obj)
+    }
   }
 
   // ---
