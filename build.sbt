@@ -1,6 +1,10 @@
 /*
  * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
  */
+import sbt._
+import sbt.util._
+import scala.sys.process._
+import sbt.io.Path._
 
 import interplay.ScalaVersions
 import ReleaseTransformations._
@@ -106,6 +110,7 @@ lazy val root = project
 lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(PlayLibrary, Playdoc)
+  .configs(Docs)
   .settings(commonSettings)
   .settings(playJsonMimaSettings)
   .settings(
@@ -223,10 +228,10 @@ releaseProcess := Seq[ReleaseStep](
   setReleaseVersion,
   commitReleaseVersion,
   tagRelease,
-  ReleaseStep(action = Command.process("publishSigned", _), enableCrossBuild = true),
+  releaseStepCommandAndRemaining("+publishSigned"),
   setNextVersion,
   commitNextVersion,
-  ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true),
+  releaseStepCommand("+sonatypeReleaseAll"),
   pushChanges
 )
 
