@@ -4,6 +4,10 @@
 
 package play.api.libs.json
 
+import scala.annotation.StaticAnnotation
+
+class Discriminator(name: String) extends StaticAnnotation
+
 /** JSON configuration */
 sealed trait JsonConfiguration {
   /** Compile-time options for the JSON macros */
