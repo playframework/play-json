@@ -544,13 +544,13 @@ import scala.reflect.macros.blackbox
         ).reverse)
 
         q"""(_: $json.JsValue) match {
-          case obj @ $json.JsObject(_) => obj.value.get("_type") match {
+          case obj @ $json.JsObject(_) => obj.value.get($config.discriminator) match {
              case Some(tjs) => {
                val vjs = obj.value.get("_value").getOrElse(obj)
                tjs.validate[String].flatMap { dis => $cases }
              }
 
-             case _ => $json.JsError($JsPath \ "_type", "error.missing.path")
+             case _ => $json.JsError($JsPath \ $config.discriminator, "error.missing.path")
           }
 
           case _ => $json.JsError("error.expected.jsobject")
@@ -580,7 +580,7 @@ import scala.reflect.macros.blackbox
               case jsv => $json.JsObject(Seq("_value" -> jsv))
             }
 
-            jso + ("_type" -> $json.JsString(${typeNaming(t)}))
+            jso + ($config.discriminator -> $json.JsString(${typeNaming(t)}))
           }"""
         })
 

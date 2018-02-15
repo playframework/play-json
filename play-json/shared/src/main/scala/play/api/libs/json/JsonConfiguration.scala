@@ -14,6 +14,9 @@ sealed trait JsonConfiguration {
 
   /** How options are handled by the macro */
   def optionHandlers: OptionHandlers
+
+  /** Name of the type discriminator field */
+  def discriminator: String
 }
 
 object JsonConfiguration {
@@ -21,16 +24,21 @@ object JsonConfiguration {
 
   private final class Impl[O <: Json.MacroOptions](
     val naming: JsonNaming = JsonNaming.Identity,
-    val optionHandlers: OptionHandlers = OptionHandlers.Default
+    val optionHandlers: OptionHandlers = OptionHandlers.Default,
+    val discriminator: String = defaultDiscriminator
   ) extends JsonConfiguration {
     type Opts = O
 
-    def this(naming: JsonNaming) = this(naming, OptionHandlers.Default)
+    def this(naming: JsonNaming) = this(naming, OptionHandlers.Default, defaultDiscriminator)
+    def this(naming: JsonNaming, optionHandlers: OptionHandlers) = this(naming, optionHandlers, defaultDiscriminator)
   }
 
   // These methods exist for binary compatibility, since Scala protected methods are public from a binary perspective.
   protected def apply(naming: JsonNaming): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming)
+  protected def apply(naming: JsonNaming, optionHandlers: OptionHandlers): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming, optionHandlers)
   protected def default: JsonConfiguration.Aux[Json.MacroOptions] = apply()
+
+  val defaultDiscriminator = "_type"
 
   /**
    * @param naming the naming strategy
@@ -38,8 +46,9 @@ object JsonConfiguration {
    */
   def apply[Opts <: Json.MacroOptions: Json.MacroOptions.Default](
     naming: JsonNaming = JsonNaming.Identity,
-    optionHandlers: OptionHandlers = OptionHandlers.Default
-  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers)
+    optionHandlers: OptionHandlers = OptionHandlers.Default,
+    discriminator: String = defaultDiscriminator
+  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers, discriminator)
 
   /** Default configuration instance */
   implicit def default[Opts <: Json.MacroOptions: Json.MacroOptions.Default]: JsonConfiguration.Aux[Opts] = apply()
