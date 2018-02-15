@@ -1,4 +1,4 @@
-<!--- Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com> -->
+<!--- Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com> -->
 # JSON automated mapping
 
 If the JSON maps directly to a class, we provide a handy macro so that you don't have to write the `Reads[T]`, `Writes[T]`, or `Format[T]` manually. Given the following case class :
@@ -30,7 +30,7 @@ And a complete example of automatically parsing JSON to a case class is:
 
 Note: To be able to access JSON from `request.body.asJson`, the request must have a `Content-Type` header of `application/json`. You can relax this constraint by using the [[tolerantJson body parser|ScalaBodyParsers#Choosing-an-explicit-body-parser]].
 
-The above example can be made even more concise by using body parsers with a typed validation function. See the [[savePlaceConcise example|ScalaJsonHttp#Creating-a-new-entity-instance-in-JSON]] in the JSON with HTTP documentation. 
+The above example can be made even more concise by using body parsers with a typed validation function. See the [[savePlaceConcise example|ScalaJsonHttp#Creating-a-new-entity-instance-in-JSON]] in the JSON with HTTP documentation.
 
 ### Requirements
 

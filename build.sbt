@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 import interplay.ScalaVersions
@@ -13,12 +13,16 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val scala213Version = "2.13.0-M1"
+val scala213Version = "2.13.0-M3"
 
-val specsVersion = "3.9.1"
-val specsBuild = Seq(
-  "specs2-core"
-).map("org.specs2" %% _ % specsVersion)
+val specsBuild = Def.setting[Seq[ModuleID]] {
+  val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 10)) => "3.9.1"
+    case _ => "4.0.2"
+  }
+
+  Seq("org.specs2" %% "specs2-core" % specsVersion)
+}
 
 val jacksonVersion = "2.8.9"
 val jacksons = Seq(
@@ -104,9 +108,9 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.3" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.5-M1" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
-      "com.chuusai" %% "shapeless" % "2.3.2" % Test,
+      "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
       compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
@@ -162,7 +166,7 @@ lazy val `play-json-joda` = project
   .enablePlugins(PlayLibrary)
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= joda ++ specsBuild.map(_ % Test)
+    libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
   )
   .dependsOn(`play-jsonJVM`)
 
@@ -170,7 +174,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
     libraryDependencies ++=
       joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specsBuild.map(_ % Test) :+ (
+      jacksons ++ specsBuild.value.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
     unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
