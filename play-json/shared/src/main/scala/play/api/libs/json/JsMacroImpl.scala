@@ -783,7 +783,7 @@ import scala.reflect.macros.blackbox
             case _ => $json.JsError("error.expected.jsobject")
           }
          """
-      def writer = q"$json.OWrites[$atpe]{_ => $json.Json.obj() }"
+      def writer = q"$json.OWrites[$atpe]{_ => $json.JsObject.empty }"
 
       val tree = methodName match {
         case "read" => reader
@@ -800,8 +800,8 @@ import scala.reflect.macros.blackbox
       case Some(subTypes) => macroSealedFamilyImpl(subTypes)
       case _ =>
         atpe match {
-          case TypeRef(_, _, args) => macroCaseImpl(args)
           case _: SingletonType => caseObjectImpl
+          case TypeRef(_, _, args) => macroCaseImpl(args)
           case _ =>
             c.abort(
               c.enclosingPosition,
