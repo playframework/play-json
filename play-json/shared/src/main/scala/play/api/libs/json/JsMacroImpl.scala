@@ -609,15 +609,7 @@ import scala.reflect.macros.blackbox
       c.Expr[M[A]](tree)
     }
 
-    def macroCaseImpl: c.Expr[M[A]] = {
-      val tpeArgs: List[Type] = atpe match {
-        case TypeRef(_, _, args) => args
-
-        case t => c.abort(
-          c.enclosingPosition,
-          s"Type ${t.typeSymbol.fullName} is not a valid case class"
-        )
-      }
+    def macroCaseImpl(tpeArgs: List[Type]): c.Expr[M[A]] = {
       val utility = new CaseClass[A](tpeArgs)
       val (companioned, isCase) = utility.validCaseClass
 
@@ -783,11 +775,39 @@ import scala.reflect.macros.blackbox
       c.Expr[M[A]](finalTree)
     }
 
+    def caseObjectImpl: c.Expr[M[A]] = {
+      def reader =
+        q"""
+          $json.Reads[${atpe}] {
+            case obj @ $json.JsObject(_) => $json.JsSuccess(${atpe.termSymbol})
+            case _ => $json.JsError("error.expected.jsobject")
+          }
+         """
+      def writer = q"$json.OWrites[$atpe]{_ => $json.JsObject.empty }"
+
+      val tree = methodName match {
+        case "read" => reader
+        case "write" => writer
+        case _ => q"""$json.OFormat[$atpe]($reader, $writer)"""
+      }
+      debug(showCode(tree))
+      c.Expr[M[A]](tree)
+    }
+
     // ---
 
     directKnownSubclasses match {
       case Some(subTypes) => macroSealedFamilyImpl(subTypes)
-      case _ => macroCaseImpl
+      case _ =>
+        atpe match {
+          case _: SingletonType => caseObjectImpl
+          case TypeRef(_, _, args) => macroCaseImpl(args)
+          case _ =>
+            c.abort(
+              c.enclosingPosition,
+              s"Type ${atpe.typeSymbol.fullName} is not a valid case class or an object"
+            )
+        }
     }
   }
 
