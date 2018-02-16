@@ -574,7 +574,7 @@ import scala.reflect.macros.blackbox
           // Use `implicitly` rather than `ImplicitResolver.createImplicit`,
           // due to the implicit/contravariance workaround
           cq"""x: $t => {
-            val xjs = implicitly[Writes[$t]].writes(x)
+            val xjs = implicitly[$json.Writes[$t]].writes(x)
             @inline def jso = xjs match {
               case xo @ $json.JsObject(_) => xo
               case jsv => $json.JsObject(Seq("_value" -> jsv))
