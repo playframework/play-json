@@ -9,8 +9,11 @@ sealed trait JsonConfiguration {
   /** Compile-time options for the JSON macros */
   type Opts <: Json.MacroOptions
 
-  /** Naming strategy */
+  /** Naming strategy for class members */
   def naming: JsonNaming
+
+  /** Naming strategy for class names */
+  def classNaming: JsonNaming
 
   /** How options are handled by the macro */
   def optionHandlers: OptionHandlers
@@ -25,7 +28,8 @@ object JsonConfiguration {
   private final class Impl[O <: Json.MacroOptions](
     val naming: JsonNaming = JsonNaming.Identity,
     val optionHandlers: OptionHandlers = OptionHandlers.Default,
-    val discriminator: String = defaultDiscriminator
+    val discriminator: String = defaultDiscriminator,
+    val classNaming: JsonNaming = JsonNaming.Identity
   ) extends JsonConfiguration {
     type Opts = O
 
@@ -47,8 +51,9 @@ object JsonConfiguration {
   def apply[Opts <: Json.MacroOptions: Json.MacroOptions.Default](
     naming: JsonNaming = JsonNaming.Identity,
     optionHandlers: OptionHandlers = OptionHandlers.Default,
-    discriminator: String = defaultDiscriminator
-  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers, discriminator)
+    discriminator: String = defaultDiscriminator,
+    classNaming: JsonNaming = JsonNaming.Identity
+  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers, discriminator, classNaming)
 
   /** Default configuration instance */
   implicit def default[Opts <: Json.MacroOptions: Json.MacroOptions.Default]: JsonConfiguration.Aux[Opts] = apply()
