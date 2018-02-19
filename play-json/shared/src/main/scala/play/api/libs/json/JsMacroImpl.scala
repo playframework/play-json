@@ -519,14 +519,7 @@ import scala.reflect.macros.blackbox
         c.abort(c.enclosingPosition, s"Sealed trait ${atpe} is not supported: no known subclasses")
       }
 
-      def typeNaming(t: Type): String = {
-        /** Extract "name" from @Discriminator("name") */
-        val annotatedName = t.typeSymbol.annotations.map(_.tree).collectFirst {
-          case Apply(Select(New(tt), TermName("<init>")), List(Literal(Constant(name: String)))) if tt.tpe == typeOf[play.api.libs.json.Discriminator] => name
-        }
-
-        annotatedName getOrElse t.typeSymbol.fullName
-      }
+      val typeNaming = (_: Type).typeSymbol.fullName
 
       def readLambda: Tree = {
         val resolver = new ImplicitResolver({ orig: Type => orig })

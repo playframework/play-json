@@ -553,30 +553,6 @@ class MacroSpec extends WordSpec with MustMatchers
       jsOptional.validate(Json.reads[Optional]).get mustEqual optional
     }
 
-    "handle sealed family with annotated discriminator values" in {
-      implicit val familyFormat: OFormat[FamilyWithDiscriminator] = {
-        implicit val firstFormat: OFormat[FirstWithDiscriminator] = Json.format[FirstWithDiscriminator]
-        implicit val secondFormat: OFormat[SecondWithDiscriminator] = Json.format[SecondWithDiscriminator]
-        Json.format[FamilyWithDiscriminator]
-      }
-
-      val first = FirstWithDiscriminator("test")
-      val firstJson = JsObject(Map(
-        "x" -> JsString("test"),
-        "_type" -> JsString("first")
-      ))
-      Json.toJsObject(first) mustEqual firstJson
-      Json.fromJson[FamilyWithDiscriminator](firstJson).get mustEqual first
-
-      val second = SecondWithDiscriminator("test")
-      val secondJson = JsObject(Map(
-        "y" -> JsString("test"),
-        "_type" -> JsString("second")
-      ))
-      Json.toJsObject(second) mustEqual secondJson
-      Json.fromJson[FamilyWithDiscriminator](secondJson).get mustEqual second
-    }
-
     "handle case objects as empty JsObject" in {
       case object Obj
       val writer = Json.writes[Obj.type]
@@ -599,15 +575,6 @@ class MacroSpec extends WordSpec with MustMatchers
   case class Optional(prop: Option[String]) extends Family
 
   sealed trait EmptyFamily
-
-  sealed trait FamilyWithDiscriminator
-
-  @Discriminator("first")
-  case class FirstWithDiscriminator(x: String) extends FamilyWithDiscriminator
-
-  final val SecondDiscriminator = "second"
-  @Discriminator(SecondDiscriminator)
-  case class SecondWithDiscriminator(y: String) extends FamilyWithDiscriminator
 
   object FamilyCodec {
     implicit val simpleWrites = Json.writes[Simple]
