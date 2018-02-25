@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package play.api.libs.json
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 import java.time.temporal.{ ChronoUnit, TemporalUnit, UnsupportedTemporalTypeException, Temporal => JTemporal }

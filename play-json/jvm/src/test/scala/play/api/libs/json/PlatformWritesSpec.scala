@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package play.api.libs.json
 
 import org.specs2.specification.core.Fragment
