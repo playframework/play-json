@@ -4,6 +4,6 @@
 
 package play.api.libs.json
 
-trait EnvWrites {
+trait PlatformWrites {
   // No specific writer
 }

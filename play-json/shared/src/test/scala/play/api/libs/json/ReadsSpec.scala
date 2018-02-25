@@ -5,26 +5,9 @@
 package play.api.libs.json
 
 import java.math.{ BigDecimal => JBigDec }
-
-import org.scalatest.prop.TableDrivenPropertyChecks._
-
-import java.util.Locale
-
-import java.time.{
-  Clock,
-  Duration => JDuration,
-  Instant,
-  Period,
-  LocalDate,
-  LocalTime,
-  LocalDateTime,
-  OffsetDateTime,
-  ZoneId,
-  ZonedDateTime,
-  ZoneOffset
-}
-import java.time.temporal.ChronoUnit
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.time.{ Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, Period, ZoneId, ZoneOffset, ZonedDateTime, Duration => JDuration }
 
 import org.specs2.specification.core.Fragment
 
@@ -545,25 +528,6 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         case JsError((_, JsonValidationError(
           "error.expected.timezone" :: Nil, "UTC+x") :: Nil) :: Nil) => ok
       }
-    }
-  }
-
-  "Locale" should {
-    import LocaleFixtures._
-
-    Fragment.foreach(locales zip objs) {
-      case (locale, obj) =>
-        s"be ${locale.toLanguageTag} and be read as JSON object" in {
-          Json.fromJson[Locale](obj)(
-            Reads.localeObjectReads) mustEqual (JsSuccess(locale))
-        }
-    }
-
-    Fragment.foreach(locales zip tags) {
-      case (locale, tag) =>
-        s"be ${locale.toLanguageTag} and be read from JSON string (tag)" in {
-          Json.fromJson[Locale](JsString(tag)) must_== JsSuccess(locale)
-        }
     }
   }
 
