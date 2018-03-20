@@ -553,8 +553,8 @@ class MacroSpec extends WordSpec with MustMatchers
       jsOptional.validate(Json.reads[Optional]).get mustEqual optional
     }
 
-    "handle sealed family with classNaming" in {
-      implicit val cfg = JsonConfiguration(classNaming = JsonNaming {
+    "handle sealed family with typeNaming" in {
+      implicit val cfg = JsonConfiguration(typeNaming = JsonNaming {
         case "play.api.libs.json.MacroSpec.Simple" => "simple"
         case "play.api.libs.json.MacroSpec.Optional" => "optional"
       })

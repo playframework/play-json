@@ -535,7 +535,7 @@ import scala.reflect.macros.blackbox
                   s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
                 )
               }
-              cq"name if name == $config.classNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)" :: out
+              cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)" :: out
             }
           )
         ).reverse)
@@ -577,7 +577,7 @@ import scala.reflect.macros.blackbox
               case jsv => $json.JsObject(Seq("_value" -> jsv))
             }
 
-            jso + ($config.discriminator -> $json.JsString($config.classNaming(${t.typeSymbol.fullName})))
+            jso + ($config.discriminator -> $json.JsString($config.typeNaming(${t.typeSymbol.fullName})))
           }"""
         })
 

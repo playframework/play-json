@@ -9,16 +9,19 @@ sealed trait JsonConfiguration {
   /** Compile-time options for the JSON macros */
   type Opts <: Json.MacroOptions
 
-  /** Naming strategy for class members */
+  /** Naming strategy for fields */
   def naming: JsonNaming
 
-  /** Naming strategy for class names */
-  def classNaming: JsonNaming
+  /** Naming strategy for type names */
+  def typeNaming: JsonNaming
 
   /** How options are handled by the macro */
   def optionHandlers: OptionHandlers
 
-  /** Name of the type discriminator field */
+  /**
+   * Name of the type discriminator field
+   * (for sealed family; see [[JsonConfiguration$.defaultDiscriminator]])
+   */
   def discriminator: String
 }
 
@@ -29,7 +32,7 @@ object JsonConfiguration {
     val naming: JsonNaming = JsonNaming.Identity,
     val optionHandlers: OptionHandlers = OptionHandlers.Default,
     val discriminator: String = defaultDiscriminator,
-    val classNaming: JsonNaming = JsonNaming.Identity
+    val typeNaming: JsonNaming = JsonNaming.Identity
   ) extends JsonConfiguration {
     type Opts = O
 
@@ -47,13 +50,15 @@ object JsonConfiguration {
   /**
    * @param naming the naming strategy
    * @param optionHandlers handlers for option
+   * @param discriminator See [[JsonConfiguration.discriminator]]
+   * @param typeNaming See [[JsonConfiguration.typeNaming]]
    */
   def apply[Opts <: Json.MacroOptions: Json.MacroOptions.Default](
     naming: JsonNaming = JsonNaming.Identity,
     optionHandlers: OptionHandlers = OptionHandlers.Default,
     discriminator: String = defaultDiscriminator,
-    classNaming: JsonNaming = JsonNaming.Identity
-  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers, discriminator, classNaming)
+    typeNaming: JsonNaming = JsonNaming.Identity
+  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers, discriminator, typeNaming)
 
   /** Default configuration instance */
   implicit def default[Opts <: Json.MacroOptions: Json.MacroOptions.Default]: JsonConfiguration.Aux[Opts] = apply()
