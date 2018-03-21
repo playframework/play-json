@@ -345,8 +345,8 @@ class ScalaJsonSpec extends Specification {
 
       // Pattern matching
       nameResult match {
-        case JsSuccess[String](name) => println("Name: " + name)
-        case e: JsError => println("Errors: " + JsError.toJson(e).toString())
+        case JsSuccess(name) => println(s"Name: $name")
+        case e: JsError => println(s"Errors: ${JsError toJson e}")
       }
 
       // Fallback value
@@ -369,7 +369,7 @@ class ScalaJsonSpec extends Specification {
         }
       )
       //#convert-to-type-validate
-      nameResult must beLike { case x: JsSuccess[String] => x.get === "Watership Down" }
+      nameResult must beLike { case JsSuccess(v) => v === "Watership Down" }
     }
 
     "allow converting JsValue to model" in {
