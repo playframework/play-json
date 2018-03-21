@@ -345,31 +345,29 @@ class ScalaJsonSpec extends Specification {
 
       // Pattern matching
       nameResult match {
-        case s: JsSuccess[String] => println("Name: " + s.get)
-        case e: JsError => println("Errors: " + JsError.toJson(e).toString())
+        case JsSuccess(name, _) => println(s"Name: $name")
+        case e: JsError => println(s"Errors: ${JsError toJson e}")
       }
 
       // Fallback value
       val nameOrFallback = nameResult.getOrElse("Undefined")
 
       // map
-      val nameUpperResult: JsResult[String] = nameResult.map(_.toUpperCase())
+      val nameUpperResult: JsResult[String] = nameResult.map(_.toUpperCase)
 
       // fold
       val nameOption: Option[String] = nameResult.fold(
         invalid = {
           fieldErrors =>
-            fieldErrors.foreach(x => {
-              println("field: " + x._1 + ", errors: " + x._2)
-            })
-            None
+            fieldErrors.foreach { x =>
+              println(s"field: ${x._1}, errors: ${x._2}")
+            }
+            Option.empty[String]
         },
-        valid = {
-          name => Some(name)
-        }
+        valid = Some(_)
       )
       //#convert-to-type-validate
-      nameResult must beLike { case x: JsSuccess[String] => x.get === "Watership Down" }
+      nameResult must beLike { case JsSuccess(v, _) => v === "Watership Down" }
     }
 
     "allow converting JsValue to model" in {
