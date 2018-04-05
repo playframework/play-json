@@ -35,7 +35,7 @@ import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
  * }}}
  */
 object PlayJsonModule extends SimpleModule("PlayJson", Version.unknownVersion()) {
-  override def setupModule(context: SetupContext) {
+  override def setupModule(context: SetupContext): Unit = {
     context.addDeserializers(new PlayDeserializers)
     context.addSerializers(new PlaySerializers)
   }
@@ -53,7 +53,7 @@ private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
   // Minimum magnitude of BigDecimal to write out as a plain string
   val MinPlain: BigDecimal = 1e-10
 
-  override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider) {
+  override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider): Unit = {
     value match {
       case JsNumber(v) => {
         // Workaround #3784: Same behaviour as if JsonGenerator were
