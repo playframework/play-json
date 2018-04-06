@@ -327,6 +327,24 @@ class MacroSpec extends WordSpec with MustMatchers
       )
     }
 
+    "handle case class with dynamic default values" when {
+      val json = Json.obj()
+
+      def readSpec(r: Reads[WithDynamicDefault]) = {
+        r.reads(json).get.uuid must not equal r.reads(json).get.uuid
+      }
+
+      val jsWithDefaults = Json.using[Json.WithDefaultValues]
+
+      "to generate Reads" in readSpec(
+        jsWithDefaults.reads[WithDynamicDefault]
+      )
+
+      "to generate Format" in readSpec(
+        jsWithDefaults.format[WithDynamicDefault]
+      )
+    }
+
     "handle case class with default values inner optional case class containing default values" when {
       implicit val cfg = JsonConfiguration(JsonNaming.Identity)
       implicit val withDefaultFormat = Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
@@ -572,6 +590,9 @@ class MacroSpec extends WordSpec with MustMatchers
   case class Complex[T, U](id: Int, a: T, b: Either[T, String], c: U)
 
   case class WithDefault(id: Int, a: String = "a", b: Option[String] = Some("b"))
+  case class WithDynamicDefault(
+    uuid: java.util.UUID = java.util.UUID.randomUUID()
+  )
   case class ComplexWithDefault(id: Int, ref: Option[WithDefault] = Some(WithDefault(1)))
 
   case class WithImplicit1(pos: Int, text: String)(implicit x: Numeric[Int])
