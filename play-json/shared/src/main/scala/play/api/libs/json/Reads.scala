@@ -101,7 +101,7 @@ trait Reads[A] { self =>
    */
   def compose(transformer: PartialFunction[JsValue, JsValue]): Reads[A] =
     Reads[A] { input =>
-      val json = transformer.lift(input).getOrElse(input)
+      val json = transformer.applyOrElse(input, identity[JsValue])
 
       this.reads(json)
     }
