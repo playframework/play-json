@@ -18,7 +18,7 @@ object EnumWithCustomNames extends Enumeration {
 object EnumWithDefaultNames extends Enumeration {
   type EnumWithDefaultNames = Value
 
-  val (defaultEnum1, defaultEnum2) = (Value, Value)
+  val defaultEnum1, defaultEnum2 = Value
 
   implicit val format: Format[EnumWithDefaultNames] = Json.formatEnum(this)
 }
@@ -32,29 +32,29 @@ class FormatEnumSpec extends WordSpec with MustMatchers {
 
     "serialize correctly enum with custom names" in {
 
-      toJson(customEnum1).toString mustEqual """"ENUM1""""
-      toJson(customEnum2).toString mustEqual """"ENUM2""""
+      toJson(customEnum1) mustEqual JsString("ENUM1")
+      toJson(customEnum2) mustEqual JsString("ENUM2")
 
     }
 
     "serialize correctly enum with default names" in {
 
-      toJson(defaultEnum1).toString mustEqual """"defaultEnum1""""
-      toJson(defaultEnum2).toString mustEqual """"defaultEnum2""""
+      toJson(defaultEnum1) mustEqual JsString("defaultEnum1")
+      toJson(defaultEnum2) mustEqual JsString("defaultEnum2")
 
     }
 
     "deserialize correctly enum with custom names" in {
 
-      parse(""""ENUM1"""").validate[EnumWithCustomNames].get mustEqual customEnum1
-      parse(""""ENUM2"""").validate[EnumWithCustomNames].get mustEqual customEnum2
+      parse(""""ENUM1"""").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum1)
+      parse(""""ENUM2"""").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum2)
 
     }
 
     "deserialize correctly enum with default names" in {
 
-      parse(""""defaultEnum1"""").validate[EnumWithDefaultNames].get mustEqual defaultEnum1
-      parse(""""defaultEnum2"""").validate[EnumWithDefaultNames].get mustEqual defaultEnum2
+      parse(""""defaultEnum1"""").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum1)
+      parse(""""defaultEnum2"""").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum2)
 
     }
 
