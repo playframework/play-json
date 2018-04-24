@@ -46,15 +46,15 @@ class FormatEnumSpec extends WordSpec with MustMatchers {
 
     "deserialize correctly enum with custom names" in {
 
-      parse(""""ENUM1"""").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum1)
-      parse(""""ENUM2"""").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum2)
+      JsString("ENUM1").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum1)
+      JsString("ENUM2").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum2)
 
     }
 
     "deserialize correctly enum with default names" in {
 
-      parse(""""defaultEnum1"""").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum1)
-      parse(""""defaultEnum2"""").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum2)
+      JsString("defaultEnum1").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum1)
+      JsString("defaultEnum2").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum2)
 
     }
 
