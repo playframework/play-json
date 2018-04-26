@@ -34,6 +34,8 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
   def recover[U >: T](errManager: PartialFunction[JsError, U]): JsResult[U] = this
 
   def recoverTotal[U >: T](errManager: JsError => U): U = value
+
+  def recoverWith[U >: T](errManager: JsError => JsResult[U]): JsResult[U] = this
 }
 
 /**
@@ -75,6 +77,8 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
   def recover[U >: Nothing](errManager: PartialFunction[JsError, U]): JsResult[U] = JsSuccess(errManager(this))
 
   def recoverTotal[U >: Nothing](errManager: JsError => U): U = errManager(this)
+
+  def recoverWith[U >: Nothing](errManager: JsError => JsResult[U]): JsResult[U] = errManager(this)
 }
 
 object JsError {
@@ -240,6 +244,12 @@ sealed trait JsResult[+A] { self =>
    * recovers the errors with the given function.
    */
   def recoverTotal[AA >: A](errManager: JsError => AA): AA
+
+  /**
+   * If this result is not successful,
+   * recovers the errors with the given function.
+   */
+  def recoverWith[AA >: A](errManager: JsError => JsResult[AA]): JsResult[AA]
 }
 
 object JsResult {
