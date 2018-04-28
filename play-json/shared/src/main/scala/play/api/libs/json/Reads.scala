@@ -99,9 +99,9 @@ trait Reads[A] { self =>
    *
    * @param transformer the function to pre-process the input JSON
    */
-  def compose(transformer: PartialFunction[JsValue, JsValue]): Reads[A] =
+  def preprocess(f: PartialFunction[JsValue, JsValue]): Reads[A] =
     Reads[A] { input =>
-      val json = transformer.applyOrElse(input, identity[JsValue])
+      val json = f.applyOrElse(input, identity[JsValue])
 
       this.reads(json)
     }

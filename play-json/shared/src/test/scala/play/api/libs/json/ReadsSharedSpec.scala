@@ -78,14 +78,11 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
     }
 
     "preprocess a JSON object using a function" in {
-      implicit val reads: Reads[Owner] = generated.compose {
-        val tx: PartialFunction[JsValue, JsValue] = {
-          case obj @ JsObject(_) => (obj \ "avatar").asOpt[String] match {
-            case Some(_) => obj
-            case _ => obj + ("avatar" -> JsString(""))
-          }
+      implicit val reads: Reads[Owner] = generated.preprocess {
+        case obj @ JsObject(_) => (obj \ "avatar").asOpt[String] match {
+          case Some(_) => obj
+          case _ => obj + ("avatar" -> JsString(""))
         }
-        tx
       }
 
       Json.obj("login" -> "foo", "url" -> "url://id").
