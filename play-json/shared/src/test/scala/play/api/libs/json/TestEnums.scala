@@ -5,7 +5,6 @@
 package play.api.libs.json
 
 object TestEnums {
-
   object EnumWithCustomNames extends Enumeration {
     type EnumWithCustomNames = Value
 
@@ -21,5 +20,4 @@ object TestEnums {
 
     implicit val format: Format[EnumWithDefaultNames] = Json.formatEnum(this)
   }
-
 }
