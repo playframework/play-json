@@ -49,6 +49,21 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
     }
   }
 
+  "EnumFormat" should {
+    import TestEnums.EnumWithCustomNames._
+    import TestEnums.EnumWithDefaultNames._
+
+    "serialize correctly enum with custom names" in {
+      Json.toJson(customEnum1) mustEqual JsString("ENUM1")
+      Json.toJson(customEnum2) mustEqual JsString("ENUM2")
+    }
+
+    "serialize correctly enum with default names" in {
+      Json.toJson(defaultEnum1) mustEqual JsString("defaultEnum1")
+      Json.toJson(defaultEnum2) mustEqual JsString("defaultEnum2")
+    }
+  }
+
   // ---
 
   case class Location(lat: Double, long: Double)

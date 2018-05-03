@@ -297,6 +297,34 @@ object Json extends JsonFacade {
   def format[A]: OFormat[A] = macro JsMacroImpl.implicitConfigFormatImpl[A]
 
   /**
+   * Creates a `Format[E]` by automatically creating Reads[E] and Writes[E] for any EnumerationE
+   *
+   * {{{
+   * import play.api.libs.json.Json
+   *
+   * object DayOfWeek extends Enumeration {
+   *
+   *  type DayOfWeek = Value
+   *
+   *  val Mon = Value("Monday")
+   *  val Tue = Value("Tuesday")
+   *  val Wed = Value("Wednesday")
+   *  // etc.
+   *
+   *   implicit val format: Format[DayOfWeek] = Json.formatEnum(DayOfWeek)
+   *   // or 'this' if defining directly in Enum
+   *   implicit val format: Format[DayOfWeek] = Json.formatEnum(this)
+   * }
+   * }}}
+   *
+   * '''Json.toJson(Mon)''' will produce '''"Monday"'''
+   *
+   * @param enum Enumeration object
+   * @tparam E type of Enum
+   */
+  def formatEnum[E <: Enumeration](enum: E): Format[E#Value] = Format(Reads.enumNameReads(enum), Writes.enumNameWrites[E])
+
+  /**
    * JSON facade with some macro options.
    *
    * $macroOptions

@@ -110,6 +110,21 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
     }
   }
 
+  "EnumFormat" should {
+    import TestEnums.EnumWithCustomNames._
+    import TestEnums.EnumWithDefaultNames._
+
+    "deserialize correctly enum with custom names" in {
+      JsString("ENUM1").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum1)
+      JsString("ENUM2").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum2)
+    }
+
+    "deserialize correctly enum with default names" in {
+      JsString("defaultEnum1").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum1)
+      JsString("defaultEnum2").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum2)
+    }
+  }
+
   // ---
 
   case class Owner(
