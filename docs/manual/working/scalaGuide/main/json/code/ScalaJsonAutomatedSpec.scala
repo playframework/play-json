@@ -272,13 +272,12 @@ class ScalaJsonAutomatedSpec extends Specification {
 
       implicit val cfg = JsonConfiguration(
         // Each JSON objects is marked with the admTpe, ...
-        discriminator = "admTpe", 
+        discriminator = "admTpe",
 
         // ... indicating the lower-cased name of sub-type
         typeNaming = JsonNaming { fullName =>
           fullName.drop(39 /* remove pkg */ ).toLowerCase
-        }
-      })
+        })
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
       implicit val adminFormat = OFormat[Admin.type](
