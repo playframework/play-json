@@ -256,12 +256,12 @@ class ScalaJsonAutomatedSpec extends Specification {
     "automatically convert custom JSON for a sealed family" in {
       //#trait-custom-representation
       val adminJson = Json.parse("""
-        { "admTpe": "scalaguide.json.ScalaJsonAutomatedSpec.Admin" }
+        { "admTpe": "admin" }
       """)
 
       val contributorJson = Json.parse("""
         {
-          "admTpe":"scalaguide.json.ScalaJsonAutomatedSpec.Contributor",
+          "admTpe":"contributor",
           "organization":"Foo"
         }
       """)
