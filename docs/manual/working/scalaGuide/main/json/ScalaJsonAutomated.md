@@ -67,6 +67,14 @@ A strategy other than the default one can be used as following:
 @[auto-naming-writes](code/ScalaJsonAutomatedSpec.scala)
 @[auto-naming-format](code/ScalaJsonAutomatedSpec.scala)
 
+The trait representation can also be configured, with a custom name for the discriminator field or the way the names of the sub-types are encoded as value for this field:
+
+@[trait-custom-representation](code/ScalaJsonAutomatedSpec.scala)
+
+To do so, the settings `discriminator` and `typeNaming` can be defined in the resolved `JsonConfiguration`:
+
+@[auto-JSON-custom-trait](code/ScalaJsonAutomatedSpec.scala)
+
 ### Implementing your own Naming Strategy
 
 To implement your own Naming Strategy you just need to implement the `JsonNaming` trait:
