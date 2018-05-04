@@ -30,6 +30,8 @@ object TestFormats {
     }
 }
 
+final class TextId(val value: String) extends AnyVal
+
 import org.scalatest._
 import org.scalacheck.Gen
 
@@ -142,6 +144,13 @@ class MacroSpec extends WordSpec with MustMatchers
         jsOptional.validate[Family].get mustEqual optional
       }
     }
+
+    "be generated for a ValueClass" in {
+      val expected = new TextId("foo")
+      implicit val r: Reads[TextId] = Json.valueReads
+
+      JsString("foo").validate[TextId].get mustEqual expected
+    }
   }
 
   "Writes" should {
@@ -218,6 +227,12 @@ class MacroSpec extends WordSpec with MustMatchers
       wsimple.validate(Json.reads[Simple]).get mustEqual simple
       wopt mustEqual jsOptional
       wopt.validate(Json.reads[Optional]).get mustEqual optional
+    }
+
+    "be generated for a ValueClass" in {
+      val js = Json.valueWrites[TextId].writes(new TextId("bar"))
+
+      js mustEqual JsString("bar")
     }
   }
 
@@ -596,6 +611,15 @@ class MacroSpec extends WordSpec with MustMatchers
       reader.reads(jsObj) mustEqual JsSuccess(Obj)
       formatter.writes(Obj) mustEqual jsObj
       formatter.reads(jsObj) mustEqual JsSuccess(Obj)
+    }
+
+    "handle ValueClass" in {
+      val id = new TextId("foo")
+      val js = JsString("foo")
+      implicit val fmt: Format[TextId] = Json.valueFormat[TextId]
+
+      js.validate[TextId].get mustEqual id
+      fmt.writes(id) mustEqual js
     }
   }
 

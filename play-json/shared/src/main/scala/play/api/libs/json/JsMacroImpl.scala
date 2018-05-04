@@ -26,8 +26,9 @@ import scala.reflect.macros.blackbox
     }
   }
 
-  def withOptionsReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
-    withOptionsConfig, "read", "map", reads = true, writes = false)
+  def withOptionsReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
+    macroImpl[A, Reads, Reads](
+      withOptionsConfig, "read", "map", reads = true, writes = false)
 
   def withOptionsWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
     withOptionsConfig, "write", "contramap", reads = false, writes = true)
@@ -38,11 +39,22 @@ import scala.reflect.macros.blackbox
   def implicitConfigReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
     implicitOptionsConfig, "read", "map", reads = true, writes = false)
 
+  def implicitConfigValueReads[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
+    valueImpl[A, Reads](implicitOptionsConfig, "read")
+
   def implicitConfigWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
     implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
 
+  def implicitConfigValueWrites[A: c.WeakTypeTag]: c.Expr[Writes[A]] =
+    valueImpl[A, Writes](implicitOptionsConfig, "write")
+
   def implicitConfigFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
     implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
+
+  def implicitConfigValueFormat[A: c.WeakTypeTag]: c.Expr[Format[A]] =
+    valueImpl[A, Format](implicitOptionsConfig, "format")
+
+  // ---
 
   // because binary compatibility...
   @deprecated("Use implicitConfigReadsImpl or withOptionsReadsImpl", "2.6.6")
@@ -57,12 +69,58 @@ import scala.reflect.macros.blackbox
   protected def formatImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
     implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
 
-  private def withOptionsConfig: c.Expr[JsonConfiguration] = {
+  private def withOptionsConfig: c.Expr[JsonConfiguration] =
     c.Expr[JsonConfiguration](c.typecheck(q"${c.prefix}.config"))
-  }
 
-  private def implicitOptionsConfig: c.Expr[JsonConfiguration] = {
+  private def implicitOptionsConfig: c.Expr[JsonConfiguration] =
     c.Expr[JsonConfiguration](c.inferImplicitValue(c.typeOf[JsonConfiguration]))
+
+  private def valueImpl[A, M[_]](config: c.Expr[JsonConfiguration], methodName: String)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]]): c.Expr[M[A]] = {
+
+    def debug(msg: => String): Unit = {
+      if (debugEnabled) {
+        c.info(c.enclosingPosition, msg, force = false)
+      }
+    }
+
+    // All these can be sort of thought as imports
+    // that can then be used later in quasi quote interpolation
+    val libs = q"_root_.play.api.libs"
+    val json = q"$libs.json"
+    val atpe = atag.tpe.dealias
+    val ctor = atpe.decl(c.universe.nme.CONSTRUCTOR).asMethod
+
+    ctor.paramLists match {
+      case List(term: TermSymbol) :: Nil => {
+        def reader = q"""
+            implicitly[$json.Reads[${term.info}]].map { v =>
+              new ${atpe}(v)
+            }
+          """
+
+        def writer = q"""{
+            val fn = implicitly[_root_.play.api.libs.functional.ContravariantFunctor[$json.Writes]]
+            val w = implicitly[$json.Writes[${term.info}]]
+            fn.contramap[${term.info}, ${atpe}](w, _.${term.name.toTermName})
+          }"""
+
+        val tree = methodName match {
+          case "read" => reader
+          case "write" => writer
+          case _ => q"""$json.Format[$atpe]($reader, $writer)"""
+        }
+
+        debug(showCode(tree))
+
+        c.Expr[M[A]](tree)
+      }
+
+      case _ =>
+        c.abort(
+          c.enclosingPosition,
+          s"Invalid ValueClass '${atpe}': single value expected")
+
+    }
   }
 
   /**
@@ -115,7 +173,9 @@ import scala.reflect.macros.blackbox
     val forwardName = TermName(c.freshName("forward"))
 
     // MacroOptions
-    val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
+    val options = config.actualType.member(TypeName("Opts")).
+      asType.toTypeIn(config.actualType)
+
     def hasOption[Flag: c.TypeTag]: Boolean = options <:< typeOf[Flag]
 
     /* Utility for implicit resolution - can hardly be moved outside
@@ -424,8 +484,7 @@ import scala.reflect.macros.blackbox
       }
 
       def implicits(resolver: ImplicitResolver): List[(Name, Implicit)] = {
-        val createImplicit = resolver.createImplicit(
-          atpe, natag.tpe) _
+        val createImplicit = resolver.createImplicit(atpe, natag.tpe) _
 
         val effectiveImplicits = params.map {
           case (n, t) => n -> createImplicit(t)
@@ -787,7 +846,9 @@ import scala.reflect.macros.blackbox
         case "write" => writer
         case _ => q"""$json.OFormat[$atpe]($reader, $writer)"""
       }
+
       debug(showCode(tree))
+
       c.Expr[M[A]](tree)
     }
 
@@ -795,16 +856,16 @@ import scala.reflect.macros.blackbox
 
     directKnownSubclasses match {
       case Some(subTypes) => macroSealedFamilyImpl(subTypes)
-      case _ =>
-        atpe match {
-          case _: SingletonType => caseObjectImpl
-          case TypeRef(_, _, args) => macroCaseImpl(args)
-          case _ =>
-            c.abort(
-              c.enclosingPosition,
-              s"Type ${atpe.typeSymbol.fullName} is not a valid case class or an object"
-            )
-        }
+
+      case _ => atpe match {
+        case _: SingletonType => caseObjectImpl
+        case TypeRef(_, _, args) => macroCaseImpl(args)
+        case _ =>
+          c.abort(
+            c.enclosingPosition,
+            s"Type ${atpe.typeSymbol.fullName} is not a valid case class or an object"
+          )
+      }
     }
   }
 
