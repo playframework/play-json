@@ -252,7 +252,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         readAnyRole(contributorJson) must_=== JsSuccess(sampleContributor)
       }
     }
-    
+
     "automatically convert custom JSON for a sealed family" in {
       //#trait-custom-representation
       val adminJson = Json.parse("""
