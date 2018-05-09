@@ -122,6 +122,8 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntReads"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntegerReads"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.optionHandlers"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.discriminator"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.typeNaming"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.recoverWith")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
