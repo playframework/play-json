@@ -519,8 +519,6 @@ import scala.reflect.macros.blackbox
         c.abort(c.enclosingPosition, s"Sealed trait ${atpe} is not supported: no known subclasses")
       }
 
-      val typeNaming = (_: Type).typeSymbol.fullName
-
       def readLambda: Tree = {
         val resolver = new ImplicitResolver({ orig: Type => orig })
         val cases = Match(q"dis", (
@@ -537,20 +535,19 @@ import scala.reflect.macros.blackbox
                   s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
                 )
               }
-
-              cq"${typeNaming(t)} => $reader.reads(vjs)" :: out
+              cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)" :: out
             }
           )
         ).reverse)
 
         q"""(_: $json.JsValue) match {
-          case obj @ $json.JsObject(_) => obj.value.get("_type") match {
+          case obj @ $json.JsObject(_) => obj.value.get($config.discriminator) match {
              case Some(tjs) => {
                val vjs = obj.value.get("_value").getOrElse(obj)
                tjs.validate[String].flatMap { dis => $cases }
              }
 
-             case _ => $json.JsError($JsPath \ "_type", "error.missing.path")
+             case _ => $json.JsError($JsPath \ $config.discriminator, "error.missing.path")
           }
 
           case _ => $json.JsError("error.expected.jsobject")
@@ -580,7 +577,7 @@ import scala.reflect.macros.blackbox
               case jsv => $json.JsObject(Seq("_value" -> jsv))
             }
 
-            jso + ("_type" -> $json.JsString(${typeNaming(t)}))
+            jso + ($config.discriminator -> $json.JsString($config.typeNaming(${t.typeSymbol.fullName})))
           }"""
         })
 

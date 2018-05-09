@@ -204,7 +204,7 @@ class ScalaJsonAutomatedSpec extends Specification {
       residentFromJson.get must_=== sampleData
     }
 
-    "automatically convert JSON to a sealed family" in {
+    "automatically convert JSON for a sealed family" in {
       //#trait-representation
       val adminJson = Json.parse("""
         { "_type": "scalaguide.json.ScalaJsonAutomatedSpec.Admin" }
@@ -237,6 +237,61 @@ class ScalaJsonAutomatedSpec extends Specification {
       // Finally able to generate format for the sealed family 'Role'
       implicit val roleFormat: OFormat[Role] = Json.format[Role]
       //#auto-JSON-sealed-trait
+
+      def writeAnyRole(role: Role) = Json.toJson(role)
+
+      def readAnyRole(input: JsValue): JsResult[Role] = input.validate[Role]
+
+      val sampleContributor = Contributor("Foo")
+
+      writeAnyRole(Admin) must_=== adminJson and {
+        writeAnyRole(sampleContributor) must_=== contributorJson
+      } and {
+        readAnyRole(adminJson) must_=== JsSuccess(Admin)
+      } and {
+        readAnyRole(contributorJson) must_=== JsSuccess(sampleContributor)
+      }
+    }
+
+    "automatically convert custom JSON for a sealed family" in {
+      //#trait-custom-representation
+      val adminJson = Json.parse("""
+        { "admTpe": "admin" }
+      """)
+
+      val contributorJson = Json.parse("""
+        {
+          "admTpe":"contributor",
+          "organization":"Foo"
+        }
+      """)
+      //#trait-custom-representation
+
+      //#auto-JSON-custom-trait
+      import play.api.libs.json._
+
+      implicit val cfg = JsonConfiguration(
+        // Each JSON objects is marked with the admTpe, ...
+        discriminator = "admTpe",
+
+        // ... indicating the lower-cased name of sub-type
+        typeNaming = JsonNaming { fullName =>
+          fullName.drop(39 /* remove pkg */ ).toLowerCase
+        })
+
+      // First provide instance for each sub-types 'Admin' and 'Contributor':
+      implicit val adminFormat = OFormat[Admin.type](
+        Reads[Admin.type] {
+          case JsObject(_) => JsSuccess(Admin)
+          case _ => JsError("Empty object expected")
+        },
+        OWrites[Admin.type] { _ => Json.obj() })
+
+      implicit val contributorFormat = Json.format[Contributor]
+
+      // Finally able to generate format for the sealed family 'Role'
+      implicit val roleFormat: OFormat[Role] = Json.format[Role]
+      //#auto-JSON-custom-trait
 
       def writeAnyRole(role: Role) = Json.toJson(role)
 
