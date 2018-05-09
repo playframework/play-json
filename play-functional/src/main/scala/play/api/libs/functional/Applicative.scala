@@ -8,7 +8,7 @@ import scala.language.higherKinds
 
 trait Applicative[M[_]] {
 
-  def pure[A](a: A): M[A]
+  def pure[A](a: => A): M[A]
   def map[A, B](m: M[A], f: A => B): M[B]
   def apply[A, B](mf: M[A => B], ma: M[A]): M[B]
 
@@ -18,7 +18,7 @@ object Applicative {
 
   implicit val applicativeOption: Applicative[Option] = new Applicative[Option] {
 
-    def pure[A](a: A): Option[A] = Some(a)
+    def pure[A](a: => A): Option[A] = Some(a)
 
     def map[A, B](m: Option[A], f: A => B): Option[B] = m.map(f)
 
