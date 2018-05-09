@@ -170,9 +170,9 @@ class JsMacroImpl(val c: blackbox.Context) {
         selfRef: Boolean
     )
 
-    val optTpeCtor = typeOf[Option[_]].typeConstructor
+    val optTpeCtor    = typeOf[Option[_]].typeConstructor
     val forwardPrefix = "play_jsmacro"
-    val forwardName = TermName(c.freshName(forwardPrefix))
+    val forwardName   = TermName(c.freshName(forwardPrefix))
 
     // MacroOptions
     val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
@@ -691,10 +691,11 @@ class JsMacroImpl(val c: blackbox.Context) {
       val (applyFunction, tparams, params, defaultValues) = utility.applyFunction match {
         case Some(info) => info
 
-        case _ => c.abort(
-          c.enclosingPosition,
-          "No apply function found matching unapply parameters"
-        )
+        case _ =>
+          c.abort(
+            c.enclosingPosition,
+            "No apply function found matching unapply parameters"
+          )
       }
 
       // ---
@@ -731,17 +732,18 @@ class JsMacroImpl(val c: blackbox.Context) {
             val defaultValue = // not applicable for 'write' only
               defaultValueMap.get(name).filter(_ => methodName != "write")
 
-val resolvedImpl = {
-val implTpeName = Option(impl.tpe).fold("null")(_.toString)
+            val resolvedImpl = {
+              val implTpeName = Option(impl.tpe).fold("null")(_.toString)
 
-if (implTpeName.startsWith(forwardPrefix) ||
-(implTpeName.startsWith("play.api.libs.json") &&
-!implTpeName.contains("MacroSpec"))) {
-impl // Avoid extra check for builtin formats
-} else {
-q"""_root_.java.util.Objects.requireNonNull($impl, "Invalid implicit resolution (forward reference?) for '" + $cn + "': " + ${implTpeName})"""
-}
-}
+              if (implTpeName.startsWith(forwardPrefix) ||
+                  (implTpeName.startsWith("play.api.libs.json") &&
+                  !(implTpeName.startsWith("play.api.libs.json.Functional") ||
+                    implTpeName.contains("MacroSpec")))) {
+                impl // Avoid extra check for builtin formats
+              } else {
+                q"""_root_.java.util.Objects.requireNonNull($impl, "Implicit value for '" + $cn + "' was null (forward reference?): " + ${implTpeName})"""
+              }
+            }
 
             // - If we're an default value, invoke the withDefault version
             // - If we're an option with default value,
@@ -749,18 +751,19 @@ q"""_root_.java.util.Objects.requireNonNull($impl, "Invalid implicit resolution 
             (isOption, defaultValue) match {
               case (true, Some(v)) =>
                 val c = TermName(s"${methodName}HandlerWithDefault")
-                q"$config.optionHandlers.$c($jspathTree, $v)($resolveImpl)"
+                q"$config.optionHandlers.$c($jspathTree, $v)($resolvedImpl)"
 
-              case (true, _) =>
+              case (true, _) => {
                 val c = TermName(s"${methodName}Handler")
-                q"$config.optionHandlers.$c($jspathTree)($resolveImpl)"
+                q"$config.optionHandlers.$c($jspathTree)($impl)"
+              }
 
               case (false, Some(v)) =>
                 val c = TermName(s"${methodName}WithDefault")
-                q"$jspathTree.$c($v)($resolveImpl)"
+                q"$jspathTree.$c($v)($resolvedImpl)"
 
               case _ =>
-                q"$jspathTree.${TermName(methodName)}($resolveImpl)"
+                q"$jspathTree.${TermName(methodName)}($resolvedImpl)"
             }
         }
         .reduceLeft[Tree] { (acc, r) =>
