@@ -209,18 +209,19 @@ trait ConstraintWrites {
   }
 
   def list[A](implicit writes: Writes[A]): Writes[List[A]] = Writes.traversableWrites[A]
+
   def set[A](implicit writes: Writes[A]): Writes[Set[A]] = Writes.traversableWrites[A]
+
   def seq[A](implicit writes: Writes[A]): Writes[Seq[A]] = Writes.traversableWrites[A]
+
   def map[A](implicit writes: Writes[A]): OWrites[collection.immutable.Map[String, A]] = Writes.mapWrites[A]
 
   /**
    * Pure Option Writer[T] which writes "null" when None which is different
    * from `JsPath.writeNullable` which omits the field when None
    */
-  def optionWithNull[A](implicit wa: Writes[A]) = Writes[Option[A]] { a =>
-    a match {
-      case None => JsNull
-      case Some(av) => wa.writes(av)
-    }
+  def optionWithNull[A](implicit wa: Writes[A]) = Writes[Option[A]] {
+    case Some(av) => wa.writes(av)
+    case _ => JsNull
   }
 }

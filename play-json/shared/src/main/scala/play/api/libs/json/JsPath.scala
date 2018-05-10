@@ -344,7 +344,7 @@ case class JsPath(path: List[PathNode] = List()) {
   def lazyReadNullable[T](r: => Reads[T]): Reads[Option[T]] = Reads(js => Reads.nullable[T](this)(r).reads(js))
 
   /** Pure Reads doesn't read anything but creates a JsObject based on JsPath with the given T value */
-  def read[T](t: T) = Reads.pure(t)
+  def read[T](t: T) = Reads.pure(f = t)
 
   /** Writes a T at given JsPath */
   def write[T](implicit w: Writes[T]): OWrites[T] = Writes.at[T](this)(w)

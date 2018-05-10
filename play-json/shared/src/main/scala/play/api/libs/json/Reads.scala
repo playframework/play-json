@@ -120,14 +120,26 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
 
   val path: PathReads = this
 
-  /** Returns a `JsSuccess(a)` (with root path) for any JSON value read. */
-  override def pure[A](a: => A): Reads[A] = Reads[A] { _ => JsSuccess(a) }
+  /**
+   * Returns a `JsSuccess(a)` (with root path) for any JSON value read.
+   *
+   * {{{
+   * import play.api.libs.json.Reads
+   *
+   * val r: Reads[String] = Reads.pure("foo")
+   * }}}
+   */
+  override def pure[A](f: => A): Reads[A] = Reads[A] { _ => JsSuccess(f) }
+
+  @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
+  private[json] def pure[A](value: A): Reads[A] =
+    Reads[A] { _ => JsSuccess(value) }
 
   import play.api.libs.functional._
 
   implicit def applicative(implicit applicativeJsResult: Applicative[JsResult]): Applicative[Reads] = new Applicative[Reads] {
 
-    def pure[A](a: => A): Reads[A] = Reads.pure(a)
+    def pure[A](f: => A): Reads[A] = Reads.pure(f = f)
 
     def map[A, B](m: Reads[A], f: A => B): Reads[B] = m.map(f)
 
