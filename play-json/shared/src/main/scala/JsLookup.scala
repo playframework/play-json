@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.json
@@ -63,9 +63,9 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    */
   def apply(fieldName: String): JsValue = result match {
     case JsDefined(x) => x match {
-      case arr: JsObject => arr.underlying.get(fieldName) match {
-        case Some(x) => x
-        case None => throw new NoSuchElementException(String.valueOf(fieldName))
+      case obj @ JsObject(_) => obj.underlying.get(fieldName) match {
+        case Some(v) => v
+        case _ => throw new NoSuchElementException(String.valueOf(fieldName))
       }
       case _ =>
         throw new Exception(x + " is not a JsObject")
@@ -97,8 +97,10 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
     case JsDefined(obj @ JsObject(_)) =>
       obj.underlying.get(fieldName).map(JsDefined.apply)
         .getOrElse(JsUndefined(s"'$fieldName' is undefined on object: $obj"))
+
     case JsDefined(o) =>
       JsUndefined(s"$o is not an object")
+
     case undef => undef
   }
 
@@ -108,8 +110,8 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    * @return the list of matching nodes
    */
   def \\(fieldName: String): Seq[JsValue] = result match {
-    case JsDefined(obj: JsObject) =>
-      obj.underlying.foldLeft(Seq[JsValue]())((o, pair) => pair match {
+    case JsDefined(obj @ JsObject(_)) =>
+      obj.underlying.foldLeft(Seq.empty[JsValue])((o, pair) => pair match {
         case (key, value) if key == fieldName => o ++ (value +: (value \\ fieldName))
         case (_, value) => o ++ (value \\ fieldName)
       })
@@ -117,7 +119,7 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
     case JsDefined(arr: JsArray) =>
       arr.value.flatMap(_ \\ fieldName)
 
-    case _ => Seq.empty
+    case _ => Seq.empty[JsValue]
   }
 }
 
