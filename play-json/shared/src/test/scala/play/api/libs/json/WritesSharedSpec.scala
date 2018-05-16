@@ -22,6 +22,18 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
         "lat" -> 0.123D, "long" -> 0.456D
       )
     }
+
+    "be contramap'ed" in {
+      val w = implicitly[Writes[String]]
+      val ow = OWrites[String] { str =>
+        Json.obj("string" -> str)
+      }
+
+      w.contramap[Int](_.toString).writes(1) mustEqual (JsString("1"))
+
+      ow.contramap[Char](_.toString).writes('A') mustEqual (
+        Json.obj("string" -> "A"))
+    }
   }
 
   "Traversable Writes" should {
