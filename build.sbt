@@ -124,6 +124,7 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.optionHandlers"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.discriminator"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.typeNaming"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.recoverWith"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Writes.contramap"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.OWrites.contramap")
     ),
