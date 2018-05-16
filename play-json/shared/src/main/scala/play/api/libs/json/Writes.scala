@@ -18,9 +18,15 @@ import scala.reflect.ClassTag
 )
 trait Writes[-A] {
   /**
-   * Convert the object into a JsValue
+   * Converts the `A` value into a [[JsValue]].
    */
   def writes(o: A): JsValue
+
+  /**
+   * Returns a new instance that first converts a `B` value to a `A` one,
+   * before converting this `A` value into a [[JsValue]].
+   */
+  def contramap[B](f: B => A): Writes[B] = Writes[B](b => this.writes(f(b)))
 
   /**
    * Transforms the resulting [[JsValue]] using transformer function.
@@ -50,6 +56,9 @@ trait OWrites[-A] extends Writes[A] {
    */
   def transform(transformer: OWrites[JsObject]): OWrites[A] =
     OWrites[A] { a => transformer.writes(this.writes(a)) }
+
+  override def contramap[B](f: B => A): OWrites[B] =
+    OWrites[B](b => this.writes(f(b)))
 
 }
 
@@ -104,7 +113,8 @@ object OWrites extends PathWrites with ConstraintWrites {
 
   implicit val contravariantfunctorOWrites: ContravariantFunctor[OWrites] = new ContravariantFunctor[OWrites] {
 
-    def contramap[A, B](wa: OWrites[A], f: B => A): OWrites[B] = OWrites[B](b => wa.writes(f(b)))
+    def contramap[A, B](wa: OWrites[A], f: B => A): OWrites[B] =
+      wa.contramap[B](f)
 
   }
 
@@ -136,7 +146,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
   implicit val contravariantfunctorWrites: ContravariantFunctor[Writes] =
     new ContravariantFunctor[Writes] {
       def contramap[A, B](wa: Writes[A], f: B => A): Writes[B] =
-        Writes[B](b => wa.writes(f(b)))
+        wa.contramap[B](f)
     }
 
   def apply[A](f: A => JsValue): Writes[A] = new Writes[A] {
