@@ -7,6 +7,7 @@ import ReleaseTransformations._
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{mimaBinaryIssueFilters, mimaPreviousArtifacts}
+import sbtcrossproject.{crossProject, CrossType}
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
@@ -103,7 +104,7 @@ lazy val root = project
     publishTo := None
   )
 
-lazy val `play-json` = crossProject.crossType(CrossType.Full)
+lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(PlayLibrary, Playdoc)
   .settings(commonSettings)
@@ -203,7 +204,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
 
 lazy val `play-jsonJS` = `play-json`.js
 
-lazy val `play-functional` = crossProject.crossType(CrossType.Pure)
+lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
   .in(file("play-functional"))
   .settings(commonSettings)
   .settings(playJsonMimaSettings)
