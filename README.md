@@ -174,6 +174,18 @@ implicit val residentFormat = Json.format[Resident]
 
 With the `Reads` and/or `Writes` in scope, I can then easily convert my class using `toJson` and `fromJson`
 
+In case you don't want to use an Option but a sensible default value you can use case class default parameters
+
+```scala
+case class Resident(name: String, age: Int, role: Role = Role.DefaultRole)
+```
+
+You need to enable DefaultValues for this to work
+```scala
+implicit val residentFormat: Format[Resident] = Json.using[Json.WithDefaultValues].format[Resident]
+```
+
+
 ### Constructing `Reads` and `Writes`
 
 Play JSON provides a convenient functional DSL for constructing `Reads` and `Writes`. For example, assume I have the following classes:
