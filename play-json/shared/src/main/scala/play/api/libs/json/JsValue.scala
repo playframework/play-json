@@ -121,9 +121,7 @@ object JsArray extends (IndexedSeq[JsValue] => JsArray) {
 /**
  * Represent a Json object value.
  */
-case class JsObject(
-  private[json] val underlying: Map[String, JsValue]
-) extends JsValue {
+case class JsObject(underlying: Map[String, JsValue]) extends JsValue {
 
   /**
    * The fields of this JsObject in the order passed to to constructor
