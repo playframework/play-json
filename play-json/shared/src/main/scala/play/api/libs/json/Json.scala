@@ -250,7 +250,7 @@ object Json extends JsonFacade {
 
   /**
    * Creates a `Reads[A]`, if `A` is a ValueClass,
-   * by resolving at compile-time the required implicits.
+   * by resolving at compile-time the `Reads` for the underlying type.
    *
    * $macroWarning
    *
@@ -261,6 +261,7 @@ object Json extends JsonFacade {
    *
    * final class IdText(val value: String) extends AnyVal
    *
+   * // Based on provided Reads[String] corresponding to `value: String`
    * val r: Reads[IdText] = Json.valueReads
    * }}}
    */
@@ -292,7 +293,7 @@ object Json extends JsonFacade {
 
   /**
    * Creates a `OWrites[T]`, if `T` is a ValueClass,
-   * by resolving at compile-time the required implicits.
+   * by resolving at compile-time the `Writes` for the underlying type.
    *
    * $macroWarning
    *
@@ -303,6 +304,7 @@ object Json extends JsonFacade {
    *
    * final class TextId(val value: String) extends AnyVal
    *
+   * // Based on provided Writes[String] corresponding to `value: String`
    * val w: Writes[TextId] = Json.writes[TextId]
    * }}}
    */
@@ -333,7 +335,8 @@ object Json extends JsonFacade {
   def format[A]: OFormat[A] = macro JsMacroImpl.implicitConfigFormatImpl[A]
 
   /**
-   * Creates a `OFormat[T]` by resolving, if `T` is a ValueClass.
+   * Creates a `OFormat[T]` by resolving, if `T` is a ValueClass
+   * (see [[valueReads]] and [[valueWrites]]).
    *
    * $macroWarning
    *
@@ -345,6 +348,7 @@ object Json extends JsonFacade {
    * final class User(val name: String) extends AnyVal
    *
    * implicit val userFormat: Format[User] = Json.valueFormat[User]
+   * }}}
    */
   def valueFormat[A]: Format[A] = macro JsMacroImpl.implicitConfigValueFormat[A]
 
