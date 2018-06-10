@@ -24,14 +24,16 @@ val specsBuild = Def.setting[Seq[ModuleID]] {
   Seq("org.specs2" %% "specs2-core" % specsVersion)
 }
 
-val jacksonVersion = "2.8.9"
+val jacksonVersion = "2.8.11"
+val jacksonDatabindVersion = "2.8.11.1" // https://nvd.nist.gov/vuln/detail/CVE-2018-7489
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
-  "com.fasterxml.jackson.core" % "jackson-databind",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310"
-).map(_ % jacksonVersion)
+).map(_ % jacksonVersion) ++ Seq(
+  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
+)
 
 val joda = Seq(
   "joda-time" % "joda-time" % "2.9.9"
