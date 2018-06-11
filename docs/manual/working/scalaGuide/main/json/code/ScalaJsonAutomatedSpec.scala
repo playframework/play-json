@@ -8,8 +8,11 @@ import play.api.libs.json.Json
 import org.specs2.mutable.Specification
 import play.api.libs.json.JsonNaming.SnakeCase
 
-class ScalaJsonAutomatedSpec extends Specification {
+//#valueClass
+final class IdText(val value: String) extends AnyVal
+//#valueClass
 
+class ScalaJsonAutomatedSpec extends Specification {
   //#model
   case class Resident(name: String, age: Int, role: Option[String])
   //#model
@@ -57,151 +60,189 @@ class ScalaJsonAutomatedSpec extends Specification {
   )
 
   "Scala JSON automated" should {
-    "produce a working Reads" in {
-      //#auto-reads
-      import play.api.libs.json._
+    "for case class" >> {
+      "produce a Reads" in {
+        //#auto-reads
+        import play.api.libs.json._
 
-      implicit val residentReads = Json.reads[Resident]
-      //#auto-reads
+        implicit val residentReads = Json.reads[Resident]
+        //#auto-reads
 
-      sampleJson.as[Resident] must_=== sampleData
-    }
+        sampleJson.as[Resident] must_=== sampleData
+      }
 
-    "do the same thing as a manual Reads" in {
-      //#manual-reads
-      import play.api.libs.json._
-      import play.api.libs.functional.syntax._
+      "do the same thing as a manual Reads" in {
+        //#manual-reads
+        import play.api.libs.json._
+        import play.api.libs.functional.syntax._
 
-      implicit val residentReads = (
-        (__ \ "name").read[String] and
-        (__ \ "age").read[Int] and
-        (__ \ "role").readNullable[String]
-      )(Resident)
-      //#manual-reads
+        implicit val residentReads = (
+          (__ \ "name").read[String] and
+          (__ \ "age").read[Int] and
+          (__ \ "role").readNullable[String]
+        )(Resident)
+        //#manual-reads
 
-      sampleJson.as[Resident] must_=== sampleData
-    }
+        sampleJson.as[Resident] must_=== sampleData
+      }
 
-    "produce a working Writes" in {
-      //#auto-writes
-      import play.api.libs.json._
+      "produce a Writes" in {
+        //#auto-writes
+        import play.api.libs.json._
 
-      implicit val residentWrites = Json.writes[Resident]
-      //#auto-writes
+        implicit val residentWrites = Json.writes[Resident]
+        //#auto-writes
 
-      Json.toJson(sampleData) must_=== sampleJson
-    }
-
-    "produce a working Format" in {
-      //#auto-format
-      import play.api.libs.json._
-
-      implicit val residentFormat = Json.format[Resident]
-      //#auto-format
-
-      sampleJson.as[Resident] must_=== sampleData and {
         Json.toJson(sampleData) must_=== sampleJson
       }
-    }
 
-    "produce a working Writes with SnakeCase" in {
-      //#auto-naming-writes
-      import play.api.libs.json._
+      "produce a Format" in {
+        //#auto-format
+        import play.api.libs.json._
 
-      implicit val config = JsonConfiguration(SnakeCase)
+        implicit val residentFormat = Json.format[Resident]
+        //#auto-format
 
-      implicit val userWrites: OWrites[PlayUser] = Json.writes[PlayUser]
-      //#auto-naming-writes
+        sampleJson.as[Resident] must_=== sampleData and {
+          Json.toJson(sampleData) must_=== sampleJson
+        }
+      }
 
-      Json.toJson(sampleData2) must_=== sampleJson2
-    }
+      "produce a Writes with SnakeCase" in {
+        //#auto-naming-writes
+        import play.api.libs.json._
 
-    "produce a working Format with SnakeCase" in {
-      //#auto-naming-format
-      import play.api.libs.json._
+        implicit val config = JsonConfiguration(SnakeCase)
 
-      implicit val config = JsonConfiguration(SnakeCase)
+        implicit val userWrites: OWrites[PlayUser] = Json.writes[PlayUser]
+        //#auto-naming-writes
 
-      implicit val userFormat: OFormat[PlayUser] = Json.format[PlayUser]
-      //#auto-naming-format
-
-      sampleJson2.as[PlayUser] must_=== sampleData2 and {
         Json.toJson(sampleData2) must_=== sampleJson2
       }
-    }
 
-    "produce a working Reads with SnakeCase" in {
-      //#auto-naming-reads
-      import play.api.libs.json._
+      "produce a Format with SnakeCase" in {
+        //#auto-naming-format
+        import play.api.libs.json._
 
-      implicit val config = JsonConfiguration(SnakeCase)
+        implicit val config = JsonConfiguration(SnakeCase)
 
-      implicit val userReads: Reads[PlayUser] = Json.reads[PlayUser]
-      //#auto-naming-reads
+        implicit val userFormat: OFormat[PlayUser] = Json.format[PlayUser]
+        //#auto-naming-format
 
-      sampleJson2.as[PlayUser] must_=== sampleData2
-    }
-
-    "produce a working Format with Custom Naming" in {
-      //#auto-custom-naming-format
-      import play.api.libs.json._
-
-      object Lightbend extends JsonNaming {
-        override def apply(property: String): String = s"lightbend_$property"
+        sampleJson2.as[PlayUser] must_=== sampleData2 and {
+          Json.toJson(sampleData2) must_=== sampleJson2
+        }
       }
 
-      implicit val config = JsonConfiguration(Lightbend)
+      "produce a Reads with SnakeCase" in {
+        //#auto-naming-reads
+        import play.api.libs.json._
 
-      implicit val customWrites: OFormat[PlayUser] = Json.format[PlayUser]
-      //#auto-custom-naming-format
+        implicit val config = JsonConfiguration(SnakeCase)
 
-      sampleJson3.as[PlayUser] must_=== sampleData2 and {
-        Json.toJson(sampleData2) must_=== sampleJson3
+        implicit val userReads: Reads[PlayUser] = Json.reads[PlayUser]
+        //#auto-naming-reads
+
+        sampleJson2.as[PlayUser] must_=== sampleData2
       }
-    }
 
-    "automatically serialize a case class to JSON" in {
-      //#auto-case-class-to-JSON
-      import play.api.libs.json._
+      "produce a Format with Custom Naming" in {
+        //#auto-custom-naming-format
+        import play.api.libs.json._
 
-      implicit val residentWrites = Json.writes[Resident]
+        object Lightbend extends JsonNaming {
+          override def apply(property: String): String = s"lightbend_$property"
+        }
 
-      val resident = Resident(name = "Fiver", age = 4, role = None)
+        implicit val config = JsonConfiguration(Lightbend)
 
-      val residentJson: JsValue = Json.toJson(resident)
-      //#auto-case-class-to-JSON
+        implicit val customWrites: OFormat[PlayUser] = Json.format[PlayUser]
+        //#auto-custom-naming-format
 
-      residentJson must_=== sampleJson
-    }
+        sampleJson3.as[PlayUser] must_=== sampleData2 and {
+          Json.toJson(sampleData2) must_=== sampleJson3
+        }
+      }
 
-    "automatically convert JSON to a case class" in {
-      //#auto-JSON-to-case-class
-      import play.api.libs.json._
+      "automatically serialize a case class to JSON" in {
+        //#auto-case-class-to-JSON
+        import play.api.libs.json._
 
-      implicit val residentReads = Json.reads[Resident]
+        implicit val residentWrites = Json.writes[Resident]
 
-      // In a request, a JsValue is likely to come from `request.body.asJson`
-      // or just `request.body` if using the `Action(parse.json)` body parser
-      val jsonString: JsValue = Json.parse(
-        """{
+        val resident = Resident(name = "Fiver", age = 4, role = None)
+
+        val residentJson: JsValue = Json.toJson(resident)
+        //#auto-case-class-to-JSON
+
+        residentJson must_=== sampleJson
+      }
+
+      "automatically convert JSON to a case class" in {
+        //#auto-JSON-to-case-class
+        import play.api.libs.json._
+
+        implicit val residentReads = Json.reads[Resident]
+
+        // In a request, a JsValue is likely to come from `request.body.asJson`
+        // or just `request.body` if using the `Action(parse.json)` body parser
+        val jsonString: JsValue = Json.parse(
+          """{
           "name" : "Fiver",
           "age" : 4
         }"""
-      )
+        )
 
-      val residentFromJson: JsResult[Resident] =
-        Json.fromJson[Resident](jsonString)
+        val residentFromJson: JsResult[Resident] =
+          Json.fromJson[Resident](jsonString)
 
-      residentFromJson match {
-        case JsSuccess(r: Resident, path: JsPath) =>
-          println("Name: " + r.name)
+        residentFromJson match {
+          case JsSuccess(r: Resident, path: JsPath) =>
+            println("Name: " + r.name)
 
-        case e @ JsError(_) =>
-          println("Errors: " + JsError.toJson(e).toString())
+          case e @ JsError(_) =>
+            println("Errors: " + JsError.toJson(e).toString())
+        }
+        //#auto-JSON-to-case-class
+
+        residentFromJson.get must_=== sampleData
       }
-      //#auto-JSON-to-case-class
+    }
 
-      residentFromJson.get must_=== sampleData
+    "for value class" >> {
+      "produce a Reads" in {
+        //#value-reads
+        import play.api.libs.json._
+
+        implicit val idTextReads = Json.valueReads[IdText]
+        //#value-reads
+
+        JsString("foo").as[IdText] must_=== (new IdText("foo"))
+      }
+
+      "produce a Writes" in {
+        //#value-writes
+        import play.api.libs.json._
+
+        implicit val idTextWrites = Json.valueWrites[IdText]
+        //#value-writes
+
+        Json.toJson(new IdText("bar")) must_=== JsString("bar")
+      }
+
+      "produce a Format" in {
+        //#value-format
+        import play.api.libs.json._
+
+        implicit val idTextFormat = Json.valueFormat[IdText]
+        //#value-format
+
+        val id = new IdText("lorem")
+
+        JsString("lorem").as[IdText] must_=== id and {
+          Json.toJson(id) must_=== JsString("lorem")
+        }
+      }
     }
 
     "automatically convert JSON for a sealed family" in {
