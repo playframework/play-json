@@ -4,6 +4,6 @@
 
 package play.api.libs.json
 
-trait EnvReads {
+trait PlatformReads {
   // No specific reader
 }

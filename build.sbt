@@ -19,7 +19,7 @@ val specsBuild = Def.setting[Seq[ModuleID]] {
     case _ => "4.0.2"
   }
 
-  Seq("org.specs2" %% "specs2-core" % specsVersion)
+  Seq("org.specs2" %%% "specs2-core" % specsVersion)
 }
 
 val jacksonVersion = "2.9.6"
@@ -132,11 +132,11 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
       "org.scalatest" %%% "scalatest" % "3.0.5-M1" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
-      "com.chuusai" %% "shapeless" % "2.3.3" % Test,
-      "org.typelevel" %% "macro-compat" % "1.1.1",
+      "com.chuusai" %%% "shapeless" % "2.3.3" % Test,
+      "org.typelevel" %%% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
       compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-    ),
+    ) ++ specsBuild.value.map(_ % Test),
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
 
@@ -196,13 +196,16 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
   settings(
     libraryDependencies ++=
       joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specsBuild.value.map(_ % Test) :+ (
+      jacksons  :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
     unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
   )
 
-lazy val `play-jsonJS` = `play-json`.js
+lazy val `play-jsonJS` = `play-json`.js.
+  settings(
+    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12"
+  )
 
 lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
   .in(file("play-functional"))

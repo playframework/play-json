@@ -4,20 +4,8 @@
 
 package play.api.libs.json
 
-import java.time.{
-  Instant,
-  Duration => JDuration,
-  Period,
-  LocalDateTime,
-  LocalDate,
-  LocalTime,
-  OffsetDateTime,
-  ZonedDateTime,
-  ZoneOffset,
-  ZoneId
-}
 import java.time.temporal.ChronoUnit
-import java.time.format.DateTimeFormatter
+import java.time.{ Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, Period, ZoneId, ZoneOffset, ZonedDateTime, Duration => JDuration }
 
 import org.specs2.specification.core.Fragment
 
@@ -240,24 +228,6 @@ class WritesSpec extends org.specs2.mutable.Specification {
       val written: JsObject = transformed.writes(Foo("Lorem"))
 
       written must_== Json.obj("bar" -> "Lorem", "time" -> time)
-    }
-  }
-
-  "Locale" should {
-    import LocaleFixtures._
-
-    Fragment.foreach(locales zip objs) {
-      case (locale, obj) =>
-        s"be ${locale.toLanguageTag} and be written as JSON object" in {
-          Json.toJson(locale)(Writes.localeObjectWrites) must_== obj
-        }
-    }
-
-    Fragment.foreach(locales zip tags) {
-      case (locale, tag) =>
-        s"be ${locale.toLanguageTag} and be written as JSON string (tag)" in {
-          Json.toJson(locale) must_== JsString(tag)
-        }
     }
   }
 
