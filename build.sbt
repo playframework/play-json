@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 import interplay.ScalaVersions
@@ -11,12 +11,12 @@ import sbtcrossproject.{crossProject, CrossType}
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val scala213Version = "2.13.0-M3"
+val scala213Version = "2.13.0-M4"
 
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _ => "4.0.2"
+    case _ => "4.3.0"
   }
 
   Seq("org.specs2" %% "specs2-core" % specsVersion)
@@ -130,13 +130,17 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.OWrites.contramap")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.5-M1" % Test,
-      "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.6-SNAP1" % Test,
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
-      compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
     ),
+    libraryDependencies ++=
+      (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 13)) => Seq()
+        case _ => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+      }),
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
 
