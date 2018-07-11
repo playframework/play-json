@@ -130,10 +130,10 @@ trait ConstraintReads {
 
   def filter[A](otherwise: JsonValidationError)(p: A => Boolean)(implicit reads: Reads[A]) = Reads[A](js => reads.reads(js).filter(JsError(otherwise))(p))
 
-  def minLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.TraversableLike[_, M]) =
+  def minLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
     filterNot[M](JsonValidationError("error.minLength", m))(_.size < m)
 
-  def maxLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.TraversableLike[_, M]) =
+  def maxLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
     filterNot[M](JsonValidationError("error.maxLength", m))(_.size > m)
 
   /**

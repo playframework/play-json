@@ -6,7 +6,7 @@ package play.api.libs.json
 
 import scala.collection._
 
-case class JsResultException(errors: Seq[(JsPath, Seq[JsonValidationError])])
+case class JsResultException(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])])
   extends RuntimeException(s"JsResultException(errors:$errors)")
 
 /**
@@ -91,7 +91,7 @@ case class JsString(value: String) extends JsValue
 case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValue {
 
   // keeping this method will also help bincompat with older play-json versions
-  private[json] def this(value: Seq[JsValue]) = this(value.toArray[JsValue])
+  private[json] def this(value: collection.Seq[JsValue]) = this(value.toArray[JsValue])
 
   /**
    * Concatenates this array with the elements of an other array.
@@ -113,7 +113,7 @@ case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValu
 }
 
 object JsArray extends (IndexedSeq[JsValue] => JsArray) {
-  def apply(value: Seq[JsValue]) = new JsArray(value.toArray[JsValue])
+  def apply(value: collection.Seq[JsValue]) = new JsArray(value.toArray[JsValue])
 
   def empty = JsArray(Array.empty[JsValue])
 }
@@ -128,7 +128,7 @@ case class JsObject(
   /**
    * The fields of this JsObject in the order passed to to constructor
    */
-  lazy val fields: Seq[(String, JsValue)] = underlying.toSeq
+  lazy val fields: collection.Seq[(String, JsValue)] = underlying.toSeq
 
   /**
    * The value of this JsObject as an immutable map.
@@ -161,7 +161,7 @@ case class JsObject(
   /**
    * Removes one field from the JsObject
    */
-  def -(otherField: String): JsObject = JsObject(underlying - otherField)
+  def -(otherField: String): JsObject = JsObject(underlying.toMap - otherField)
 
   /**
    * Adds one field to the JsObject
@@ -203,7 +203,7 @@ object JsObject extends (Seq[(String, JsValue)] => JsObject) {
   /**
    * Construct a new JsObject, with the order of fields in the Seq.
    */
-  def apply(fields: Seq[(String, JsValue)]): JsObject = new JsObject(mutable.LinkedHashMap(fields: _*))
+  def apply(fields: collection.Seq[(String, JsValue)]): JsObject = new JsObject(mutable.LinkedHashMap(fields.toSeq: _*))
 
   def empty = JsObject(Seq.empty)
 }

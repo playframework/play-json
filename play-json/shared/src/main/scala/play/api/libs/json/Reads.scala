@@ -8,7 +8,8 @@ import scala.annotation.implicitNotFound
 
 import scala.util.control
 
-import scala.collection._
+import scala.collection.Seq
+import scala.collection.compat._
 import scala.collection.immutable.Map
 import scala.collection.mutable.Builder
 
@@ -165,7 +166,7 @@ trait LowPriorityDefaultReads extends EnvReads {
   /**
    * Generic deserializer for collections types.
    */
-  implicit def traversableReads[F[_], A](implicit bf: generic.CanBuildFrom[F[_], A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
+  implicit def traversableReads[F[_], A](implicit bf: Factory[A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
     def reads(json: JsValue) = json match {
       case JsArray(ts) =>
 
@@ -180,7 +181,7 @@ trait LowPriorityDefaultReads extends EnvReads {
             case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, idx))
           }
         }.fold(JsError.apply, { res =>
-          val builder = bf()
+          val builder = bf.newBuilder
           builder.sizeHint(res)
           builder ++= res
           JsSuccess(builder.result())

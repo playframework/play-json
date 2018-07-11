@@ -80,7 +80,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
     },
     scalaVersion := ScalaVersions.scala212,
     crossScalaVersions := Seq(
-      ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
+      ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
     ),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
@@ -130,6 +130,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.OWrites.contramap")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
+      "org.scala-lang.modules" %%% "scala-collection-compat" % "0.1.1",
       "org.scalatest" %%% "scalatest" % "3.0.6-SNAP1" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
