@@ -11,8 +11,6 @@ import sbtcrossproject.{crossProject, CrossType}
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-val scala213Version = "2.13.0-M4"
-
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
@@ -88,7 +86,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
     },
     scalaVersion := ScalaVersions.scala212,
     crossScalaVersions := Seq(
-      ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
+      ScalaVersions.scala211, ScalaVersions.scala212, ScalaVersions.scala213
     ),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
