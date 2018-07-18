@@ -65,6 +65,14 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
 })
 
 lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
+    // Do not buffer test output
+    logBuffered in Test := false,
+    testOptions in Test ++= Seq(
+      // Show the duration of tests
+      Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      // Filtering tests that are not stable in Scala 2.13 yet.
+      Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
+    ),
     publishTo := Some(
       if (isSnapshot.value)
         Opts.resolver.sonatypeSnapshots

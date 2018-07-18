@@ -535,7 +535,7 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
   }
 
   "JSON Reads" should {
-    "manage nullable/option" in {
+    "manage nullable/option" taggedAs (UnstableInScala213) in {
       case class User(name: String, email: String, phone: Option[String])
 
       implicit val UserReads = (
