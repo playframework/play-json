@@ -7,7 +7,7 @@ jdk:
 - oraclejdk8
 - oraclejdk9
 script:
-- sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode testOnly
+- sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode testOnly mimaReportBinaryIssues
 cache:
   directories:
   - "$HOME/.ivy2/cache"
