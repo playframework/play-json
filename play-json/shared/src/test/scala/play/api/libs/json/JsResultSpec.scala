@@ -32,4 +32,20 @@ class JsResultSpec extends WordSpec with MustMatchers {
       JsResult.toTry(err) mustEqual Failure(JsResult.Exception(err))
     }
   }
+
+  "JsSuccess" should {
+    "be recovered" in {
+      val succ = JsSuccess("success")
+
+      succ.recoverWith { _ => JsSuccess("fallback") } mustEqual succ
+    }
+  }
+
+  "JsError" should {
+    "be recovered" in {
+      val succ = JsSuccess("success")
+
+      JsError("err").recoverWith { _ => succ } mustEqual succ
+    }
+  }
 }

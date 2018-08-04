@@ -98,7 +98,7 @@ object OWrites extends PathWrites with ConstraintWrites {
    * An `OWrites` capable of writing an object incrementally to a mutable map
    */
   private trait OWritesFromFields[A] extends OWrites[A] {
-    def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A)
+    def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A): Unit
 
     def writes(a: A): JsObject = {
       val fieldsMap = new mutable.LinkedHashMap[String, JsValue]()
