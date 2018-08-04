@@ -58,6 +58,39 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
     }
   }
 
+  "Compose" should {
+    lazy val generated: Reads[Owner] = Json.reads
+
+    "preprocess a JSON object using a Reads" in {
+      implicit val reads: Reads[Owner] =
+        generated.composeWith(Reads[JsValue] {
+          case obj @ JsObject(_) => (obj \ "avatar").asOpt[String] match {
+            case Some(_) => JsSuccess(obj)
+            case _ => JsSuccess(obj + ("avatar" -> JsString("")))
+          }
+
+          case _ => JsError("Object expected")
+        })
+
+      Json.obj("login" -> "foo", "url" -> "url://id").
+        validate[Owner] mustEqual JsSuccess(Owner("foo", "", "url://id"))
+
+    }
+
+    "preprocess a JSON object using a function" in {
+      implicit val reads: Reads[Owner] = generated.preprocess {
+        case obj @ JsObject(_) => (obj \ "avatar").asOpt[String] match {
+          case Some(_) => obj
+          case _ => obj + ("avatar" -> JsString(""))
+        }
+      }
+
+      Json.obj("login" -> "foo", "url" -> "url://id").
+        validate[Owner] mustEqual JsSuccess(Owner("foo", "", "url://id"))
+
+    }
+  }
+
   "Functional Reads" should {
     import play.api.libs.functional.syntax._
 

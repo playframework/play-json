@@ -4,9 +4,13 @@
 
 import interplay.ScalaVersions
 import ReleaseTransformations._
+
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import com.typesafe.tools.mima.plugin.MimaKeys.{mimaBinaryIssueFilters, mimaPreviousArtifacts}
+import com.typesafe.tools.mima.plugin.MimaKeys.{
+  mimaBinaryIssueFilters, mimaPreviousArtifacts
+}
+
 import sbtcrossproject.{crossProject, CrossType}
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
@@ -125,6 +129,10 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.optionHandlers"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.discriminator"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.typeNaming"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntegerReads"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.compose"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.composeWith"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.preprocess"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.recoverWith"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Writes.contramap"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.OWrites.contramap")
