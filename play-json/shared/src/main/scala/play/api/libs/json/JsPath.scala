@@ -318,7 +318,7 @@ case class JsPath(path: List[PathNode] = List()) {
    * {{{
    * case class User(id: Long, name: String, friend: User)
    *
-   * implicit lazy val UserReads: Reads[User] = (
+   * implicit lazy val userReads: Reads[User] = (
    *   (__ \ 'id).read[Long] and
    *   (__ \ 'name).read[String] and
    *   (__ \ 'friend).lazyRead(UserReads)
@@ -334,7 +334,7 @@ case class JsPath(path: List[PathNode] = List()) {
    * {{{
    * case class User(id: Long, name: String, friend: Option[User])
    *
-   * implicit lazy val UserReads: Reads[User] = (
+   * implicit lazy val userReads: Reads[User] = (
    *   (__ \ 'id).read[Long] and
    *   (__ \ 'name).read[String] and
    *   (__ \ 'friend).lazyReadNullable(UserReads)
@@ -370,11 +370,11 @@ case class JsPath(path: List[PathNode] = List()) {
    * {{{
    * case class User(id: Long, name: String, friend: User)
    *
-   * implicit lazy val UserReads: Reads[User] = (
+   * implicit lazy val userWrites: Writes[User] = (
    *   (__ \ 'id).write[Long] and
    *   (__ \ 'name).write[String] and
    *   (__ \ 'friend).lazyWrite(UserReads)
-   * )(User.apply _)
+   * )(unlift(User.unapply))
    * }}}
    */
   def lazyWrite[T](w: => Writes[T]): OWrites[T] = OWrites((t: T) => Writes.at[T](this)(w).writes(t))
@@ -388,11 +388,11 @@ case class JsPath(path: List[PathNode] = List()) {
    * {{{
    * case class User(id: Long, name: String, friend: Option[User])
    *
-   * implicit lazy val UserReads: Reads[User] = (
+   * implicit lazy val userWrites: Writes[User] = (
    *   (__ \ 'id).write[Long] and
    *   (__ \ 'name).write[String] and
    *   (__ \ 'friend).lazyWriteNullable(UserReads)
-   * )(User.apply _)
+   * )(unlift(User.unapply))
    * }}}
    */
   def lazyWriteNullable[T](w: => Writes[T]): OWrites[Option[T]] = OWrites((t: Option[T]) => Writes.nullable[T](this)(w).writes(t))
