@@ -88,7 +88,7 @@ import scala.reflect.macros.blackbox
     val libs = q"_root_.play.api.libs"
     val json = q"$libs.json"
     val atpe = atag.tpe.dealias
-    val ctor = atpe.decl(c.universe.nme.CONSTRUCTOR).asMethod
+    val ctor = atpe.decl(c.universe.termNames.CONSTRUCTOR).asMethod
 
     ctor.paramLists match {
       case List(term: TermSymbol) :: Nil => {
@@ -369,7 +369,7 @@ import scala.reflect.macros.blackbox
           }
 
           case Some((a, b)) =>
-            conforms(new scala.runtime.Tuple2Zipped(a.typeArgs, b.typeArgs) ++: types.tail)
+            conforms((a.typeArgs, b.typeArgs).zipped ++: types.tail)
 
           case _ => true
         }
@@ -431,7 +431,7 @@ import scala.reflect.macros.blackbox
           val unapplyParams = unapplyReturnTypes.toList.flatMap(identity)
 
           (applyParams.size == unapplyParams.size &&
-            conforms(new scala.runtime.Tuple2Zipped(applyParams, unapplyParams).toSeq))
+            conforms((applyParams, unapplyParams).zipped.toSeq))
 
         } => apply
       }
@@ -509,7 +509,7 @@ import scala.reflect.macros.blackbox
         applyFunction.fold(Map.empty[String, Type]) {
           case (_, tparams, _, _) => tparams.zip(tpeArgs).map {
             case (sym, ty) => sym.fullName -> ty
-          }(scala.collection.breakOut)
+          }.toMap
         }
 
       // To print the implicit types in the compiler messages
@@ -701,7 +701,7 @@ import scala.reflect.macros.blackbox
         if (!hasOption[Json.DefaultValues]) Map.empty else {
           (params, defaultValues).zipped.collect {
             case (p, Some(dv)) => p.name.encodedName -> dv
-          }(scala.collection.breakOut)
+          }.toMap
         }
 
       val resolvedImplicits = utility.implicits(resolver)

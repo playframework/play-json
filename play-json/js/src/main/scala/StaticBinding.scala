@@ -123,7 +123,7 @@ object StaticBinding {
   private def escapeStr(s: String): String = s.flatMap { c =>
     val code = c.toInt
 
-    if (code > 31 && code < 127 /* US-ASCII */ ) Some(c) else {
+    if (code > 31 && code < 127 /* US-ASCII */ ) String.valueOf(c) else {
       def hexCode = code.toHexString.reverse.padTo(4, '0').reverse
       '\\' +: s"u${hexCode.toUpperCase}"
     }

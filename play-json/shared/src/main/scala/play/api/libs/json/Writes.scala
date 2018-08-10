@@ -330,7 +330,7 @@ sealed trait LowPriorityWrites extends EnvWrites {
     val w = implicitly[Writes[A]]
 
     Writes[Traversable[A]] { as =>
-      val builder = mutable.ArrayBuilder.make[JsValue]()
+      val builder = mutable.ArrayBuilder.make[JsValue]
       as.foreach { a =>
         builder += w.writes(a)
       }

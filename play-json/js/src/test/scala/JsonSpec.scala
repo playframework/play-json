@@ -25,7 +25,7 @@ class JsonSpec extends WordSpec with MustMatchers {
       parse(stringify(json)) mustEqual json
     }
 
-    "keep similar object between serialized and deserialized data" in {
+    "keep similar object between serialized and deserialized data" taggedAs (UnstableInScala213) in {
       val original = Json.obj(
         "key1" -> "value1",
         "key2" -> true,

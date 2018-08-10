@@ -357,7 +357,7 @@ class JsonSharedSpec extends WordSpec
       js.toJson(TestCase("my-id", "foo", "bar")) mustEqual jo
     }
 
-    "keep the insertion order on ListMap" in json { js =>
+    "keep the insertion order on ListMap" taggedAs (UnstableInScala213) in json { js =>
       def test = js.toJson(
         ListMap(
           "name" -> "foo",
@@ -371,7 +371,7 @@ class JsonSharedSpec extends WordSpec
       //must be(equalIgnoringSpace(Json.parse(req).toString))
     }
 
-    "keep insertion order on large ListMap" in json { js =>
+    "keep insertion order on large ListMap" taggedAs (UnstableInScala213) in json { js =>
       def test = js.toJson(
         ListMap(
           "name" -> "a", "zip" -> "foo", "city" -> "foo",

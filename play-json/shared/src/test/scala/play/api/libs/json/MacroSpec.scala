@@ -499,11 +499,11 @@ class MacroSpec extends WordSpec with MustMatchers
         Json.reads[WithColl[Double, (Int, String)]]
       }
 
-      "to generated Writes" in writeSpec {
+      "to generated Writes" taggedAs (UnstableInScala213) in writeSpec {
         Json.writes[WithColl[Double, (Int, String)]]
       }
 
-      "to generate Format" in {
+      "to generate Format" taggedAs (UnstableInScala213) in {
         val f = Json.format[WithColl[Double, (Int, String)]]
         readSpec(f)
         writeSpec(f)

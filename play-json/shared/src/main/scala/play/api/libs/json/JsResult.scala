@@ -13,7 +13,7 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
   val isSuccess = true
   val isError = false
 
-  def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: T => U): U = valid(value)
+  def fold[U](invalid: collection.Seq[(JsPath, collection.Seq[JsonValidationError])] => U, valid: T => U): U = valid(value)
 
   def map[U](f: T => U): JsResult[U] = copy(value = f(value))
 
@@ -29,7 +29,7 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
 
   def asOpt: Option[T] = Some(value)
 
-  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], T] = Right(value)
+  def asEither: Either[collection.Seq[(JsPath, collection.Seq[JsonValidationError])], T] = Right(value)
 
   def recover[U >: T](errManager: PartialFunction[JsError, U]): JsResult[U] = this
 
@@ -41,7 +41,7 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
 /**
  * The result in case of parsing `errors`.
  */
-case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsResult[Nothing] {
+case class JsError(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])]) extends JsResult[Nothing] {
   def get: Nothing = throw new NoSuchElementException("JsError.get")
 
   def ++(error: JsError): JsError = JsError.merge(this, error)
@@ -55,7 +55,7 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
   val isSuccess = false
   val isError = true
 
-  def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: Nothing => U): U = invalid(errors)
+  def fold[U](invalid: collection.Seq[(JsPath, collection.Seq[JsonValidationError])] => U, valid: Nothing => U): U = invalid(errors)
 
   def map[U](f: Nothing => U): JsResult[U] = this
 
@@ -72,7 +72,7 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
 
   val asOpt = None
 
-  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], Nothing] = Left(errors)
+  def asEither: Either[collection.Seq[(JsPath, collection.Seq[JsonValidationError])], Nothing] = Left(errors)
 
   def recover[U >: Nothing](errManager: PartialFunction[JsError, U]): JsResult[U] = JsSuccess(errManager(this))
 
@@ -94,7 +94,7 @@ object JsError {
 
   def apply(path: JsPath, error: String): JsError = JsError(path -> JsonValidationError(error))
 
-  def merge(e1: Seq[(JsPath, Seq[JsonValidationError])], e2: Seq[(JsPath, Seq[JsonValidationError])]): Seq[(JsPath, Seq[JsonValidationError])] = {
+  def merge(e1: collection.Seq[(JsPath, collection.Seq[JsonValidationError])], e2: collection.Seq[(JsPath, collection.Seq[JsonValidationError])]): collection.Seq[(JsPath, collection.Seq[JsonValidationError])] = {
     (e1 ++ e2).groupBy(_._1).mapValues(_.flatMap(_._2)).toList
   }
 
@@ -104,12 +104,12 @@ object JsError {
 
   def toJson(e: JsError): JsObject = toJson(e.errors, false)
 
-  def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])]): JsObject = toJson(errors, false)
+  def toJson(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])]): JsObject = toJson(errors, false)
 
   //def toJsonErrorsOnly: JsValue = original // TODO
-  def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map { case (path, seq) => path.toJsonString -> seq }
+  def toFlatForm(e: JsError): collection.Seq[(String, collection.Seq[JsonValidationError])] = e.errors.map { case (path, seq) => path.toJsonString -> seq }
 
-  private def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])], flat: Boolean): JsObject = {
+  private def toJson(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])], flat: Boolean): JsObject = {
     errors.foldLeft(JsObject.empty) { (obj, error) =>
       obj ++ JsObject(Seq(error._1.toJsonString -> error._2.foldLeft(JsArray.empty) { (arr, err) =>
         val msg = JsArray({
@@ -148,7 +148,7 @@ sealed trait JsResult[+A] { self =>
    * Either applies the `invalid` function if this result is an error,
    * or applies the `valid` function on the successful value.
    */
-  def fold[B](invalid: Seq[(JsPath, Seq[JsonValidationError])] => B, valid: A => B): B
+  def fold[B](invalid: collection.Seq[(JsPath, collection.Seq[JsonValidationError])] => B, valid: A => B): B
 
   /**
    * If this result is successful, applies the function `f` on the parsed value.
@@ -231,7 +231,7 @@ sealed trait JsResult[+A] { self =>
    * Returns either the result errors (at `Left`),
    * or the successful value (at `Right`).
    */
-  def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], A]
+  def asEither: Either[collection.Seq[(JsPath, collection.Seq[JsonValidationError])], A]
 
   /**
    * If this result is not successful,
