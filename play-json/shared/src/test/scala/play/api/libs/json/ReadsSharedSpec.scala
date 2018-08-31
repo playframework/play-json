@@ -158,6 +158,14 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
     }
   }
 
+  "JavaEnumFormat" should {
+    import JavaTestsEnumsFormat._
+    "deserialize correctly java enum with names" in {
+      JsString("TEST_1").validate[JavaTestEnum] mustEqual JsSuccess(JavaTestEnum.TEST_1)
+      JsString("TEST_2").validate[JavaTestEnum] mustEqual JsSuccess(JavaTestEnum.TEST_2)
+    }
+  }
+
   // ---
 
   case class Owner(
