@@ -207,6 +207,12 @@ sealed trait JsResult[+A] { self =>
     def withFilter(q: A => Boolean) = new WithFilter(a => p(a) && q(a))
   }
 
+  /** If this result is successful than checks for presence for '''elem''', otherwise return '''false''' */
+  def contains[AA >: A](elem: AA): Boolean = asOpt.contains(elem)
+
+  /** If this result is successful than check value with predicate '''p''', otherwise return '''false''' */
+  def exists(p: A => Boolean): Boolean = asOpt.exists(p)
+
   /** Updates the JSON path */
   def repath(path: JsPath): JsResult[A]
 
