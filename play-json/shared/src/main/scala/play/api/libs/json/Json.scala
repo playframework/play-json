@@ -353,7 +353,7 @@ object Json extends JsonFacade {
   def valueFormat[A]: Format[A] = macro JsMacroImpl.implicitConfigValueFormat[A]
 
   /**
-   * Creates a `Format[E]` by automatically creating Reads[E] and Writes[E] for any EnumerationE
+   * Creates a `Format[E]` by automatically creating Reads[E] and Writes[E] for any Enumeration E
    *
    * {{{
    * import play.api.libs.json.Json
