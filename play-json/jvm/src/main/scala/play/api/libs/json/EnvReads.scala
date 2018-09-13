@@ -185,7 +185,6 @@ trait EnvReads {
         Some(Instant.from(formatter.parse(input)))
       } catch {
         case _: DateTimeException => None
-        case _: DateTimeParseException => None
         case _: UnsupportedTemporalTypeException => None
       }
     }
