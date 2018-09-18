@@ -270,7 +270,7 @@ class JsonSharedSpec extends WordSpec
         "key3" -> js.arr(1, "tutu")
       )
 
-      js.prettyPrint(jo) mustEqual ("""{
+      js.prettyPrint(jo).replaceAllLiterally("\r\n", "\n") mustEqual ("""{
   "key1" : "toto",
   "key2" : {
     "key21" : "tata",
