@@ -56,7 +56,7 @@ class JsResultSpec extends WordSpec with MustMatchers {
       assert(JsSuccess(x).contains(10))
     }
 
-    "return true for JsSuccess(x)#contains(y)" in {
+    "return false for JsSuccess(x)#contains(y)" in {
       val x = 10
       assert(!JsSuccess(x).contains(x * 2))
     }
