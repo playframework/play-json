@@ -130,12 +130,7 @@ object JsonNaming {
    * to name its column (e.g. fooBar -> FooBar).
    */
   object PascalCase extends JsonNaming {
-    def apply(property: String): String =
-      if (property.length > 0) {
-        property.updated(0, Character.toUpperCase(property charAt 0))
-      } else {
-        property
-      }
+    def apply(property: String): String = property.capitalize
 
     override val toString = "PascalCase"
   }
