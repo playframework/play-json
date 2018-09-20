@@ -21,6 +21,10 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
 
   def foreach(f: T => Unit): Unit = f(value)
 
+  def contains[AA >: T](elem: AA): Boolean = elem == value
+
+  def exists(p: T => Boolean): Boolean = p(value)
+
   def repath(path: JsPath): JsResult[T] = JsSuccess(value, path ++ this.path)
 
   def getOrElse[U >: T](t: => U): U = value
@@ -62,6 +66,10 @@ case class JsError(errors: collection.Seq[(JsPath, collection.Seq[JsonValidation
   def flatMap[U](f: Nothing => JsResult[U]): JsResult[U] = this
 
   def foreach(f: Nothing => Unit): Unit = ()
+
+  def contains[AA >: Nothing](elem: AA): Boolean = false
+
+  def exists(p: Nothing => Boolean): Boolean = false
 
   def repath(path: JsPath): JsResult[Nothing] =
     JsError(errors.map { case (p, s) => path ++ p -> s })
@@ -208,10 +216,10 @@ sealed trait JsResult[+A] { self =>
   }
 
   /** If this result is successful than checks for presence for '''elem''', otherwise return '''false''' */
-  def contains[AA >: A](elem: AA): Boolean = asOpt.contains(elem)
+  def contains[AA >: A](elem: AA): Boolean
 
   /** If this result is successful than check value with predicate '''p''', otherwise return '''false''' */
-  def exists(p: A => Boolean): Boolean = asOpt.exists(p)
+  def exists(p: A => Boolean): Boolean
 
   /** Updates the JSON path */
   def repath(path: JsPath): JsResult[A]
