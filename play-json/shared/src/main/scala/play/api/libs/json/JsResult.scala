@@ -292,7 +292,7 @@ object JsResult {
 
   implicit val applicativeJsResult: Applicative[JsResult] = new Applicative[JsResult] {
 
-    def pure[A](a: A): JsResult[A] = JsSuccess(a)
+    def pure[A](f: => A): JsResult[A] = JsSuccess(f)
 
     def map[A, B](m: JsResult[A], f: A => B): JsResult[B] = m.map(f)
 

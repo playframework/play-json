@@ -756,7 +756,7 @@ import scala.reflect.macros.blackbox
       @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
       def readResult =
         if (multiParam) q"underlying.reads(obj)"
-        else q"underlying.flatMap[${atpe}]($json.Reads.pure(_)).reads(obj)"
+        else q"underlying.flatMap[${atpe}] { v: ${atpe} => $json.Reads.pure(f = v) }.reads(obj)"
 
       val canBuildCall = methodName match {
         case "read" => {
