@@ -52,31 +52,27 @@ class JsResultSpec extends WordSpec with MustMatchers {
   "JsResult" should {
 
     "return true for JsSuccess(x)#contains(x)" in {
-      val x = 10
-      assert(JsSuccess(x).contains(10))
+      assert(JsSuccess(1).contains(1))
     }
 
     "return false for JsSuccess(x)#contains(y)" in {
-      val x = 10
-      assert(!JsSuccess(x).contains(x * 2))
+      assert(!JsSuccess(1).contains(2))
     }
 
     "return false for JsError(_)#contains(_)" in {
-      assert(!JsError().contains(10))
+      assert(!JsError().contains(1))
     }
 
     "return true for JsSuccess(x)#exists(p) if p(x) == true" in {
-      val x = 10
-      assert(JsSuccess(x).exists(_ == x))
+      assert(JsSuccess(1).exists(_ == 1))
     }
 
     "return false for JsSuccess(x)#exists(p) if p(x) == false" in {
-      val x = 10
-      assert(JsSuccess(x).exists(_ == x))
+      assert(!JsSuccess(1).exists(_ == 2))
     }
 
     "return false for JsError(_).exists(_)" in {
-      assert(!JsError().exists(_ == 10))
+      assert(!JsError().exists(_ == 1))
     }
 
   }
