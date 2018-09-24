@@ -48,4 +48,33 @@ class JsResultSpec extends WordSpec with MustMatchers {
       JsError("err").recoverWith { _ => succ } mustEqual succ
     }
   }
+
+  "JsResult" should {
+
+    "return true for JsSuccess(x)#contains(x)" in {
+      assert(JsSuccess(1).contains(1))
+    }
+
+    "return false for JsSuccess(x)#contains(y)" in {
+      assert(!JsSuccess(1).contains(2))
+    }
+
+    "return false for JsError(_)#contains(_)" in {
+      assert(!JsError().contains(1))
+    }
+
+    "return true for JsSuccess(x)#exists(p) if p(x) == true" in {
+      assert(JsSuccess(1).exists(_ == 1))
+    }
+
+    "return false for JsSuccess(x)#exists(p) if p(x) == false" in {
+      assert(!JsSuccess(1).exists(_ == 2))
+    }
+
+    "return false for JsError(_).exists(_)" in {
+      assert(!JsError().exists(_ == 1))
+    }
+
+  }
+
 }
