@@ -21,6 +21,10 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
 
   def foreach(f: T => Unit): Unit = f(value)
 
+  def contains[AA >: T](elem: AA): Boolean = elem == value
+
+  def exists(p: T => Boolean): Boolean = p(value)
+  
   def forall(p: T => Boolean): Boolean = p(value)
 
   def repath(path: JsPath): JsResult[T] = JsSuccess(value, path ++ this.path)
@@ -64,7 +68,11 @@ case class JsError(errors: collection.Seq[(JsPath, collection.Seq[JsonValidation
   def flatMap[U](f: Nothing => JsResult[U]): JsResult[U] = this
 
   def foreach(f: Nothing => Unit): Unit = ()
+  
+  def contains[AA >: Nothing](elem: AA): Boolean = false
 
+  def exists(p: Nothing => Boolean): Boolean = false
+  
   def forall(p: Nothing => Boolean): Boolean = true
 
   def repath(path: JsPath): JsResult[Nothing] =
@@ -211,6 +219,12 @@ sealed trait JsResult[+A] { self =>
     def withFilter(q: A => Boolean) = new WithFilter(a => p(a) && q(a))
   }
 
+  /** If this result is successful than checks for presence for '''elem''', otherwise return '''false''' */
+  def contains[AA >: A](elem: AA): Boolean
+
+  /** If this result is successful than check value with predicate '''p''', otherwise return '''false''' */
+  def exists(p: A => Boolean): Boolean
+  
   /**
    * If this result is successful than check value with predicate '''p''', otherwise return '''true'''.
    * Follows [[Option.forall]] semantics
@@ -302,7 +316,7 @@ object JsResult {
 
   implicit val applicativeJsResult: Applicative[JsResult] = new Applicative[JsResult] {
 
-    def pure[A](a: A): JsResult[A] = JsSuccess(a)
+    def pure[A](f: => A): JsResult[A] = JsSuccess(f)
 
     def map[A, B](m: JsResult[A], f: A => B): JsResult[B] = m.map(f)
 
