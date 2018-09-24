@@ -21,6 +21,8 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
 
   def foreach(f: T => Unit): Unit = f(value)
 
+  def forall(p: T => Boolean): Boolean = p(value)
+
   def repath(path: JsPath): JsResult[T] = JsSuccess(value, path ++ this.path)
 
   def getOrElse[U >: T](t: => U): U = value
@@ -62,6 +64,8 @@ case class JsError(errors: collection.Seq[(JsPath, collection.Seq[JsonValidation
   def flatMap[U](f: Nothing => JsResult[U]): JsResult[U] = this
 
   def foreach(f: Nothing => Unit): Unit = ()
+
+  def forall(p: Nothing => Boolean): Boolean = true
 
   def repath(path: JsPath): JsResult[Nothing] =
     JsError(errors.map { case (p, s) => path ++ p -> s })
@@ -206,6 +210,12 @@ sealed trait JsResult[+A] { self =>
 
     def withFilter(q: A => Boolean) = new WithFilter(a => p(a) && q(a))
   }
+
+  /**
+   * If this result is successful than check value with predicate '''p''', otherwise return '''true'''.
+   * Follows [[Option.forall]] semantics
+   */
+  def forall(p: A => Boolean): Boolean
 
   /** Updates the JSON path */
   def repath(path: JsPath): JsResult[A]
