@@ -227,7 +227,7 @@ sealed trait JsResult[+A] { self =>
 
   /**
    * If this result is successful than check value with predicate '''p''', otherwise return '''true'''.
-   * Follows [[Option.forall]] semantics
+   * Follows [[scala.collection.Traversable.forall]] semantics
    */
   def forall(p: A => Boolean): Boolean
 
