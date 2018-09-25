@@ -144,6 +144,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.OWrites.contramap"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.contains"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.exists"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.forall"),
 
       // Scala 2.13.0-M4
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),

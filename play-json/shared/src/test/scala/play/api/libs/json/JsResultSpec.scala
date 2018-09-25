@@ -77,4 +77,24 @@ class JsResultSpec extends WordSpec with MustMatchers {
 
   }
 
+  "JsSuccess#forall" should {
+
+    "return true for JsSuccess(x * 2).forall(_ % 2 == 0)" in {
+      assert(JsSuccess(2).forall(_ % 2 == 0))
+    }
+
+    "return false for JsSuccess(x, {x < 0}).forall(_ >)" in {
+      assert(!JsSuccess(-1).forall(_ > 0))
+    }
+
+  }
+
+  "JsError#forall" should {
+
+    "return true" in {
+      assert(JsError("").forall(_ => false))
+    }
+
+  }
+
 }

@@ -25,6 +25,8 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
 
   def exists(p: T => Boolean): Boolean = p(value)
 
+  def forall(p: T => Boolean): Boolean = p(value)
+
   def repath(path: JsPath): JsResult[T] = JsSuccess(value, path ++ this.path)
 
   def getOrElse[U >: T](t: => U): U = value
@@ -70,6 +72,8 @@ case class JsError(errors: collection.Seq[(JsPath, collection.Seq[JsonValidation
   def contains[AA >: Nothing](elem: AA): Boolean = false
 
   def exists(p: Nothing => Boolean): Boolean = false
+
+  def forall(p: Nothing => Boolean): Boolean = true
 
   def repath(path: JsPath): JsResult[Nothing] =
     JsError(errors.map { case (p, s) => path ++ p -> s })
@@ -220,6 +224,12 @@ sealed trait JsResult[+A] { self =>
 
   /** If this result is successful than check value with predicate '''p''', otherwise return '''false''' */
   def exists(p: A => Boolean): Boolean
+
+  /**
+   * If this result is successful than check value with predicate '''p''', otherwise return '''true'''.
+   * Follows [[scala.collection.Traversable.forall]] semantics
+   */
+  def forall(p: A => Boolean): Boolean
 
   /** Updates the JSON path */
   def repath(path: JsPath): JsResult[A]
