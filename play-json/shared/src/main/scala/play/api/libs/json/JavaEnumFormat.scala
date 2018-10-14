@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package play.api.libs.json
 
 /**
@@ -13,7 +17,6 @@ package play.api.libs.json
  *
  * implicit val  TestEnumFormat = JavaEnumFormat.format[TestEnum]
  *
- * @author Sebastian Hardt (s.hardt@micromata.de)
  */
 object JavaEnumFormat {
   def format[A <: Enum[A]](implicit m: scala.reflect.Manifest[A]): Format[A] = {
@@ -24,7 +27,6 @@ object JavaEnumFormat {
 /**
  * Format for java enums from and to json
  *
- * @param classType the classType of the enum
  * @tparam A the type of the enum
  */
 class JsonJavaEnumFormat[A <: Enum[A]](implicit m: scala.reflect.Manifest[A]) extends Format[A] {
