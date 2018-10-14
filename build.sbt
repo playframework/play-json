@@ -142,6 +142,9 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.recoverWith"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Writes.contramap"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.OWrites.contramap"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.contains"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.exists"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.forall"),
 
       // Scala 2.13.0-M4
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
@@ -234,8 +237,12 @@ lazy val `play-jsonJS` = `play-json`.js
 
 lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
   .in(file("play-functional"))
-  .settings(commonSettings)
-  .settings(playJsonMimaSettings)
+  .settings(commonSettings ++ playJsonMimaSettings ++ Seq(
+    mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[ReversedMissingMethodProblem](
+        "play.api.libs.functional.Applicative.pure")
+    )
+  ))
   .enablePlugins(PlayLibrary)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm
