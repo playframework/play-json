@@ -146,7 +146,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.exists"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.forall"),
 
-      // Scala 2.13.0-M4
+      // Scala 2.13.0-M5
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.traversableReads"),
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
@@ -157,7 +157,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
       "org.scala-lang.modules" %%% "scala-collection-compat" % "0.1.1",
-      "org.scalatest" %%% "scalatest" % "3.0.6-SNAP1" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.6-SNAP3" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
