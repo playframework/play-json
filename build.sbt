@@ -18,13 +18,13 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _ => "4.3.0"
+    case _ => "4.3.5"
   }
 
   Seq("org.specs2" %% "specs2-core" % specsVersion)
 }
 
-val jacksonVersion = "2.9.6"
+val jacksonVersion = "2.9.7"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
