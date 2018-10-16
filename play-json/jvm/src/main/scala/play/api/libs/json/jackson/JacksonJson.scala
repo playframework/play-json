@@ -5,14 +5,14 @@
 package play.api.libs.json.jackson
 
 import java.io.{ InputStream, StringWriter }
+import java.math.MathContext
 
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.Module.SetupContext
+import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
-import com.fasterxml.jackson.databind._
-import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
 import play.api.libs.json._
@@ -44,7 +44,8 @@ object PlayJsonModule extends SimpleModule("PlayJson", Version.unknownVersion())
 // -- Serializers.
 
 private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
-  import java.math.{ BigDecimal => JBigDec, BigInteger }
+  import java.math.{ BigInteger, BigDecimal => JBigDec }
+
   import com.fasterxml.jackson.databind.node.{ BigIntegerNode, DecimalNode }
 
   // Maximum magnitude of BigDecimal to write out as a plain string
@@ -141,7 +142,23 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 
     val (maybeValue, nextContext) = (jp.getCurrentToken.id(): @switch) match {
 
-      case JsonTokenId.ID_NUMBER_INT | JsonTokenId.ID_NUMBER_FLOAT => (Some(JsNumber(jp.getDecimalValue)), parserContext)
+      case JsonTokenId.ID_NUMBER_INT | JsonTokenId.ID_NUMBER_FLOAT => {
+        val inputText = jp.getText
+        val inputLength = inputText.length
+
+        // There is a limit of how large the numbers can be since parsing extremely
+        // large numbers (think thousand of digits) and operating on the parsed values
+        // can potentially cause a DDoS.
+        if (inputLength > JacksonJson.BigDecimalLimits.DigitsLimit) throw new IllegalArgumentException("Number is larger than supported")
+
+        // Must create the BigDecimal with a MathContext that is consistent with the limits used.
+        val bigDecimal = BigDecimal(inputText, JacksonJson.BigDecimalLimits.DefaultMathContext)
+
+        // We should also avoid numbers with scale that are out of a safe limit
+        if (Math.abs(bigDecimal.scale) > JacksonJson.BigDecimalLimits.ScaleLimit) throw new IllegalArgumentException(s"Number scale (${bigDecimal.scale}) is out of limits")
+
+        (Some(JsNumber(bigDecimal)), parserContext)
+      }
 
       case JsonTokenId.ID_STRING => (Some(JsString(jp.getText)), parserContext)
 
@@ -220,6 +237,25 @@ private[jackson] class PlaySerializers extends Serializers.Base {
 }
 
 private[json] object JacksonJson {
+
+  /**
+   * Define limits for parsing BigDecimal numbers.
+   *
+   * By default, we are using MathContext.DECIMAL128 and then the limits are define in its terms.
+   */
+  object BigDecimalLimits {
+
+    val DefaultMathContext: MathContext = MathContext.DECIMAL128
+
+    // Limit for the scale considering the MathContext of 128
+    // limit for scale for decimal128: BigDecimal("0." + "0" * 33 + "1e-6143", java.math.MathContext.DECIMAL128).scale + 1
+    val ScaleLimit: Int = 6178
+
+    // 307 digits should be the correct value for 128 bytes. But we are using 310
+    // because Play JSON uses BigDecimal to parse any number including Doubles and
+    // Doubles max value has 309 digits, so we are using 310 here
+    val DigitsLimit: Int = 310
+  }
 
   private val mapper = (new ObjectMapper).registerModule(PlayJsonModule)
 

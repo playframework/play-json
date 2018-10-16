@@ -72,6 +72,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
     testOptions in Test ++= Seq(
       // Show the duration of tests
       Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      Tests.Argument(TestFrameworks.Specs2, "showtimes"),
       // Filtering tests that are not stable in Scala 2.13 yet.
       Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
     ),
