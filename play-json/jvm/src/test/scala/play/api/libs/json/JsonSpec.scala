@@ -28,16 +28,16 @@ class JsonSpec extends org.specs2.mutable.Specification {
   val exceedsDigitsLimitNegative: BigDecimal = exceedsDigitsLimit.unary_-
 
   val invalidJsonExceedingNumberOfDigits: String = s"""
-     |{
-     |  "bigInt": 1,
-     |  "bigDec": $exceedsDigitsLimit
-     |}""".stripMargin
+    |{
+    |  "bigInt": 1,
+    |  "bigDec": $exceedsDigitsLimit
+    |}""".stripMargin
 
   val invalidJsonExceedingNumberOfDigitsNegative: String = s"""
-                                                      |{
-                                                      |  "bigInt": 1,
-                                                      |  "bigDec": $exceedsDigitsLimitNegative
-                                                      |}""".stripMargin
+    |{
+    |  "bigInt": 1,
+    |  "bigDec": $exceedsDigitsLimitNegative
+    |}""".stripMargin
 
   implicit val BigNumbersFormat: Format[BigNumbers] = Json.format[BigNumbers]
   implicit val IntNumbersFormat: Format[IntNumbers] = Json.format[IntNumbers]
