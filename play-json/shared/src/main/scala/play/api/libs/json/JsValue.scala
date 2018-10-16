@@ -126,7 +126,7 @@ case class JsObject(
 ) extends JsValue {
 
   /**
-   * The fields of this JsObject in the order passed to to constructor
+   * The fields of this JsObject in the order passed to the constructor
    */
   lazy val fields: collection.Seq[(String, JsValue)] = underlying.toSeq
 
