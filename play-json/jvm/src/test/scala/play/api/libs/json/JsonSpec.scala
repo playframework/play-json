@@ -356,7 +356,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "truncate when exceeding the precision limit" in {
-          // lsat two six are exceeding 34 precision limit
+          // last two six are exceeding 34 precision limit
           val n = BigDecimal("10.12345678912345678912345678912345666")
           val numbers = Json.parse(
             s"""
