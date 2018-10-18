@@ -159,7 +159,7 @@ object JsPath extends JsPath(List.empty) {
     }
 
     // optimize fast path
-    val objectMap = new scala.collection.mutable.LinkedHashMap[String, JsValue]()
+    val objectMap = JsObject.createFieldsMap()
     val isSimpleObject = pathValues.forall {
       case (JsPath(KeyPathNode(key) :: Nil), value) =>
         objectMap.put(key, value)

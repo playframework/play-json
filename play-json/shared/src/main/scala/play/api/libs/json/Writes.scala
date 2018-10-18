@@ -92,7 +92,7 @@ object OWrites extends PathWrites with ConstraintWrites {
     def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A)
 
     def writes(a: A): JsObject = {
-      val fieldsMap = new mutable.LinkedHashMap[String, JsValue]()
+      val fieldsMap = JsObject.createFieldsMap()
       writeFields(fieldsMap, a)
       JsObject(fieldsMap)
     }

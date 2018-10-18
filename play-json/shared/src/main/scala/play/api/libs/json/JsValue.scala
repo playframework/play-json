@@ -200,10 +200,21 @@ case class JsObject(
 }
 
 object JsObject extends (Seq[(String, JsValue)] => JsObject) {
+
+  /**
+   * INTERNAL API: create a fields map by wrapping a Java LinkedHashMap.
+   *
+   * We use this because the Java implementation better handles hash code collisions for Comparable keys.
+   */
+  private[json] def createFieldsMap(fields: Iterable[(String, JsValue)] = Seq.empty): mutable.Map[String, JsValue] = {
+    import scala.collection.JavaConverters._
+    new java.util.LinkedHashMap[String, JsValue]().asScala ++= fields
+  }
+
   /**
    * Construct a new JsObject, with the order of fields in the Seq.
    */
-  def apply(fields: Seq[(String, JsValue)]): JsObject = new JsObject(mutable.LinkedHashMap(fields: _*))
+  def apply(fields: Seq[(String, JsValue)]): JsObject = new JsObject(createFieldsMap(fields))
 
   def empty = JsObject(Seq.empty)
 }
