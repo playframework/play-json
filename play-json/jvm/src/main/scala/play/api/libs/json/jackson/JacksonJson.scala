@@ -134,6 +134,28 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     value
   }
 
+  private def parseBigDecimal(jp: JsonParser, parserContext: List[DeserializerContext]): (Some[JsNumber], List[DeserializerContext]) = {
+    val inputText = jp.getText
+    val inputLength = inputText.length
+
+    // There is a limit of how large the numbers can be since parsing extremely
+    // large numbers (think thousand of digits) and operating on the parsed values
+    // can potentially cause a DDoS.
+    if (inputLength > JacksonJson.BigDecimalLimits.DigitsLimit) {
+      throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
+    }
+
+    // Must create the BigDecimal with a MathContext that is consistent with the limits used.
+    val bigDecimal = BigDecimal(inputText, JacksonJson.BigDecimalLimits.DefaultMathContext)
+
+    // We should also avoid numbers with scale that are out of a safe limit
+    if (Math.abs(bigDecimal.scale) > JacksonJson.BigDecimalLimits.ScaleLimit) {
+      throw new IllegalArgumentException(s"""Number scale (${bigDecimal.scale}) is out of limits for field "${jp.currentName()}"""")
+    }
+
+    (Some(JsNumber(bigDecimal)), parserContext)
+  }
+
   @tailrec
   final def deserialize(jp: JsonParser, ctxt: DeserializationContext, parserContext: List[DeserializerContext]): JsValue = {
     if (jp.getCurrentToken == null) {
@@ -142,23 +164,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 
     val (maybeValue, nextContext) = (jp.getCurrentToken.id(): @switch) match {
 
-      case JsonTokenId.ID_NUMBER_INT | JsonTokenId.ID_NUMBER_FLOAT => {
-        val inputText = jp.getText
-        val inputLength = inputText.length
-
-        // There is a limit of how large the numbers can be since parsing extremely
-        // large numbers (think thousand of digits) and operating on the parsed values
-        // can potentially cause a DDoS.
-        if (inputLength > JacksonJson.BigDecimalLimits.DigitsLimit) throw new IllegalArgumentException("Number is larger than supported")
-
-        // Must create the BigDecimal with a MathContext that is consistent with the limits used.
-        val bigDecimal = BigDecimal(inputText, JacksonJson.BigDecimalLimits.DefaultMathContext)
-
-        // We should also avoid numbers with scale that are out of a safe limit
-        if (Math.abs(bigDecimal.scale) > JacksonJson.BigDecimalLimits.ScaleLimit) throw new IllegalArgumentException(s"Number scale (${bigDecimal.scale}) is out of limits")
-
-        (Some(JsNumber(bigDecimal)), parserContext)
-      }
+      case JsonTokenId.ID_NUMBER_INT | JsonTokenId.ID_NUMBER_FLOAT => parseBigDecimal(jp, parserContext)
 
       case JsonTokenId.ID_STRING => (Some(JsString(jp.getText)), parserContext)
 
