@@ -274,14 +274,14 @@ class JsonSpec extends org.specs2.mutable.Specification {
           parse(stringify(json)) mustEqual json
         }
 
+        // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
         "truncate when exceeding the precision limit" in {
-          // last two six are exceeding 34 precision limit
-          // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
-          val n = BigDecimal("10.12345678912345678912345678912345666")
+          // last two "3" are exceeding 34 precision limit
+          val n = BigDecimal("10.1234567890123456789012345678901233")
           val numbers = Json.parse(bigNumbersJson(bigDec = n.toString)).as[BigNumbers]
 
-          // Without the last two "6" since they were truncated ("...4566" becomes "...46")
-          numbers.bigDec mustEqual BigDecimal("10.12345678912345678912345678912346")
+          // Without the last two "3" since they were truncated ("...1233" becomes "...12")
+          numbers.bigDec mustEqual BigDecimal("10.12345678901234567890123456789012")
         }
 
         "success when not exceeding the scale limit for positive numbers" in {
