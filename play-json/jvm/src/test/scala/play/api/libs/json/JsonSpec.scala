@@ -266,6 +266,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
       }
 
       "for BigDecimals" should {
+
+        // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
         "maintain precision when parsing BigDecimals within precision limit" in {
           val n = BigDecimal("12345678901234567890.123456789")
           val json = toJson(n)
@@ -274,6 +276,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
         "truncate when exceeding the precision limit" in {
           // last two six are exceeding 34 precision limit
+          // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
           val n = BigDecimal("10.12345678912345678912345678912345666")
           val numbers = Json.parse(bigNumbersJson(bigDec = n.toString)).as[BigNumbers]
 
