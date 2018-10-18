@@ -148,203 +148,120 @@ class JsonSpec extends org.specs2.mutable.Specification {
     }
 
     "when parsing numbers" in {
+
+      def intsJson(long: String = "1", int: String = "1") = {
+        s"""
+           |{
+           |  "long": $long,
+           |  "integer": $int
+           |}""".stripMargin
+      }
+
+      def floatsJson(float: String = "1.0", double: String = "1.0") = {
+        s"""
+           |{
+           |  "float": $float,
+           |  "double": $double
+           |}""".stripMargin
+      }
+
+      def bigNumbersJson(bigDec: String = BigDecimal(1).toString, bigInt: String = BigInt(1).toString) = {
+        s"""
+           |{
+           |  "bigInt": $bigInt,
+           |  "bigDec": $bigDec
+           |}""".stripMargin
+      }
+
       "for Long" should {
 
         "success for valid positive number" in {
-          Json.parse(
-            s"""
-              |{
-              |  "long": 123,
-              |  "integer": 1
-              |}""".stripMargin)
-            .as[IntNumbers].long mustEqual 123
+          Json.parse(intsJson(long = 123.toString)).as[IntNumbers].long mustEqual 123
         }
 
         "success for valid negative number" in {
-          Json.parse(
-            s"""
-               |{
-               |  "long": -123,
-               |  "integer": 1
-               |}""".stripMargin)
-            .as[IntNumbers].long mustEqual -123
+          Json.parse(intsJson(long = (-123).toString)).as[IntNumbers].long mustEqual -123
         }
 
         "success for max value" in {
-          Json.parse(
-            s"""
-               |{
-               |  "long": ${Long.MaxValue},
-               |  "integer": 1
-               |}""".stripMargin)
-            .as[IntNumbers].long mustEqual Long.MaxValue
+          Json.parse(intsJson(long = Long.MaxValue.toString)).as[IntNumbers].long mustEqual Long.MaxValue
         }
 
         "success for min value" in {
-          Json.parse(
-            s"""
-               |{
-               |  "long": ${Long.MinValue},
-               |  "integer": 1
-               |}""".stripMargin)
-            .as[IntNumbers].long mustEqual Long.MinValue
+          Json.parse(intsJson(long = Long.MinValue.toString)).as[IntNumbers].long mustEqual Long.MinValue
         }
 
         "fail for positive number out of Long limits" in {
           val outOfLimits = BigDecimal(Long.MaxValue) + 10
-          Json.parse(
-            s"""
-               |{
-               |  "long": $outOfLimits,
-               |  "integer": 1
-               |}""".stripMargin)
-            .as[IntNumbers] must throwA[JsResultException]
+          Json.parse(intsJson(long = outOfLimits.toString())).as[IntNumbers] must throwA[JsResultException]
         }
 
         "fail for negative number out of Long limits" in {
           val outOfLimits = BigDecimal(Long.MaxValue) + 10
-          Json.parse(
-            s"""
-               |{
-               |  "long": ${outOfLimits.unary_-},
-               |  "integer": 1
-               |}""".stripMargin)
-            .as[IntNumbers] must throwA[JsResultException]
+          Json.parse(intsJson(long = outOfLimits.unary_-.toString())).as[IntNumbers] must throwA[JsResultException]
         }
       }
 
       "for Integer" should {
 
         "success for valid positive number" in {
-          Json.parse(
-            s"""
-               |{
-               |  "long": 1,
-               |  "integer": 123
-               |}""".stripMargin)
-            .as[IntNumbers].integer mustEqual 123
+          Json.parse(intsJson(int = 123.toString)).as[IntNumbers].integer mustEqual 123
         }
 
         "success for valid negative number" in {
-          Json.parse(
-            s"""
-               |{
-               |  "long": 1,
-               |  "integer": -123
-               |}""".stripMargin)
-            .as[IntNumbers].integer mustEqual -123
+          Json.parse(intsJson(int = (-123).toString)).as[IntNumbers].integer mustEqual -123
         }
 
         "fail for positive number out of Int limits" in {
           val outOfLimits = BigDecimal(Int.MaxValue) + 10
-          Json.parse(
-            s"""
-               |{
-               |  "long": 1,
-               |  "integer": $outOfLimits
-               |}""".stripMargin)
-            .as[IntNumbers] must throwA[JsResultException]
+          Json.parse(intsJson(int = outOfLimits.toString())).as[IntNumbers] must throwA[JsResultException]
         }
 
         "fail for negative number out of Int limits" in {
           val outOfLimits = BigDecimal(Int.MaxValue) + 10
-          Json.parse(
-            s"""
-               |{
-               |  "long": 1,
-               |  "integer": ${outOfLimits.unary_-}
-               |}""".stripMargin)
-            .as[IntNumbers] must throwA[JsResultException]
+          Json.parse(intsJson(int = outOfLimits.unary_-.toString())).as[IntNumbers] must throwA[JsResultException]
         }
       }
 
       "for Float" should {
 
         "success for valid positive number" in {
-          Json.parse(
-            s"""
-               |{
-               |  "float": 123.123,
-               |  "double": 1
-               |}""".stripMargin)
-            .as[FloatNumbers].float mustEqual 123.123f
+          Json.parse(floatsJson(123.123.toString)).as[FloatNumbers].float mustEqual 123.123f
         }
 
         "success for valid negative number" in {
-          Json.parse(
-            s"""
-               |{
-               |  "float": -123.123,
-               |  "double": 1
-               |}""".stripMargin)
-            .as[FloatNumbers].float mustEqual -123.123f
+          Json.parse(floatsJson(float = (-123.123).toString)).as[FloatNumbers].float mustEqual -123.123f
         }
 
         "success for max value" in {
-          val outOfLimits = BigDecimal(Float.MaxValue.toString)
-          Json.parse(
-            s"""
-               |{
-               |  "float": $outOfLimits,
-               |  "double": 1
-               |}""".stripMargin)
-            .as[FloatNumbers].float mustEqual Float.MaxValue
+          val maxFloat = BigDecimal(Float.MaxValue.toString)
+          Json.parse(floatsJson(float = maxFloat.toString())).as[FloatNumbers].float mustEqual Float.MaxValue
         }
 
         "success for min value" in {
-          val outOfLimits = BigDecimal(Float.MinValue.toString)
-          Json.parse(
-            s"""
-               |{
-               |  "float": $outOfLimits,
-               |  "double": 1
-               |}""".stripMargin)
-            .as[FloatNumbers].float mustEqual Float.MinValue
+          val minFloat = BigDecimal(Float.MinValue.toString)
+          Json.parse(floatsJson(float = minFloat.toString())).as[FloatNumbers].float mustEqual Float.MinValue
         }
       }
 
       "for Double" should {
 
         "success for valid positive number" in {
-          Json.parse(
-            s"""
-               |{
-               |  "float": 1,
-               |  "double": 123.123
-               |}""".stripMargin)
-            .as[FloatNumbers].double mustEqual 123.123d
+          Json.parse(floatsJson(double = 123.123.toString)).as[FloatNumbers].double mustEqual 123.123d
         }
 
         "success for valid negative number" in {
-          Json.parse(
-            s"""
-               |{
-               |  "float": 1,
-               |  "double": -123.123
-               |}""".stripMargin)
-            .as[FloatNumbers].double mustEqual -123.123d
+          Json.parse(floatsJson(double = (-123.123).toString)).as[FloatNumbers].double mustEqual -123.123d
         }
 
         "success when parsing max value" in {
-          val outOfLimits = BigDecimal(Double.MaxValue)
-          Json.parse(
-            s"""
-               |{
-               |  "float": 1,
-               |  "double": $outOfLimits
-               |}""".stripMargin)
-            .as[FloatNumbers].double mustEqual Double.MaxValue
+          val maxDouble = BigDecimal(Double.MaxValue)
+          Json.parse(floatsJson(double = maxDouble.toString())).as[FloatNumbers].double mustEqual Double.MaxValue
         }
 
         "success when parsing min value" in {
-          val outOfLimits = BigDecimal(Double.MinValue)
-          Json.parse(
-            s"""
-               |{
-               |  "float": 1,
-               |  "double": $outOfLimits
-               |}""".stripMargin)
-            .as[FloatNumbers].double mustEqual Double.MinValue
+          val minDouble = BigDecimal(Double.MinValue)
+          Json.parse(floatsJson(double = minDouble.toString)).as[FloatNumbers].double mustEqual Double.MinValue
         }
       }
 
@@ -358,13 +275,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
         "truncate when exceeding the precision limit" in {
           // last two six are exceeding 34 precision limit
           val n = BigDecimal("10.12345678912345678912345678912345666")
-          val numbers = Json.parse(
-            s"""
-               |{
-               |  "bigInt": 1,
-               |  "bigDec": $n
-               |}""".stripMargin
-          ).as[BigNumbers]
+          val numbers = Json.parse(bigNumbersJson(bigDec = n.toString)).as[BigNumbers]
 
           // Without the last two "6" since they were truncated ("...4566" becomes "...46")
           numbers.bigDec mustEqual BigDecimal("10.12345678912345678912345678912346")
@@ -372,70 +283,32 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
         "success when not exceeding the scale limit for positive numbers" in {
           val withinScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit - 1)
-          Json.parse(
-            s"""
-                 |{
-                 |  "bigInt": 1,
-                 |  "bigDec": $withinScaleLimit
-                 |}""".stripMargin
-          ).as[BigNumbers].bigDec mustEqual withinScaleLimit
+          Json.parse(bigNumbersJson(bigDec = withinScaleLimit.toString)).as[BigNumbers].bigDec mustEqual withinScaleLimit
         }
 
         "success when not exceeding the scale limit for negative numbers" in {
           val withinScaleLimitNegative = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit - 1).unary_-
-          Json.parse(
-            s"""
-                 |{
-                 |  "bigInt": 1,
-                 |  "bigDec": $withinScaleLimitNegative
-                 |}""".stripMargin
-          ).as[BigNumbers].bigDec mustEqual { withinScaleLimitNegative }
+          Json.parse(bigNumbersJson(bigDec = withinScaleLimitNegative.toString)).as[BigNumbers].bigDec mustEqual { withinScaleLimitNegative }
         }
 
         "success when not exceeding the number of digits limit for negative numbers" in {
           val withinDigitsLimitNegative = BigDecimal(Long.MinValue)
-          Json.parse(
-            s"""
-               |{
-               |  "bigInt": 1,
-               |  "bigDec": $withinDigitsLimitNegative
-
-               |}""".
-              stripMargin
-          ).as[BigNumbers].bigDec mustEqual withinDigitsLimitNegative
+          Json.parse(bigNumbersJson(bigDec = withinDigitsLimitNegative.toString)).as[BigNumbers].bigDec mustEqual withinDigitsLimitNegative
         }
 
         "success when not exceeding the number of digits limit for positive numbers" in {
           val withinDigitsLimit = BigDecimal(Long.MaxValue)
-          Json.parse(
-            s"""
-               |{
-               |  "bigInt": 1,
-               |  "bigDec": $withinDigitsLimit
-               |}""".stripMargin
-          ).as[BigNumbers].bigDec mustEqual withinDigitsLimit
+          Json.parse(bigNumbersJson(bigDec = withinDigitsLimit.toString)).as[BigNumbers].bigDec mustEqual withinDigitsLimit
         }
 
         "fail when exceeding the scale limit for positive numbers" in {
           val exceedsScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit + 1)
-          Json.parse(
-            s"""
-                 |{
-                 |  "bigInt": 1,
-                 |  "bigDec": $exceedsScaleLimit
-                 |}""".stripMargin
-          ).as[BigNumbers] must throwA[IllegalArgumentException]
+          Json.parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString)).as[BigNumbers] must throwA[IllegalArgumentException]
         }
 
         "fail when exceeding the scale limit for negative numbers" in {
           val exceedsScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit + 1).unary_-
-          Json.parse(
-            s"""
-                 |{
-                 |  "bigInt": 1,
-                 |  "bigDec": $exceedsScaleLimit
-                 |}""".stripMargin
-          ).as[BigNumbers] must throwA[IllegalArgumentException]
+          Json.parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString)).as[BigNumbers] must throwA[IllegalArgumentException]
         }
 
         "fail when exceeding the number of digits limit for positive numbers" in {
