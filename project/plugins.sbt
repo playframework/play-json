@@ -20,4 +20,4 @@ addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.0.0")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
 
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
