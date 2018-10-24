@@ -19,7 +19,8 @@ class JsonRichSpec extends WordSpec with MustMatchers {
         "key1" -> Json.obj("key11" -> "value11", "key12" -> 123L, "key13" -> JsNull),
         "key2" -> 123,
         "key3" -> true,
-        "key4" -> Json.arr("value41", 345.6, JsString("test"), JsObject(Seq("key411" -> obj("key4111" -> 987.654))))
+        "key4" -> Json.arr("value41", 345.6, JsString("test"), JsObject(Seq("key411" -> obj("key4111" -> 987.654)))),
+        "url" -> Option(new java.net.URL("http://a.b")).map(_.toString).getOrElse("#")
       )
 
       js mustEqual (
