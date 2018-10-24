@@ -66,6 +66,11 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
   case _ => FastOptStage
 })
 
+val fixJS = Seq(
+  libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
+  addCompilerPlugin("org.scala-js" % "scalajs-compiler_2.12.7" % "0.6.25")
+)
+
 lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
     // Do not buffer test output
     logBuffered in Test := false,
@@ -89,7 +94,9 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
         s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
       ))
     },
-    scalaVersion := ScalaVersions.scala212,
+    resolvers += "scala-integration" at
+      "https://scala-ci.typesafe.com/artifactory/scala-integration/",
+    scalaVersion := "2.12.8-bin-ebf8017",
     crossScalaVersions := Seq(
       ScalaVersions.scala211, ScalaVersions.scala212, ScalaVersions.scala213
     ),
@@ -177,7 +184,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     libraryDependencies ++=
       (CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, 13)) => Seq()
-        case _ => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+        case _ => Seq(compilerPlugin("org.scalamacros" % "paradise_2.12.7" % "2.1.0"))
       }),
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
@@ -223,6 +230,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       Seq(file)
     }.taskValue
   )
+  .jsSettings(fixJS)
   .dependsOn(`play-functional`)
 
 lazy val `play-json-joda` = project
@@ -254,6 +262,7 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform).crossType(Cro
         "play.api.libs.functional.Applicative.pure")
     )
   ))
+  .jsSettings(fixJS)
   .enablePlugins(PlayLibrary)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm
