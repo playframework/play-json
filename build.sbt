@@ -121,6 +121,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .settings(playJsonMimaSettings)
   .settings(
     mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.widen"),
       // AbstractFunction1 is in scala.runtime and isn't meant to be used by end users
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$"),
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$"),

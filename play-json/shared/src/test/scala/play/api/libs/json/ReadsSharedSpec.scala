@@ -11,8 +11,8 @@ import java.util.Locale
 import org.scalatest._
 
 class ReadsSharedSpec extends WordSpec with MustMatchers {
-  "Reads flatMap" should {
-    "not repath the second result" when {
+  "Reads" should {
+    "not repath the second result on flatMap" when {
       val aPath = JsPath \ "a"
       val readsA: Reads[String] = aPath.read[String]
       val value = "string"
@@ -32,6 +32,22 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
             JsonValidationError("error.expected.jsnumber")
           )))))
       }
+    }
+
+    "widen" in {
+      // !! Keep type ascriptions
+      val orig: Reads[List[String]] = implicitly[Reads[List[String]]]
+      val widened: Reads[Traversable[String]] = orig.widen
+
+      widened.reads(JsArray(Seq(JsString("foo"), JsString("bar")))).
+        mustEqual(JsSuccess[Traversable[String]](List("foo", "bar")))
+
+    }
+
+    "be failed" in {
+      val r: Reads[String] = Reads.failed[String]("Foo")
+
+      r.reads(Json.obj()) mustEqual JsError("Foo")
     }
   }
 
