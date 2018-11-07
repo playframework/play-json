@@ -41,7 +41,8 @@ class PlayJsonModule(parserSettings: JsonParserSettings) extends SimpleModule("P
   }
 }
 
-object PlayJsonModule extends PlayJsonModule(JsonParserSettings.settings)
+@deprecated("Use PlayJsonModule class instead")
+object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
 
 // -- Serializers.
 
@@ -246,7 +247,7 @@ private[jackson] class PlaySerializers extends Serializers.Base {
 
 private[json] object JacksonJson {
 
-  private lazy val mapper = (new ObjectMapper).registerModule(PlayJsonModule)
+  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonModule(JsonParserSettings.settings))
 
   private lazy val jsonFactory = new JsonFactory(mapper)
 
