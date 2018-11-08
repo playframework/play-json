@@ -217,10 +217,15 @@ object Json extends JsonFacade {
 
   implicit def toJsFieldJsValueWrapper[T](field: T)(implicit w: Writes[T]): JsValueWrapper = JsValueWrapperImpl(w.writes(field))
 
-  def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map(f => (f._1, f._2.asInstanceOf[JsValueWrapperImpl].field)))
+  def obj(fields: (String, JsValueWrapper)*): JsObject = {
+    if (fields.isEmpty) JsObject.empty
+    else JsObject(fields.map(f => (f._1, f._2.asInstanceOf[JsValueWrapperImpl].field)))
+  }
 
-  def arr(items: JsValueWrapper*): JsArray =
-    JsArray(items.iterator.map(_.asInstanceOf[JsValueWrapperImpl].field).toArray[JsValue])
+  def arr(items: JsValueWrapper*): JsArray = {
+    if (items.isEmpty) JsArray.empty
+    else JsArray(items.iterator.map(_.asInstanceOf[JsValueWrapperImpl].field).toArray[JsValue])
+  }
 
   import language.experimental.macros
 
