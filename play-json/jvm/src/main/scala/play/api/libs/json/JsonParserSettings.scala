@@ -16,18 +16,18 @@ import scala.util.control.NonFatal
  * @param scaleLimit limit the scale, and it is related to the math context used.
  * @param digitsLimit how many digits are accepted, also related to the math context used.
  */
-case class BigDecimalParseSettings(
+final case class BigDecimalParseSettings(
   mathContext: MathContext = MathContext.DECIMAL128,
   scaleLimit: Int,
   digitsLimit: Int
 )
 
-case class BigDecimalSerializerSettings(
+final case class BigDecimalSerializerSettings(
   minPlain: BigDecimal,
   maxPlain: BigDecimal
 )
 
-case class JsonParserSettings(bigDecimalParseSettings: BigDecimalParseSettings, bigDecimalSerializerSettings: BigDecimalSerializerSettings)
+final case class JsonParserSettings(bigDecimalParseSettings: BigDecimalParseSettings, bigDecimalSerializerSettings: BigDecimalSerializerSettings)
 
 object JsonParserSettings {
 
