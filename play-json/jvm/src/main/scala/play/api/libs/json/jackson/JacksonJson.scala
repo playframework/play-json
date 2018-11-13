@@ -37,7 +37,7 @@ import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 class PlayJsonModule(parserSettings: JsonParserSettings) extends SimpleModule("PlayJson", Version.unknownVersion()) {
   override def setupModule(context: SetupContext): Unit = {
     context.addDeserializers(new PlayDeserializers(parserSettings))
-    context.addSerializers(new PlaySerializers)
+    context.addSerializers(new PlaySerializers(parserSettings))
   }
 }
 
@@ -46,16 +46,10 @@ object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
 
 // -- Serializers.
 
-private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
+private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) extends JsonSerializer[JsValue] {
   import java.math.{ BigInteger, BigDecimal => JBigDec }
 
   import com.fasterxml.jackson.databind.node.{ BigIntegerNode, DecimalNode }
-
-  // Maximum magnitude of BigDecimal to write out as a plain string
-  val MaxPlain: BigDecimal = 1e20
-
-  // Minimum magnitude of BigDecimal to write out as a plain string
-  val MinPlain: BigDecimal = 1e-10
 
   override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider): Unit = {
     value match {
@@ -65,7 +59,7 @@ private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
         // configuration is ignored when called from ObjectMapper.valueToTree
         val shouldWritePlain = {
           val va = v.abs
-          va < MaxPlain && va > MinPlain
+          va < parserSettings.bigDecimalSerializerSettings.maxPlain && va > parserSettings.bigDecimalSerializerSettings.minPlain
         }
         val stripped = v.bigDecimal.stripTrailingZeros
         val raw = if (shouldWritePlain) stripped.toPlainString else stripped.toString
@@ -234,10 +228,10 @@ private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) ext
   }
 }
 
-private[jackson] class PlaySerializers extends Serializers.Base {
+private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) extends Serializers.Base {
   override def findSerializer(config: SerializationConfig, javaType: JavaType, beanDesc: BeanDescription) = {
     val ser: Object = if (classOf[JsValue].isAssignableFrom(beanDesc.getBeanClass)) {
-      JsValueSerializer
+      new JsValueSerializer(parserSettings)
     } else {
       null
     }

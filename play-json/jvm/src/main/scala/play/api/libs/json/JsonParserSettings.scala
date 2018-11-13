@@ -22,7 +22,12 @@ case class BigDecimalParseSettings(
   digitsLimit: Int
 )
 
-case class JsonParserSettings(bigDecimalParseSettings: BigDecimalParseSettings)
+case class BigDecimalSerializerSettings(
+  minPlain: BigDecimal,
+  maxPlain: BigDecimal
+)
+
+case class JsonParserSettings(bigDecimalParseSettings: BigDecimalParseSettings, bigDecimalSerializerSettings: BigDecimalSerializerSettings)
 
 object JsonParserSettings {
 
@@ -37,7 +42,16 @@ object JsonParserSettings {
   // Doubles max value has 309 digits, so we are using 310 here
   val defaultDigitsLimit: Int = 310
 
-  def apply(): JsonParserSettings = JsonParserSettings(BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit))
+  // Maximum magnitude of BigDecimal to write out as a plain string
+  val MaxPlain: BigDecimal = 1e20
+
+  // Minimum magnitude of BigDecimal to write out as a plain string
+  val MinPlain: BigDecimal = 1e-10
+
+  def apply(): JsonParserSettings = JsonParserSettings(
+    BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit),
+    BigDecimalSerializerSettings(minPlain = MinPlain, maxPlain = MaxPlain)
+  )
 
   /**
    * Return the parse settings that are configured.
@@ -45,15 +59,22 @@ object JsonParserSettings {
   val settings: JsonParserSettings = {
     // Initialize the parser settings from System properties. This way it is possible to users
     // to easily replace the default values.
-    val scaleLimit = parseInt("play.json.parser.scaleLimit", defaultScaleLimit)
-    val digitsLimit = parseInt("play.json.parser.digitsLimit", defaultDigitsLimit)
+    val scaleLimit = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
+    val digitsLimit = parseNum("play.json.parser.digitsLimit", defaultDigitsLimit)(_.toInt)
     val mathContext = parseMathContext("play.json.parser.mathContext")
+
+    val minPlain: BigDecimal = parseNum("play.json.serializer.minPlain", MinPlain)(BigDecimal.exact)
+    val maxPlain: BigDecimal = parseNum("play.json.serializer.maxPlain", MaxPlain)(BigDecimal.exact)
 
     JsonParserSettings(
       BigDecimalParseSettings(
         mathContext,
         scaleLimit,
         digitsLimit
+      ),
+      BigDecimalSerializerSettings(
+        minPlain,
+        maxPlain
       )
     )
   }
@@ -66,8 +87,8 @@ object JsonParserSettings {
     case _ => defaultMathContext
   }
 
-  private def parseInt(key: String, default: Int): Int = try {
-    sys.props.get(key).map(_.toInt).getOrElse(default)
+  private def parseNum[T](key: String, default: T)(f: String => T): T = try {
+    sys.props.get(key).map(f).getOrElse(default)
   } catch {
     case NonFatal(_) => default
   }
