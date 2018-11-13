@@ -9,8 +9,7 @@ import java.util.{ Calendar, Date, TimeZone }
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
-
-import scala.collection.immutable.ListMap
+import play.api.libs.json.jackson.JacksonJson
 
 class JsonSpec extends org.specs2.mutable.Specification {
   "JSON" title
@@ -21,6 +20,29 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
   case class Post(body: String, created_at: Option[Date])
 
+  case class BigNumbers(bigInt: BigInt, bigDec: BigDecimal)
+  case class IntNumbers(long: Long, integer: Int)
+  case class FloatNumbers(float: Float, double: Double)
+
+  val exceedsDigitsLimit: BigDecimal = BigDecimal("9" * 1000000)
+  val exceedsDigitsLimitNegative: BigDecimal = exceedsDigitsLimit.unary_-
+
+  val invalidJsonExceedingNumberOfDigits: String = s"""
+    |{
+    |  "bigInt": 1,
+    |  "bigDec": $exceedsDigitsLimit
+    |}""".stripMargin
+
+  val invalidJsonExceedingNumberOfDigitsNegative: String = s"""
+    |{
+    |  "bigInt": 1,
+    |  "bigDec": $exceedsDigitsLimitNegative
+    |}""".stripMargin
+
+  implicit val BigNumbersFormat: Format[BigNumbers] = Json.format[BigNumbers]
+  implicit val IntNumbersFormat: Format[IntNumbers] = Json.format[IntNumbers]
+  implicit val FloatNumbersFormat: Format[FloatNumbers] = Json.format[FloatNumbers]
+
   implicit val PostFormat: Format[Post] = (
     (__ \ 'body).format[String] and
     (__ \ 'created_at).formatNullable[Option[Date]](
@@ -29,7 +51,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
         Writes.optionWithNull(Writes.dateWrites(dateFormat))
       )
     ).inmap(optopt => optopt.flatten, (opt: Option[Date]) => Some(opt))
-  )(Post, unlift(Post.unapply))
+  ) (Post, unlift(Post.unapply))
 
   val LenientPostFormat: Format[Post] = (
     (__ \ 'body).format[String] and
@@ -39,12 +61,13 @@ class JsonSpec extends org.specs2.mutable.Specification {
         Writes.dateWrites(dateFormat)
       )
     )
-  )(Post, unlift(Post.unapply))
+  ) (Post, unlift(Post.unapply))
 
   val mapper = new ObjectMapper()
 
   "Complete JSON should create full object" >> {
     lazy val postDate: Date = dateParser.parse("2011-04-22T13:33:48Z")
+
     def postDateWithTZ(tz: TimeZone): Date = {
       val cal = Calendar.getInstance
       cal.setTime(postDate)
@@ -60,66 +83,245 @@ class JsonSpec extends org.specs2.mutable.Specification {
       Json.parse(postJson).as[Post] aka "parsed" must_== expectedPost
     }
 
-    "with default/lenient date format with millis and UTC zone" in {
-      val postJson =
-        """{"body": "foobar", "created_at": "2011-04-22T13:33:48.000Z"}"""
-      val expectedPost = Post("foobar", Some(postDate))
+    "with default/lenient date format" should {
+      "with default/lenient date format with millis and UTC zone" in {
+        val postJson =
+          """{"body": "foobar", "created_at": "2011-04-22T13:33:48.000Z"}"""
+        val expectedPost = Post("foobar", Some(postDate))
 
-      Json.parse(postJson).as[Post](LenientPostFormat).
-        aka("parsed") must_== expectedPost
+        Json.parse(postJson).as[Post](LenientPostFormat).
+          aka("parsed") must_== expectedPost
+      }
+
+      "with default/lenient date format with millis and ISO8601 zone" in {
+        val cal = Calendar.getInstance(TimeZone getTimeZone "UTC")
+        cal.setTime(postDate)
+        cal.add(Calendar.HOUR_OF_DAY, -5)
+
+        val postJson =
+          """{"body": "foobar", "created_at": "2011-04-22T13:33:48.000+0500"}"""
+        val expectedPost = Post("foobar", Some(cal.getTime))
+
+        Json.parse(postJson).as[Post](LenientPostFormat).
+          aka("parsed") must_== expectedPost
+      }
+
+      "with default/lenient date format with no millis and UTC zone" in {
+        val postJson =
+          """{"body": "foobar", "created_at": "2011-04-22T13:33:48Z"}"""
+        val expectedPost = Post("foobar", Some(postDate))
+
+        Json.parse(postJson).as[Post](LenientPostFormat).
+          aka("parsed") must_== expectedPost
+      }
+
+      "with default/lenient date format with no millis and ISO8601 zone" in {
+        val cal = Calendar.getInstance(TimeZone getTimeZone "UTC")
+        cal.setTime(postDate)
+        cal.add(Calendar.HOUR_OF_DAY, -7)
+
+        val postJson =
+          """{"body": "foobar", "created_at": "2011-04-22T13:33:48+0700"}"""
+        val expectedPost = Post("foobar", Some(cal.getTime))
+
+        Json.parse(postJson).as[Post](LenientPostFormat).
+          aka("parsed") must_== expectedPost
+      }
+
+      "with default/lenient date format with millis" in {
+        val postJson =
+          """{"body": "foobar", "created_at": "2011-04-22T13:33:48.000"}"""
+        val expectedPost = Post("foobar", Some(postDateWithTZ(TimeZone.getDefault)))
+
+        Json.parse(postJson).as[Post](LenientPostFormat).
+          aka("parsed") must_== expectedPost
+      }
+
+      "with default/lenient date format without millis or time zone" in {
+        val postJson =
+          """{"body": "foobar", "created_at": "2011-04-22T13:33:48"}"""
+        val expectedPost = Post("foobar", Some(postDateWithTZ(TimeZone.getDefault)))
+
+        Json.parse(postJson).as[Post](LenientPostFormat).
+          aka("parsed") must_== expectedPost
+      }
     }
 
-    "with default/lenient date format with millis and ISO8601 zone" in {
-      val cal = Calendar.getInstance(TimeZone getTimeZone "UTC")
-      cal.setTime(postDate)
-      cal.add(Calendar.HOUR_OF_DAY, -5)
+    "when parsing numbers" in {
 
-      val postJson =
-        """{"body": "foobar", "created_at": "2011-04-22T13:33:48.000+0500"}"""
-      val expectedPost = Post("foobar", Some(cal.getTime))
+      def intsJson(long: String = "1", int: String = "1") = {
+        s"""
+           |{
+           |  "long": $long,
+           |  "integer": $int
+           |}""".stripMargin
+      }
 
-      Json.parse(postJson).as[Post](LenientPostFormat).
-        aka("parsed") must_== expectedPost
-    }
+      def floatsJson(float: String = "1.0", double: String = "1.0") = {
+        s"""
+           |{
+           |  "float": $float,
+           |  "double": $double
+           |}""".stripMargin
+      }
 
-    "with default/lenient date format with no millis and UTC zone" in {
-      val postJson =
-        """{"body": "foobar", "created_at": "2011-04-22T13:33:48Z"}"""
-      val expectedPost = Post("foobar", Some(postDate))
+      def bigNumbersJson(bigDec: String = BigDecimal(1).toString, bigInt: String = BigInt(1).toString) = {
+        s"""
+           |{
+           |  "bigInt": $bigInt,
+           |  "bigDec": $bigDec
+           |}""".stripMargin
+      }
 
-      Json.parse(postJson).as[Post](LenientPostFormat).
-        aka("parsed") must_== expectedPost
-    }
+      "for Long" should {
 
-    "with default/lenient date format with no millis and ISO8601 zone" in {
-      val cal = Calendar.getInstance(TimeZone getTimeZone "UTC")
-      cal.setTime(postDate)
-      cal.add(Calendar.HOUR_OF_DAY, -7)
+        "success for valid positive number" in {
+          Json.parse(intsJson(long = 123.toString)).as[IntNumbers].long mustEqual 123
+        }
 
-      val postJson =
-        """{"body": "foobar", "created_at": "2011-04-22T13:33:48+0700"}"""
-      val expectedPost = Post("foobar", Some(cal.getTime))
+        "success for valid negative number" in {
+          Json.parse(intsJson(long = (-123).toString)).as[IntNumbers].long mustEqual -123
+        }
 
-      Json.parse(postJson).as[Post](LenientPostFormat).
-        aka("parsed") must_== expectedPost
-    }
+        "success for max value" in {
+          Json.parse(intsJson(long = Long.MaxValue.toString)).as[IntNumbers].long mustEqual Long.MaxValue
+        }
 
-    "with default/lenient date format with millis" in {
-      val postJson =
-        """{"body": "foobar", "created_at": "2011-04-22T13:33:48.000"}"""
-      val expectedPost = Post("foobar", Some(postDateWithTZ(TimeZone.getDefault)))
+        "success for min value" in {
+          Json.parse(intsJson(long = Long.MinValue.toString)).as[IntNumbers].long mustEqual Long.MinValue
+        }
 
-      Json.parse(postJson).as[Post](LenientPostFormat).
-        aka("parsed") must_== expectedPost
-    }
+        "fail for positive number out of Long limits" in {
+          val outOfLimits = BigDecimal(Long.MaxValue) + 10
+          Json.parse(intsJson(long = outOfLimits.toString())).as[IntNumbers] must throwA[JsResultException]
+        }
 
-    "with default/lenient date format without millis or time zone" in {
-      val postJson =
-        """{"body": "foobar", "created_at": "2011-04-22T13:33:48"}"""
-      val expectedPost = Post("foobar", Some(postDateWithTZ(TimeZone.getDefault)))
+        "fail for negative number out of Long limits" in {
+          val outOfLimits = BigDecimal(Long.MaxValue) + 10
+          Json.parse(intsJson(long = outOfLimits.unary_-.toString())).as[IntNumbers] must throwA[JsResultException]
+        }
+      }
 
-      Json.parse(postJson).as[Post](LenientPostFormat).
-        aka("parsed") must_== expectedPost
+      "for Integer" should {
+
+        "success for valid positive number" in {
+          Json.parse(intsJson(int = 123.toString)).as[IntNumbers].integer mustEqual 123
+        }
+
+        "success for valid negative number" in {
+          Json.parse(intsJson(int = (-123).toString)).as[IntNumbers].integer mustEqual -123
+        }
+
+        "fail for positive number out of Int limits" in {
+          val outOfLimits = BigDecimal(Int.MaxValue) + 10
+          Json.parse(intsJson(int = outOfLimits.toString())).as[IntNumbers] must throwA[JsResultException]
+        }
+
+        "fail for negative number out of Int limits" in {
+          val outOfLimits = BigDecimal(Int.MaxValue) + 10
+          Json.parse(intsJson(int = outOfLimits.unary_-.toString())).as[IntNumbers] must throwA[JsResultException]
+        }
+      }
+
+      "for Float" should {
+
+        "success for valid positive number" in {
+          Json.parse(floatsJson(123.123.toString)).as[FloatNumbers].float mustEqual 123.123f
+        }
+
+        "success for valid negative number" in {
+          Json.parse(floatsJson(float = (-123.123).toString)).as[FloatNumbers].float mustEqual -123.123f
+        }
+
+        "success for max value" in {
+          val maxFloat = BigDecimal(Float.MaxValue.toString)
+          Json.parse(floatsJson(float = maxFloat.toString())).as[FloatNumbers].float mustEqual Float.MaxValue
+        }
+
+        "success for min value" in {
+          val minFloat = BigDecimal(Float.MinValue.toString)
+          Json.parse(floatsJson(float = minFloat.toString())).as[FloatNumbers].float mustEqual Float.MinValue
+        }
+      }
+
+      "for Double" should {
+
+        "success for valid positive number" in {
+          Json.parse(floatsJson(double = 123.123.toString)).as[FloatNumbers].double mustEqual 123.123d
+        }
+
+        "success for valid negative number" in {
+          Json.parse(floatsJson(double = (-123.123).toString)).as[FloatNumbers].double mustEqual -123.123d
+        }
+
+        "success when parsing max value" in {
+          val maxDouble = BigDecimal(Double.MaxValue)
+          Json.parse(floatsJson(double = maxDouble.toString())).as[FloatNumbers].double mustEqual Double.MaxValue
+        }
+
+        "success when parsing min value" in {
+          val minDouble = BigDecimal(Double.MinValue)
+          Json.parse(floatsJson(double = minDouble.toString)).as[FloatNumbers].double mustEqual Double.MinValue
+        }
+      }
+
+      "for BigDecimals" should {
+
+        // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
+        "maintain precision when parsing BigDecimals within precision limit" in {
+          val n = BigDecimal("12345678901234567890.123456789")
+          val json = toJson(n)
+          parse(stringify(json)) mustEqual json
+        }
+
+        // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
+        "truncate when exceeding the precision limit" in {
+          // last two "3" are exceeding 34 precision limit
+          val n = BigDecimal("10.1234567890123456789012345678901233")
+          val numbers = Json.parse(bigNumbersJson(bigDec = n.toString)).as[BigNumbers]
+
+          // Without the last two "3" since they were truncated ("...1233" becomes "...12")
+          numbers.bigDec mustEqual BigDecimal("10.12345678901234567890123456789012")
+        }
+
+        "success when not exceeding the scale limit for positive numbers" in {
+          val withinScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit - 1)
+          Json.parse(bigNumbersJson(bigDec = withinScaleLimit.toString)).as[BigNumbers].bigDec mustEqual withinScaleLimit
+        }
+
+        "success when not exceeding the scale limit for negative numbers" in {
+          val withinScaleLimitNegative = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit - 1).unary_-
+          Json.parse(bigNumbersJson(bigDec = withinScaleLimitNegative.toString)).as[BigNumbers].bigDec mustEqual { withinScaleLimitNegative }
+        }
+
+        "success when not exceeding the number of digits limit for negative numbers" in {
+          val withinDigitsLimitNegative = BigDecimal(Long.MinValue)
+          Json.parse(bigNumbersJson(bigDec = withinDigitsLimitNegative.toString)).as[BigNumbers].bigDec mustEqual withinDigitsLimitNegative
+        }
+
+        "success when not exceeding the number of digits limit for positive numbers" in {
+          val withinDigitsLimit = BigDecimal(Long.MaxValue)
+          Json.parse(bigNumbersJson(bigDec = withinDigitsLimit.toString)).as[BigNumbers].bigDec mustEqual withinDigitsLimit
+        }
+
+        "fail when exceeding the scale limit for positive numbers" in {
+          val exceedsScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit + 1)
+          Json.parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString)).as[BigNumbers] must throwA[IllegalArgumentException]
+        }
+
+        "fail when exceeding the scale limit for negative numbers" in {
+          val exceedsScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit + 1).unary_-
+          Json.parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString)).as[BigNumbers] must throwA[IllegalArgumentException]
+        }
+
+        "fail when exceeding the number of digits limit for positive numbers" in {
+          Json.parse(invalidJsonExceedingNumberOfDigits).as[BigNumbers] must throwA[IllegalArgumentException]
+        }
+
+        "fail when exceeding the number of digits limit for negative numbers" in {
+          Json.parse(invalidJsonExceedingNumberOfDigitsNegative).as[BigNumbers] must throwA[IllegalArgumentException]
+        }
+      }
     }
 
     "Optional parameters in JSON should generate post w/o date" in {
@@ -181,19 +383,6 @@ class JsonSpec extends org.specs2.mutable.Specification {
       Json.parse(stream) mustEqual js
     }
 
-    "not lose precision when parsing BigDecimals" in {
-      val n = BigDecimal("12345678901234567890.123456789")
-      val json = toJson(n)
-      parse(stringify(json)) mustEqual json
-    }
-
-    "not lose precision when parsing big integers" in {
-      // By big integers, we just mean integers that overflow long,
-      // since Jackson has different code paths for them from decimals
-      val json = toJson(BigDecimal("123456789012345678901234567890"))
-      parse(stringify(json)) mustEqual json
-    }
-
     "keep isomorphism between serialized and deserialized data" in {
       val original = Json.obj(
         "key1" -> "value1",
@@ -211,5 +400,6 @@ class JsonSpec extends org.specs2.mutable.Specification {
       Json.stringify(parsed) mustEqual originalString
     }
   }
+
 }
 
