@@ -6,12 +6,9 @@ package play.api.libs.json
 
 import java.math.{ BigDecimal => JBigDec }
 
-import org.scalatest.prop.TableDrivenPropertyChecks._
-
 import java.util.Locale
 
 import java.time.{
-  Clock,
   Duration => JDuration,
   Instant,
   Period,
@@ -28,9 +25,10 @@ import java.time.format.DateTimeFormatter
 
 import org.specs2.specification.core.Fragment
 
-case class Ipsum(id: Long, value: Either[String, Ipsum])
-
 class ReadsSpec extends org.specs2.mutable.Specification {
+
+  val veryLargeNumber = BigDecimal("9" * 1000000)
+
   "JSON Reads" title
 
   "Local date/time" should {
@@ -630,6 +628,32 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     "be parsed as years" in {
       Json.fromJson[Period](JsNumber(5))(
         Reads.javaPeriodYearsReads) must_== JsSuccess(Period.ofYears(5))
+    }
+  }
+
+  "Long numbers" should {
+
+    val DefaultReads = implicitly[Reads[Long]]
+    import DefaultReads.reads
+
+    "parse a long number" in {
+      reads(JsNumber(JBigDec valueOf 123L)).aka("read long number") must_== JsSuccess(123L)
+    }
+
+    "parse a negative long number" in {
+      reads(JsNumber(JBigDec valueOf -123L)).aka("read long number") must_== JsSuccess(-123L)
+    }
+
+    "not read from invalid number" in {
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))).aka("read long number") must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
+    }
+
+    "parse a large long number 2" in {
+      reads(JsNumber(veryLargeNumber)).aka("read long number") must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
     }
   }
 }
