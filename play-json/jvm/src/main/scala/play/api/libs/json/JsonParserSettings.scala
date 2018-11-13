@@ -5,7 +5,8 @@
 package play.api.libs.json
 
 import java.math.MathContext
-import java.util.concurrent.atomic.AtomicReference
+
+import scala.util.control.NonFatal
 
 /**
  * Parse settings for BigDecimals. Defines limits that will be used when parsing the BigDecimals, like how many digits
@@ -17,40 +18,57 @@ import java.util.concurrent.atomic.AtomicReference
  */
 case class BigDecimalParseSettings(
   mathContext: MathContext = MathContext.DECIMAL128,
-  // Limit for the scale considering the MathContext of 128
-  // limit for scale for decimal128: BigDecimal("0." + "0" * 33 + "1e-6143", java.math.MathContext.DECIMAL128).scale + 1
-  scaleLimit: Int = 6178,
-  // 307 digits should be the correct value for 128 bytes. But we are using 310
-  // because Play JSON uses BigDecimal to parse any number including Doubles and
-  // Doubles max value has 309 digits, so we are using 310 here
-  digitsLimit: Int = 310
+  scaleLimit: Int,
+  digitsLimit: Int
 )
 
-case class JsonParserSettings(bigDecimalParseSettings: BigDecimalParseSettings = BigDecimalParseSettings())
+case class JsonParserSettings(bigDecimalParseSettings: BigDecimalParseSettings)
 
 object JsonParserSettings {
 
-  // Initialize with the default settings. Since most of things happening in play-json are
-  // global, we are using a AtomicReference here. Also notice that these settings should be
-  // changed at application startup and it is not possible yet to re-configured after the
-  // parse is used.
-  //
-  // So, in a Play application, this will be usually configured either using an eager singleton
-  // in in an ApplicationLoader. Other frameworks using play-json should provide their own ways
-  // to do the initialization.
-  private val defaultSettings = new AtomicReference[JsonParserSettings](JsonParserSettings())
+  val defaultMathContext: MathContext = MathContext.DECIMAL128
 
-  /**
-   * Configure the parse settings.
-   *
-   * @param jsonParserSettings the parse settings that will be used.
-   */
-  def configure(jsonParserSettings: JsonParserSettings): Unit = {
-    defaultSettings.set(jsonParserSettings)
-  }
+  // Limit for the scale considering the MathContext of 128
+  // limit for scale for decimal128: BigDecimal("0." + "0" * 33 + "1e-6143", java.math.MathContext.DECIMAL128).scale + 1
+  val defaultScaleLimit: Int = 6178
+
+  // 307 digits should be the correct value for 128 bytes. But we are using 310
+  // because Play JSON uses BigDecimal to parse any number including Doubles and
+  // Doubles max value has 309 digits, so we are using 310 here
+  val defaultDigitsLimit: Int = 310
+
+  def apply(): JsonParserSettings = JsonParserSettings(BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit))
 
   /**
    * Return the parse settings that are configured.
    */
-  def settings: JsonParserSettings = defaultSettings.get()
+  val settings: JsonParserSettings = {
+    // Initialize the parser settings from System properties. This way it is possible to users
+    // to easily replace the default values.
+    val scaleLimit = parseInt("play.json.parser.scaleLimit", defaultScaleLimit)
+    val digitsLimit = parseInt("play.json.parser.digitsLimit", defaultDigitsLimit)
+    val mathContext = parseMathContext("play.json.parser.mathContext")
+
+    JsonParserSettings(
+      BigDecimalParseSettings(
+        mathContext,
+        scaleLimit,
+        digitsLimit
+      )
+    )
+  }
+
+  private def parseMathContext(key: String): MathContext = sys.props.get(key).map(_.toLowerCase) match {
+    case Some("decimal128") => MathContext.DECIMAL128
+    case Some("decimal64") => MathContext.DECIMAL64
+    case Some("decimal32") => MathContext.DECIMAL32
+    case Some("unlimited") => MathContext.UNLIMITED
+    case _ => defaultMathContext
+  }
+
+  private def parseInt(key: String, default: Int): Int = try {
+    sys.props.get(key).map(_.toInt).getOrElse(default)
+  } catch {
+    case NonFatal(_) => default
+  }
 }
