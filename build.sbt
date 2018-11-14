@@ -156,9 +156,11 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
 
-      // Add JsonParseSettings
+      // Add JsonParseSettings, these are all private[jackson] classes
       ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JsValueDeserializer.this"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.PlayDeserializers.this")
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.PlayDeserializers.this"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.PlaySerializers.this"),
+      ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.jackson.JsValueSerializer$")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
       "org.scalatest" %%% "scalatest" % "3.0.6-SNAP4" % Test,
