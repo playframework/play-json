@@ -41,7 +41,7 @@ sealed class PlayJsonModule private[jackson] (parserSettings: JsonParserSettings
   }
 }
 
-@deprecated("Use PlayJsonModule class instead")
+@deprecated("Use PlayJsonModule class instead", "2.6.11")
 object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
 
 // -- Serializers.
