@@ -267,6 +267,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
       "for BigDecimals" should {
 
+        val parserSettings = JsonParserSettings.settings
+
         // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
         "maintain precision when parsing BigDecimals within precision limit" in {
           val n = BigDecimal("12345678901234567890.123456789")
@@ -285,12 +287,12 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "success when not exceeding the scale limit for positive numbers" in {
-          val withinScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit - 1)
+          val withinScaleLimit = BigDecimal(2, parserSettings.bigDecimalParseSettings.scaleLimit - 1)
           Json.parse(bigNumbersJson(bigDec = withinScaleLimit.toString)).as[BigNumbers].bigDec mustEqual withinScaleLimit
         }
 
         "success when not exceeding the scale limit for negative numbers" in {
-          val withinScaleLimitNegative = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit - 1).unary_-
+          val withinScaleLimitNegative = BigDecimal(2, parserSettings.bigDecimalParseSettings.scaleLimit - 1).unary_-
           Json.parse(bigNumbersJson(bigDec = withinScaleLimitNegative.toString)).as[BigNumbers].bigDec mustEqual { withinScaleLimitNegative }
         }
 
@@ -305,12 +307,12 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "fail when exceeding the scale limit for positive numbers" in {
-          val exceedsScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit + 1)
+          val exceedsScaleLimit = BigDecimal(2, parserSettings.bigDecimalParseSettings.scaleLimit + 1)
           Json.parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString)).as[BigNumbers] must throwA[IllegalArgumentException]
         }
 
         "fail when exceeding the scale limit for negative numbers" in {
-          val exceedsScaleLimit = BigDecimal(2, JacksonJson.BigDecimalLimits.ScaleLimit + 1).unary_-
+          val exceedsScaleLimit = BigDecimal(2, parserSettings.bigDecimalParseSettings.scaleLimit + 1).unary_-
           Json.parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString)).as[BigNumbers] must throwA[IllegalArgumentException]
         }
 

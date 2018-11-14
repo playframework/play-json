@@ -5,7 +5,6 @@
 package play.api.libs.json.jackson
 
 import java.io.{ InputStream, StringWriter }
-import java.math.MathContext
 
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
@@ -30,29 +29,27 @@ import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
  * {{{
  *   import com.fasterxml.jackson.databind.ObjectMapper
  *
- *   val mapper = new ObjectMapper().registerModule(PlayJsonModule)
+ *   val jsonParseSettings = JsonParserSettings()
+ *   val mapper = new ObjectMapper().registerModule(PlayJsonModule(jsonParseSettings))
  *   val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
  * }}}
  */
-object PlayJsonModule extends SimpleModule("PlayJson", Version.unknownVersion()) {
+sealed class PlayJsonModule private[jackson] (parserSettings: JsonParserSettings) extends SimpleModule("PlayJson", Version.unknownVersion()) {
   override def setupModule(context: SetupContext): Unit = {
-    context.addDeserializers(new PlayDeserializers)
-    context.addSerializers(new PlaySerializers)
+    context.addDeserializers(new PlayDeserializers(parserSettings))
+    context.addSerializers(new PlaySerializers(parserSettings))
   }
 }
 
+@deprecated("Use PlayJsonModule class instead", "2.6.11")
+object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
+
 // -- Serializers.
 
-private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
+private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) extends JsonSerializer[JsValue] {
   import java.math.{ BigInteger, BigDecimal => JBigDec }
 
   import com.fasterxml.jackson.databind.node.{ BigIntegerNode, DecimalNode }
-
-  // Maximum magnitude of BigDecimal to write out as a plain string
-  val MaxPlain: BigDecimal = 1e20
-
-  // Minimum magnitude of BigDecimal to write out as a plain string
-  val MinPlain: BigDecimal = 1e-10
 
   override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider): Unit = {
     value match {
@@ -62,7 +59,7 @@ private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
         // configuration is ignored when called from ObjectMapper.valueToTree
         val shouldWritePlain = {
           val va = v.abs
-          va < MaxPlain && va > MinPlain
+          va < parserSettings.bigDecimalSerializerSettings.maxPlain && va > parserSettings.bigDecimalSerializerSettings.minPlain
         }
         val stripped = v.bigDecimal.stripTrailingZeros
         val raw = if (shouldWritePlain) stripped.toPlainString else stripped.toString
@@ -121,7 +118,7 @@ private[jackson] case class ReadingMap(content: ListBuffer[(String, JsValue)]) e
 
 }
 
-private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]) extends JsonDeserializer[Object] {
+private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_], parserSettings: JsonParserSettings) extends JsonDeserializer[Object] {
 
   override def isCachable: Boolean = true
 
@@ -141,15 +138,15 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     // There is a limit of how large the numbers can be since parsing extremely
     // large numbers (think thousand of digits) and operating on the parsed values
     // can potentially cause a DDoS.
-    if (inputLength > JacksonJson.BigDecimalLimits.DigitsLimit) {
+    if (inputLength > parserSettings.bigDecimalParseSettings.digitsLimit) {
       throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
     }
 
     // Must create the BigDecimal with a MathContext that is consistent with the limits used.
-    val bigDecimal = BigDecimal(inputText, JacksonJson.BigDecimalLimits.DefaultMathContext)
+    val bigDecimal = BigDecimal(inputText, parserSettings.bigDecimalParseSettings.mathContext)
 
     // We should also avoid numbers with scale that are out of a safe limit
-    if (Math.abs(bigDecimal.scale) > JacksonJson.BigDecimalLimits.ScaleLimit) {
+    if (Math.abs(bigDecimal.scale) > parserSettings.bigDecimalParseSettings.scaleLimit) {
       throw new IllegalArgumentException(s"""Number scale (${bigDecimal.scale}) is out of limits for field "${jp.currentName()}"""")
     }
 
@@ -222,19 +219,19 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
   override val getNullValue = JsNull
 }
 
-private[jackson] class PlayDeserializers extends Deserializers.Base {
+private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) extends Deserializers.Base {
   override def findBeanDeserializer(javaType: JavaType, config: DeserializationConfig, beanDesc: BeanDescription) = {
     val klass = javaType.getRawClass
     if (classOf[JsValue].isAssignableFrom(klass) || klass == JsNull.getClass) {
-      new JsValueDeserializer(config.getTypeFactory, klass)
+      new JsValueDeserializer(config.getTypeFactory, klass, parserSettings)
     } else null
   }
 }
 
-private[jackson] class PlaySerializers extends Serializers.Base {
+private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) extends Serializers.Base {
   override def findSerializer(config: SerializationConfig, javaType: JavaType, beanDesc: BeanDescription) = {
     val ser: Object = if (classOf[JsValue].isAssignableFrom(beanDesc.getBeanClass)) {
-      JsValueSerializer
+      new JsValueSerializer(parserSettings)
     } else {
       null
     }
@@ -244,28 +241,9 @@ private[jackson] class PlaySerializers extends Serializers.Base {
 
 private[json] object JacksonJson {
 
-  /**
-   * Define limits for parsing BigDecimal numbers.
-   *
-   * By default, we are using MathContext.DECIMAL128 and then the limits are define in its terms.
-   */
-  object BigDecimalLimits {
+  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonModule(JsonParserSettings.settings))
 
-    val DefaultMathContext: MathContext = MathContext.DECIMAL128
-
-    // Limit for the scale considering the MathContext of 128
-    // limit for scale for decimal128: BigDecimal("0." + "0" * 33 + "1e-6143", java.math.MathContext.DECIMAL128).scale + 1
-    val ScaleLimit: Int = 6178
-
-    // 307 digits should be the correct value for 128 bytes. But we are using 310
-    // because Play JSON uses BigDecimal to parse any number including Doubles and
-    // Doubles max value has 309 digits, so we are using 310 here
-    val DigitsLimit: Int = 310
-  }
-
-  private val mapper = (new ObjectMapper).registerModule(PlayJsonModule)
-
-  private val jsonFactory = new JsonFactory(mapper)
+  private lazy val jsonFactory = new JsonFactory(mapper)
 
   private def stringJsonGenerator(out: java.io.StringWriter) =
     jsonFactory.createGenerator(out)
