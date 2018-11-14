@@ -34,7 +34,7 @@ import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
  *   val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
  * }}}
  */
-class PlayJsonModule(parserSettings: JsonParserSettings) extends SimpleModule("PlayJson", Version.unknownVersion()) {
+final class PlayJsonModule(parserSettings: JsonParserSettings) extends SimpleModule("PlayJson", Version.unknownVersion()) {
   override def setupModule(context: SetupContext): Unit = {
     context.addDeserializers(new PlayDeserializers(parserSettings))
     context.addSerializers(new PlaySerializers(parserSettings))
