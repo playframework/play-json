@@ -46,7 +46,7 @@ object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
 
 // -- Serializers.
 
-private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) extends JsonSerializer[JsValue] {
+private[jackson] class JsValueSerializer(val parserSettings: JsonParserSettings) extends JsonSerializer[JsValue] {
   import java.math.{ BigInteger, BigDecimal => JBigDec }
 
   import com.fasterxml.jackson.databind.node.{ BigIntegerNode, DecimalNode }
@@ -95,6 +95,12 @@ private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) ext
   }
 }
 
+// Exists for binary compatibility
+private[jackson] object JsValueSerializer extends JsValueSerializer(JsonParserSettings()) {
+  val MinPlain: BigDecimal = parserSettings.bigDecimalSerializerSettings.minPlain
+  val MaxPlain: BigDecimal = parserSettings.bigDecimalSerializerSettings.maxPlain
+}
+
 private[jackson] sealed trait DeserializerContext {
   def addValue(value: JsValue): DeserializerContext
 }
@@ -120,6 +126,9 @@ private[jackson] case class ReadingMap(content: ListBuffer[(String, JsValue)]) e
 
 private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_], parserSettings: JsonParserSettings) extends JsonDeserializer[Object] {
 
+  // Exists for binary compatibility
+  def this(factory: TypeFactory, klass: Class[_]) = this(factory, klass, JsonParserSettings())
+
   override def isCachable: Boolean = true
 
   override def deserialize(jp: JsonParser, ctxt: DeserializationContext): JsValue = {
@@ -139,7 +148,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     // large numbers (think thousand of digits) and operating on the parsed values
     // can potentially cause a DDoS.
     if (inputLength > parserSettings.bigDecimalParseSettings.digitsLimit) {
-      throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
+      throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.getCurrentName}"""")
     }
 
     // Must create the BigDecimal with a MathContext that is consistent with the limits used.
@@ -147,7 +156,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 
     // We should also avoid numbers with scale that are out of a safe limit
     if (Math.abs(bigDecimal.scale) > parserSettings.bigDecimalParseSettings.scaleLimit) {
-      throw new IllegalArgumentException(s"""Number scale (${bigDecimal.scale}) is out of limits for field "${jp.currentName()}"""")
+      throw new IllegalArgumentException(s"""Number scale (${bigDecimal.scale}) is out of limits for field "${jp.getCurrentName}"""")
     }
 
     (Some(JsNumber(bigDecimal)), parserContext)
@@ -220,6 +229,10 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 }
 
 private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) extends Deserializers.Base {
+
+  // Exists for binary compatibility
+  def this() = this(JsonParserSettings())
+
   override def findBeanDeserializer(javaType: JavaType, config: DeserializationConfig, beanDesc: BeanDescription) = {
     val klass = javaType.getRawClass
     if (classOf[JsValue].isAssignableFrom(klass) || klass == JsNull.getClass) {
@@ -229,6 +242,10 @@ private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) ext
 }
 
 private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) extends Serializers.Base {
+
+  // Exists for binary compatibility
+  def this() = this(JsonParserSettings())
+
   override def findSerializer(config: SerializationConfig, javaType: JavaType, beanDesc: BeanDescription) = {
     val ser: Object = if (classOf[JsValue].isAssignableFrom(beanDesc.getBeanClass)) {
       new JsValueSerializer(parserSettings)
