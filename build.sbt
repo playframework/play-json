@@ -108,6 +108,8 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       // AbstractFunction1 is in scala.runtime and isn't meant to be used by end users
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$"),
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$"),
+
+      // Codec for BigInt/BigInteger
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.BigIntWrites"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.BigIntegerWrites"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntReads"),
