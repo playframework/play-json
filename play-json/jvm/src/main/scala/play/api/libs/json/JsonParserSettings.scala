@@ -53,6 +53,18 @@ object JsonParserSettings {
     BigDecimalSerializerSettings(minPlain = MinPlain, maxPlain = MaxPlain)
   )
 
+  // BigDecimal.exact does not exists for Scala 2.10. So we are copying the implementation from 2.12.
+  // The difference is that we are using our own `defaultMathContext`, but by default, is matches the
+  // same one used by Scala's BigDecimal, which is MathContext.DECIMAL128.
+  private def exact(s: String): BigDecimal = {
+    import java.math.{ BigDecimal => BigDec }
+    val repr = new BigDec(s)
+    val mc =
+      if (repr.precision <= defaultMathContext.getPrecision) defaultMathContext
+      else new MathContext(repr.precision, java.math.RoundingMode.HALF_EVEN)
+    new BigDecimal(repr, mc)
+  }
+
   /**
    * Return the parse settings that are configured.
    */
@@ -63,8 +75,8 @@ object JsonParserSettings {
     val digitsLimit = parseNum("play.json.parser.digitsLimit", defaultDigitsLimit)(_.toInt)
     val mathContext = parseMathContext("play.json.parser.mathContext")
 
-    val minPlain: BigDecimal = parseNum("play.json.serializer.minPlain", MinPlain)(BigDecimal.exact)
-    val maxPlain: BigDecimal = parseNum("play.json.serializer.maxPlain", MaxPlain)(BigDecimal.exact)
+    val minPlain: BigDecimal = parseNum("play.json.serializer.minPlain", MinPlain)(exact)
+    val maxPlain: BigDecimal = parseNum("play.json.serializer.maxPlain", MaxPlain)(exact)
 
     JsonParserSettings(
       BigDecimalParseSettings(
