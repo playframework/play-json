@@ -9,10 +9,9 @@ import java.io.{ InputStream, StringWriter }
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.Module.SetupContext
+import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
-import com.fasterxml.jackson.databind._
-import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
 import play.api.libs.json._
@@ -30,30 +29,29 @@ import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
  * {{{
  *   import com.fasterxml.jackson.databind.ObjectMapper
  *
- *   val mapper = new ObjectMapper().registerModule(PlayJsonModule)
+ *   val jsonParseSettings = JsonParserSettings()
+ *   val mapper = new ObjectMapper().registerModule(PlayJsonModule(jsonParseSettings))
  *   val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
  * }}}
  */
-object PlayJsonModule extends SimpleModule("PlayJson", Version.unknownVersion()) {
-  override def setupModule(context: SetupContext) {
-    context.addDeserializers(new PlayDeserializers)
-    context.addSerializers(new PlaySerializers)
+sealed class PlayJsonModule private[jackson] (parserSettings: JsonParserSettings) extends SimpleModule("PlayJson", Version.unknownVersion()) {
+  override def setupModule(context: SetupContext): Unit = {
+    context.addDeserializers(new PlayDeserializers(parserSettings))
+    context.addSerializers(new PlaySerializers(parserSettings))
   }
 }
 
+@deprecated("Use PlayJsonModule class instead", "2.6.11")
+object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
+
 // -- Serializers.
 
-private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
-  import java.math.{ BigDecimal => JBigDec, BigInteger }
+private[jackson] class JsValueSerializer(val parserSettings: JsonParserSettings) extends JsonSerializer[JsValue] {
+  import java.math.{ BigInteger, BigDecimal => JBigDec }
+
   import com.fasterxml.jackson.databind.node.{ BigIntegerNode, DecimalNode }
 
-  // Maximum magnitude of BigDecimal to write out as a plain string
-  val MaxPlain: BigDecimal = 1e20
-
-  // Minimum magnitude of BigDecimal to write out as a plain string
-  val MinPlain: BigDecimal = 1e-10
-
-  override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider) {
+  override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider): Unit = {
     value match {
       case JsNumber(v) => {
         // Workaround #3784: Same behaviour as if JsonGenerator were
@@ -61,7 +59,7 @@ private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
         // configuration is ignored when called from ObjectMapper.valueToTree
         val shouldWritePlain = {
           val va = v.abs
-          va < MaxPlain && va > MinPlain
+          va < parserSettings.bigDecimalSerializerSettings.maxPlain && va > parserSettings.bigDecimalSerializerSettings.minPlain
         }
         val stripped = v.bigDecimal.stripTrailingZeros
         val raw = if (shouldWritePlain) stripped.toPlainString else stripped.toString
@@ -97,6 +95,12 @@ private[jackson] object JsValueSerializer extends JsonSerializer[JsValue] {
   }
 }
 
+// Exists for binary compatibility
+private[jackson] object JsValueSerializer extends JsValueSerializer(JsonParserSettings()) {
+  val MinPlain: BigDecimal = parserSettings.bigDecimalSerializerSettings.minPlain
+  val MaxPlain: BigDecimal = parserSettings.bigDecimalSerializerSettings.maxPlain
+}
+
 private[jackson] sealed trait DeserializerContext {
   def addValue(value: JsValue): DeserializerContext
 }
@@ -120,7 +124,10 @@ private[jackson] case class ReadingMap(content: ListBuffer[(String, JsValue)]) e
 
 }
 
-private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]) extends JsonDeserializer[Object] {
+private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_], parserSettings: JsonParserSettings) extends JsonDeserializer[Object] {
+
+  // Exists for binary compatibility
+  def this(factory: TypeFactory, klass: Class[_]) = this(factory, klass, JsonParserSettings())
 
   override def isCachable: Boolean = true
 
@@ -133,6 +140,28 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     value
   }
 
+  private def parseBigDecimal(jp: JsonParser, parserContext: List[DeserializerContext]): (Some[JsNumber], List[DeserializerContext]) = {
+    val inputText = jp.getText
+    val inputLength = inputText.length
+
+    // There is a limit of how large the numbers can be since parsing extremely
+    // large numbers (think thousand of digits) and operating on the parsed values
+    // can potentially cause a DDoS.
+    if (inputLength > parserSettings.bigDecimalParseSettings.digitsLimit) {
+      throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.getCurrentName}"""")
+    }
+
+    // Must create the BigDecimal with a MathContext that is consistent with the limits used.
+    val bigDecimal = BigDecimal(inputText, parserSettings.bigDecimalParseSettings.mathContext)
+
+    // We should also avoid numbers with scale that are out of a safe limit
+    if (Math.abs(bigDecimal.scale) > parserSettings.bigDecimalParseSettings.scaleLimit) {
+      throw new IllegalArgumentException(s"""Number scale (${bigDecimal.scale}) is out of limits for field "${jp.getCurrentName}"""")
+    }
+
+    (Some(JsNumber(bigDecimal)), parserContext)
+  }
+
   @tailrec
   final def deserialize(jp: JsonParser, ctxt: DeserializationContext, parserContext: List[DeserializerContext]): JsValue = {
     if (jp.getCurrentToken == null) {
@@ -141,7 +170,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 
     val (maybeValue, nextContext) = (jp.getCurrentToken.id(): @switch) match {
 
-      case JsonTokenId.ID_NUMBER_INT | JsonTokenId.ID_NUMBER_FLOAT => (Some(JsNumber(jp.getDecimalValue)), parserContext)
+      case JsonTokenId.ID_NUMBER_INT | JsonTokenId.ID_NUMBER_FLOAT => parseBigDecimal(jp, parserContext)
 
       case JsonTokenId.ID_STRING => (Some(JsString(jp.getText)), parserContext)
 
@@ -199,19 +228,27 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
   override val getNullValue = JsNull
 }
 
-private[jackson] class PlayDeserializers extends Deserializers.Base {
+private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) extends Deserializers.Base {
+
+  // Exists for binary compatibility
+  def this() = this(JsonParserSettings())
+
   override def findBeanDeserializer(javaType: JavaType, config: DeserializationConfig, beanDesc: BeanDescription) = {
     val klass = javaType.getRawClass
     if (classOf[JsValue].isAssignableFrom(klass) || klass == JsNull.getClass) {
-      new JsValueDeserializer(config.getTypeFactory, klass)
+      new JsValueDeserializer(config.getTypeFactory, klass, parserSettings)
     } else null
   }
 }
 
-private[jackson] class PlaySerializers extends Serializers.Base {
+private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) extends Serializers.Base {
+
+  // Exists for binary compatibility
+  def this() = this(JsonParserSettings())
+
   override def findSerializer(config: SerializationConfig, javaType: JavaType, beanDesc: BeanDescription) = {
     val ser: Object = if (classOf[JsValue].isAssignableFrom(beanDesc.getBeanClass)) {
-      JsValueSerializer
+      new JsValueSerializer(parserSettings)
     } else {
       null
     }
@@ -221,9 +258,9 @@ private[jackson] class PlaySerializers extends Serializers.Base {
 
 private[json] object JacksonJson {
 
-  private val mapper = (new ObjectMapper).registerModule(PlayJsonModule)
+  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonModule(JsonParserSettings.settings))
 
-  private val jsonFactory = new JsonFactory(mapper)
+  private lazy val jsonFactory = new JsonFactory(mapper)
 
   private def stringJsonGenerator(out: java.io.StringWriter) =
     jsonFactory.createGenerator(out)
