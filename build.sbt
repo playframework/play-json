@@ -25,7 +25,7 @@ val specsBuild = Def.setting[Seq[ModuleID]] {
 }
 
 val jacksonVersion = "2.8.11"
-val jacksonDatabindVersion = "2.8.11.1" // https://nvd.nist.gov/vuln/detail/CVE-2018-7489
+val jacksonDatabindVersion = "2.8.11.3" // https://nvd.nist.gov/vuln/detail/CVE-2018-7489
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
