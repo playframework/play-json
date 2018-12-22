@@ -204,7 +204,13 @@ trait ConstraintWrites {
   def pure[A](fixed: => A)(implicit wrs: Writes[A]): Writes[JsValue] =
     Writes[JsValue] { js => wrs.writes(fixed) }
 
+  @com.github.ghik.silencer.silent
+  @deprecated("Use `pruned` without `Writes[A]`", "2.8.0")
   def pruned[A](implicit w: Writes[A]): Writes[A] = new Writes[A] {
+    def writes(a: A): JsValue = JsNull
+  }
+
+  def pruned[A]: Writes[A] = new Writes[A] {
     def writes(a: A): JsValue = JsNull
   }
 

@@ -6,7 +6,6 @@ package play.api.libs.json
 
 import java.math.BigInteger
 
-import java.util.Locale
 import java.net.URI
 
 import org.scalatest._
@@ -125,6 +124,11 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
       )
 
       Json.parse(Json.stringify(jsObj)) mustEqual jsObj
+
+      jsObj.validate[Owner] mustEqual JsSuccess(Owner(
+        login = "foo",
+        avatar = "url://avatar",
+        url = "url://id"))
     }
   }
 

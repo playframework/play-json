@@ -4,11 +4,7 @@
 
 package play.api.libs.json
 
-import play.api.libs.json._
 import play.api.libs.json.Json._
-
-import scala.util.control.Exception._
-import java.text.ParseException
 
 import org.scalatest._
 

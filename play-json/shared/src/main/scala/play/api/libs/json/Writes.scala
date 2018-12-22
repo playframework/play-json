@@ -270,6 +270,17 @@ trait DefaultWrites extends LowPriorityWrites {
   @deprecated("Use `genericMapWrites`", "2.8.0")
   implicit def mapWrites[V: Writes]: OWrites[MapWrites.Map[String, V]] = MapWrites.mapWrites
 
+  implicit def keyMapWrites[K: KeyWrites, V: Writes, M[K, V] <: MapWrites.Map[K, V]]: OWrites[M[K, V]] = {
+    val kw = implicitly[KeyWrites[K]]
+    val vw = implicitly[Writes[V]]
+
+    OWrites[M[K, V]] { ts =>
+      JsObject(ts.toSeq.map {
+        case (k, v) => kw.writeKey(k) -> vw.writes(v)
+      })
+    }
+  }
+
   /**
    * Serializer for Map[String,V] types.
    */
@@ -373,6 +384,7 @@ trait DefaultWrites extends LowPriorityWrites {
 }
 
 sealed trait LowPriorityWrites extends EnvWrites {
+
   /**
    * Serializer for java.net.URI
    */

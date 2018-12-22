@@ -8,8 +8,6 @@ import org.scalatest._
 
 class WritesSharedSpec extends WordSpec with MustMatchers {
   "Functional Writes" should {
-    import play.api.libs.functional.syntax._
-
     implicit val locationWrites = Writes[Location] { location =>
       Json.obj(
         "lat" -> location.lat,

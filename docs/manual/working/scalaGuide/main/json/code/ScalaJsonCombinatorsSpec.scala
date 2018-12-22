@@ -72,9 +72,15 @@ class ScalaJsonCombinatorsSpec extends Specification {
       //#jspath-traverse
 
       //val name = (JsPath \ "name").read[String] and (JsPath \ "location").read[Int]
-      latPath.toString === "/location/lat"
-      namesPath.toString === "//name"
-      firstResidentPath.toString === "/residents(0)"
+      longPath.toString === "/location/long" and {
+        latPath.toString === "/location/lat"
+      } and {
+        namesPath.toString === "//name"
+      } and {
+        firstResidentPath.toString === "/residents(0)"
+      } and {
+        lat must contain(exactly[JsValue](JsNumber(51.235685D)))
+      }
     }
 
     "allow creating simple Reads" in {
@@ -82,7 +88,6 @@ class ScalaJsonCombinatorsSpec extends Specification {
       //#reads-imports
       import play.api.libs.json._ // JSON library
       import play.api.libs.json.Reads._ // Custom validation helpers
-      import play.api.libs.functional.syntax._ // Combinator syntax
       //#reads-imports
 
       //###replace: val json = { ... }
@@ -139,11 +144,8 @@ class ScalaJsonCombinatorsSpec extends Specification {
     }
 
     "allow validation with Reads" in {
-      import SampleModel._
-
       import play.api.libs.json._
       import play.api.libs.json.Reads._
-      import play.api.libs.functional.syntax._
 
       //#reads-validation-simple
       //###replace: val json = { ... }
@@ -197,8 +199,8 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val json: JsValue = sampleJson
 
       json.validate[Place] match {
-        case s: JsSuccess[Place] => {
-          val place: Place = s.get
+        case JsSuccess(place, _) => {
+          val _: Place = place
           // do something with place
         }
         case e: JsError => {
@@ -246,10 +248,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val json = Json.toJson(place)
       //#writes-model
 
-      val some = (JsPath \ "lat").write[Double] and (JsPath \ "long").write[Double]
-      val placeSome = Place.unapply(place)
-
-      (json \ "name").get === JsString("Watership Down")
+      (json \ "name").get mustEqual JsString("Watership Down")
     }
 
     "allow creating Reads/Writes for recursive types" in {

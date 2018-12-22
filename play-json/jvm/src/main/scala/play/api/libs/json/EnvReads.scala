@@ -9,10 +9,11 @@ import java.time.temporal.{ ChronoUnit, TemporalUnit, UnsupportedTemporalTypeExc
 import java.time.{ Clock, DateTimeException, Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, Period, ZoneId, ZoneOffset, ZonedDateTime, Duration => JDuration }
 import java.util.Locale
 
-import scala.util.Try
+import scala.util.control.NonFatal
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
+
 import play.api.libs.json.jackson.JacksonJson
 
 trait EnvReads {
@@ -461,7 +462,9 @@ trait EnvReads {
 
   /** Deserializer for a `Locale` from a IETF BCP 47 string representation */
   implicit val localeReads: Reads[Locale] =
-    Reads[Locale] { _.validate[String].map(Locale.forLanguageTag(_)) }
+    Reads[Locale] {
+      _.validate[String].flatMap(KeyReads.LanguageTagReads.readKey(_))
+    }
 
   /** Deserializer for a `Locale` from an object representation */
   val localeObjectReads: Reads[Locale] = Reads[Locale] { json =>
@@ -648,4 +651,19 @@ trait EnvReads {
 
   @deprecated("Include play-json-joda as a dependency and use JodaReads.DefaultJodaLocalTimeReads", "2.6.0")
   val DefaultJodaLocalTimeReads = jodaLocalTimeReads("")
+}
+
+trait EnvKeyReads { _: KeyReads.type =>
+  /**
+   * Reads an object key as a locale, considering the key
+   * to be a [[https://tools.ietf.org/html/rfc5646 language tag]].
+   */
+  implicit object LanguageTagReads extends KeyReads[Locale] {
+    def readKey(key: String): JsResult[Locale] = try {
+      JsSuccess(Locale forLanguageTag key)
+    } catch {
+      case NonFatal(cause) => JsError(JsonValidationError(
+        Seq("error.expected.languageTag"), cause.getMessage))
+    }
+  }
 }

@@ -237,7 +237,7 @@ trait EnvWrites {
 
   /** Serializer for a `Locale` using the IETF BCP 47 string representation */
   implicit val localeWrites: Writes[Locale] =
-    Writes[Locale] { l => JsString(l.toLanguageTag) }
+    Writes[Locale] { l => JsString(KeyWrites.LanguageTagWrites.writeKey(l)) }
 
   /** Serializer for a `Locale` using a object representation */
   val localeObjectWrites: OWrites[Locale] = {
@@ -349,5 +349,11 @@ trait EnvWrites {
   @deprecated("Include play-json-joda as a dependency and use JodaWrites.DefaultJodaLocalTimeWrites", "2.6.0")
   object DefaultJodaLocalTimeWrites extends Writes[LocalTime] {
     def writes(d: LocalTime): JsValue = JsString(d.toString)
+  }
+}
+
+trait EnvKeyWrites {
+  implicit object LanguageTagWrites extends KeyWrites[Locale] {
+    def writeKey(locale: Locale): String = locale.toLanguageTag
   }
 }

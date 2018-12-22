@@ -4,7 +4,6 @@
 
 package play.api.libs.json
 
-import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
 
@@ -323,7 +322,7 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       val bobby = User("bobby", 54)
 
       implicit val userFormats = {
-        import Format.path._; import Format.constraints.{ of => o, _ }
+        import Format.path._; import Format.constraints.{ of => o }
         (
           at(JsPath \ "name")(Format(Reads.minLength[String](5), o[String]))
           and
@@ -340,7 +339,7 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       val bobby = User("bobby", 54)
 
       implicit val userFormats = {
-        import Format.constraints.{ of => o, _ }
+        import Format.constraints.{ of => o }
         (
           (__ \ "name").rw(Reads.minLength[String](5), o[String])
           and

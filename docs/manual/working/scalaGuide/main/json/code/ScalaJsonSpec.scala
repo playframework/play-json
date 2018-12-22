@@ -298,8 +298,6 @@ class ScalaJsonSpec extends Specification {
     }
 
     "allow converting JsValue using as" in {
-
-      import play.api.libs.json._
       val json = sampleJson
 
       //#convert-to-type-as
@@ -315,8 +313,6 @@ class ScalaJsonSpec extends Specification {
     }
 
     "allow converting JsValue using asOpt" in {
-
-      import play.api.libs.json._
       val json = sampleJson
 
       //#convert-to-type-as-opt
@@ -332,8 +328,6 @@ class ScalaJsonSpec extends Specification {
     }
 
     "allow converting JsValue using validate" in {
-      import SampleModel._
-
       import play.api.libs.json._
       import play.api.libs.json.Reads._
 
@@ -367,7 +361,16 @@ class ScalaJsonSpec extends Specification {
         valid = Some(_)
       )
       //#convert-to-type-validate
-      nameResult must beLike { case JsSuccess(v, _) => v === "Watership Down" }
+
+      nameResult must beLike {
+        case JsSuccess("Watership Down", _) => ok
+      } and {
+        nameOrFallback must_=== "Watership Down"
+      } and {
+        nameUpperResult mustEqual (JsSuccess("WATERSHIP DOWN"))
+      } and {
+        nameOption must beSome("Watership Down")
+      }
     }
 
     "allow converting JsValue to model" in {

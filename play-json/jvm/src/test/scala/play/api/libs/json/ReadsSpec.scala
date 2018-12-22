@@ -662,7 +662,6 @@ class ReadsSpec extends org.specs2.mutable.Specification {
   }
 
   "Long numbers" should {
-
     val DefaultReads = implicitly[Reads[Long]]
     import DefaultReads.reads
 
@@ -684,6 +683,15 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       reads(JsNumber(veryLargeNumber)).aka("read long number") must beLike {
         case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
       }
+    }
+  }
+
+  "Map" should {
+    "be successfully read with custom (locale) keys" in {
+      Json.obj("en" -> 1, "fr" -> 2).
+        validate[Map[Locale, Int]] must_== JsSuccess(Map(
+          Locale.ENGLISH -> 1, Locale.FRENCH -> 2))
+
     }
   }
 }

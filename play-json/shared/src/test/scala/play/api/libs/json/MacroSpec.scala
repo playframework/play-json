@@ -73,25 +73,25 @@ class MacroSpec extends WordSpec with MustMatchers
 
     "ignore Option alias" in {
       def a = {
-        implicit def ignored: Reads[OptionalInt] = ???
+        implicit lazy val _: Reads[OptionalInt] = ???
 
         Json.reads[UsingAlias]
       }
 
       def b = {
-        implicit def ignored: Format[OptionalInt] = ???
+        implicit lazy val _: Format[OptionalInt] = ???
 
         Json.reads[UsingAlias]
       }
 
       def c = {
-        implicit def ignored: Reads[OptionalInt] = ???
+        implicit lazy val _: Reads[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
 
       def d = {
-        implicit def ignored: Format[OptionalInt] = ???
+        implicit lazy val _: Format[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
@@ -168,25 +168,25 @@ class MacroSpec extends WordSpec with MustMatchers
 
     "ignore Option alias" in {
       def a = {
-        implicit def ignored: Writes[OptionalInt] = ???
+        implicit lazy val _: Writes[OptionalInt] = ???
 
         Json.writes[UsingAlias]
       }
 
       def b = {
-        implicit def ignored: Format[OptionalInt] = ???
+        implicit lazy val _: Format[OptionalInt] = ???
 
         Json.writes[UsingAlias]
       }
 
       def c = {
-        implicit def ignored: Writes[OptionalInt] = ???
+        implicit lazy val _: Writes[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
 
       def d = {
-        implicit def ignored: Format[OptionalInt] = ???
+        implicit lazy val _: Format[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
@@ -309,8 +309,6 @@ class MacroSpec extends WordSpec with MustMatchers
     }
 
     "handle case class with default values" when {
-      implicit val cfg = JsonConfiguration(JsonNaming.Identity)
-
       val json01 = Json.obj("id" -> 15)
       val json02 = Json.obj("id" -> 15, "a" -> "a")
       val json03 = Json.obj("id" -> 15, "a" -> "a", "b" -> "b")
@@ -335,6 +333,7 @@ class MacroSpec extends WordSpec with MustMatchers
         r.reads(json1).get mustEqual fixture1
         r.reads(json2).get mustEqual fixture2
         r.reads(json3).get mustEqual fixture3
+        r.reads(json4).get mustEqual fixture4
       }
 
       val jsWithDefaults = Json.using[Json.WithDefaultValues]
@@ -355,7 +354,6 @@ class MacroSpec extends WordSpec with MustMatchers
     }
 
     "handle case class with default values inner optional case class containing default values" when {
-      implicit val cfg = JsonConfiguration(JsonNaming.Identity)
       implicit val withDefaultFormat = Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
 
       val json01 = Json.obj("id" -> 3)
@@ -377,8 +375,6 @@ class MacroSpec extends WordSpec with MustMatchers
 
       val json11 = Json.obj("id" -> 15, "ref" -> JsNull)
       val fixture1 = ComplexWithDefault(15, None)
-
-      val fixture2 = ComplexWithDefault(18)
 
       def readSpec(r: Reads[ComplexWithDefault]) = {
         r.reads(json01).get mustEqual fixture0

@@ -7,3 +7,7 @@ package play.api.libs.json
 trait EnvWrites {
   // No specific writer
 }
+
+trait EnvKeyWrites {
+  // No specific writer
+}

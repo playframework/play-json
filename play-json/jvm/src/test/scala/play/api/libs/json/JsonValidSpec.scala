@@ -5,7 +5,7 @@
 package play.api.libs.json
 
 import org.specs2.mutable._
-import play.api.libs.json._
+
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
 
