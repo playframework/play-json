@@ -26,8 +26,9 @@ import scala.reflect.macros.blackbox
     }
   }
 
-  def withOptionsReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
-    withOptionsConfig, "read", "map", reads = true, writes = false)
+  def withOptionsReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
+    macroImpl[A, Reads, Reads](
+      withOptionsConfig, "read", "map", reads = true, writes = false)
 
   def withOptionsWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
     withOptionsConfig, "write", "contramap", reads = false, writes = true)
@@ -38,11 +39,22 @@ import scala.reflect.macros.blackbox
   def implicitConfigReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
     implicitOptionsConfig, "read", "map", reads = true, writes = false)
 
+  def implicitConfigValueReads[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
+    valueImpl[A, Reads](implicitOptionsConfig, "read")
+
   def implicitConfigWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
     implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
 
+  def implicitConfigValueWrites[A: c.WeakTypeTag]: c.Expr[Writes[A]] =
+    valueImpl[A, Writes](implicitOptionsConfig, "write")
+
   def implicitConfigFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
     implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
+
+  def implicitConfigValueFormat[A: c.WeakTypeTag]: c.Expr[Format[A]] =
+    valueImpl[A, Format](implicitOptionsConfig, "format")
+
+  // ---
 
   // because binary compatibility...
   @deprecated("Use implicitConfigReadsImpl or withOptionsReadsImpl", "2.6.6")
@@ -57,12 +69,58 @@ import scala.reflect.macros.blackbox
   protected def formatImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
     implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
 
-  private def withOptionsConfig: c.Expr[JsonConfiguration] = {
+  private def withOptionsConfig: c.Expr[JsonConfiguration] =
     c.Expr[JsonConfiguration](c.typecheck(q"${c.prefix}.config"))
-  }
 
-  private def implicitOptionsConfig: c.Expr[JsonConfiguration] = {
+  private def implicitOptionsConfig: c.Expr[JsonConfiguration] =
     c.Expr[JsonConfiguration](c.inferImplicitValue(c.typeOf[JsonConfiguration]))
+
+  private def valueImpl[A, M[_]](config: c.Expr[JsonConfiguration], methodName: String)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]]): c.Expr[M[A]] = {
+
+    def debug(msg: => String): Unit = {
+      if (debugEnabled) {
+        c.info(c.enclosingPosition, msg, force = false)
+      }
+    }
+
+    // All these can be sort of thought as imports
+    // that can then be used later in quasi quote interpolation
+    val libs = q"_root_.play.api.libs"
+    val json = q"$libs.json"
+    val atpe = atag.tpe.dealias
+    val ctor = atpe.decl(c.universe.termNames.CONSTRUCTOR).asMethod
+
+    ctor.paramLists match {
+      case List(term: TermSymbol) :: Nil => {
+        def reader = q"""
+            implicitly[$json.Reads[${term.info}]].map { v =>
+              new ${atpe}(v)
+            }
+          """
+
+        def writer = q"""{
+            val fn = implicitly[_root_.play.api.libs.functional.ContravariantFunctor[$json.Writes]]
+            val w = implicitly[$json.Writes[${term.info}]]
+            fn.contramap[${term.info}, ${atpe}](w, _.${term.name.toTermName})
+          }"""
+
+        val tree = methodName match {
+          case "read" => reader
+          case "write" => writer
+          case _ => q"""$json.Format[$atpe]($reader, $writer)"""
+        }
+
+        debug(showCode(tree))
+
+        c.Expr[M[A]](tree)
+      }
+
+      case _ =>
+        c.abort(
+          c.enclosingPosition,
+          s"Invalid ValueClass '${atpe}': single value expected")
+
+    }
   }
 
   /**
@@ -115,7 +173,9 @@ import scala.reflect.macros.blackbox
     val forwardName = TermName(c.freshName("forward"))
 
     // MacroOptions
-    val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
+    val options = config.actualType.member(TypeName("Opts")).
+      asType.toTypeIn(config.actualType)
+
     def hasOption[Flag: c.TypeTag]: Boolean = options <:< typeOf[Flag]
 
     /* Utility for implicit resolution - can hardly be moved outside
@@ -309,7 +369,7 @@ import scala.reflect.macros.blackbox
           }
 
           case Some((a, b)) =>
-            conforms(new scala.runtime.Tuple2Zipped(a.typeArgs, b.typeArgs) ++: types.tail)
+            conforms((a.typeArgs, b.typeArgs).zipped ++: types.tail)
 
           case _ => true
         }
@@ -371,7 +431,7 @@ import scala.reflect.macros.blackbox
           val unapplyParams = unapplyReturnTypes.toList.flatMap(identity)
 
           (applyParams.size == unapplyParams.size &&
-            conforms(new scala.runtime.Tuple2Zipped(applyParams, unapplyParams).toSeq))
+            conforms((applyParams, unapplyParams).zipped.toSeq))
 
         } => apply
       }
@@ -424,8 +484,7 @@ import scala.reflect.macros.blackbox
       }
 
       def implicits(resolver: ImplicitResolver): List[(Name, Implicit)] = {
-        val createImplicit = resolver.createImplicit(
-          atpe, natag.tpe) _
+        val createImplicit = resolver.createImplicit(atpe, natag.tpe) _
 
         val effectiveImplicits = params.map {
           case (n, t) => n -> createImplicit(t)
@@ -450,7 +509,7 @@ import scala.reflect.macros.blackbox
         applyFunction.fold(Map.empty[String, Type]) {
           case (_, tparams, _, _) => tparams.zip(tpeArgs).map {
             case (sym, ty) => sym.fullName -> ty
-          }(scala.collection.breakOut)
+          }.toMap
         }
 
       // To print the implicit types in the compiler messages
@@ -473,10 +532,7 @@ import scala.reflect.macros.blackbox
         case Some(cls: ClassSymbol) if (
           tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym)
         ) => {
-          val newSub: Set[Type] = if (!cls.isCaseClass) {
-            c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: no case accessor")
-            Set.empty
-          } else if (!cls.typeParams.isEmpty) {
+          val newSub: Set[Type] = if (!cls.typeParams.isEmpty) {
             c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: type parameter not supported")
             Set.empty
           } else Set(cls.selfType)
@@ -488,10 +544,7 @@ import scala.reflect.macros.blackbox
           o.companion == NoSymbol && // not a companion object
           tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
         ) => {
-          val newSub: Set[Type] = if (!o.moduleClass.asClass.isCaseClass) {
-            c.warning(c.enclosingPosition, s"cannot handle object ${o.fullName}: no case accessor")
-            Set.empty
-          } else Set(o.typeSignature)
+          val newSub: Set[Type] = Set(o.typeSignature)
 
           allSubclasses(path.tail, subclasses ++ newSub)
         }
@@ -519,8 +572,6 @@ import scala.reflect.macros.blackbox
         c.abort(c.enclosingPosition, s"Sealed trait ${atpe} is not supported: no known subclasses")
       }
 
-      val typeNaming = (_: Type).typeSymbol.fullName
-
       def readLambda: Tree = {
         val resolver = new ImplicitResolver({ orig: Type => orig })
         val cases = Match(q"dis", (
@@ -537,20 +588,19 @@ import scala.reflect.macros.blackbox
                   s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
                 )
               }
-
-              cq"${typeNaming(t)} => $reader.reads(vjs)" :: out
+              cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)" :: out
             }
           )
         ).reverse)
 
         q"""(_: $json.JsValue) match {
-          case obj @ $json.JsObject(_) => obj.value.get("_type") match {
+          case obj @ $json.JsObject(_) => obj.value.get($config.discriminator) match {
              case Some(tjs) => {
                val vjs = obj.value.get("_value").getOrElse(obj)
                tjs.validate[String].flatMap { dis => $cases }
              }
 
-             case _ => $json.JsError($JsPath \ "_type", "error.missing.path")
+             case _ => $json.JsError($JsPath \ $config.discriminator, "error.missing.path")
           }
 
           case _ => $json.JsError("error.expected.jsobject")
@@ -574,13 +624,13 @@ import scala.reflect.macros.blackbox
           // Use `implicitly` rather than `ImplicitResolver.createImplicit`,
           // due to the implicit/contravariance workaround
           cq"""x: $t => {
-            val xjs = implicitly[Writes[$t]].writes(x)
+            val xjs = implicitly[$json.Writes[$t]].writes(x)
             @inline def jso = xjs match {
               case xo @ $json.JsObject(_) => xo
               case jsv => $json.JsObject(Seq("_value" -> jsv))
             }
 
-            jso + ("_type" -> $json.JsString(${typeNaming(t)}))
+            jso + ($config.discriminator -> $json.JsString($config.typeNaming(${t.typeSymbol.fullName})))
           }"""
         })
 
@@ -609,15 +659,7 @@ import scala.reflect.macros.blackbox
       c.Expr[M[A]](tree)
     }
 
-    def macroCaseImpl: c.Expr[M[A]] = {
-      val tpeArgs: List[Type] = atpe match {
-        case TypeRef(_, _, args) => args
-
-        case t => c.abort(
-          c.enclosingPosition,
-          s"Type ${t.typeSymbol.fullName} is not a valid case class"
-        )
-      }
+    def macroCaseImpl(tpeArgs: List[Type]): c.Expr[M[A]] = {
       val utility = new CaseClass[A](tpeArgs)
       val (companioned, isCase) = utility.validCaseClass
 
@@ -653,7 +695,7 @@ import scala.reflect.macros.blackbox
         if (!hasOption[Json.DefaultValues]) Map.empty else {
           (params, defaultValues).zipped.collect {
             case (p, Some(dv)) => p.name.encodedName -> dv
-          }(scala.collection.breakOut)
+          }.toMap
         }
 
       val resolvedImplicits = utility.implicits(resolver)
@@ -708,7 +750,7 @@ import scala.reflect.macros.blackbox
       @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
       def readResult =
         if (multiParam) q"underlying.reads(obj)"
-        else q"underlying.flatMap[${atpe}]($json.Reads.pure(_)).reads(obj)"
+        else q"underlying.flatMap[${atpe}] { v: ${atpe} => $json.Reads.pure(f = v) }.reads(obj)"
 
       val canBuildCall = methodName match {
         case "read" => {
@@ -783,11 +825,41 @@ import scala.reflect.macros.blackbox
       c.Expr[M[A]](finalTree)
     }
 
+    def caseObjectImpl: c.Expr[M[A]] = {
+      def reader =
+        q"""
+          $json.Reads[${atpe}] {
+            case obj @ $json.JsObject(_) => $json.JsSuccess(${atpe.termSymbol})
+            case _ => $json.JsError("error.expected.jsobject")
+          }
+         """
+      def writer = q"$json.OWrites[$atpe]{_ => $json.JsObject.empty }"
+
+      val tree = methodName match {
+        case "read" => reader
+        case "write" => writer
+        case _ => q"""$json.OFormat[$atpe]($reader, $writer)"""
+      }
+
+      debug(showCode(tree))
+
+      c.Expr[M[A]](tree)
+    }
+
     // ---
 
     directKnownSubclasses match {
       case Some(subTypes) => macroSealedFamilyImpl(subTypes)
-      case _ => macroCaseImpl
+
+      case _ => atpe match {
+        case _: SingletonType => caseObjectImpl
+        case TypeRef(_, _, args) => macroCaseImpl(args)
+        case _ =>
+          c.abort(
+            c.enclosingPosition,
+            s"Type ${atpe.typeSymbol.fullName} is not a valid case class or an object"
+          )
+      }
     }
   }
 

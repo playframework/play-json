@@ -501,7 +501,7 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
             (__ \ "key233").json.copyFrom((__ \ "key23").json.pick)
           ).reduce
         ) and
-          (__ \ "key3").json.pickBranch[JsArray](pure(Json.arr("delta"))) and
+          (__ \ "key3").json.pickBranch[JsArray](pure(f = Json.arr("delta"))) and
           (__ \ "key4").json.put(
             Json.obj(
               "key41" -> 345,
@@ -535,7 +535,7 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
   }
 
   "JSON Reads" should {
-    "manage nullable/option" in {
+    "manage nullable/option" taggedAs (UnstableInScala213) in {
       case class User(name: String, email: String, phone: Option[String])
 
       implicit val UserReads = (

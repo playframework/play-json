@@ -130,10 +130,10 @@ trait ConstraintReads {
 
   def filter[A](otherwise: JsonValidationError)(p: A => Boolean)(implicit reads: Reads[A]) = Reads[A](js => reads.reads(js).filter(JsError(otherwise))(p))
 
-  def minLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.TraversableLike[_, M]) =
+  def minLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
     filterNot[M](JsonValidationError("error.minLength", m))(_.size < m)
 
-  def maxLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.TraversableLike[_, M]) =
+  def maxLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
     filterNot[M](JsonValidationError("error.maxLength", m))(_.size > m)
 
   /**
@@ -209,18 +209,19 @@ trait ConstraintWrites {
   }
 
   def list[A](implicit writes: Writes[A]): Writes[List[A]] = Writes.traversableWrites[A]
+
   def set[A](implicit writes: Writes[A]): Writes[Set[A]] = Writes.traversableWrites[A]
+
   def seq[A](implicit writes: Writes[A]): Writes[Seq[A]] = Writes.traversableWrites[A]
+
   def map[A](implicit writes: Writes[A]): OWrites[collection.immutable.Map[String, A]] = Writes.mapWrites[A]
 
   /**
    * Pure Option Writer[T] which writes "null" when None which is different
    * from `JsPath.writeNullable` which omits the field when None
    */
-  def optionWithNull[A](implicit wa: Writes[A]) = Writes[Option[A]] { a =>
-    a match {
-      case None => JsNull
-      case Some(av) => wa.writes(av)
-    }
+  def optionWithNull[A](implicit wa: Writes[A]) = Writes[Option[A]] {
+    case Some(av) => wa.writes(av)
+    case _ => JsNull
   }
 }

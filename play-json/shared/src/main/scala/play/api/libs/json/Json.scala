@@ -225,7 +225,7 @@ object Json extends JsonFacade {
   import language.experimental.macros
 
   /**
-   * Creates a `Reads[T]` by resolving, at compile-time,
+   * Creates a `Reads[A]` by resolving, at compile-time,
    * the case class fields or sealed family, and the required implicits.
    *
    * $macroWarning
@@ -247,6 +247,25 @@ object Json extends JsonFacade {
    * }}}
    */
   def reads[A]: Reads[A] = macro JsMacroImpl.implicitConfigReadsImpl[A]
+
+  /**
+   * Creates a `Reads[A]`, if `A` is a ValueClass,
+   * by resolving at compile-time the `Reads` for the underlying type.
+   *
+   * $macroWarning
+   *
+   * $macroTypeParam
+   *
+   * {{{
+   * import play.api.libs.json.{ Json, Reads }
+   *
+   * final class IdText(val value: String) extends AnyVal
+   *
+   * // Based on provided Reads[String] corresponding to `value: String`
+   * val r: Reads[IdText] = Json.valueReads
+   * }}}
+   */
+  def valueReads[A]: Reads[A] = macro JsMacroImpl.implicitConfigValueReads[A]
 
   /**
    * Creates a `OWrites[T]` by resolving, at compile-time,
@@ -273,6 +292,25 @@ object Json extends JsonFacade {
   def writes[A]: OWrites[A] = macro JsMacroImpl.implicitConfigWritesImpl[A]
 
   /**
+   * Creates a `OWrites[T]`, if `T` is a ValueClass,
+   * by resolving at compile-time the `Writes` for the underlying type.
+   *
+   * $macroWarning
+   *
+   * $macroTypeParam
+   *
+   * {{{
+   * import play.api.libs.json.{ Json, Writes }
+   *
+   * final class TextId(val value: String) extends AnyVal
+   *
+   * // Based on provided Writes[String] corresponding to `value: String`
+   * val w: Writes[TextId] = Json.writes[TextId]
+   * }}}
+   */
+  def valueWrites[A]: Writes[A] = macro JsMacroImpl.implicitConfigValueWrites[A]
+
+  /**
    * Creates a `OFormat[T]` by resolving, at compile-time,
    * the case class fields or sealed family, and the required implicits.
    *
@@ -295,6 +333,52 @@ object Json extends JsonFacade {
    * }}}
    */
   def format[A]: OFormat[A] = macro JsMacroImpl.implicitConfigFormatImpl[A]
+
+  /**
+   * Creates a `OFormat[T]` by resolving, if `T` is a ValueClass
+   * (see [[valueReads]] and [[valueWrites]]).
+   *
+   * $macroWarning
+   *
+   * $macroTypeParam
+   *
+   * {{{
+   * import play.api.libs.json.{ Format, Json }
+   *
+   * final class User(val name: String) extends AnyVal
+   *
+   * implicit val userFormat: Format[User] = Json.valueFormat[User]
+   * }}}
+   */
+  def valueFormat[A]: Format[A] = macro JsMacroImpl.implicitConfigValueFormat[A]
+
+  /**
+   * Creates a `Format[E]` by automatically creating Reads[E] and Writes[E] for any Enumeration E
+   *
+   * {{{
+   * import play.api.libs.json.Json
+   *
+   * object DayOfWeek extends Enumeration {
+   *
+   *  type DayOfWeek = Value
+   *
+   *  val Mon = Value("Monday")
+   *  val Tue = Value("Tuesday")
+   *  val Wed = Value("Wednesday")
+   *  // etc.
+   *
+   *   implicit val format: Format[DayOfWeek] = Json.formatEnum(DayOfWeek)
+   *   // or 'this' if defining directly in Enum
+   *   implicit val format: Format[DayOfWeek] = Json.formatEnum(this)
+   * }
+   * }}}
+   *
+   * '''Json.toJson(Mon)''' will produce '''"Monday"'''
+   *
+   * @param enum Enumeration object
+   * @tparam E type of Enum
+   */
+  def formatEnum[E <: Enumeration](enum: E): Format[E#Value] = Format(Reads.enumNameReads(enum), Writes.enumNameWrites[E])
 
   /**
    * JSON facade with some macro options.

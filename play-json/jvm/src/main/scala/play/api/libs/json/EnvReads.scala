@@ -51,7 +51,7 @@ trait EnvReads {
   def dateReads(pattern: String, corrector: String => String = identity): Reads[java.util.Date] = new Reads[java.util.Date] {
 
     def reads(json: JsValue): JsResult[java.util.Date] = json match {
-      case JsNumber(d) => JsSuccess(new java.util.Date(d.toLong))
+      case n: JsNumber => n.validate[Long].map(l => new java.util.Date(l))
       case JsString(s) => parseJDate(pattern, corrector(s)) match {
         case Some(d) => JsSuccess(d)
         case None => JsError(Seq(JsPath ->
@@ -95,7 +95,7 @@ trait EnvReads {
     val WithTz = """^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^.]+$""".r
 
     def reads(json: JsValue): JsResult[Date] = json match {
-      case JsNumber(d) => JsSuccess(new Date(d.toLong))
+      case n: JsNumber => n.validate[Long].map(l => new Date(l))
 
       case JsString(s) => (s match {
         case WithMillisAndTz() => millisAndTz -> parseJDate(millisAndTz, s)
@@ -185,7 +185,6 @@ trait EnvReads {
         Some(Instant.from(formatter.parse(input)))
       } catch {
         case _: DateTimeException => None
-        case _: DateTimeParseException => None
         case _: UnsupportedTemporalTypeException => None
       }
     }
@@ -228,7 +227,7 @@ trait EnvReads {
     epoch: Long => B
   ) extends Reads[B] {
     def reads(json: JsValue): JsResult[B] = json match {
-      case JsNumber(d) => JsSuccess(epoch(d.toLong))
+      case n: JsNumber => n.validate[Long].map(epoch)
       case JsString(s) => p(parsing).parse(corrector(s)) match {
         case Some(d) => JsSuccess(d)
         case None => JsError(Seq(JsPath ->
@@ -355,7 +354,7 @@ trait EnvReads {
   def localDateReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[LocalDate]): Reads[LocalDate] =
     new Reads[LocalDate] {
       def reads(json: JsValue): JsResult[LocalDate] = json match {
-        case JsNumber(d) => JsSuccess(epoch(d.toLong))
+        case n: JsNumber => n.validate[Long].map(epoch)
         case JsString(s) => p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
           case _ => JsError(Seq(JsPath ->
@@ -423,7 +422,7 @@ trait EnvReads {
   def localTimeReads[T](parsing: T, corrector: String => String = identity)(implicit p: T => TemporalParser[LocalTime]): Reads[LocalTime] =
     new Reads[LocalTime] {
       def reads(json: JsValue): JsResult[LocalTime] = json match {
-        case JsNumber(d) => JsSuccess(epoch(d.toLong))
+        case n: JsNumber => n.validate[Long].map(epoch)
         case JsString(s) => p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
           case _ => JsError(Seq(JsPath ->
@@ -515,11 +514,8 @@ trait EnvReads {
 
   private def jdurationNumberReads(unit: TemporalUnit) =
     Reads[JDuration] {
-      case JsNumber(n) if !n.ulp.isValidLong =>
-        JsError("error.invalid.longDuration")
-
-      case JsNumber(n) => JsSuccess(JDuration.of(n.toLong, unit))
-      case _ => JsError("error.expected.lonDuration")
+      case n: JsNumber => n.validate[Long].map(l => JDuration.of(l, unit))
+      case _ => JsError("error.expected.longDuration")
     }
 
   /**
@@ -594,7 +590,7 @@ trait EnvReads {
     val df = DateTimeFormat.forPattern(pattern)
 
     def reads(json: JsValue): JsResult[DateTime] = json match {
-      case JsNumber(d) => JsSuccess(new DateTime(d.toLong))
+      case n: JsNumber => n.validate[Long].map(l => new DateTime(l))
       case JsString(s) => parseDate(corrector(s)) match {
         case Some(d) => JsSuccess(d)
         case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
@@ -636,7 +632,7 @@ trait EnvReads {
     val df = if (pattern == "") ISODateTimeFormat.localTimeParser else DateTimeFormat.forPattern(pattern)
 
     def reads(json: JsValue): JsResult[LocalTime] = json match {
-      case JsNumber(n) => JsSuccess(new LocalTime(n.toLong))
+      case n: JsNumber => n.validate[Long].map(l => new LocalTime(l))
       case JsString(s) => parseTime(corrector(s)) match {
         case Some(d) => JsSuccess(d)
         case None => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodatime.format", pattern))))

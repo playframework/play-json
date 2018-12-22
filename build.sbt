@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
  */
 import sbt._
 import sbt.util._
@@ -8,24 +8,27 @@ import sbt.io.Path._
 
 import interplay.ScalaVersions
 import ReleaseTransformations._
+
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import com.typesafe.tools.mima.plugin.MimaKeys.{mimaBinaryIssueFilters, mimaPreviousArtifacts}
+import com.typesafe.tools.mima.plugin.MimaKeys.{
+  mimaBinaryIssueFilters, mimaPreviousArtifacts
+}
+
+import sbtcrossproject.{crossProject, CrossType}
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
-
-val scala213Version = "2.13.0-M3"
 
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _ => "4.0.2"
+    case _ => "4.3.5"
   }
 
   Seq("org.specs2" %% "specs2-core" % specsVersion)
 }
 
-val jacksonVersion = "2.9.3"
+val jacksonVersion = "2.9.8"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
@@ -35,7 +38,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion)
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.9.9"
+  "joda-time" % "joda-time" % "2.10.1"
     //"org.joda" % "joda-convert" % "1.8.1")
 )
 
@@ -68,6 +71,15 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
 })
 
 lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
+    // Do not buffer test output
+    logBuffered in Test := false,
+    testOptions in Test ++= Seq(
+      // Show the duration of tests
+      Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      Tests.Argument(TestFrameworks.Specs2, "showtimes"),
+      // Filtering tests that are not stable in Scala 2.13 yet.
+      Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
+    ),
     publishTo := Some(
       if (isSnapshot.value)
         Opts.resolver.sonatypeSnapshots
@@ -83,7 +95,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
     },
     scalaVersion := ScalaVersions.scala212,
     crossScalaVersions := Seq(
-      ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
+      ScalaVersions.scala211, ScalaVersions.scala212, ScalaVersions.scala213
     ),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
@@ -107,7 +119,7 @@ lazy val root = project
     publishTo := None
   )
 
-lazy val `play-json` = crossProject.crossType(CrossType.Full)
+lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(PlayLibrary, Playdoc)
   .configs(Docs)
@@ -115,6 +127,7 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
   .settings(playJsonMimaSettings)
   .settings(
     mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.widen"),
       // AbstractFunction1 is in scala.runtime and isn't meant to be used by end users
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$"),
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$"),
@@ -126,16 +139,51 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultWrites.BigIntegerWrites"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntReads"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntegerReads"),
-      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.optionHandlers")
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.optionHandlers"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.discriminator"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsonConfiguration.typeNaming"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntegerReads"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.compose"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.composeWith"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.preprocess"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.recoverWith"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Writes.contramap"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.OWrites.contramap"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.contains"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.exists"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.forall"),
+
+      // Scala 2.13.0-M5
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.traversableReads"),
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.traversableReads"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
+
+      // Add JsonParseSettings, these are all private[jackson] classes
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JsValueDeserializer.this"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.PlayDeserializers.this"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.PlaySerializers.this"),
+      ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.jackson.JsValueSerializer$")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.5-M1" % Test,
-      "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.6-SNAP4" % Test,
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
-      compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
     ),
+    libraryDependencies ++=
+      (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 13)) => Seq("org.scala-lang.modules" %%% "scala-collection-compat" % "0.2.0")
+        case _ => Seq("org.scala-lang.modules" %%% "scala-collection-compat" % "0.1.1")
+      }),
+    libraryDependencies ++=
+      (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 13)) => Seq()
+        case _ => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+      }),
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
 
@@ -203,10 +251,14 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
 
 lazy val `play-jsonJS` = `play-json`.js
 
-lazy val `play-functional` = crossProject.crossType(CrossType.Pure)
+lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
   .in(file("play-functional"))
-  .settings(commonSettings)
-  .settings(playJsonMimaSettings)
+  .settings(commonSettings ++ playJsonMimaSettings ++ Seq(
+    mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[ReversedMissingMethodProblem](
+        "play.api.libs.functional.Applicative.pure")
+    )
+  ))
   .enablePlugins(PlayLibrary)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm

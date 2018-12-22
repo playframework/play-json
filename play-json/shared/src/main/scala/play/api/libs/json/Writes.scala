@@ -16,21 +16,31 @@ import scala.reflect.ClassTag
 @implicitNotFound(
   "No Json serializer found for type ${A}. Try to implement an implicit Writes or Format for this type."
 )
-trait Writes[-A] {
+trait Writes[-A] { self =>
   /**
-   * Convert the object into a JsValue
+   * Converts the `A` value into a [[JsValue]].
    */
   def writes(o: A): JsValue
 
   /**
+   * Returns a new instance that first converts a `B` value to a `A` one,
+   * before converting this `A` value into a [[JsValue]].
+   */
+  def contramap[B](f: B => A): Writes[B] = Writes[B](b => self.writes(f(b)))
+
+  /**
    * Transforms the resulting [[JsValue]] using transformer function.
    */
-  def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a => transformer(this.writes(a)) }
+  def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a =>
+    transformer(self.writes(a))
+  }
 
   /**
    * Transforms the resulting [[JsValue]] using a `Writes[JsValue]`.
    */
-  def transform(transformer: Writes[JsValue]): Writes[A] = Writes[A] { a => transformer.writes(this.writes(a)) }
+  def transform(transformer: Writes[JsValue]): Writes[A] = Writes[A] { a =>
+    transformer.writes(self.writes(a))
+  }
 }
 
 @implicitNotFound(
@@ -50,6 +60,9 @@ trait OWrites[-A] extends Writes[A] {
    */
   def transform(transformer: OWrites[JsObject]): OWrites[A] =
     OWrites[A] { a => transformer.writes(this.writes(a)) }
+
+  override def contramap[B](f: B => A): OWrites[B] =
+    OWrites[B](b => this.writes(f(b)))
 
 }
 
@@ -89,10 +102,10 @@ object OWrites extends PathWrites with ConstraintWrites {
    * An `OWrites` capable of writing an object incrementally to a mutable map
    */
   private trait OWritesFromFields[A] extends OWrites[A] {
-    def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A)
+    def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A): Unit
 
     def writes(a: A): JsObject = {
-      val fieldsMap = new mutable.LinkedHashMap[String, JsValue]()
+      val fieldsMap = JsObject.createFieldsMap()
       writeFields(fieldsMap, a)
       JsObject(fieldsMap)
     }
@@ -104,7 +117,8 @@ object OWrites extends PathWrites with ConstraintWrites {
 
   implicit val contravariantfunctorOWrites: ContravariantFunctor[OWrites] = new ContravariantFunctor[OWrites] {
 
-    def contramap[A, B](wa: OWrites[A], f: B => A): OWrites[B] = OWrites[B](b => wa.writes(f(b)))
+    def contramap[A, B](wa: OWrites[A], f: B => A): OWrites[B] =
+      wa.contramap[B](f)
 
   }
 
@@ -136,7 +150,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
   implicit val contravariantfunctorWrites: ContravariantFunctor[Writes] =
     new ContravariantFunctor[Writes] {
       def contramap[A, B](wa: Writes[A], f: B => A): Writes[B] =
-        Writes[B](b => wa.writes(f(b)))
+        wa.contramap[B](f)
     }
 
   def apply[A](f: A => JsValue): Writes[A] = new Writes[A] {
@@ -320,7 +334,7 @@ sealed trait LowPriorityWrites extends EnvWrites {
     val w = implicitly[Writes[A]]
 
     Writes[Traversable[A]] { as =>
-      val builder = mutable.ArrayBuilder.make[JsValue]()
+      val builder = mutable.ArrayBuilder.make[JsValue]
       as.foreach { a =>
         builder += w.writes(a)
       }

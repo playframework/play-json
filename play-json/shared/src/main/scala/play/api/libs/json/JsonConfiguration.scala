@@ -9,11 +9,20 @@ sealed trait JsonConfiguration {
   /** Compile-time options for the JSON macros */
   type Opts <: Json.MacroOptions
 
-  /** Naming strategy */
+  /** Naming strategy for fields */
   def naming: JsonNaming
+
+  /** Naming strategy for type names */
+  def typeNaming: JsonNaming
 
   /** How options are handled by the macro */
   def optionHandlers: OptionHandlers
+
+  /**
+   * Name of the type discriminator field
+   * (for sealed family; see [[JsonConfiguration$.defaultDiscriminator]])
+   */
+  def discriminator: String
 }
 
 object JsonConfiguration {
@@ -21,25 +30,35 @@ object JsonConfiguration {
 
   private final class Impl[O <: Json.MacroOptions](
     val naming: JsonNaming = JsonNaming.Identity,
-    val optionHandlers: OptionHandlers = OptionHandlers.Default
+    val optionHandlers: OptionHandlers = OptionHandlers.Default,
+    val discriminator: String = defaultDiscriminator,
+    val typeNaming: JsonNaming = JsonNaming.Identity
   ) extends JsonConfiguration {
     type Opts = O
 
-    def this(naming: JsonNaming) = this(naming, OptionHandlers.Default)
+    def this(naming: JsonNaming) = this(naming, OptionHandlers.Default, defaultDiscriminator)
+    def this(naming: JsonNaming, optionHandlers: OptionHandlers) = this(naming, optionHandlers, defaultDiscriminator)
   }
 
   // These methods exist for binary compatibility, since Scala protected methods are public from a binary perspective.
   protected def apply(naming: JsonNaming): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming)
+  protected def apply(naming: JsonNaming, optionHandlers: OptionHandlers): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming, optionHandlers)
   protected def default: JsonConfiguration.Aux[Json.MacroOptions] = apply()
+
+  val defaultDiscriminator = "_type"
 
   /**
    * @param naming the naming strategy
    * @param optionHandlers handlers for option
+   * @param discriminator See [[JsonConfiguration.discriminator]]
+   * @param typeNaming See [[JsonConfiguration.typeNaming]]
    */
   def apply[Opts <: Json.MacroOptions: Json.MacroOptions.Default](
     naming: JsonNaming = JsonNaming.Identity,
-    optionHandlers: OptionHandlers = OptionHandlers.Default
-  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers)
+    optionHandlers: OptionHandlers = OptionHandlers.Default,
+    discriminator: String = defaultDiscriminator,
+    typeNaming: JsonNaming = JsonNaming.Identity
+  ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers, discriminator, typeNaming)
 
   /** Default configuration instance */
   implicit def default[Opts <: Json.MacroOptions: Json.MacroOptions.Default]: JsonConfiguration.Aux[Opts] = apply()
@@ -111,12 +130,7 @@ object JsonNaming {
    * to name its column (e.g. fooBar -> FooBar).
    */
   object PascalCase extends JsonNaming {
-    def apply(property: String): String =
-      if (property.length > 0) {
-        property.updated(0, Character.toUpperCase(property charAt 0))
-      } else {
-        property
-      }
+    def apply(property: String): String = property.capitalize
 
     override val toString = "PascalCase"
   }

@@ -6,12 +6,9 @@ package play.api.libs.json
 
 import java.math.{ BigDecimal => JBigDec }
 
-import org.scalatest.prop.TableDrivenPropertyChecks._
-
 import java.util.Locale
 
 import java.time.{
-  Clock,
   Duration => JDuration,
   Instant,
   Period,
@@ -28,9 +25,10 @@ import java.time.format.DateTimeFormatter
 
 import org.specs2.specification.core.Fragment
 
-case class Ipsum(id: Long, value: Either[String, Ipsum])
-
 class ReadsSpec extends org.specs2.mutable.Specification {
+
+  val veryLargeNumber = BigDecimal("9" * 1000000)
+
   "JSON Reads" title
 
   "Local date/time" should {
@@ -55,6 +53,12 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         aka("read date") must_== JsSuccess(LocalDateTime.ofInstant(
           Instant.ofEpochMilli(123L), ZoneOffset.UTC
         ))
+    }
+
+    "not be read from invalid number" in {
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))) aka "read date" must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
     }
 
     "not be read from invalid string" in {
@@ -224,6 +228,12 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       }
     }
 
+    "not be read from invalid number" in {
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))) aka "read date" must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
+    }
+
     "be successfully read with default implicit" >> {
       "from '2011-12-03T10:15:30+01:00' (with TZ offset)" in {
         reads(JsString("2011-12-03T10:15:30+01:00")) aka "read date" must_== (
@@ -299,6 +309,12 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         aka("read date") must_== JsSuccess(d)
     }
 
+    "not be read from invalid number" in {
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))) aka "read date" must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
+    }
+
     "not be read from invalid string" in {
       reads(JsString("invalid")) aka "read date" must beLike {
         case JsError((_, JsonValidationError(
@@ -368,6 +384,12 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         aka("read time") must_== JsSuccess(d)
     }
 
+    "not be read from invalid number" in {
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))) aka "read date" must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
+    }
+
     "not be read from invalid string" in {
       reads(JsString("invalid")) aka "read time" must beLike {
         case JsError((_, JsonValidationError(
@@ -430,6 +452,12 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     "be successfully read from number" in {
       reads(JsNumber(JBigDec valueOf 123L)).
         aka("read date") must_== JsSuccess(Instant ofEpochMilli 123L)
+    }
+
+    "not be read from invalid number" in {
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))) aka "read date" must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
     }
 
     "not be read from invalid string" in {
@@ -575,7 +603,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       JsString("1 seconds") -> JsError("error.invalid.duration"),
       JsString("foo") -> JsError("error.invalid.duration"),
       JsNumber(BigDecimal(1000L)) -> JsSuccess(oneSec),
-      JsNumber(BigDecimal(1.234D)) -> JsError("error.invalid.longDuration")
+      JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.long")
     )) {
       case (input, result) =>
         s"be parsed from ${Json stringify input} as $result" in {
@@ -630,6 +658,32 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     "be parsed as years" in {
       Json.fromJson[Period](JsNumber(5))(
         Reads.javaPeriodYearsReads) must_== JsSuccess(Period.ofYears(5))
+    }
+  }
+
+  "Long numbers" should {
+
+    val DefaultReads = implicitly[Reads[Long]]
+    import DefaultReads.reads
+
+    "parse a long number" in {
+      reads(JsNumber(JBigDec valueOf 123L)).aka("read long number") must_== JsSuccess(123L)
+    }
+
+    "parse a negative long number" in {
+      reads(JsNumber(JBigDec valueOf -123L)).aka("read long number") must_== JsSuccess(-123L)
+    }
+
+    "not read from invalid number" in {
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))).aka("read long number") must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
+    }
+
+    "parse a large long number 2" in {
+      reads(JsNumber(veryLargeNumber)).aka("read long number") must beLike {
+        case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
+      }
     }
   }
 }

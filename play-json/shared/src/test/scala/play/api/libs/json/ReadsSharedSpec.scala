@@ -11,8 +11,8 @@ import java.util.Locale
 import org.scalatest._
 
 class ReadsSharedSpec extends WordSpec with MustMatchers {
-  "Reads flatMap" should {
-    "not repath the second result" when {
+  "Reads" should {
+    "not repath the second result on flatMap" when {
       val aPath = JsPath \ "a"
       val readsA: Reads[String] = aPath.read[String]
       val value = "string"
@@ -32,6 +32,22 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
             JsonValidationError("error.expected.jsnumber")
           )))))
       }
+    }
+
+    "widen" in {
+      // !! Keep type ascriptions
+      val orig: Reads[List[String]] = implicitly[Reads[List[String]]]
+      val widened: Reads[Traversable[String]] = orig.widen
+
+      widened.reads(JsArray(Seq(JsString("foo"), JsString("bar")))).
+        mustEqual(JsSuccess[Traversable[String]](List("foo", "bar")))
+
+    }
+
+    "be failed" in {
+      val r: Reads[String] = Reads.failed[String]("Foo")
+
+      r.reads(Json.obj()) mustEqual JsError("Foo")
     }
   }
 
@@ -55,6 +71,39 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
             (JsPath \ "bar", List(JsonValidationError("error.invalid.character")))
           ))
       }
+    }
+  }
+
+  "Compose" should {
+    lazy val generated: Reads[Owner] = Json.reads
+
+    "preprocess a JSON object using a Reads" in {
+      implicit val reads: Reads[Owner] =
+        generated.composeWith(Reads[JsValue] {
+          case obj @ JsObject(_) => (obj \ "avatar").asOpt[String] match {
+            case Some(_) => JsSuccess(obj)
+            case _ => JsSuccess(obj + ("avatar" -> JsString("")))
+          }
+
+          case _ => JsError("Object expected")
+        })
+
+      Json.obj("login" -> "foo", "url" -> "url://id").
+        validate[Owner] mustEqual JsSuccess(Owner("foo", "", "url://id"))
+
+    }
+
+    "preprocess a JSON object using a function" in {
+      implicit val reads: Reads[Owner] = generated.preprocess {
+        case obj @ JsObject(_) => (obj \ "avatar").asOpt[String] match {
+          case Some(_) => obj
+          case _ => obj + ("avatar" -> JsString(""))
+        }
+      }
+
+      Json.obj("login" -> "foo", "url" -> "url://id").
+        validate[Owner] mustEqual JsSuccess(Owner("foo", "", "url://id"))
+
     }
   }
 
@@ -107,6 +156,21 @@ class ReadsSharedSpec extends WordSpec with MustMatchers {
 
         jsStr.validate[BigInteger] mustEqual jsErr
       }
+    }
+  }
+
+  "EnumFormat" should {
+    import TestEnums.EnumWithCustomNames._
+    import TestEnums.EnumWithDefaultNames._
+
+    "deserialize correctly enum with custom names" in {
+      JsString("ENUM1").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum1)
+      JsString("ENUM2").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum2)
+    }
+
+    "deserialize correctly enum with default names" in {
+      JsString("defaultEnum1").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum1)
+      JsString("defaultEnum2").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum2)
     }
   }
 

@@ -8,7 +8,8 @@ import scala.annotation.implicitNotFound
 
 import scala.util.control
 
-import scala.collection._
+import scala.collection.Seq
+import scala.collection.compat._
 import scala.collection.immutable.Map
 import scala.collection.mutable.Builder
 
@@ -71,22 +72,57 @@ trait Reads[A] { self =>
    * `Reads`' logic then, if this `Reads` resulted in a `JsError`, runs
    * the second `Reads` on the [[JsValue]].
    *
-   * @param v The `Reads` to run if this one gets a `JsError`.
+   * @param v the `Reads` to run if this one gets a `JsError`
    * @return A new `Reads` with the updated behavior.
    */
   def orElse(v: Reads[A]): Reads[A] =
     Reads[A] { json => self.reads(json).orElse(v.reads(json)) }
 
-  def compose[B <: JsValue](rb: Reads[B]): Reads[A] = Reads[A] { js =>
-    rb.reads(js) match {
+  @deprecated("Use [[composeWith]]", "2.7.0")
+  def compose[B <: JsValue](rb: Reads[B]): Reads[A] = composeWith[B](rb)
+
+  /**
+   * Creates a new `Reads`, which first passes the input JSON to `rb`,
+   * and then it executes this `Reads` on the pre-processed JSON
+   * (if `rb` has successfully handled the input JSON).
+   */
+  def composeWith[B <: JsValue](rb: Reads[B]): Reads[A] = Reads[A] {
+    rb.reads(_) match {
       case JsSuccess(b, p) => this.reads(b).repath(p)
       case JsError(e) => JsError(e)
     }
   }
 
-  def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
-    rb.compose(this.map(witness))
+  /**
+   * Creates a new `Reads`, which first transforms the input JSON
+   * using the given `tranformer`, and then it executes this `Reads`
+   * on the pre-processed JSON.
+   *
+   * @param transformer the function to pre-process the input JSON
+   */
+  def preprocess(f: PartialFunction[JsValue, JsValue]): Reads[A] =
+    Reads[A] { input =>
+      val json = f.applyOrElse(input, identity[JsValue])
 
+      this.reads(json)
+    }
+
+  def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
+    rb.composeWith(this.map(witness))
+
+  /**
+   * Widen this `Reads`.
+   *
+   * {{{
+   * import play.api.libs.json.Reads
+   *
+   * def simple(r: Reads[Dog]): Reads[Animal] = r.widen[Animal]
+   *
+   * def combine(dog: Reads[Dog], cat: Reads[Cat]): Reads[Animal] =
+   *   dog.orElse(cat).orElse(Reads.failed[Animal]("Unsupported Animal"))
+   * }}}
+   */
+  def widen[B >: A]: Reads[B] = Reads[B] { self.reads(_) }
 }
 
 /**
@@ -98,14 +134,41 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
 
   val path: PathReads = this
 
-  /** Returns a `JsSuccess(a)` (with root path) for any JSON value read. */
-  def pure[A](a: A): Reads[A] = Reads[A] { _ => JsSuccess(a) }
+  /**
+   * Returns a `JsSuccess(a)` (with root path) for any JSON value read.
+   *
+   * {{{
+   * import play.api.libs.json.Reads
+   *
+   * val r: Reads[String] = Reads.pure("foo")
+   * }}}
+   *
+   * @see [[failed]]
+   */
+  override def pure[A](f: => A): Reads[A] = Reads[A] { _ => JsSuccess(f) }
+
+  /**
+   * Returns a `JsError(cause)` for any JSON value read.
+   *
+   * {{{
+   * import play.api.libs.json.Reads
+   *
+   * val r: Reads[String] = Reads.failed[String]("Failure message")
+   * }}}
+   *
+   * @see [[pure]]
+   */
+  def failed[A](msg: => String): Reads[A] = Reads[A] { _ => JsError(msg) }
+
+  @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
+  private[json] def pure[A](value: A): Reads[A] =
+    Reads[A] { _ => JsSuccess(value) }
 
   import play.api.libs.functional._
 
   implicit def applicative(implicit applicativeJsResult: Applicative[JsResult]): Applicative[Reads] = new Applicative[Reads] {
 
-    def pure[A](a: A): Reads[A] = Reads.pure(a)
+    def pure[A](f: => A): Reads[A] = Reads.pure(f = f)
 
     def map[A, B](m: Reads[A], f: A => B): Reads[B] = m.map(f)
 
@@ -165,7 +228,7 @@ trait LowPriorityDefaultReads extends EnvReads {
   /**
    * Generic deserializer for collections types.
    */
-  implicit def traversableReads[F[_], A](implicit bf: generic.CanBuildFrom[F[_], A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
+  implicit def traversableReads[F[_], A](implicit bf: Factory[A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
     def reads(json: JsValue) = json match {
       case JsArray(ts) =>
 
@@ -180,7 +243,7 @@ trait LowPriorityDefaultReads extends EnvReads {
             case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, idx))
           }
         }.fold(JsError.apply, { res =>
-          val builder = bf()
+          val builder = bf.newBuilder
           builder.sizeHint(res)
           builder ++= res
           JsSuccess(builder.result())

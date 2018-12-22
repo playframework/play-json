@@ -30,6 +30,8 @@ object TestFormats {
     }
 }
 
+final class TextId(val value: String) extends AnyVal
+
 import org.scalatest._
 import org.scalacheck.Gen
 
@@ -142,6 +144,13 @@ class MacroSpec extends WordSpec with MustMatchers
         jsOptional.validate[Family].get mustEqual optional
       }
     }
+
+    "be generated for a ValueClass" in {
+      val expected = new TextId("foo")
+      implicit val r: Reads[TextId] = Json.valueReads
+
+      JsString("foo").validate[TextId].get mustEqual expected
+    }
   }
 
   "Writes" should {
@@ -218,6 +227,12 @@ class MacroSpec extends WordSpec with MustMatchers
       wsimple.validate(Json.reads[Simple]).get mustEqual simple
       wopt mustEqual jsOptional
       wopt.validate(Json.reads[Optional]).get mustEqual optional
+    }
+
+    "be generated for a ValueClass" in {
+      val js = Json.valueWrites[TextId].writes(new TextId("bar"))
+
+      js mustEqual JsString("bar")
     }
   }
 
@@ -325,6 +340,12 @@ class MacroSpec extends WordSpec with MustMatchers
       "to generate Format" in readSpec(
         jsWithDefaults.format[WithDefault]
       )
+    }
+
+    "handle case class with default values, format defined in companion object" in {
+      val json = Json.obj("id" -> 15)
+      val expected = WithDefaultInCompanion(15, "a")
+      Json.fromJson[WithDefaultInCompanion](json).get mustEqual expected
     }
 
     "handle case class with default values inner optional case class containing default values" when {
@@ -484,11 +505,11 @@ class MacroSpec extends WordSpec with MustMatchers
         Json.reads[WithColl[Double, (Int, String)]]
       }
 
-      "to generated Writes" in writeSpec {
+      "to generated Writes" taggedAs (UnstableInScala213) in writeSpec {
         Json.writes[WithColl[Double, (Int, String)]]
       }
 
-      "to generate Format" in {
+      "to generate Format" taggedAs (UnstableInScala213) in {
         val f = Json.format[WithColl[Double, (Int, String)]]
         readSpec(f)
         writeSpec(f)
@@ -522,6 +543,89 @@ class MacroSpec extends WordSpec with MustMatchers
       jsSimple.validate(Json.reads[Simple]).get mustEqual simple
       jsOptional.validate(Json.reads[Optional]).
         get mustEqual (optional)
+    }
+
+    "handle sealed family with custom discriminator name" in {
+      implicit val cfg = JsonConfiguration(discriminator = "_discriminator")
+      implicit val simpleWrites = OWrites[Simple] { simple =>
+        Json.obj("bar" -> simple.bar)
+      }
+      implicit val simpleReads = Reads[Simple] { js =>
+        (js \ "bar").validate[String].map(Simple(_))
+      }
+      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+      implicit val familyFormat: OFormat[Family] = Json.format[Family]
+
+      val simple = Simple("foo")
+      val jsSimple = simpleWrites.writes(simple) + (
+        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Simple")
+      )
+
+      val optional = Optional(None)
+      val jsOptional = optionalFormat.writes(optional) + (
+        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
+      )
+
+      Json.toJson[Family](simple) mustEqual jsSimple
+      Json.toJson[Family](optional) mustEqual jsOptional
+      jsSimple.validate[Family].get mustEqual simple
+      jsOptional.validate[Family].get mustEqual optional
+      jsSimple.validate(Json.reads[Simple]).get mustEqual simple
+      jsOptional.validate(Json.reads[Optional]).get mustEqual optional
+    }
+
+    "handle sealed family with typeNaming" in {
+      implicit val cfg = JsonConfiguration(typeNaming = JsonNaming {
+        case "play.api.libs.json.MacroSpec.Simple" => "simple"
+        case "play.api.libs.json.MacroSpec.Optional" => "optional"
+      })
+      implicit val simpleWrites = OWrites[Simple] { simple =>
+        Json.obj("bar" -> simple.bar)
+      }
+      implicit val simpleReads = Reads[Simple] { js =>
+        (js \ "bar").validate[String].map(Simple(_))
+      }
+      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+      implicit val familyFormat: OFormat[Family] = Json.format[Family]
+
+      val simple = Simple("foo")
+      val jsSimple = simpleWrites.writes(simple) + (
+        "_type" -> JsString("simple")
+      )
+
+      val optional = Optional(None)
+      val jsOptional = optionalFormat.writes(optional) + (
+        "_type" -> JsString("optional")
+      )
+
+      Json.toJson[Family](simple) mustEqual jsSimple
+      Json.toJson[Family](optional) mustEqual jsOptional
+      jsSimple.validate[Family].get mustEqual simple
+      jsOptional.validate[Family].get mustEqual optional
+      jsSimple.validate(Json.reads[Simple]).get mustEqual simple
+      jsOptional.validate(Json.reads[Optional]).get mustEqual optional
+    }
+
+    "handle case objects as empty JsObject" in {
+      case object Obj
+      val writer = Json.writes[Obj.type]
+      val reader = Json.reads[Obj.type]
+      val formatter = Json.format[Obj.type]
+
+      val jsObj = Json.obj()
+      writer.writes(Obj) mustEqual jsObj
+      reader.reads(jsObj) mustEqual JsSuccess(Obj)
+      formatter.writes(Obj) mustEqual jsObj
+      formatter.reads(jsObj) mustEqual JsSuccess(Obj)
+    }
+
+    "handle ValueClass" in {
+      val id = new TextId("foo")
+      val js = JsString("foo")
+      implicit val fmt: Format[TextId] = Json.valueFormat[TextId]
+
+      js.validate[TextId].get mustEqual id
+      fmt.writes(id) mustEqual js
     }
   }
 
@@ -574,4 +678,9 @@ class MacroSpec extends WordSpec with MustMatchers
 
   type OptionalInt = Option[Int]
   case class UsingAlias(v: OptionalInt)
+
+  case class WithDefaultInCompanion(id: Int, a: String = "a")
+  object WithDefaultInCompanion {
+    implicit val format: OFormat[WithDefaultInCompanion] = Json.using[Json.WithDefaultValues].format[WithDefaultInCompanion]
+  }
 }

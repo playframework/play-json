@@ -22,6 +22,18 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
         "lat" -> 0.123D, "long" -> 0.456D
       )
     }
+
+    "be contramap'ed" in {
+      val w = implicitly[Writes[String]]
+      val ow = OWrites[String] { str =>
+        Json.obj("string" -> str)
+      }
+
+      w.contramap[Int](_.toString).writes(1) mustEqual (JsString("1"))
+
+      ow.contramap[Char](_.toString).writes('A') mustEqual (
+        Json.obj("string" -> "A"))
+    }
   }
 
   "Traversable Writes" should {
@@ -46,6 +58,21 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
 
       Json.toJson(BigInt("123")) mustEqual jsNum
       Json.toJson(new java.math.BigInteger("123")) mustEqual jsNum
+    }
+  }
+
+  "EnumFormat" should {
+    import TestEnums.EnumWithCustomNames._
+    import TestEnums.EnumWithDefaultNames._
+
+    "serialize correctly enum with custom names" in {
+      Json.toJson(customEnum1) mustEqual JsString("ENUM1")
+      Json.toJson(customEnum2) mustEqual JsString("ENUM2")
+    }
+
+    "serialize correctly enum with default names" in {
+      Json.toJson(defaultEnum1) mustEqual JsString("defaultEnum1")
+      Json.toJson(defaultEnum2) mustEqual JsString("defaultEnum2")
     }
   }
 
