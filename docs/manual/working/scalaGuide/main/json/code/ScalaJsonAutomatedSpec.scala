@@ -24,7 +24,16 @@ class ScalaJsonAutomatedSpec extends Specification {
   //#model3
   sealed trait Role
   case object Admin extends Role
-  case class Contributor(organization: String) extends Role
+  class Contributor(val organization: String) extends Role {
+    override def equals(obj: Any): Boolean = obj match {
+      case other: Contributor if obj != null ⇒ this.organization == other.organization
+      case _ ⇒ false
+    }
+  }
+  object Contributor {
+    def apply(organization: String): Contributor = new Contributor(organization)
+    def unapply(contributor: Contributor): Option[(String)] = Some(contributor.organization)
+  }
   //#model3
 
   val sampleJson = Json.parse(

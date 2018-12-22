@@ -532,10 +532,7 @@ import scala.reflect.macros.blackbox
         case Some(cls: ClassSymbol) if (
           tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym)
         ) => {
-          val newSub: Set[Type] = if (!cls.isCaseClass) {
-            c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: no case accessor")
-            Set.empty
-          } else if (!cls.typeParams.isEmpty) {
+          val newSub: Set[Type] = if (!cls.typeParams.isEmpty) {
             c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: type parameter not supported")
             Set.empty
           } else Set(cls.selfType)
@@ -547,10 +544,7 @@ import scala.reflect.macros.blackbox
           o.companion == NoSymbol && // not a companion object
           tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
         ) => {
-          val newSub: Set[Type] = if (!o.moduleClass.asClass.isCaseClass) {
-            c.warning(c.enclosingPosition, s"cannot handle object ${o.fullName}: no case accessor")
-            Set.empty
-          } else Set(o.typeSignature)
+          val newSub: Set[Type] = Set(o.typeSignature)
 
           allSubclasses(path.tail, subclasses ++ newSub)
         }
