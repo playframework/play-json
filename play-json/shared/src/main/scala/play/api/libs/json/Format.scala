@@ -30,7 +30,10 @@ object OFormat {
 
   }
 
-  implicit def GenericOFormat[T](implicit fjs: Reads[T], tjs: OWrites[T]): Format[T] = apply(fjs, tjs)
+  @deprecated("Use `oFormatFromReadsAndOWrites`", "2.7.0")
+  def GenericOFormat[T](implicit fjs: Reads[T], tjs: OWrites[T]): Format[T] = apply(fjs, tjs)
+
+  implicit def oFormatFromReadsAndOWrites[T](implicit fjs: Reads[T], tjs: OWrites[T]): OFormat[T] = apply(fjs, tjs)
 
   def apply[A](read: JsValue => JsResult[A], write: A => JsObject): OFormat[A] = new OFormat[A] {
 
