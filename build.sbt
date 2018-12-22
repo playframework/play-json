@@ -18,13 +18,13 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _ => "4.3.0"
+    case _ => "4.3.5"
   }
 
   Seq("org.specs2" %% "specs2-core" % specsVersion)
 }
 
-val jacksonVersion = "2.9.6"
+val jacksonVersion = "2.9.8"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
@@ -34,7 +34,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion)
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.9.9"
+  "joda-time" % "joda-time" % "2.10.1"
     //"org.joda" % "joda-convert" % "1.8.1")
 )
 
@@ -72,6 +72,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
     testOptions in Test ++= Seq(
       // Show the duration of tests
       Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      Tests.Argument(TestFrameworks.Specs2, "showtimes"),
       // Filtering tests that are not stable in Scala 2.13 yet.
       Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
     ),
@@ -121,6 +122,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .settings(playJsonMimaSettings)
   .settings(
     mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.Reads.widen"),
       // AbstractFunction1 is in scala.runtime and isn't meant to be used by end users
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsArray$"),
       ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsObject$"),
@@ -146,23 +148,32 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.exists"),
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.JsResult.forall"),
 
-      // Scala 2.13.0-M4
+      // Scala 2.13.0-M5
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.traversableReads"),
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.Reads.traversableReads"),
       ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
-      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads")
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.LowPriorityDefaultReads.traversableReads"),
 
+      // Add JsonParseSettings, these are all private[jackson] classes
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JsValueDeserializer.this"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.PlayDeserializers.this"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.PlaySerializers.this"),
+      ProblemFilters.exclude[MissingClassProblem]("play.api.libs.json.jackson.JsValueSerializer$")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % "0.1.1",
-      "org.scalatest" %%% "scalatest" % "3.0.6-SNAP1" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.6-SNAP4" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
     ),
+    libraryDependencies ++=
+      (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 13)) => Seq("org.scala-lang.modules" %%% "scala-collection-compat" % "0.2.0")
+        case _ => Seq("org.scala-lang.modules" %%% "scala-collection-compat" % "0.1.1")
+      }),
     libraryDependencies ++=
       (CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, 13)) => Seq()

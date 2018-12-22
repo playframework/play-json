@@ -110,6 +110,19 @@ trait Reads[A] { self =>
   def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
     rb.composeWith(this.map(witness))
 
+  /**
+   * Widen this `Reads`.
+   *
+   * {{{
+   * import play.api.libs.json.Reads
+   *
+   * def simple(r: Reads[Dog]): Reads[Animal] = r.widen[Animal]
+   *
+   * def combine(dog: Reads[Dog], cat: Reads[Cat]): Reads[Animal] =
+   *   dog.orElse(cat).orElse(Reads.failed[Animal]("Unsupported Animal"))
+   * }}}
+   */
+  def widen[B >: A]: Reads[B] = Reads[B] { self.reads(_) }
 }
 
 /**
@@ -129,8 +142,23 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
    *
    * val r: Reads[String] = Reads.pure("foo")
    * }}}
+   *
+   * @see [[failed]]
    */
   override def pure[A](f: => A): Reads[A] = Reads[A] { _ => JsSuccess(f) }
+
+  /**
+   * Returns a `JsError(cause)` for any JSON value read.
+   *
+   * {{{
+   * import play.api.libs.json.Reads
+   *
+   * val r: Reads[String] = Reads.failed[String]("Failure message")
+   * }}}
+   *
+   * @see [[pure]]
+   */
+  def failed[A](msg: => String): Reads[A] = Reads[A] { _ => JsError(msg) }
 
   @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
   private[json] def pure[A](value: A): Reads[A] =

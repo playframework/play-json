@@ -126,7 +126,7 @@ case class JsObject(
 ) extends JsValue {
 
   /**
-   * The fields of this JsObject in the order passed to to constructor
+   * The fields of this JsObject in the order passed to the constructor
    */
   lazy val fields: collection.Seq[(String, JsValue)] = underlying.toSeq
 
@@ -200,10 +200,21 @@ case class JsObject(
 }
 
 object JsObject extends (Seq[(String, JsValue)] => JsObject) {
+
+  /**
+   * INTERNAL API: create a fields map by wrapping a Java LinkedHashMap.
+   *
+   * We use this because the Java implementation better handles hash code collisions for Comparable keys.
+   */
+  private[json] def createFieldsMap(fields: Iterable[(String, JsValue)] = Seq.empty): mutable.Map[String, JsValue] = {
+    import scala.collection.JavaConverters._
+    new java.util.LinkedHashMap[String, JsValue]().asScala ++= fields
+  }
+
   /**
    * Construct a new JsObject, with the order of fields in the Seq.
    */
-  def apply(fields: collection.Seq[(String, JsValue)]): JsObject = new JsObject(mutable.LinkedHashMap(fields.toSeq: _*))
+  def apply(fields: collection.Seq[(String, JsValue)]): JsObject = new JsObject(createFieldsMap(fields))
 
   def empty = JsObject(Seq.empty)
 }

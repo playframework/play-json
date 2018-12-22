@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
 @implicitNotFound(
   "No Json serializer found for type ${A}. Try to implement an implicit Writes or Format for this type."
 )
-trait Writes[-A] {
+trait Writes[-A] { self =>
   /**
    * Converts the `A` value into a [[JsValue]].
    */
@@ -26,17 +26,21 @@ trait Writes[-A] {
    * Returns a new instance that first converts a `B` value to a `A` one,
    * before converting this `A` value into a [[JsValue]].
    */
-  def contramap[B](f: B => A): Writes[B] = Writes[B](b => this.writes(f(b)))
+  def contramap[B](f: B => A): Writes[B] = Writes[B](b => self.writes(f(b)))
 
   /**
    * Transforms the resulting [[JsValue]] using transformer function.
    */
-  def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a => transformer(this.writes(a)) }
+  def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a =>
+    transformer(self.writes(a))
+  }
 
   /**
    * Transforms the resulting [[JsValue]] using a `Writes[JsValue]`.
    */
-  def transform(transformer: Writes[JsValue]): Writes[A] = Writes[A] { a => transformer.writes(this.writes(a)) }
+  def transform(transformer: Writes[JsValue]): Writes[A] = Writes[A] { a =>
+    transformer.writes(self.writes(a))
+  }
 }
 
 @implicitNotFound(
@@ -101,7 +105,7 @@ object OWrites extends PathWrites with ConstraintWrites {
     def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A): Unit
 
     def writes(a: A): JsObject = {
-      val fieldsMap = new mutable.LinkedHashMap[String, JsValue]()
+      val fieldsMap = JsObject.createFieldsMap()
       writeFields(fieldsMap, a)
       JsObject(fieldsMap)
     }
