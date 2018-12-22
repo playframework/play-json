@@ -227,6 +227,12 @@ class MacroSpec extends WordSpec with MustMatchers
       wsimple.validate(Json.reads[Simple]).get mustEqual simple
       wopt mustEqual jsOptional
       wopt.validate(Json.reads[Optional]).get mustEqual optional
+
+      // was StackOverFlow exception
+      Json.toJson[Family1](Family1Member("bar")) mustEqual Json.obj(
+        "_type" -> "play.api.libs.json.MacroSpec.Family1Member",
+        "foo" -> "bar"
+      )
     }
 
     "be generated for a ValueClass" in {
@@ -655,7 +661,6 @@ class MacroSpec extends WordSpec with MustMatchers
     def id(value: String): Id = value.asInstanceOf[Id]
 
     implicit val idReads: Reads[Id] = implicitly[Reads[String]].asInstanceOf[Reads[Id]]
-    implicit val idWrites: Writes[Id] = implicitly[Writes[String]]
   }
   case class Foo(id: Foo.Id, value: Option[Either[String, Foo]])
 
@@ -682,5 +687,33 @@ class MacroSpec extends WordSpec with MustMatchers
   case class WithDefaultInCompanion(id: Int, a: String = "a")
   object WithDefaultInCompanion {
     implicit val format: OFormat[WithDefaultInCompanion] = Json.using[Json.WithDefaultValues].format[WithDefaultInCompanion]
+  }
+
+  // ---
+
+  sealed trait Family1
+  object Family1 {
+    def w: OWrites[Family1] = Json.writes[Family1]
+    implicit lazy val writes: OWrites[Family1] = w
+  }
+
+  case class Family1Member(foo: String) extends Family1
+  object Family1Member {
+    implicit def writer: OWrites[Family1Member] = Json.writes[Family1Member]
+  }
+
+  // ---
+
+  sealed trait Family2
+  case class Family2Member(p: Int) extends Family2
+  object Family2 {
+    implicit def w: OWrites[Family2] = {
+      shapeless.test.illTyped("Json.writes[Family2]")
+      ???
+    }
+    /* Should fail, as there is no implicit for Family2Member,
+     for now due to the contravariance `w` being defined is self resolved
+     as Writes instance this subtype Family2Member
+     */
   }
 }

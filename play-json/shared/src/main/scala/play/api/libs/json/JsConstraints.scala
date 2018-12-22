@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import scala.collection.immutable.Map
+
 trait ConstraintFormat {
   @inline def of[A](implicit fmt: Format[A]): Format[A] = fmt
 
@@ -206,13 +208,13 @@ trait ConstraintWrites {
     def writes(a: A): JsValue = JsNull
   }
 
-  def list[A](implicit writes: Writes[A]): Writes[List[A]] = Writes.traversableWrites[A]
+  def list[A](implicit writes: Writes[A]): Writes[List[A]] = Writes.iterableWrites[A, List]
 
-  def set[A](implicit writes: Writes[A]): Writes[Set[A]] = Writes.traversableWrites[A]
+  def set[A](implicit writes: Writes[A]): Writes[Set[A]] = Writes.iterableWrites[A, Set]
 
-  def seq[A](implicit writes: Writes[A]): Writes[Seq[A]] = Writes.traversableWrites[A]
+  def seq[A](implicit writes: Writes[A]): Writes[Seq[A]] = Writes.iterableWrites[A, Seq]
 
-  def map[A](implicit writes: Writes[A]): OWrites[collection.immutable.Map[String, A]] = Writes.mapWrites[A]
+  def map[A](implicit writes: Writes[A]): OWrites[Map[String, A]] = Writes.genericMapWrites[A, Map]
 
   /**
    * Pure Option Writer[T] which writes "null" when None which is different
