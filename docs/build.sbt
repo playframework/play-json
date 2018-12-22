@@ -7,6 +7,6 @@ lazy val docs = project
   .enablePlugins(PlayDocsPlugin)
   .configs(Docs)
   .settings(
-    scalaVersion := "2.12.4",
+    scalaVersion := "2.12.7",
     libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.0-SNAPSHOT"
   )
