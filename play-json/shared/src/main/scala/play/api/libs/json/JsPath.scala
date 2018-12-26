@@ -57,7 +57,7 @@ case class RecursiveSearch(key: String) extends PathNode {
 case class KeyPathNode(key: String) extends PathNode {
 
   def apply(json: JsValue): List[JsValue] = json match {
-    case obj: JsObject => List(json \ key).flatMap(_.toOption)
+    case obj: JsObject => obj.underlying.get(key).toList
     case _ => List()
   }
 
