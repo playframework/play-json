@@ -5,7 +5,7 @@ scala:
 - 2.11.12
 jdk:
 - oraclejdk8
-- oraclejdk9
+- openjdk11
 script:
 - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode testOnly mimaReportBinaryIssues
 cache:
@@ -21,6 +21,6 @@ notifications:
 matrix:
   exclude:
     - scala: 2.11.12
-      jdk: oraclejdk9
+      jdk: openjdk11
     - scala: 2.13.0-M5
-      jdk: oraclejdk9
+      jdk: openjdk11
