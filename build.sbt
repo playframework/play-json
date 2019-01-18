@@ -104,7 +104,8 @@ lazy val root = project
     `play-jsonJVM`,
     `play-functionalJS`,
     `play-functionalJVM`,
-    `play-json-joda`
+    `play-json-joda`,
+    `play-json4s`
   ).settings(
     commonSettings,
     publishTo := None
@@ -188,6 +189,17 @@ lazy val `play-json-joda` = project
   .settings(
     libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
   )
+  .dependsOn(`play-jsonJVM`)
+
+lazy val `play-json4s` = project
+  .in(file("play-json4s"))
+  .enablePlugins(PlayLibrary)
+  .settings(commonSettings ++ playJsonMimaSettings ++ Seq(
+    libraryDependencies ++= Seq(
+      "org.json4s" %% "json4s-core" % "3.6.3",
+      "com.chuusai" %% "shapeless" % "2.3.3" % Test
+    ) ++ specsBuild.value.map(_ % Test)
+  ))
   .dependsOn(`play-jsonJVM`)
 
 lazy val `play-jsonJVM` = `play-json`.jvm.
