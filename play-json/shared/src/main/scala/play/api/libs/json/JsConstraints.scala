@@ -62,7 +62,7 @@ trait PathReads {
     Reads[Option[A]] { json =>
       path.applyTillLast(json).fold(identity, _.fold(
         _ => JsSuccess(defaultValue),
-        _ match {
+        {
           case JsNull => JsSuccess(None)
           case js => reads.reads(js).repath(path).map(Some(_))
         }
@@ -80,7 +80,7 @@ trait PathReads {
     Reads[JsObject](js => reads.reads(js).map(js => JsPath.createObj(path -> js)))
 
   def jsUpdate[A <: JsValue](path: JsPath)(reads: Reads[A]) =
-    Reads[JsObject](js => js match {
+    Reads[JsObject] {
       case o: JsObject =>
         path.asSingleJsResult(o)
           .flatMap(js => reads.reads(js).repath(path))
@@ -88,7 +88,7 @@ trait PathReads {
           .map(opath => o.deepMerge(opath))
       case _ =>
         JsError(JsPath, JsonValidationError("error.expected.jsobject"))
-    })
+    }
 
   def jsPrune(path: JsPath) = Reads[JsObject](js => path.prune(js))
 }
@@ -98,10 +98,10 @@ trait ConstraintReads {
   @inline def of[A](implicit r: Reads[A]) = r
 
   /** very simple optional field Reads that maps "null" to None */
-  def optionWithNull[T](implicit rds: Reads[T]): Reads[Option[T]] = Reads(js => js match {
+  def optionWithNull[T](implicit rds: Reads[T]): Reads[Option[T]] = Reads {
     case JsNull => JsSuccess(None)
     case js => rds.reads(js).map(Some(_))
-  })
+  }
 
   /** Stupidly reads a field as an Option mapping any error (format or missing field) to None */
   def optionNoError[A](implicit reads: Reads[A]): Reads[Option[A]] =
@@ -173,11 +173,9 @@ trait PathWrites {
    * If you want to write a "null", use ConstraintWrites.optionWithNull[A]
    */
   def nullable[A](path: JsPath)(implicit wrs: Writes[A]): OWrites[Option[A]] =
-    OWrites[Option[A]] { a =>
-      a match {
-        case Some(a) => JsPath.createObj(path -> wrs.writes(a))
-        case None => JsObject.empty
-      }
+    OWrites[Option[A]] {
+      case Some(a) => JsPath.createObj(path -> wrs.writes(a))
+      case None => JsObject.empty
     }
 
   def jsPick(path: JsPath): Writes[JsValue] =
