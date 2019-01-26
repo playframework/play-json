@@ -134,6 +134,17 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
         case Some((2, 13)) => Seq()
         case _ => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
       }),
+    // Adds a `src/main/scala-2.13+` source directory for Scala 2.13 and newer
+    // and a `src/main/scala-2.13-` source directory for Scala version older than 2.13
+    unmanagedSourceDirectories in Compile ++= {
+      (unmanagedSourceDirectories in Compile).value.map { dir =>
+        val sv = scalaVersion.value
+        CrossVersion.partialVersion(sv) match {
+          case Some((2, 13)) => file(dir.getPath ++ "-2.13+")
+          case _             => file(dir.getPath ++ "-2.13-")
+        }
+      }
+    },
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
 
