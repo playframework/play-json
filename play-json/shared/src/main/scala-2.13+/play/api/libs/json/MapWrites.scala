@@ -9,10 +9,13 @@ import scala.collection.IterableOps
 
 object MapWrites {
 
-  type Map[K, V] = MapOps[K, V, ({ type l[X, +Y] = IterableOps[_, AnyConstr, _] })#l, _]
+  type Map[K, V] = MapOps[K, V, CC, _]
 
   //see scala.collection.AnyConstr
   private[json] type AnyConstr[X] = Any
+
+  // see scala.collections.MapOps
+  private[json] type CC[X, +Y] = IterableOps[_, AnyConstr, _]
 
   /**
    * Serializer for Map[String,V] types.
