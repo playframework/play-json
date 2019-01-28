@@ -717,8 +717,8 @@ import scala.reflect.macros.blackbox
           //   invoke the nullableWithDefault version
           (isOption, defaultValue) match {
             case (true, Some(v)) =>
-              val c = TermName(s"${methodName}NullableWithDefault")
-              q"$jspathTree.$c($v)($impl)"
+              val c = TermName(s"${methodName}HandlerWithDefault")
+              q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
 
             case (true, _) =>
               val c = TermName(s"${methodName}Handler")

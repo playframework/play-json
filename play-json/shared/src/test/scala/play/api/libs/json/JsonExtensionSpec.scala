@@ -95,6 +95,7 @@ case class WithDefault2(a: String = "a", bar: Option[WithDefault1] = Some(WithDe
 case class WithDefaultSnake(firstProp: String, defaultProp: String = "the default")
 
 case class Optional(props: Option[String])
+case class OptionalWithDefault(props: Option[String] = None)
 
 class JsonExtensionSpec extends WordSpec with MustMatchers {
   "JsonExtension" should {
@@ -778,6 +779,40 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
       formatter.reads(Json.obj()) mustEqual JsSuccess(Optional(None))
       formatter.reads(Json.obj("props" -> JsNull)) mustEqual JsSuccess(Optional(None))
       formatter.reads(Json.obj("props" -> Some("foo"))) mustEqual JsSuccess(Optional(Some("foo")))
+    }
+
+    "create a Writes[OptionalWithDefault] with optionHandlers=WritesNull" in {
+      implicit val jsonConfiguration = JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
+      val writer = Json.writes[OptionalWithDefault]
+      writer.writes(OptionalWithDefault()) mustEqual Json.obj("props" -> JsNull)
+    }
+
+    "create a Format[OptionalWithDefault] with optionHandlers=WritesNull" in {
+      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      val formatter = Json.format[OptionalWithDefault]
+      formatter.writes(OptionalWithDefault()) mustEqual Json.obj("props" -> JsNull)
+      formatter.writes(OptionalWithDefault(Some("foo"))) mustEqual Json.obj("props" -> "foo")
+
+      formatter.reads(Json.obj()) mustEqual JsSuccess(OptionalWithDefault())
+      formatter.reads(Json.obj("props" -> JsNull)) mustEqual JsSuccess(OptionalWithDefault())
+      formatter.reads(Json.obj("props" -> Some("foo"))) mustEqual JsSuccess(OptionalWithDefault(Some("foo")))
+    }
+
+    "create a Writes[OptionalWithDefault] with DefaultValues and optionHandlers=WritesNull" in {
+      implicit val jsonConfiguration = JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
+      val writer = Json.writes[OptionalWithDefault]
+      writer.writes(OptionalWithDefault()) mustEqual Json.obj("props" -> JsNull)
+    }
+
+    "create a Format[OptionalWithDefault] with DefaultValues and optionHandlers=WritesNull" in {
+      implicit val jsonConfiguration = JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
+      val formatter = Json.format[OptionalWithDefault]
+      formatter.writes(OptionalWithDefault()) mustEqual Json.obj("props" -> JsNull)
+      formatter.writes(OptionalWithDefault(Some("foo"))) mustEqual Json.obj("props" -> "foo")
+
+      formatter.reads(Json.obj()) mustEqual JsSuccess(OptionalWithDefault())
+      formatter.reads(Json.obj("props" -> JsNull)) mustEqual JsSuccess(OptionalWithDefault(None))
+      formatter.reads(Json.obj("props" -> Some("foo"))) mustEqual JsSuccess(OptionalWithDefault(Some("foo")))
     }
   }
 }
