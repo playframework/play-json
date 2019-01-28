@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2019 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.json
@@ -57,7 +57,7 @@ case class RecursiveSearch(key: String) extends PathNode {
 case class KeyPathNode(key: String) extends PathNode {
 
   def apply(json: JsValue): List[JsValue] = json match {
-    case obj: JsObject => List(json \ key).flatMap(_.toOption)
+    case obj: JsObject => obj.underlying.get(key).toList
     case _ => List()
   }
 

@@ -1,21 +1,19 @@
 /*
- * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2019 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.json
 
-import scala.annotation.implicitNotFound
-
-import scala.util.control
-
-import scala.collection.Seq
-import scala.collection.compat._
-import scala.collection.immutable.Map
-import scala.collection.mutable.Builder
-
 import scala.language.higherKinds
 
-import reflect.ClassTag
+import scala.annotation.implicitNotFound
+import scala.collection.Seq
+import scala.collection.immutable.Map
+import scala.collection.mutable.Builder
+import scala.reflect.ClassTag
+import scala.util.control
+
+import ScalaCollectionCompat._
 
 /**
  * A `Reads` object describes how to decode JSON into a value.
