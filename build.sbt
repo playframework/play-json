@@ -126,14 +126,18 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     ),
     libraryDependencies ++=
       (CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, 13)) => Seq("org.scala-lang.modules" %%% "scala-collection-compat" % "0.2.0")
-        case _ => Seq("org.scala-lang.modules" %%% "scala-collection-compat" % "0.1.1")
-      }),
-    libraryDependencies ++=
-      (CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, 13)) => Seq()
         case _ => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
       }),
+    unmanagedSourceDirectories in Compile += {
+    //val sourceDir = (sourceDirectory in Compile).value
+      // ^ gives jvm/src/main, for some reason
+      val sourceDir = baseDirectory.value / "../shared/src/main"
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) if n >= 13 => sourceDir / "scala-2.13+"
+        case _                       => sourceDir / "scala-2.13-"
+      }
+    },
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
 

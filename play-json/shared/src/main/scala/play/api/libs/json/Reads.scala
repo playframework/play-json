@@ -4,18 +4,16 @@
 
 package play.api.libs.json
 
-import scala.annotation.implicitNotFound
-
-import scala.util.control
-
-import scala.collection.Seq
-import scala.collection.compat._
-import scala.collection.immutable.Map
-import scala.collection.mutable.Builder
-
 import scala.language.higherKinds
 
-import reflect.ClassTag
+import scala.annotation.implicitNotFound
+import scala.collection.Seq
+import scala.collection.immutable.Map
+import scala.collection.mutable.Builder
+import scala.reflect.ClassTag
+import scala.util.control
+
+import ScalaCollectionCompat._
 
 /**
  * A `Reads` object describes how to decode JSON into a value.
