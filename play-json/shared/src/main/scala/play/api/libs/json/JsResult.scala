@@ -78,7 +78,7 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
   def forall(p: Nothing => Boolean): Boolean = true
 
   def repath(path: JsPath): JsResult[Nothing] =
-    JsError(errors.map { case (p, s) => (path ++ p) -> s })
+    JsError(JsResult.repath(errors, path))
 
   def getOrElse[U >: Nothing](t: => U): U = t
 
@@ -333,4 +333,10 @@ object JsResult {
   implicit val functorJsResult: Functor[JsResult] = new Functor[JsResult] {
     override def fmap[A, B](m: JsResult[A], f: A => B) = m map f
   }
+
+  private[JsResult] type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+
+  private[json] def repath(errors: Errors, path: JsPath): Errors =
+    errors.map { case (p, s) => (path ++ p) -> s }
+
 }

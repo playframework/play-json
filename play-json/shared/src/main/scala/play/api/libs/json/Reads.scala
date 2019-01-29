@@ -229,26 +229,18 @@ trait LowPriorityDefaultReads extends EnvReads {
   implicit def traversableReads[F[_], A](implicit bf: Factory[A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
     def reads(json: JsValue) = json match {
       case JsArray(ts) =>
-
-        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
-        def locate(e: Errors, idx: Int) = e.map { case (p, valerr) => (JsPath(idx)) ++ p -> valerr }
-
-        ts.iterator.zipWithIndex.foldLeft(Right(Vector.empty): Either[Errors, Vector[A]]) {
-          case (acc, (elt, idx)) => (acc, ra.reads(elt)) match {
-            case (Right(vs), JsSuccess(v, _)) => Right(vs :+ v)
-            case (Right(_), JsError(e)) => Left(locate(e, idx))
-            case (Left(e), _: JsSuccess[_]) => Left(e)
-            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, idx))
+        ts.iterator.zipWithIndex.foldLeft(JsSuccess(bf.newBuilder): JsResult[Builder[A, F[A]]]) {
+          case (acc, (elem, idx)) => (acc, ra.reads(elem)) match {
+            case (JsSuccess(vs, _), JsSuccess(v, _)) => JsSuccess(vs += v)
+            case (_: JsSuccess[_], jsError: JsError) => jsError.repath(JsPath(idx))
+            case (JsError(errors0), JsError(errors)) => JsError(errors0 ++ JsResult.repath(errors, JsPath(idx)))
+            case (jsError: JsError, _: JsSuccess[_]) => jsError
           }
-        }.fold(JsError.apply, { res =>
-          val builder = bf.newBuilder
-          builder.sizeHint(res)
-          builder ++= res
-          JsSuccess(builder.result())
-        })
+        }.map(_.result())
       case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsarray"))))
     }
   }
+
 }
 
 /**
