@@ -782,7 +782,7 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
     }
 
     "create a Writes[OptionalWithDefault] with optionHandlers=WritesNull" in {
-      implicit val jsonConfiguration = JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
+      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
       val writer = Json.writes[OptionalWithDefault]
       writer.writes(OptionalWithDefault()) mustEqual Json.obj("props" -> JsNull)
     }
