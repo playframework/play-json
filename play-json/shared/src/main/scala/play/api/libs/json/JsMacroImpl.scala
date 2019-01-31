@@ -714,7 +714,7 @@ import scala.reflect.macros.blackbox
 
           // - If we're an default value, invoke the withDefault version
           // - If we're an option with default value,
-          //   invoke the nullableWithDefault version
+          //   invoke the WithDefault version
           (isOption, defaultValue) match {
             case (true, Some(v)) =>
               val c = TermName(s"${methodName}HandlerWithDefault")
