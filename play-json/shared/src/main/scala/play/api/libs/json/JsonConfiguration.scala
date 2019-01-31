@@ -143,10 +143,19 @@ object JsonNaming {
 
 /** Configure how options should be handled */
 trait OptionHandlers {
-  def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]]
   def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]]
+  def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]]
+
+  def readHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = {
+    jsPath.readNullableWithDefault(defaultValue)
+  }
+
   final def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
     OFormat(readHandler(jsPath), writeHandler(jsPath))
+  }
+
+  final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit format: Format[T]): OFormat[Option[T]] = {
+    OFormat(readHandlerWithDefault(jsPath, defaultValue), writeHandler(jsPath))
   }
 }
 
