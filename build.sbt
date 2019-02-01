@@ -47,7 +47,7 @@ import com.typesafe.sbt.SbtScalariform, SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 val previousVersions = Def.setting[Seq[String]] {
-  Seq("2.7.0")
+  Seq("2.7.1")
 }
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
