@@ -1,10 +1,9 @@
 # These settings are synced to GitHub by https://probot.github.io/apps/settings/
 repository:
-  homepage: "https://www.playframework.com/documentation/latest/JavaWS"
   topics: playframework, json, dsl, convenience-macros, json-ast, automatic-conversion, scala, scalajs, serialization, serializer
   private: false
   has_issues: true
-  has_projects: true
+  has_projects: false
   # We don't need wiki since the documentation lives in playframework.com
   has_wiki: false
   has_downloads: true
@@ -71,7 +70,6 @@ labels:
     oldname: backlog
   - color: b60205
     name: "status:block-merge"
-    oldname: block-merge
   - color: b60205
     name: "status:blocked"
   - color: 0e8a16
@@ -79,16 +77,16 @@ labels:
     oldname: in progress
   - color: 0e8a16
     name: "status:merge-when-green"
-    oldname: merge-when-green
   - color: fbca04
     name: "status:needs-backport"
   - color: fbca04
     name: "status:needs-forwardport"
   - color: fbca04
     name: "status:needs-info"
+    oldnmae: "help:needs-info"
   - color: fbca04
     name: "status:needs-verification"
-    oldname: needs-confirmation
+    oldname: "help:needs-verification"
   - color: 0e8a16
     name: "status:ready"
     oldname: ready
@@ -119,4 +117,3 @@ labels:
     name: "type:updates"
   - color: 0052cc
     name: "type:upstream"
-    oldname: akka-http-backend
