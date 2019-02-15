@@ -17,21 +17,8 @@ teams:
     permission: admin
   - name: integrators
     permission: write
-  - name: write-bots
-    permission: write
 
 branches:
-  - name: master
-    protection:
-      required_pull_request_reviews:
-        required_approving_review_count: 1
-        dismiss_stale_reviews: true
-      # Require status checks to pass before merging
-      required_status_checks:
-        # Require branches to be up to date before merging.
-        strict: true
-        # The list of status checks to require in order to merge into this branch
-        contexts: ["Travis CI - Pull Request", "typesafe-cla-validator"]
   - name: "[0-9].*.x"
     protection:
       required_pull_request_reviews:
@@ -39,8 +26,6 @@ branches:
         dismiss_stale_reviews: true
       # Require status checks to pass before merging
       required_status_checks:
-        # Require branches to be up to date before merging.
-        strict: true
         # The list of status checks to require in order to merge into this branch
         contexts: ["Travis CI - Pull Request", "typesafe-cla-validator"]
 
@@ -83,7 +68,7 @@ labels:
     name: "status:needs-forwardport"
   - color: fbca04
     name: "status:needs-info"
-    oldnmae: "help:needs-info"
+    oldname: "help:needs-info"
   - color: fbca04
     name: "status:needs-verification"
     oldname: "help:needs-verification"
