@@ -405,8 +405,8 @@ class ScalaJsonSpec extends Specification {
       // JsSuccess(Resident(Bigwig,6,Some(Owsla)),)
       //#convert-to-model
 
-      placeResult must beLike { case JsSuccess(Place(name, _, _)) => name === "Watership Down" }
-      residentResult must beLike { case Resident(name, _, _) => name === "Bigwig" }
+      placeResult must beLike { case JsSuccess(Place(name, _, _), _) => name === "Watership Down" }
+      residentResult must beLike { case JsSuccess(Resident(name, _, _), _) => name === "Bigwig" }
     }
 
   }
