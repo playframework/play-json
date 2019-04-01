@@ -12,16 +12,8 @@ env:
   global:
     - JABBA_HOME=$HOME/.jabba
   matrix:
-    - TRAVIS_JDK=adopt@1.8.192-12
-    - TRAVIS_JDK=adopt@1.11.0-1
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    # Java 11 is still not fully supported. It is good that we are already
-    # testing play-json using it to better discover possible problems but we
-    # can allow failures here too.
-    - env: TRAVIS_JDK=adopt@1.11.0-1
+    - TRAVIS_JDK=adopt@1.8.202-08
+    - TRAVIS_JDK=adopt@1.11.0-2
 
 scala:
   - 2.12.8
