@@ -7,7 +7,7 @@ resolvers += Resolver.typesafeRepo("releases")
 
 addSbtPlugin("com.typesafe.play" % "interplay" % sys.props.get("interplay.version").getOrElse("2.0.5"))
 
-addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
+addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.5")
 
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.3.0")
 
