@@ -3,7 +3,7 @@ Play JSON
 
 Play JSON is a powerful Scala JSON library, originally developed by the Play team for use with Play Framework. It uses Jackson for JSON parsing and has no Play dependencies.
 
-We've provided some documentation here on how to use Play JSON in your app (without Play). For more information on how to use Play JSON in Play, please refer to the [Play documentation](https://www.playframework.com/documentation/2.6.x/ScalaJson).
+We've provided some documentation here on how to use Play JSON in your app (without Play). For more information on how to use Play JSON in Play, please refer to the [Play documentation](https://www.playframework.com/documentation/2.7.x/ScalaJson).
 
 ## Getting Started
 
