@@ -153,4 +153,70 @@ class JsObjectSpec extends WordSpec with MustMatchers {
         )
     }
   }
+
+  "JsObject.++" should {
+    "preserve order of fields" in {
+      val obj1 = Json.obj(
+        "field1" -> 123,
+        "field2" -> "abc",
+        "field3" -> JsNull
+      )
+      val obj2 = Json.obj(
+        "field4" -> 456,
+        "field5" -> "def",
+        "field6" -> JsNull
+      )
+      val expected = Json.obj(
+        "field1" -> 123,
+        "field2" -> "abc",
+        "field3" -> JsNull,
+        "field4" -> 456,
+        "field5" -> "def",
+        "field6" -> JsNull
+      )
+      Json.stringify(obj1 ++ obj2) mustEqual Json.stringify(expected)
+    }
+  }
+
+  "JsObject.+" should {
+    "preserve order of fields" in {
+      val obj1 = Json.obj(
+        "field1" -> 123,
+        "field2" -> "abc",
+        "field3" -> JsNull
+      )
+      val field4 = "field4" -> JsNumber(456)
+      val field5 = "field5" -> JsString("def")
+      val field6 = "field6" -> JsNull
+
+      val expected = Json.obj(
+        "field1" -> 123,
+        "field2" -> "abc",
+        "field3" -> JsNull,
+        "field4" -> 456,
+        "field5" -> "def",
+        "field6" -> JsNull
+      )
+      Json.stringify(obj1 + field4 + field5 + field6) mustEqual Json.stringify(expected)
+    }
+  }
+
+  "JsObject.-" should {
+    "preserve order of fields" in {
+      val originalObj = Json.obj(
+        "field1" -> 123,
+        "field2" -> "abc",
+        "field3" -> JsNull,
+        "field4" -> 456,
+        "field5" -> "def",
+        "field6" -> JsNull
+      )
+      val expected = Json.obj(
+        "field4" -> 456,
+        "field5" -> "def",
+        "field6" -> JsNull
+      )
+      Json.stringify(originalObj - "field1" - "field2" - "field3") mustEqual Json.stringify(expected)
+    }
+  }
 }
