@@ -18,7 +18,7 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _ => "4.3.5"
+    case _ => "4.5.1"
   }
 
   Seq("org.specs2" %% "specs2-core" % specsVersion)
@@ -85,9 +85,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
       ))
     },
     scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(
-      ScalaVersions.scala211, ScalaVersions.scala212, ScalaVersions.scala213
-    ),
+    crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
@@ -118,7 +116,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .settings(
     mimaBinaryIssueFilters ++= Seq(),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.6-SNAP4" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.8-RC2" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
