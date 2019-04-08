@@ -10,6 +10,7 @@ import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{
   mimaBinaryIssueFilters, mimaPreviousArtifacts
 }
+import sbtcrossproject.{crossProject, CrossType}
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
@@ -18,7 +19,7 @@ val scala213Version = "2.13.0-M3"
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _ => "4.0.2"
+    case _ => "4.5.1"
   }
 
   Seq("org.specs2" %% "specs2-core" % specsVersion)
@@ -76,9 +77,7 @@ lazy val commonSettings = scalariformSettings(autoformat = true) ++ Seq(
       ))
     },
     scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(
-      ScalaVersions.scala210, ScalaVersions.scala211, ScalaVersions.scala212, scala213Version
-    ),
+    crossScalaVersions := Seq("2.11.12", ScalaVersions.scala212, scala213Version),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
@@ -98,7 +97,7 @@ lazy val root = project
     `play-json-joda`
   ).settings(commonSettings: _*)
 
-lazy val `play-json` = crossProject.crossType(CrossType.Full)
+lazy val `play-json` = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(PlayLibrary, Playdoc)
   .settings(commonSettings)
@@ -120,13 +119,17 @@ lazy val `play-json` = crossProject.crossType(CrossType.Full)
       ProblemFilters.exclude[ReversedMissingMethodProblem]("play.api.libs.json.DefaultReads.BigIntegerReads")
     ),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.5-M1" % Test,
-      "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.8-RC2" % Test,
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
-      compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
     ),
+    libraryDependencies ++=
+      (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 13)) => Seq()
+        case _ => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+      }),
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
 
@@ -194,7 +197,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
 
 lazy val `play-jsonJS` = `play-json`.js
 
-lazy val `play-functional` = crossProject.crossType(CrossType.Pure)
+lazy val `play-functional` = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure)
   .in(file("play-functional"))
   .settings(commonSettings)
   .settings(playJsonMimaSettings)

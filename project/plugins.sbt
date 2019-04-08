@@ -5,7 +5,7 @@
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 resolvers += Resolver.typesafeRepo("releases")
 
-addSbtPlugin("com.typesafe.play" % "interplay" % sys.props.get("interplay.version").getOrElse("1.3.18"))
+addSbtPlugin("com.typesafe.play" % "interplay" % sys.props.get("interplay.version").getOrElse("2.0.6"))
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.2.24")
 
@@ -18,4 +18,6 @@ addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.0")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "3.0.1")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.26")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.27")
+
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
