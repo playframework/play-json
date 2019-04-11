@@ -85,7 +85,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
       ))
     },
     scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
+    crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213, "2.11.12"),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
