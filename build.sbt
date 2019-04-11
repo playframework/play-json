@@ -50,9 +50,12 @@ val previousVersions = Def.setting[Seq[String]] {
   Seq("2.7.1")
 }
 
-def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
-  mimaPreviousArtifacts := previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
-)
+def playJsonMimaSettings = mimaDefaultSettings ++ {
+  mimaPreviousArtifacts := {
+    if (scalaVersion.value.equals(ScalaVersions.scala213)) Set.empty
+    else previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
+  }
+}
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
 // Use "sbt -DscalaJSStage=full" in .travis.yml
