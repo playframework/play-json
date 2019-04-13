@@ -51,7 +51,10 @@ val previousVersions = Def.setting[Seq[String]] {
 }
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
-  mimaPreviousArtifacts := previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
+  mimaPreviousArtifacts := {
+    if (scalaVersion.value.equals(ScalaVersions.scala213)) Set.empty
+    else previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
+  }
 )
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
@@ -85,7 +88,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
       ))
     },
     scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
+    crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213, "2.11.12"),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
