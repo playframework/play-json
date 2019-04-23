@@ -20,12 +20,12 @@ scala:
   - 2.13.0-RC1
 
 script:
-  - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode testOnly mimaReportBinaryIssues
+  - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues
 
 cache:
   directories:
     - "$HOME/.ivy2/cache"
-    - "$HOME/.sbt/boot/"
+    - "$HOME/.sbt"
     - "$HOME/.jabba/jdk"
 
 before_cache:
