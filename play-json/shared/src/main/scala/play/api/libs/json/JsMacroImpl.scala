@@ -559,7 +559,7 @@ import scala.reflect.macros.blackbox
       }
 
       if (tpeSym.isSealed && tpeSym.isAbstract) {
-        Some(allSubclasses(tpeSym.owner.typeSignature.decls, Set.empty).toList)
+        Some(allSubclasses(tpeSym.owner.typeSignature.decls.sorted, Set.empty).toList)
       } else None
     }
 
