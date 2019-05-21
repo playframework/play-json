@@ -29,7 +29,7 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "pick a value at a path" in {
       js.transform(
-        (__ \ 'field3).json.pick
+        (__ \ Symbol("field3")).json.pick
       ).get mustEqual (
           Json.obj(
             "field31" -> "beta", "field32" -> 345
@@ -39,7 +39,7 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "pick a branch" in {
       js.transform(
-        (__ \ 'field3).json.pickBranch
+        (__ \ Symbol("field3")).json.pickBranch
       ).get mustEqual (
           Json.obj(
             "field3" -> Json.obj("field31" -> "beta", "field32" -> 345)
@@ -49,7 +49,7 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "copy input JSON and update a branch (merge the updated branch with input JSON)" in {
       js.transform(
-        (__ \ 'field3).json.update(
+        (__ \ Symbol("field3")).json.update(
           __.read[JsObject].map { o => o ++ Json.obj("field33" -> false) }
         )
       ).get mustEqual (
@@ -68,11 +68,11 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "pick a branch and update its content" in {
       js.transform(
-        (__ \ 'field3).json.pickBranch(
-          (__ \ 'field32).json.update(
+        (__ \ Symbol("field3")).json.pickBranch(
+          (__ \ Symbol("field32")).json.update(
             Reads.of[JsNumber].map { case JsNumber(nb) => JsNumber(nb + 12) }
           ) andThen
-            (__ \ 'field31).json.update(
+            (__ \ Symbol("field31")).json.update(
               Reads.of[JsString].map { case JsString(s) => JsString(s + "toto") }
             )
         )
@@ -85,7 +85,7 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "put a value in a new branch (don't keep passed json)" in {
       js.transform(
-        (__ \ 'field3).json.put(JsNumber(234))
+        (__ \ Symbol("field3")).json.put(JsNumber(234))
       ).get mustEqual (
           Json.obj(
             "field3" -> 234
@@ -95,7 +95,7 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "create a new path by copying a branch" in {
       js.transform(
-        (__ \ 'field5).json.copyFrom((__ \ 'field3).json.pick)
+        (__ \ Symbol("field5")).json.copyFrom((__ \ Symbol("field3")).json.pick)
       ).get mustEqual (
           Json.obj(
             "field5" -> Json.obj(
@@ -108,7 +108,7 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "copy full json and prune a branch" in {
       js.transform(
-        (__ \ 'field3).json.prune
+        (__ \ Symbol("field3")).json.prune
       ).get mustEqual (
           Json.obj(
             "field1" -> "alpha",
@@ -120,8 +120,8 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "pick a single branch and prune a sub-branch" in {
       js.transform(
-        (__ \ 'field3).json.pickBranch(
-          (__ \ 'field32).json.prune
+        (__ \ Symbol("field3")).json.pickBranch(
+          (__ \ Symbol("field32")).json.prune
         )
       ).get mustEqual (
           Json.obj(
@@ -132,9 +132,9 @@ class JsonTransSpec extends WordSpec with MustMatchers {
 
     "copy the full json and update a 2nd-level path and then prune a subbranch" in {
       js.validate(
-        (__ \ 'field3 \ 'field32).json.update(
+        (__ \ Symbol("field3") \ Symbol("field32")).json.update(
           Reads.of[JsNumber].map { case JsNumber(nb) => JsNumber(nb + 5) }
-        ) andThen (__ \ 'field4).json.prune
+        ) andThen (__ \ Symbol("field4")).json.prune
       ).get mustEqual (
           Json.obj(
             "field1" -> "alpha",
@@ -163,14 +163,14 @@ class JsonTransSpec extends WordSpec with MustMatchers {
     "report the correct path in the JsError" when {
       "the field to modify doesn't exist" in {
         js.transform(
-          (__ \ 'field42).json.update(__.read[JsString])
-        ).asEither.left.get.head mustEqual ((__ \ 'field42, Seq(JsonValidationError("error.path.missing"))))
+          (__ \ Symbol("field42")).json.update(__.read[JsString])
+        ).asEither.left.get.head mustEqual ((__ \ Symbol("field42"), Seq(JsonValidationError("error.path.missing"))))
       }
 
       "the reader is the wrong type" in {
         js.transform(
-          (__ \ 'field2).json.update(__.read[JsString])
-        ).asEither.left.get.head mustEqual ((__ \ 'field2, Seq(JsonValidationError("error.expected.jsstring"))))
+          (__ \ Symbol("field2")).json.update(__.read[JsString])
+        ).asEither.left.get.head mustEqual ((__ \ Symbol("field2"), Seq(JsonValidationError("error.expected.jsstring"))))
       }
     }
   }

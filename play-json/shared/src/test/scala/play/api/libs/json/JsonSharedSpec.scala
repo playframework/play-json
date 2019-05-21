@@ -17,16 +17,16 @@ class JsonSharedSpec extends WordSpec
   case class User(id: Long, name: String, friends: List[User])
 
   implicit val UserFormat: Format[User] = (
-    (__ \ 'id).format[Long] and
-    (__ \ 'name).format[String] and
-    (__ \ 'friends).lazyFormat(Reads.list(UserFormat), Writes.list(UserFormat))
+    (__ \ Symbol("id")).format[Long] and
+    (__ \ Symbol("name")).format[String] and
+    (__ \ Symbol("friends")).lazyFormat(Reads.list(UserFormat), Writes.list(UserFormat))
   )(User, unlift(User.unapply))
 
   case class Car(id: Long, models: Map[String, String])
 
   implicit val CarFormat = (
-    (__ \ 'id).format[Long] and
-    (__ \ 'models).format[Map[String, String]]
+    (__ \ Symbol("id")).format[Long] and
+    (__ \ Symbol("models")).format[Map[String, String]]
   )(Car, unlift(Car.unapply))
 
   def json[T](f: JsonFacade => T) = forAll(
@@ -316,10 +316,10 @@ class JsonSharedSpec extends WordSpec
       js.toJson(Map("key1" -> "value1", "key2" -> "value2")) mustEqual (js.obj("key1" -> "value1", "key2" -> "value2"))
 
       implicit val myWrites = (
-        (__ \ 'key1).write(constraints.list[Int]) and
-        (__ \ 'key2).write(constraints.set[String]) and
-        (__ \ 'key3).write(constraints.seq[String]) and
-        (__ \ 'key4).write(constraints.map[String])
+        (__ \ Symbol("key1")).write(constraints.list[Int]) and
+        (__ \ Symbol("key2")).write(constraints.set[String]) and
+        (__ \ Symbol("key3")).write(constraints.seq[String]) and
+        (__ \ Symbol("key4")).write(constraints.map[String])
       ).tupled
 
       js.toJson((
