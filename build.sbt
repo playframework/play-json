@@ -135,7 +135,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     unmanagedSourceDirectories in Compile += {
     //val sourceDir = (sourceDirectory in Compile).value
       // ^ gives jvm/src/main, for some reason
-      val sourceDir = baseDirectory.value / "../shared/src/main"
+      val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, n)) if n >= 13 => sourceDir / "scala-2.13+"
         case _                       => sourceDir / "scala-2.13-"
@@ -204,7 +204,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
       jacksons ++ specsBuild.value.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
-    unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
+    unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
   )
 
 lazy val `play-jsonJS` = `play-json`.js
