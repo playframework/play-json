@@ -37,8 +37,8 @@ class JsonValidSpec extends Specification {
 
     "verifyingIf reads" in {
       implicit val TupleReads: Reads[(String, JsObject)] = (
-        (__ \ 'type).read[String] and
-        (__ \ 'data).read(
+        (__ \ Symbol("type")).read[String] and
+        (__ \ Symbol("data")).read(
           Reads.verifyingIf[JsObject] { case JsObject(fields) => !fields.isEmpty }(
             ((__ \ "title").read[String] and
               (__ \ "created").read[java.util.Date]).tupled

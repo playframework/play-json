@@ -26,8 +26,8 @@ class ScalaJsonAutomatedSpec extends Specification {
   case object Admin extends Role
   class Contributor(val organization: String) extends Role {
     override def equals(obj: Any): Boolean = obj match {
-      case other: Contributor if obj != null ⇒ this.organization == other.organization
-      case _ ⇒ false
+      case other: Contributor if obj != null => this.organization == other.organization
+      case _ => false
     }
   }
   object Contributor {

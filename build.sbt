@@ -52,7 +52,7 @@ val previousVersions = Def.setting[Seq[String]] {
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
   mimaPreviousArtifacts := {
-    if (scalaVersion.value.equals(ScalaVersions.scala213)) Set.empty
+    if (scalaVersion.value.startsWith("2.13.0-")) Set.empty
     else previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
   }
 )
@@ -88,7 +88,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
       ))
     },
     scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213, "2.11.12"),
+    crossScalaVersions := Seq(ScalaVersions.scala212, "2.13.0-RC2", "2.11.12"),
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(SpacesAroundMultiImports, true)
       .setPreference(SpaceInsideParentheses, false)
@@ -119,7 +119,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .settings(
     mimaBinaryIssueFilters ++= Seq(),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.8-RC2" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.8-RC4" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
@@ -133,7 +133,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     unmanagedSourceDirectories in Compile += {
     //val sourceDir = (sourceDirectory in Compile).value
       // ^ gives jvm/src/main, for some reason
-      val sourceDir = baseDirectory.value / "../shared/src/main"
+      val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, n)) if n >= 13 => sourceDir / "scala-2.13+"
         case _                       => sourceDir / "scala-2.13-"
@@ -202,7 +202,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
       jacksons ++ specsBuild.value.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
-    unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
+    unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
   )
 
 lazy val `play-jsonJS` = `play-json`.js
