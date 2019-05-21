@@ -164,13 +164,13 @@ class JsonTransSpec extends WordSpec with MustMatchers {
       "the field to modify doesn't exist" in {
         js.transform(
           (__ \ Symbol("field42")).json.update(__.read[JsString])
-        ).asEither.left.get.head mustEqual ((__ \ Symbol("field42"), Seq(JsonValidationError("error.path.missing"))))
+        ).asEither.swap.getOrElse(???).head mustEqual ((__ \ Symbol("field42"), Seq(JsonValidationError("error.path.missing"))))
       }
 
       "the reader is the wrong type" in {
         js.transform(
           (__ \ Symbol("field2")).json.update(__.read[JsString])
-        ).asEither.left.get.head mustEqual ((__ \ Symbol("field2"), Seq(JsonValidationError("error.expected.jsstring"))))
+        ).asEither.swap.getOrElse(???).head mustEqual ((__ \ Symbol("field2"), Seq(JsonValidationError("error.expected.jsstring"))))
       }
     }
   }
