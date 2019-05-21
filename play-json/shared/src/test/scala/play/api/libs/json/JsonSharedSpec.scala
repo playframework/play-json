@@ -12,7 +12,7 @@ import org.scalatest._
 import org.scalacheck.Gen
 
 class JsonSharedSpec extends WordSpec
-  with MustMatchers with org.scalatest.prop.PropertyChecks {
+  with MustMatchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
 
   case class User(id: Long, name: String, friends: List[User])
 
