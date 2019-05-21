@@ -44,8 +44,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
   implicit val FloatNumbersFormat: Format[FloatNumbers] = Json.format[FloatNumbers]
 
   implicit val PostFormat: Format[Post] = (
-    (__ \ 'body).format[String] and
-    (__ \ 'created_at).formatNullable[Option[Date]](
+    (__ \ Symbol("body")).format[String] and
+    (__ \ Symbol("created_at")).formatNullable[Option[Date]](
       Format(
         Reads.optionWithNull(Reads.dateReads(dateFormat)),
         Writes.optionWithNull(Writes.dateWrites(dateFormat))
@@ -54,8 +54,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
   ) (Post, unlift(Post.unapply))
 
   val LenientPostFormat: Format[Post] = (
-    (__ \ 'body).format[String] and
-    (__ \ 'created_at).formatNullable[Date](
+    (__ \ Symbol("body")).format[String] and
+    (__ \ Symbol("created_at")).formatNullable[Date](
       Format(
         Reads.IsoDateReads,
         Writes.dateWrites(dateFormat)
