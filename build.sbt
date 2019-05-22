@@ -65,38 +65,39 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
   case _ => FastOptStage
 })
 
-lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
-    // Do not buffer test output
-    logBuffered in Test := false,
-    testOptions in Test ++= Seq(
-      // Show the duration of tests
-      Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
-      Tests.Argument(TestFrameworks.Specs2, "showtimes"),
-      // Filtering tests that are not stable in Scala 2.13 yet.
-      Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
-    ),
-    publishTo := Some(
-      if (isSnapshot.value)
-        Opts.resolver.sonatypeSnapshots
-      else
-        Opts.resolver.sonatypeStaging
-    ),
-    scalariformAutoformat := true,
-    headerLicense := {
-      val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
-      Some(HeaderLicense.Custom(
-        s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
-      ))
-    },
-    scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(ScalaVersions.scala212, "2.13.0-RC2"),
-    ScalariformKeys.preferences := ScalariformKeys.preferences.value
-      .setPreference(SpacesAroundMultiImports, true)
-      .setPreference(SpaceInsideParentheses, false)
-      .setPreference(DanglingCloseParenthesis, Preserve)
-      .setPreference(PreserveSpaceBeforeArguments, true)
-      .setPreference(DoubleIndentConstructorArguments, false)
-  )
+lazy val commonSettings = Def.settings(
+  // Do not buffer test output
+  logBuffered in Test := false,
+  testOptions in Test ++= Seq(
+    // Show the duration of tests
+    Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+    Tests.Argument(TestFrameworks.Specs2, "showtimes"),
+    // Filtering tests that are not stable in Scala 2.13 yet.
+    Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
+  ),
+  publishTo := Some(
+    if (isSnapshot.value)
+      Opts.resolver.sonatypeSnapshots
+    else
+      Opts.resolver.sonatypeStaging
+  ),
+  scalariformAutoformat := true,
+  headerLicense := {
+    val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
+    Some(HeaderLicense.Custom(
+      s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
+    ))
+  },
+  scalaVersion := ScalaVersions.scala212,
+  crossScalaVersions := Seq(ScalaVersions.scala212, "2.13.0-RC2"),
+  SbtScalariform.projectSettings,
+  ScalariformKeys.preferences := ScalariformKeys.preferences.value
+    .setPreference(SpacesAroundMultiImports, true)
+    .setPreference(SpaceInsideParentheses, false)
+    .setPreference(DanglingCloseParenthesis, Preserve)
+    .setPreference(PreserveSpaceBeforeArguments, true)
+    .setPreference(DoubleIndentConstructorArguments, false),
+)
 
 lazy val root = project
   .in(file("."))
