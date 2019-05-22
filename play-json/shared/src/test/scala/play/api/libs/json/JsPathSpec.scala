@@ -174,7 +174,7 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      ((JsPath \ 'level1 \ 'key1)(1) \\ 'tags)(obj) mustEqual (Seq(Json.arr("alpha1", "beta1", "gamma1")))
+      ((JsPath \ Symbol("level1") \ Symbol("key1"))(1) \\ Symbol("tags"))(obj) mustEqual (Seq(Json.arr("alpha1", "beta1", "gamma1")))
 
     }
 
@@ -227,10 +227,10 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      (__ \ 'level2).prune(obj) mustEqual (JsSuccess(res, __ \ 'level2))
-      (__ \ 'level1 \ 'key1).prune(obj).get mustEqual (res2)
-      (__ \ 'level1 \ 'key2 \ 'key21).prune(obj).get mustEqual (res3)
-      (__ \\ 'key21).prune(obj) mustEqual (JsError(__ \\ "key21", JsonValidationError("error.expected.keypathnode")))
+      (__ \ Symbol("level2")).prune(obj) mustEqual (JsSuccess(res, __ \ Symbol("level2")))
+      (__ \ Symbol("level1") \ Symbol("key1")).prune(obj).get mustEqual (res2)
+      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key21")).prune(obj).get mustEqual (res3)
+      (__ \\ Symbol("key21")).prune(obj) mustEqual (JsError(__ \\ "key21", JsonValidationError("error.expected.keypathnode")))
     }
 
     "get JsPath till last node" in {
@@ -247,16 +247,16 @@ class JsPathSpec extends WordSpec with MustMatchers {
         )
       )
 
-      (__ \ 'level1 \ 'key2 \ 'key21).applyTillLast(res) mustEqual (Right(JsSuccess(
+      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key21")).applyTillLast(res) mustEqual (Right(JsSuccess(
         Json.obj("tags" -> Json.arr("alpha2", "beta2", "gamma2"))
       )))
 
-      (__ \ 'level1 \ 'key2 \ 'key23).applyTillLast(res) mustEqual (
-        Right(JsError(__ \ 'level1 \ 'key2 \ 'key23, JsonValidationError("error.path.missing")))
+      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key23")).applyTillLast(res) mustEqual (
+        Right(JsError(__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key23"), JsonValidationError("error.path.missing")))
       )
 
-      (__ \ 'level2 \ 'key3).applyTillLast(res) mustEqual (
-        Left(JsError(__ \ 'level2 \ 'key3, JsonValidationError("error.path.missing")))
+      (__ \ Symbol("level2") \ Symbol("key3")).applyTillLast(res) mustEqual (
+        Left(JsError(__ \ Symbol("level2") \ Symbol("key3"), JsonValidationError("error.path.missing")))
       )
     }
 
