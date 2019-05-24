@@ -65,6 +65,21 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
   case _ => FastOptStage
 })
 
+val javacSettings = Seq(
+  "-source", "1.8",
+  "-target", "1.8",
+  "-Xlint:deprecation",
+  "-Xlint:unchecked",
+)
+
+val scalacOpts = Seq(
+  "-target:jvm-1.8",
+  "-Ywarn-unused:imports",
+  "-Xlint:nullary-unit",
+  "-Xlint",
+  "-Ywarn-dead-code",
+)
+
 lazy val commonSettings = Def.settings(
   // Do not buffer test output
   logBuffered in Test := false,
@@ -89,7 +104,7 @@ lazy val commonSettings = Def.settings(
     ))
   },
   scalaVersion := ScalaVersions.scala212,
-  crossScalaVersions := Seq(ScalaVersions.scala212, "2.13.0-RC2"),
+  crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
   SbtScalariform.projectSettings,
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(SpacesAroundMultiImports, true)
@@ -97,6 +112,16 @@ lazy val commonSettings = Def.settings(
     .setPreference(DanglingCloseParenthesis, Preserve)
     .setPreference(PreserveSpaceBeforeArguments, true)
     .setPreference(DoubleIndentConstructorArguments, false),
+
+  javacOptions in Compile ++= javacSettings,
+  javacOptions in Test ++= javacSettings,
+
+  scalacOptions ++= scalacOpts,
+  scalacOptions in (Compile, doc) ++= Seq(
+    "-Xfatal-warnings",
+    // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
+    "-no-java-comments",
+  )
 )
 
 lazy val root = project
