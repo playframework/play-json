@@ -566,6 +566,7 @@ import scala.reflect.macros.blackbox
     // --- Sub implementations
 
     val readsType = c.typeOf[Reads[_]]
+    val writesType = c.typeOf[Writes[_]]
 
     def macroSealedFamilyImpl(subTypes: List[Type]): c.Expr[M[A]] = {
       if (subTypes.isEmpty) {
@@ -574,24 +575,21 @@ import scala.reflect.macros.blackbox
 
       def readLambda: Tree = {
         val resolver = new ImplicitResolver({ orig: Type => orig })
-        val cases = Match(q"dis", (
-          cq"""_ => $json.JsError("error.invalid")""" :: (
-            subTypes.foldLeft(List.empty[CaseDef]) { (out, t) =>
-              val rtpe = appliedType(readsType, List(t))
-              val reader = resolver.createImplicit(
-                atpe, rtpe
-              )(t).neededImplicit
+        val cases = Match(q"dis", (subTypes.map { t =>
+          val rtpe = appliedType(readsType, List(t))
+          val reader = resolver.createImplicit(
+            atpe, rtpe
+          )(t).neededImplicit
 
-              if (reader.isEmpty) {
-                c.abort(
-                  c.enclosingPosition,
-                  s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
-                )
-              }
-              cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)" :: out
-            }
-          )
-        ).reverse)
+          if (reader.isEmpty) {
+            c.abort(
+              c.enclosingPosition,
+              s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+            )
+          }
+
+          cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)"
+        }) :+ cq"""_ => $json.JsError("error.invalid")""")
 
         q"""(_: $json.JsValue) match {
           case obj @ $json.JsObject(_) => obj.value.get($config.discriminator) match {
@@ -608,23 +606,24 @@ import scala.reflect.macros.blackbox
       }
 
       def writeLambda: Tree = {
-        val owner = c.internal.enclosingOwner
-
-        if (!owner.isTerm) {
-          c.abort(
-            c.enclosingPosition,
-            "the macro must be used to generate the body of a term"
-          )
-        }
-
-        // ---
-
-        val term = owner.asTerm
+        val resolver = new ImplicitResolver({ orig: Type => orig })
         val cases = Match(q"v", subTypes.map { t =>
-          // Use `implicitly` rather than `ImplicitResolver.createImplicit`,
-          // due to the implicit/contravariance workaround
+          val wtpe = appliedType(writesType, List(t))
+          val writer = resolver.createImplicit(
+            atpe, wtpe
+          )(t).neededImplicit
+
+          if (writer.isEmpty) {
+            c.abort(
+              c.enclosingPosition,
+              s"No instance of Writes is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+            )
+          }
+
+          // ---
+
           cq"""x: $t => {
-            val xjs = implicitly[$json.Writes[$t]].writes(x)
+            val xjs = ${writer}.writes(x)
             @inline def jso = xjs match {
               case xo @ $json.JsObject(_) => xo
               case jsv => $json.JsObject(Seq("_value" -> jsv))
@@ -634,20 +633,7 @@ import scala.reflect.macros.blackbox
           }"""
         })
 
-        // Use shadowing to eliminate the generated term itself
-        // from the implicit scope, due to the contravariant/implicit issue:
-        // https://groups.google.com/forum/#!topic/scala-language/ZE83TvSWpT4
-
-        val shadowName = TermName(term.name.decodedName.toString.trim)
-        // DO NOT directly use `term.name` as for some reason,
-        // the TermName is provided within Scala.JS is appended with a final ' '
-
-        q"""{ v: ${atpe} =>
-          def ${shadowName}: $json.OWrites[${atpe}] =
-            sys.error("Invalid implicit resolution")
-
-          $cases
-        }"""
+        q"{ v: ${atpe} => $cases }"
       }
 
       def tree = methodName match {

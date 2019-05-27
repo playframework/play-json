@@ -418,9 +418,9 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
 
       implicit val userFormats = {
         (
-          (__ \ 'name).format[String]
+          (__ \ Symbol("name")).format[String]
           and
-          (__ \ 'age).format[Int]
+          (__ \ Symbol("age")).format[Int]
         )(User, unlift(User.unapply))
       }
 
@@ -433,9 +433,9 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       val bobby = User("bobby", 54)
 
       implicit val userFormat = (
-        (__ \ 'name).format(Reads.minLength[String](5))
+        (__ \ Symbol("name")).format(Reads.minLength[String](5))
         and
-        (__ \ 'age).format(Reads.min(40))
+        (__ \ Symbol("age")).format(Reads.min(40))
       )(User, unlift(User.unapply))
 
       val js = Json.toJson(bobby)
@@ -449,8 +449,8 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
         "field2" -> 123L,
         "field3" -> Json.obj("field31" -> "beta", "field32" -> 345)
       )
-      val reads1 = (__ \ 'field3).json.pick
-      val reads2 = ((__ \ 'field32).read[Int] and (__ \ 'field31).read[String]).tupled
+      val reads1 = (__ \ Symbol("field3")).json.pick
+      val reads2 = ((__ \ Symbol("field32")).read[Int] and (__ \ Symbol("field31")).read[String]).tupled
 
       js.validate(reads1 andThen reads2).get mustEqual (345 -> "beta")
     }
@@ -526,7 +526,7 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
 
       js0.validate(jsonTransformer) mustEqual (
         //JsError( (__ \ 'key3), "error.expected.jsarray" ) ++
-        JsError((__ \ 'key2 \ 'key22), "error.path.missing")
+        JsError((__ \ Symbol("key2") \ Symbol("key22")), "error.path.missing")
       )
 
       js.validate(jsonTransformer) mustEqual JsSuccess(res)
@@ -539,9 +539,9 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       case class User(name: String, email: String, phone: Option[String])
 
       implicit val UserReads = (
-        (__ \ 'name).read[String] and
-        (__ \ 'coords \ 'email).read(Reads.email) and
-        (__ \ 'coords \ 'phone).readNullable(Reads.minLength[String](8))
+        (__ \ Symbol("name")).read[String] and
+        (__ \ Symbol("coords") \ Symbol("email")).read(Reads.email) and
+        (__ \ Symbol("coords") \ Symbol("phone")).readNullable(Reads.minLength[String](8))
       )(User)
 
       Json.obj(
@@ -591,8 +591,8 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
         )
       ).validate[User] mustEqual (
           JsError(Seq(
-            __ \ 'coords \ 'phone -> Seq(JsonValidationError("error.path.missing")),
-            __ \ 'coords \ 'email -> Seq(JsonValidationError("error.path.missing"))
+            __ \ Symbol("coords") \ Symbol("phone") -> Seq(JsonValidationError("error.path.missing")),
+            __ \ Symbol("coords") \ Symbol("email") -> Seq(JsonValidationError("error.path.missing"))
           ))
         )
     }
@@ -601,8 +601,8 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       case class User(email: String, phone: Option[String])
 
       implicit val UserReads = (
-        (__ \ 'email).read(Reads.email) and
-        (__ \ 'phone).readNullable(Reads.minLength[String](8))
+        (__ \ Symbol("email")).read(Reads.email) and
+        (__ \ Symbol("phone")).readNullable(Reads.minLength[String](8))
       )(User)
 
       Json.obj("email" -> "john").validate[User] mustEqual (JsError(__ \ "email", JsonValidationError("error.email")))
@@ -613,23 +613,23 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       case class User(id: Long, email: String, age: Int)
 
       implicit val UserReads = (
-        (__ \ 'id).read[Long] and
-        (__ \ 'email).read(Reads.email andKeep Reads.minLength[String](5)) and
-        (__ \ 'age).read(Reads.max(55) or Reads.min(65))
+        (__ \ Symbol("id")).read[Long] and
+        (__ \ Symbol("email")).read(Reads.email andKeep Reads.minLength[String](5)) and
+        (__ \ Symbol("age")).read(Reads.max(55) or Reads.min(65))
       )(User)
 
       Json.obj("id" -> 123L, "email" -> "john.doe@blibli.com", "age" -> 50).validate[User] mustEqual (JsSuccess(User(123L, "john.doe@blibli.com", 50)))
-      Json.obj("id" -> 123L, "email" -> "john.doe@blibli.com", "age" -> 60).validate[User] mustEqual (JsError((__ \ 'age), JsonValidationError("error.max", 55)) ++ JsError((__ \ 'age), JsonValidationError("error.min", 65)))
-      Json.obj("id" -> 123L, "email" -> "john.doe", "age" -> 60).validate[User] mustEqual (JsError((__ \ 'email), JsonValidationError("error.email")) ++ JsError((__ \ 'age), JsonValidationError("error.max", 55)) ++ JsError((__ \ 'age), JsonValidationError("error.min", 65)))
+      Json.obj("id" -> 123L, "email" -> "john.doe@blibli.com", "age" -> 60).validate[User] mustEqual (JsError((__ \ Symbol("age")), JsonValidationError("error.max", 55)) ++ JsError((__ \ Symbol("age")), JsonValidationError("error.min", 65)))
+      Json.obj("id" -> 123L, "email" -> "john.doe", "age" -> 60).validate[User] mustEqual (JsError((__ \ Symbol("email")), JsonValidationError("error.email")) ++ JsError((__ \ Symbol("age")), JsonValidationError("error.max", 55)) ++ JsError((__ \ Symbol("age")), JsonValidationError("error.min", 65)))
     }
 
     "recursive reads" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
       implicit lazy val UserReads: Reads[User] = (
-        (__ \ 'id).read[Long] and
-        (__ \ 'name).read[String] and
-        (__ \ 'friend).lazyReadNullable(UserReads)
+        (__ \ Symbol("id")).read[Long] and
+        (__ \ Symbol("name")).read[String] and
+        (__ \ Symbol("friend")).lazyReadNullable(UserReads)
       )(User)
 
       val js = Json.obj(
@@ -653,9 +653,9 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
       implicit lazy val UserWrites: Writes[User] = (
-        (__ \ 'id).write[Long] and
-        (__ \ 'name).write[String] and
-        (__ \ 'friend).lazyWriteNullable(UserWrites)
+        (__ \ Symbol("id")).write[Long] and
+        (__ \ Symbol("name")).write[String] and
+        (__ \ Symbol("friend")).lazyWriteNullable(UserWrites)
       )(unlift(User.unapply))
 
       val js = Json.obj(
@@ -671,9 +671,9 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
       implicit lazy val UserFormats: Format[User] = (
-        (__ \ 'id).format[Long] and
-        (__ \ 'name).format[String] and
-        (__ \ 'friend).lazyFormatNullable(UserFormats)
+        (__ \ Symbol("id")).format[Long] and
+        (__ \ Symbol("name")).format[String] and
+        (__ \ Symbol("friend")).lazyFormatNullable(UserFormats)
       )(User, unlift(User.unapply))
 
       val js = Json.obj(
@@ -688,18 +688,18 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
 
     "lots of fields to read" in {
       val myReads = (
-        (__ \ 'field1).read[String] and
-        (__ \ 'field2).read[Long] and
-        (__ \ 'field3).read[Float] and
-        (__ \ 'field4).read[Boolean] and
-        (__ \ 'field5).read[List[String]] and
-        (__ \ 'field6).read[String] and
-        (__ \ 'field7).read[String] and
-        (__ \ 'field8).read[String] and
-        (__ \ 'field9).read[String] and
-        (__ \ 'field10).read[String] and
-        (__ \ 'field11).read[String] and
-        (__ \ 'field12).read[String]
+        (__ \ Symbol("field1")).read[String] and
+        (__ \ Symbol("field2")).read[Long] and
+        (__ \ Symbol("field3")).read[Float] and
+        (__ \ Symbol("field4")).read[Boolean] and
+        (__ \ Symbol("field5")).read[List[String]] and
+        (__ \ Symbol("field6")).read[String] and
+        (__ \ Symbol("field7")).read[String] and
+        (__ \ Symbol("field8")).read[String] and
+        (__ \ Symbol("field9")).read[String] and
+        (__ \ Symbol("field10")).read[String] and
+        (__ \ Symbol("field11")).read[String] and
+        (__ \ Symbol("field12")).read[String]
       ).tupled
 
       Json.obj(
@@ -722,10 +722,10 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
 
     "single field case class" in {
       case class Test(field: String)
-      val myFormat = (__ \ 'field).format[String].inmap(Test, unlift(Test.unapply))
+      val myFormat = (__ \ Symbol("field")).format[String].inmap(Test, unlift(Test.unapply))
 
-      myFormat.reads(Json.obj("field" -> "blabla")) mustEqual JsSuccess(Test("blabla"), __ \ 'field)
-      myFormat.reads(Json.obj()) mustEqual JsError(__ \ 'field, "error.path.missing")
+      myFormat.reads(Json.obj("field" -> "blabla")) mustEqual JsSuccess(Test("blabla"), __ \ Symbol("field"))
+      myFormat.reads(Json.obj()) mustEqual JsError(__ \ Symbol("field"), "error.path.missing")
       myFormat.writes(Test("blabla")) mustEqual Json.obj("field" -> "blabla")
     }
 
@@ -733,8 +733,8 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       import Reads._
 
       val myReads: Reads[JsObject] = (
-        (__ \ 'field1).json.pickBranch and
-        (__ \ 'field2).json.pickBranch
+        (__ \ Symbol("field1")).json.pickBranch and
+        (__ \ Symbol("field2")).json.pickBranch
       ).reduce
 
       val js0 = Json.obj("field1" -> "alpha")
@@ -742,16 +742,16 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       val js2 = js ++ Json.obj("field3" -> "beta")
       js.validate(myReads) mustEqual JsSuccess(js)
       js2.validate(myReads) mustEqual JsSuccess(js)
-      js0.validate(myReads) mustEqual JsError(__ \ 'field2, "error.path.missing")
+      js0.validate(myReads) mustEqual JsError(__ \ Symbol("field2"), "error.path.missing")
     }
 
     "reduce Reads[JsArray]" in {
       import Reads._
 
       val myReads: Reads[JsArray] = (
-        (__ \ 'field1).json.pick[JsString] and
-        (__ \ 'field2).json.pick[JsNumber] and
-        (__ \ 'field3).json.pick[JsBoolean]
+        (__ \ Symbol("field1")).json.pick[JsString] and
+        (__ \ Symbol("field2")).json.pick[JsNumber] and
+        (__ \ Symbol("field3")).json.pick[JsBoolean]
       ).reduce[JsValue, JsArray]
 
       val js0 = Json.obj("field1" -> "alpha")
@@ -759,16 +759,16 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       val js2 = js ++ Json.obj("field4" -> false)
       js.validate(myReads) mustEqual (JsSuccess(Json.arr("alpha", 123L, false)))
       js2.validate(myReads) mustEqual (JsSuccess(Json.arr("alpha", 123L, false)))
-      js0.validate(myReads) mustEqual (JsError(__ \ 'field2, "error.path.missing") ++ JsError(__ \ 'field3, "error.path.missing"))
+      js0.validate(myReads) mustEqual (JsError(__ \ Symbol("field2"), "error.path.missing") ++ JsError(__ \ Symbol("field3"), "error.path.missing"))
     }
 
     "reduce Reads[JsArray] no type" in {
       import Reads._
 
       val myReads: Reads[JsArray] = (
-        (__ \ 'field1).json.pick and
-        (__ \ 'field2).json.pick and
-        (__ \ 'field3).json.pick
+        (__ \ Symbol("field1")).json.pick and
+        (__ \ Symbol("field2")).json.pick and
+        (__ \ Symbol("field3")).json.pick
       ).reduce
 
       val js0 = Json.obj("field1" -> "alpha")
@@ -776,16 +776,16 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       val js2 = js ++ Json.obj("field4" -> false)
       js.validate(myReads) mustEqual JsSuccess(Json.arr("alpha", 123L, false))
       js2.validate(myReads) mustEqual JsSuccess(Json.arr("alpha", 123L, false))
-      js0.validate(myReads) mustEqual JsError(__ \ 'field2, "error.path.missing") ++ JsError(__ \ 'field3, "error.path.missing")
+      js0.validate(myReads) mustEqual JsError(__ \ Symbol("field2"), "error.path.missing") ++ JsError(__ \ Symbol("field3"), "error.path.missing")
     }
 
     "serialize JsError to json" in {
       val jserr = JsError(Seq(
-        (__ \ 'field1 \ 'field11) -> Seq(
+        (__ \ Symbol("field1") \ Symbol("field11")) -> Seq(
           JsonValidationError(Seq("msg1.msg11", "msg1.msg12"), "arg11", 123L, 123.456F),
           JsonValidationError("msg2.msg21.msg22", 456, 123.456, true, 123)
         ),
-        (__ \ 'field2 \ 'field21) -> Seq(
+        (__ \ Symbol("field2") \ Symbol("field21")) -> Seq(
           JsonValidationError("msg1.msg21", "arg1", Json.obj("test" -> "test2")),
           JsonValidationError("msg2", "arg1", "arg2")
         )
@@ -833,11 +833,11 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       )
 
       val myReads: Reads[JsObject] = (
-        (__ \ 'field1).json.pickBranch and
-        (__ \ 'field2).json.pickBranch(
-          (__ \ 'field21).json.prune andThen (__ \ 'field23).json.prune
+        (__ \ Symbol("field1")).json.pickBranch and
+        (__ \ Symbol("field2")).json.pickBranch(
+          (__ \ Symbol("field21")).json.prune andThen (__ \ Symbol("field23")).json.prune
         ) and
-          (__ \ 'field3).json.pickBranch
+          (__ \ Symbol("field3")).json.pickBranch
       ).reduce
 
       js.validate(myReads) mustEqual JsSuccess(res)
@@ -851,8 +851,8 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       case class User(email: String, phone: Option[String])
 
       implicit val UserWrites = (
-        (__ \ 'email).write[String] and
-        (__ \ 'phone).writeNullable[String]
+        (__ \ Symbol("email")).write[String] and
+        (__ \ Symbol("phone")).writeNullable[String]
       )(unlift(User.unapply))
 
       Json.toJson(User("john.doe@blibli.com", None)) mustEqual Json.obj("email" -> "john.doe@blibli.com")
@@ -861,17 +861,17 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
 
     "join" in {
       val joinWrites = (
-        (__ \ 'alpha).write[JsString] and
-        (__ \ 'beta).write[JsValue]
+        (__ \ Symbol("alpha")).write[JsString] and
+        (__ \ Symbol("beta")).write[JsValue]
       ).join
 
       joinWrites.writes(JsString("toto")) mustEqual Json.obj("alpha" -> "toto", "beta" -> "toto")
 
       val joinWrites2 = (
-        (__ \ 'alpha).write[JsString] and
-        (__ \ 'beta).write[JsValue] and
-        (__ \ 'gamma).write[JsString] and
-        (__ \ 'delta).write[JsValue]
+        (__ \ Symbol("alpha")).write[JsString] and
+        (__ \ Symbol("beta")).write[JsValue] and
+        (__ \ Symbol("gamma")).write[JsString] and
+        (__ \ Symbol("delta")).write[JsValue]
       ).join
 
       joinWrites2.writes(JsString("toto")) mustEqual (
@@ -888,8 +888,8 @@ class JsonValidSharedSpec extends WordSpec with MustMatchers {
       case class User(email: String, phone: Option[String])
 
       implicit val UserFormat = (
-        (__ \ 'email).format(email) and
-        (__ \ 'phone).formatNullable(Format(minLength[String](8), Writes.of[String]))
+        (__ \ Symbol("email")).format(email) and
+        (__ \ Symbol("phone")).formatNullable(Format(minLength[String](8), Writes.of[String]))
       )(User, unlift(User.unapply))
 
       Json.obj("email" -> "john").validate[User] mustEqual JsError(__ \ "email", JsonValidationError("error.email"))

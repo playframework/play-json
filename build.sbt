@@ -65,38 +65,64 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
   case _ => FastOptStage
 })
 
-lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
-    // Do not buffer test output
-    logBuffered in Test := false,
-    testOptions in Test ++= Seq(
-      // Show the duration of tests
-      Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
-      Tests.Argument(TestFrameworks.Specs2, "showtimes"),
-      // Filtering tests that are not stable in Scala 2.13 yet.
-      Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
-    ),
-    publishTo := Some(
-      if (isSnapshot.value)
-        Opts.resolver.sonatypeSnapshots
-      else
-        Opts.resolver.sonatypeStaging
-    ),
-    scalariformAutoformat := true,
-    headerLicense := {
-      val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
-      Some(HeaderLicense.Custom(
-        s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
-      ))
-    },
-    scalaVersion := ScalaVersions.scala212,
-    crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
-    ScalariformKeys.preferences := ScalariformKeys.preferences.value
-      .setPreference(SpacesAroundMultiImports, true)
-      .setPreference(SpaceInsideParentheses, false)
-      .setPreference(DanglingCloseParenthesis, Preserve)
-      .setPreference(PreserveSpaceBeforeArguments, true)
-      .setPreference(DoubleIndentConstructorArguments, false)
+val javacSettings = Seq(
+  "-source", "1.8",
+  "-target", "1.8",
+  "-Xlint:deprecation",
+  "-Xlint:unchecked",
+)
+
+val scalacOpts = Seq(
+  "-target:jvm-1.8",
+  "-Ywarn-unused:imports",
+  "-Xlint:nullary-unit",
+  "-Xlint",
+  "-Ywarn-dead-code",
+)
+
+lazy val commonSettings = Def.settings(
+  // Do not buffer test output
+  logBuffered in Test := false,
+  testOptions in Test ++= Seq(
+    // Show the duration of tests
+    Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+    Tests.Argument(TestFrameworks.Specs2, "showtimes"),
+    // Filtering tests that are not stable in Scala 2.13 yet.
+    Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
+  ),
+  publishTo := Some(
+    if (isSnapshot.value)
+      Opts.resolver.sonatypeSnapshots
+    else
+      Opts.resolver.sonatypeStaging
+  ),
+  scalariformAutoformat := true,
+  headerLicense := {
+    val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
+    Some(HeaderLicense.Custom(
+      s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
+    ))
+  },
+  scalaVersion := ScalaVersions.scala212,
+  crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
+  SbtScalariform.projectSettings,
+  ScalariformKeys.preferences := ScalariformKeys.preferences.value
+    .setPreference(SpacesAroundMultiImports, true)
+    .setPreference(SpaceInsideParentheses, false)
+    .setPreference(DanglingCloseParenthesis, Preserve)
+    .setPreference(PreserveSpaceBeforeArguments, true)
+    .setPreference(DoubleIndentConstructorArguments, false),
+
+  javacOptions in Compile ++= javacSettings,
+  javacOptions in Test ++= javacSettings,
+
+  scalacOptions ++= scalacOpts,
+  scalacOptions in (Compile, doc) ++= Seq(
+    "-Xfatal-warnings",
+    // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
+    "-no-java-comments",
   )
+)
 
 lazy val root = project
   .in(file("."))
@@ -121,7 +147,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .settings(
     mimaBinaryIssueFilters ++= Seq(),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.8-RC2" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.8-RC4" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.typelevel" %% "macro-compat" % "1.1.1",
@@ -135,7 +161,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     unmanagedSourceDirectories in Compile += {
     //val sourceDir = (sourceDirectory in Compile).value
       // ^ gives jvm/src/main, for some reason
-      val sourceDir = baseDirectory.value / "../shared/src/main"
+      val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, n)) if n >= 13 => sourceDir / "scala-2.13+"
         case _                       => sourceDir / "scala-2.13-"
@@ -204,7 +230,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.
       jacksons ++ specsBuild.value.map(_ % Test) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
-    unmanagedSourceDirectories in Test ++= (baseDirectory.value / ".." / ".." / "docs" / "manual" / "working" / "scalaGuide" ** "code").get
+    unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
   )
 
 lazy val `play-jsonJS` = `play-json`.js

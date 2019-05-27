@@ -15,12 +15,16 @@ import play.api.libs.json.jackson.JacksonJson
 trait EnvWrites {
   import scala.language.implicitConversions
 
+  @deprecated("Use `jsonNodeWrites`", "2.8.0")
+  object JsonNodeWrites extends Writes[JsonNode] {
+    def writes(o: JsonNode): JsValue = JacksonJson.jsonNodeToJsValue(o)
+  }
+
   /**
    * Serializer for Jackson JsonNode
    */
-  implicit object JsonNodeWrites extends Writes[JsonNode] {
-    def writes(o: JsonNode): JsValue = JacksonJson.jsonNodeToJsValue(o)
-  }
+  implicit def jsonNodeWrites[T <: JsonNode]: Writes[T] =
+    Writes[T](JacksonJson.jsonNodeToJsValue)
 
   /** Typeclass to implement way of formatting of Java8 temporal types. */
   trait TemporalFormatter[T <: Temporal] {
