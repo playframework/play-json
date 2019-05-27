@@ -66,7 +66,6 @@ scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
 
 val javacSettings = Seq(
   "-source", "1.8",
-  "-target", "1.8",
   "-Xlint:deprecation",
   "-Xlint:unchecked"
 )
@@ -112,6 +111,7 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
 
   javacOptions in Compile ++= javacSettings,
   javacOptions in Test ++= javacSettings,
+  javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
 
   scalacOptions ++= scalacOpts,
   scalacOptions in (Compile, doc) ++= Seq(
