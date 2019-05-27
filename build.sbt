@@ -73,7 +73,6 @@ val javacSettings = Seq(
 
 val scalacOpts = Seq(
   "-target:jvm-1.8",
-  "-Ywarn-unused:imports",
   "-Xlint:nullary-unit",
   "-Xlint",
   "-Ywarn-dead-code"
