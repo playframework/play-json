@@ -4,14 +4,20 @@
 
 package play.api.libs.json
 
+import java.net.URI
+
 import scala.language.higherKinds
 
 import scala.annotation.implicitNotFound
+
+import scala.util.control
+import scala.util.Try
+
 import scala.collection.Seq
 import scala.collection.immutable.Map
 import scala.collection.mutable.Builder
+
 import scala.reflect.ClassTag
-import scala.util.control
 
 import ScalaCollectionCompat._
 
@@ -191,6 +197,9 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
 
   }
 
+  /**
+   * Returns an instance which uses `f` as [[Reads.reads]] function.
+   */
   def apply[A](f: JsValue => JsResult[A]): Reads[A] =
     new Reads[A] { def reads(json: JsValue) = f(json) }
 
@@ -532,16 +541,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
     case _ => JsError("error.expected.jsobject")
   }
 
-  /* TODO: Remove
-  def mapReads[K, V]()(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
-    case JsObject(fields) =>
-      mapObj[K, V](key, fields.toList, Map.newBuilder)
-
-    case _ => JsError(Seq(JsPath -> Seq(
-      JsonValidationError("error.expected.jsobject"))))
-  }
-   */
-
   /** Deserializer for a `Map[String,V]` */
   implicit def mapReads[V](implicit fmtv: Reads[V]): Reads[Map[String, V]] =
     mapReads[String, V](JsSuccess(_))
@@ -558,6 +557,15 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit def ArrayReads[T: Reads: ClassTag]: Reads[Array[T]] = new Reads[Array[T]] {
     def reads(json: JsValue) = json.validate[List[T]].map(_.toArray)
+  }
+
+  /**
+   * Deserializer for java.net.URI
+   */
+  implicit val uriReads: Reads[URI] = Reads[URI] {
+    _.validate[String].flatMap { repr =>
+      JsResult.fromTry(Try(new URI(repr)))
+    }
   }
 
   /**

@@ -178,7 +178,6 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
  * Default Serializers.
  */
 trait DefaultWrites extends LowPriorityWrites {
-
   /**
    * Serializer for Int types.
    */
@@ -374,6 +373,12 @@ trait DefaultWrites extends LowPriorityWrites {
 }
 
 sealed trait LowPriorityWrites extends EnvWrites {
+  /**
+   * Serializer for java.net.URI
+   */
+  implicit val uriWrites: Writes[java.net.URI] =
+    implicitly[Writes[String]].contramap[java.net.URI](_.toString)
+
   @deprecated("Use `iterableWrites`", "2.8.0")
   def traversableWrites[A: Writes]: Writes[Traversable[A]] = {
     val w = implicitly[Writes[A]]

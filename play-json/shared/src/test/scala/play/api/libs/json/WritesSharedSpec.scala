@@ -82,6 +82,14 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
     }
   }
 
+  "URI" should {
+    "be written as string" in {
+      val strRepr = "https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.libs.json.JsResult"
+
+      Json.toJson(new java.net.URI(strRepr)) mustEqual JsString(strRepr)
+    }
+  }
+
   // ---
 
   case class Location(lat: Double, long: Double)

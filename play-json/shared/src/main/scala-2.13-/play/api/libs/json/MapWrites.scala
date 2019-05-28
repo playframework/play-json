@@ -4,8 +4,6 @@
 
 package play.api.libs.json
 
-import scala.collection.Map
-
 object MapWrites {
 
   type Map[K, V] = scala.collection.Map[K, V]
