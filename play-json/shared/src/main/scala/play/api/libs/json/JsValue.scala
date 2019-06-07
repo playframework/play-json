@@ -156,18 +156,18 @@ case class JsObject(
   /**
    * Merge this object with another one. Values from other override value of the current object.
    */
-  def ++(other: JsObject): JsObject = JsObject(underlying ++ other.underlying)
+  def ++(other: JsObject): JsObject = JsObject(JsObject.createFieldsMap(underlying) ++= other.underlying)
 
   /**
    * Removes one field from the JsObject
    */
-  def -(otherField: String): JsObject = JsObject(underlying.toMap - otherField)
+  def -(otherField: String): JsObject = JsObject(JsObject.createFieldsMap(underlying) -= otherField)
 
   /**
    * Adds one field to the JsObject
    */
   def +(otherField: (String, JsValue)): JsObject =
-    JsObject(underlying + otherField)
+    JsObject(JsObject.createFieldsMap(underlying) += otherField)
 
   /**
    * merges everything in depth and doesn't stop at first level, as ++ does
