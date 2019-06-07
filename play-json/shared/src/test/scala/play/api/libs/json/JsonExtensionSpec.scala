@@ -455,8 +455,8 @@ class JsonExtensionSpec extends WordSpec with MustMatchers {
 
       implicit def c1Reads[A](implicit rds: Reads[Id[A]]) = {
         (
-          (__ \ 'id).read(rds) and
-          (__ \ 'name).read[String]
+          (__ \ Symbol("id")).read(rds) and
+          (__ \ Symbol("name")).read[String]
         )((id, name) => C1[A](id, name))
       }
 

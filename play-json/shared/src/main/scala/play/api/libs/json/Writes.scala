@@ -4,11 +4,15 @@
 
 package play.api.libs.json
 
-import play.api.libs.functional.ContravariantFunctor
+import java.util.Date
 
 import scala.annotation.implicitNotFound
+import scala.language.higherKinds
+
 import scala.collection._
 import scala.reflect.ClassTag
+
+import play.api.libs.functional.ContravariantFunctor
 
 /**
  * Json serializer: write an implicit to define a serializer for any type
@@ -16,7 +20,7 @@ import scala.reflect.ClassTag
 @implicitNotFound(
   "No Json serializer found for type ${A}. Try to implement an implicit Writes or Format for this type."
 )
-trait Writes[-A] { self =>
+trait Writes[A] { self =>
   /**
    * Converts the `A` value into a [[JsValue]].
    */
@@ -46,7 +50,7 @@ trait Writes[-A] { self =>
 @implicitNotFound(
   "No Json serializer as JsObject found for type ${A}. Try to implement an implicit OWrites or OFormat for this type."
 )
-trait OWrites[-A] extends Writes[A] {
+trait OWrites[A] extends Writes[A] {
   def writes(o: A): JsObject
 
   /**
@@ -265,14 +269,47 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for Map[String,V] types.
    */
+  @deprecated("Use `genericMapWrites`", "2.8.0")
   implicit def mapWrites[V: Writes]: OWrites[MapWrites.Map[String, V]] = MapWrites.mapWrites
+
+  /**
+   * Serializer for Map[String,V] types.
+   */
+  implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] = OWrites[M[String, V]] { ts =>
+    JsObject(ts.mapValues(w.writes(_)).toSeq)
+  }
+
+  @deprecated("Use `jsValueWrites`", "2.8.0")
+  object JsValueWrites extends Writes[JsValue] {
+    def writes(o: JsValue) = o
+  }
 
   /**
    * Serializer for JsValues.
    */
-  implicit object JsValueWrites extends Writes[JsValue] {
-    def writes(o: JsValue) = o
-  }
+  implicit def jsValueWrites[T <: JsValue]: Writes[T] = Writes[T] { js => js }
+
+  /**
+   * Serializer for JsNull.
+   *
+   * {{{
+   * Json.obj("foo" -> None)
+   * // equivalent to Json.obj("foo" -> JsNull)
+   * }}}
+   */
+  implicit val NoneWrites: Writes[None.type] =
+    Writes[None.type] { _ => JsNull }
+
+  /**
+   * If `Some` is directly used (not as `Option`).
+   *
+   * {{{
+   * Json.obj("foo" -> Some(writeableValue))
+   * // equivalent to Json.obj("foo" -> writeableValue)
+   * }}}
+   */
+  implicit def someWrites[T](implicit w: Writes[T]): Writes[Some[T]] =
+    Writes[Some[T]] { some => w.writes(some.get) }
 
   /**
    * Serializer for Option.
@@ -292,17 +329,22 @@ trait DefaultWrites extends LowPriorityWrites {
     def writes(d: java.util.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
   }
 
+  @deprecated("Use `defaultDateWrites`", "2.8.0")
+  object DefaultDateWrites extends Writes[Date] {
+    def writes(d: Date): JsValue = JsNumber(d.getTime)
+  }
+
   /**
    * Default Serializer java.util.Date -> JsNumber(d.getTime (nb of ms))
    */
-  implicit object DefaultDateWrites extends Writes[java.util.Date] {
-    def writes(d: java.util.Date): JsValue = JsNumber(d.getTime)
-  }
+  implicit def defaultDateWrites[T <: Date]: Writes[T] =
+    Writes[T] { d => JsNumber(d.getTime) }
 
   /**
    * Serializer for java.sql.Date
    * @param pattern the pattern used by SimpleDateFormat
    */
+  @deprecated("Use `dateWrites`", "2.8.0")
   def sqlDateWrites(pattern: String): Writes[java.sql.Date] = new Writes[java.sql.Date] {
     def writes(d: java.sql.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
   }
@@ -320,13 +362,21 @@ trait DefaultWrites extends LowPriorityWrites {
   implicit def enumNameWrites[E <: Enumeration]: Writes[E#Value] =
     Writes[E#Value] { value: E#Value => JsString(value.toString) }
 
+  /**
+   * Serializer for [[scala.collection.immutable.Range]]
+   * (aka specialized `Seq` of `Int`).
+   */
+  implicit def rangeWrites[T <: Range]: Writes[T] = Writes[T] { range =>
+    // `iterableWrites` cannot be resolved for as,
+    // even if `Range <: Traversable[_]`, it's not a parametrized one
+    // and so doesn't accept a type parameter (doesn't match `M[_]` constraint).
+    JsArray(range.map(JsNumber(_)))
+  }
 }
 
 sealed trait LowPriorityWrites extends EnvWrites {
-  /**
-   * Serializer for Traversables types.
-   */
-  implicit def traversableWrites[A: Writes]: Writes[Traversable[A]] = {
+  @deprecated("Use `iterableWrites`", "2.8.0")
+  def traversableWrites[A: Writes]: Writes[Traversable[A]] = {
     val w = implicitly[Writes[A]]
 
     Writes[Traversable[A]] { as =>
@@ -339,4 +389,30 @@ sealed trait LowPriorityWrites extends EnvWrites {
     // Avoid resolution ambiguity with more specific Traversable Writes,
     // such as OWrites.map
   }
+
+  /**
+   * Serializer for Iterable types.
+   */
+  implicit def iterableWrites[A, M[T] <: Iterable[T]](implicit w: Writes[A]): Writes[M[A]] = {
+    // Use Iterable rather than Traversable, for 2.13 compat
+
+    Writes[M[A]] { as =>
+      val builder = mutable.ArrayBuilder.make[JsValue]
+
+      as.foreach { a: A =>
+        builder += w.writes(a)
+      }
+
+      JsArray(builder.result())
+    }
+
+    // Avoid resolution ambiguity with more specific Iterable Writes,
+    // such as OWrites.map
+  }
+
+  /**
+   * Serializer for any type that is provided an implicit conversion to String
+   * (e.g. tagged types).
+   */
+  implicit def stringableWrites[T](implicit conv: T => String): Writes[T] = Writes.StringWrites.contramap[T](conv)
 }

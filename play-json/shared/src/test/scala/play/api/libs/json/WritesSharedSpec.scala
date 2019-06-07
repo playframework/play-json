@@ -54,7 +54,7 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
 
   "Map Writes" should {
     "write lazy maps" in {
-      Json.toJson(Map("a" -> 1).mapValues(_ + 1)) mustEqual Json.obj("a" -> 2)
+      Json.toJson(Map("a" -> 1).map(kv => kv._1 -> (kv._2 + 1))) mustEqual Json.obj("a" -> 2)
     }
   }
 

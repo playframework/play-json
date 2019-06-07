@@ -17,7 +17,7 @@ env:
 
 scala:
   - 2.12.8
-  - 2.13.0-RC1
+  - 2.13.0-RC2
 
 script:
   - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues
