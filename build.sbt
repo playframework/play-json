@@ -143,7 +143,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .settings(
     mimaBinaryIssueFilters ++= Seq(),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.8-RC4" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.8" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
