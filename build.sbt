@@ -150,7 +150,6 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
       "org.scalatest" %%% "scalatest" % "3.0.8-RC5" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
-      "org.typelevel" %% "macro-compat" % "1.1.1",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
     ),
     libraryDependencies ++=
