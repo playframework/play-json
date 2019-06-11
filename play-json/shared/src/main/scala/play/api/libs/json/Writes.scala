@@ -178,7 +178,6 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
  * Default Serializers.
  */
 trait DefaultWrites extends LowPriorityWrites {
-  import scala.language.implicitConversions
 
   /**
    * Serializer for Int types.

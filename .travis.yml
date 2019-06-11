@@ -20,7 +20,7 @@ scala:
   - 2.13.0
 
 script:
-  - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues
+  - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues publishLocal
 
 cache:
   directories:

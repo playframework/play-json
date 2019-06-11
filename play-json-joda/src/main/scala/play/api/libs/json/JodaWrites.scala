@@ -5,7 +5,6 @@
 package play.api.libs.json
 
 import org.joda.time._
-import org.joda.time.format._
 
 object JodaWrites extends JodaWrites
 
