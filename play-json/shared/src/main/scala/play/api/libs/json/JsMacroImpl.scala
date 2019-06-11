@@ -4,7 +4,6 @@
 
 package play.api.libs.json
 
-import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
 
@@ -274,7 +273,7 @@ class JsMacroImpl(val c: blackbox.Context) {
             appliedType(ctag.typeConstructor, ptype), silent = true)
 
           if (it != EmptyTree) {
-            debug("Ignoring instance of ${ctag.typeSymbol.fullName} for ${ptype} (${it.pos.source}:${it.pos.line}:${it.pos.column}); Alias for Option[$tpe] will be handled by the nullable operations.")
+            debug(s"Ignoring instance of ${ctag.typeSymbol.fullName} for ${ptype} (${it.pos.source}:${it.pos.line}:${it.pos.column}); Alias for Option[$tpe] will be handled by the nullable operations.")
           }
         }
 
