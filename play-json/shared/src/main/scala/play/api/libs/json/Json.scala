@@ -6,8 +6,6 @@ package play.api.libs.json
 
 import java.io.InputStream
 
-import play.api.libs.json.Json.MacroOptions
-
 /**
  * @define jsonParam @param json the JsValue to convert
  * @define returnStringRepr A String with the json representation

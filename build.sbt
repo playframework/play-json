@@ -118,7 +118,6 @@ lazy val commonSettings = Def.settings(
 
   scalacOptions ++= scalacOpts,
   scalacOptions in (Compile, doc) ++= Seq(
-    "-Xfatal-warnings",
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
   )
