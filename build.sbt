@@ -114,11 +114,13 @@ lazy val commonSettings = SbtScalariform.projectSettings ++ Seq(
   javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
 
   scalacOptions ++= scalacOpts,
-  scalacOptions in (Compile, doc) ++= Seq(
-    "-Xfatal-warnings",
+  scalacOptions in (Compile, doc) ++= {
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
-    "-no-java-comments"
-  )
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, n)) if n >= 12 => Seq("-no-java-comments")
+      case _                       => Seq.empty
+    }
+  }
 )
 
 lazy val root = project
