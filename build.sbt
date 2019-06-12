@@ -52,7 +52,7 @@ val previousVersions = Def.setting[Seq[String]] {
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
   mimaPreviousArtifacts := {
-    if (scalaVersion.value.startsWith("2.13.0-")) Set.empty
+    if (scalaVersion.value.startsWith("2.13")) Set.empty
     else previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
   }
 )
@@ -145,7 +145,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .settings(
     mimaBinaryIssueFilters ++= Seq(),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.8-RC4" % Test,
+      "org.scalatest" %%% "scalatest" % "3.0.8" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % Test,
       "com.chuusai" %% "shapeless" % "2.3.3" % Test,
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
