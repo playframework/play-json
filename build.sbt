@@ -52,7 +52,7 @@ val previousVersions = Def.setting[Seq[String]] {
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
   mimaPreviousArtifacts := {
-    if (scalaVersion.value.startsWith("2.13.0-")) Set.empty
+    if (scalaVersion.value.startsWith("2.13")) Set.empty
     else previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
   }
 )
