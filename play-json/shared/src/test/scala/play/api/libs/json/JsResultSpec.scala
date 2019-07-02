@@ -31,6 +31,14 @@ class JsResultSpec extends WordSpec with MustMatchers {
       val err = JsError("bar")
       JsResult.toTry(err) mustEqual Failure(JsResult.Exception(err))
     }
+
+    "be created from a Success" in {
+      JsResult.fromTry(Success("foo")) mustEqual JsSuccess("foo")
+    }
+
+    "be created from a Failure" in {
+      JsResult.fromTry(Failure(new Throwable("bar"))) mustEqual JsError("bar")
+    }
   }
 
   "JsSuccess" should {

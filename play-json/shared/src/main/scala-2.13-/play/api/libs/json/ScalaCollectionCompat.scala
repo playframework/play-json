@@ -4,9 +4,6 @@
 
 package play.api.libs.json
 
-import scala.language.implicitConversions
-import scala.language.higherKinds
-
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable
 

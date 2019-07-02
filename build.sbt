@@ -168,7 +168,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
     sourceGenerators in Compile += Def.task{
       val dir = (sourceManaged in Compile).value
 
-      val file = dir / "upickle" / "Generated.scala"
+      val file = dir / "Generated.scala"
       val (writes, reads) = (1 to 22).map{ i =>
         def commaSeparated(s: Int => String) = (1 to i).map(s).mkString(", ")
         def newlineSeparated(s: Int => String) = (1 to i).map(s).mkString("\n")
@@ -178,6 +178,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
         val written = commaSeparated(j => s"implicitly[Writes[T$j]].writes(x._$j)")
         val readValues = commaSeparated(j => s"t$j")
         val readGenerators = newlineSeparated(j => s"t$j <- implicitly[Reads[T$j]].reads(arr(${j-1}))")
+
         (s"""
           implicit def Tuple${i}W[$writerTypes]: Writes[Tuple${i}[$typeTuple]] = Writes[Tuple${i}[$typeTuple]](
             x => JsArray(Array($written))

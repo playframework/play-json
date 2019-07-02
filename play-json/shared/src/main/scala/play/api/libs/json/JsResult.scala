@@ -306,6 +306,18 @@ object JsResult {
     case s @ JsSuccess(v, _) => Success(v)
   }
 
+  /**
+   * Returns a [[scala.util.Try]] as JSON validation.
+   *
+   * @tparam T the type for the parsing
+   * @param result the result
+   * @param err the function to be applied for [[scala.util.Failure]]
+   */
+  def fromTry[T](result: Try[T], err: Throwable => JsError = { e => JsError(e.getMessage) }): JsResult[T] = result match {
+    case Success(v) => JsSuccess(v)
+    case Failure(e) => err(e)
+  }
+
   implicit def alternativeJsResult(implicit a: Applicative[JsResult]): Alternative[JsResult] = new Alternative[JsResult] {
     val app = a
     def |[A, B >: A](alt1: JsResult[A], alt2: JsResult[B]): JsResult[B] = (alt1, alt2) match {
