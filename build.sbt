@@ -46,14 +46,12 @@ def jsonDependencies(scalaVersion: String) = Seq(
 import com.typesafe.sbt.SbtScalariform, SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
-val previousVersions = Def.setting[Seq[String]] {
-  Seq("2.7.1")
-}
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
   mimaPreviousArtifacts := {
-    if (scalaVersion.value.startsWith("2.13")) Set.empty
-    else previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
+    val artifact = organization.value %%% name.value
+    if (scalaVersion.value.startsWith("2.13")) Set(artifact % "2.7.4")
+    else Set(artifact % "2.7.1")
   }
 )
 
