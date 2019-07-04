@@ -38,7 +38,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion)
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.2"
+  "joda-time" % "joda-time" % "2.10.3"
     //"org.joda" % "joda-convert" % "1.8.1")
 )
 
