@@ -14,12 +14,12 @@ import org.scalatest._
 
 case class User(age: Int, name: String)
 case class Dog(name: String, master: User)
-case class UserProfile(firstName: String, lastName: String, zip: Option[String], city: String)
+case class UserProfile(firstName: String, lastName: String, zip: Option[String], _homeCity: String)
 object UserProfile {
   def obj1 = UserProfile("Christian", "Schmitt", None, "Kenzingen")
-  def json1 = Json.obj("first_name" -> "Christian", "last_name" -> "Schmitt", "city" -> "Kenzingen")
-  def json2 = Json.obj("lightbend_firstName" -> "Christian", "lightbend_lastName" -> "Schmitt", "lightbend_city" -> "Kenzingen")
-  def json3 = Json.obj("FirstName" -> "Christian", "LastName" -> "Schmitt", "City" -> "Kenzingen")
+  def json1 = Json.obj("first_name" -> "Christian", "last_name" -> "Schmitt", "home_city" -> "Kenzingen")
+  def json2 = Json.obj("lightbend_firstName" -> "Christian", "lightbend_lastName" -> "Schmitt", "lightbend__homeCity" -> "Kenzingen")
+  def json3 = Json.obj("FirstName" -> "Christian", "LastName" -> "Schmitt", "_homeCity" -> "Kenzingen")
 }
 case class UserProfileHolder(holder: String, profile: UserProfile)
 case class Cat(name: String)

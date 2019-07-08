@@ -101,7 +101,7 @@ object JsonNaming {
 
       for (i <- 0 until length) {
         var c = property.charAt(i)
-        if (i > 0 || i != '_') {
+        if (i > 0 || c != '_') {
           if (Character.isUpperCase(c)) {
             // append a underscore if the previous result wasn't translated
             if (!wasPrevTranslated && resultLength > 0 && result.charAt(resultLength - 1) != '_') {
