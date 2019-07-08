@@ -25,19 +25,32 @@ val specsBuild = Def.setting[Seq[ModuleID]] {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 val jacksonVersion = "2.8.11"
 val jacksonDatabindVersion = "2.8.11.3" // https://nvd.nist.gov/vuln/detail/CVE-2018-7489
 =======
 val jacksonVersion = "2.9.9.1"
 >>>>>>> f71f7da... Update jackson-databind to 2.9.9.1
+=======
+val jacksonDatabindVersion = "2.9.9.1"
+val jacksonDatabind = Seq(
+  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
+)
+
+val jacksonVersion = "2.9.9"
+>>>>>>> f33b688... Separate Jackson Databind version
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310"
+<<<<<<< HEAD
 ).map(_ % jacksonVersion) ++ Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
+=======
+).map(_ % jacksonVersion) ++ jacksonDatabind
+>>>>>>> f33b688... Separate Jackson Databind version
 
 val joda = Seq(
   "joda-time" % "joda-time" % "2.9.9"
