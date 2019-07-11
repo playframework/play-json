@@ -59,6 +59,7 @@ val previousVersions = Def.setting[Seq[String]] {
 }
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
+  mimaFailOnNoPrevious := false,
   mimaPreviousArtifacts := previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
 )
 
@@ -145,9 +146,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
   .in(file("play-json"))
   .enablePlugins(PlayLibrary, Playdoc)
   .configs(Docs)
-  .settings(commonSettings)
-  .settings(playJsonMimaSettings)
-  .settings(
+  .settings(commonSettings ++ playJsonMimaSettings ++ Seq(
     mimaBinaryIssueFilters ++= Seq(),
     libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
       "org.scalatest" %%% "scalatest" % "3.0.8" % Test,
@@ -213,17 +212,15 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
         """)
       Seq(file)
     }.taskValue
-  )
+  ))
   .dependsOn(`play-functional`)
 
 lazy val `play-json-joda` = project
   .in(file("play-json-joda"))
   .enablePlugins(PlayLibrary)
-  .settings(commonSettings)
-  .settings(playJsonMimaSettings)
-  .settings(
+  .settings(commonSettings ++ playJsonMimaSettings ++ Seq(
     libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
-  )
+  ))
   .dependsOn(`play-jsonJVM`)
 
 lazy val `play-jsonJVM` = `play-json`.jvm.
