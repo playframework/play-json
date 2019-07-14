@@ -58,8 +58,9 @@ val previousVersions = Def.setting[Seq[String]] {
   Nil // Seq("2.8.0-M1") // TODO: switch to a release of 2.8, when available
 }
 
+ThisBuild / mimaFailOnNoPrevious := false
+
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
-  mimaFailOnNoPrevious := false,
   mimaPreviousArtifacts := previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
 )
 
