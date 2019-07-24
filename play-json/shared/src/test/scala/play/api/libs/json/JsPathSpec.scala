@@ -256,6 +256,19 @@ class JsPathSpec extends WordSpec with MustMatchers {
       )
     }
 
+    "read deep nullable nested fields" in {
+      val path = __ \ "foo" \ "bar" \ "baz"
+      val reads = path.readDeepNullable[String]
+
+      reads.reads(Json.obj()) mustEqual JsSuccess(None)
+      reads.reads(Json.obj("foo" -> Json.obj())) mustEqual JsSuccess(None)
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj()))) mustEqual JsSuccess(None)
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> "blah")))) mustEqual JsSuccess(Some("blah"), path)
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> JsNull)))) mustEqual JsSuccess(None)
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> JsNull))) mustEqual JsSuccess(None)
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> "blah"))) mustEqual JsSuccess(None)
+    }
+
     /*"set 1-level field in simple jsobject" in {
       val obj = Json.obj("key" -> "value")
 

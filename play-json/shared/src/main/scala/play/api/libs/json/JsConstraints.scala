@@ -25,6 +25,11 @@ trait PathFormat {
   def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit f: Format[A]): OFormat[Option[A]] =
     OFormat(Reads.nullableWithDefault(path, defaultValue)(f), Writes.nullable(path)(f))
 
+  def deepNullable[A](path: JsPath)(implicit f: Format[A]): OFormat[Option[A]] =
+    OFormat(Reads.deepNullable(path)(f), Writes.nullable(path)(f))
+
+  def deepNullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit f: Format[A]): OFormat[Option[A]] =
+    OFormat(Reads.deepNullableWithDefault(path, defaultValue)(f), Writes.nullable(path)(f))
 }
 
 trait PathReads {
@@ -69,6 +74,42 @@ trait PathReads {
           case js => reads.reads(js).repath(path).map(Some(_))
         }
       ))
+    }
+
+  /**
+   * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
+   * and other cases are Error).
+   *
+   * This method is designed for cherry-picking deeply nested fields whose path at any level may
+   * not exist.
+   *
+   * It runs through JsValue following all JsPath nodes on JsValue:
+   * - If any node in JsPath is not found => returns None
+   * - If any node in JsPath is found with value "null" => returns None
+   * - If the entire path is found => applies implicit Reads[T]
+   */
+  def deepNullable[A](path: JsPath)(implicit reads: Reads[A]): Reads[Option[A]] =
+    deepNullableWithDefault(path, None)
+
+  /**
+   * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
+   * default value, null is None and other cases are Error).
+   *
+   * This method is designed for cherry-picking deeply nested fields whose path at any level may
+   * not exist.
+   *
+   * It runs through JsValue following all JsPath nodes on JsValue:
+   * - If any node in JsPath is not found => returns default value
+   * - If the last node in JsPath is found with value "null" => returns None
+   * - If the entire path is found => applies implicit Reads[T]
+   */
+  def deepNullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]): Reads[Option[A]] =
+    Reads[Option[A]] { json =>
+      path.asSingleJson(json) match {
+        case JsDefined(JsNull) => JsSuccess(None)
+        case JsDefined(value) => reads.reads(value).repath(path).map(Some(_))
+        case JsUndefined() => JsSuccess(defaultValue)
+      }
     }
 
   def jsPick[A <: JsValue](path: JsPath)(implicit reads: Reads[A]): Reads[A] = at(path)(reads)

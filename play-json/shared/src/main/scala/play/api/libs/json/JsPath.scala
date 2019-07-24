@@ -312,6 +312,34 @@ case class JsPath(path: List[PathNode] = List()) {
   def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.nullableWithDefault[T](this, defaultValue)(r)
 
   /**
+   * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
+   * and other cases are Error).
+   *
+   * This method is designed for cherry-picking deeply nested fields whose path at any level may
+   * not exist.
+   *
+   * It runs through JsValue following all JsPath nodes on JsValue:
+   * - If any node in JsPath is not found => returns None
+   * - If any node in JsPath is found with value "null" => returns None
+   * - If the entire path is found => applies implicit Reads[T]
+   */
+  def readDeepNullable[T](implicit r: Reads[T]): Reads[Option[T]] = Reads.deepNullable[T](this)(r)
+
+  /**
+   * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
+   * default value, null is None and other cases are Error).
+   *
+   * This method is designed for cherry-picking deeply nested fields whose path at any level may
+   * not exist.
+   *
+   * It runs through JsValue following all JsPath nodes on JsValue:
+   * - If any node in JsPath is not found => returns default value
+   * - If any node in JsPath is found with value "null" => returns None
+   * - If the entire path is found => applies implicit Reads[T]
+   */
+  def readDeepNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.deepNullableWithDefault[T](this, defaultValue)(r)
+
+  /**
    * Reads a T at JsPath using the explicit Reads[T] passed by name which is useful in case of
    * recursive case classes for ex.
    *
@@ -437,6 +465,24 @@ case class JsPath(path: List[PathNode] = List()) {
    */
   def formatNullableWithDefault[T](defaultValue: => Option[T])(implicit f: Format[T]): OFormat[Option[T]] = {
     Format.nullableWithDefault[T](this, defaultValue)(f)
+  }
+
+  /**
+   * Reads/Writes a Option[T] (optional or nullable field) at given JsPath
+   *
+   * @see JsPath.readDeepNullable to see behavior in reads
+   * @see JsPath.writeNullable to see behavior in writes
+   */
+  def formatDeepNullable[T](implicit f: Format[T]): OFormat[Option[T]] = Format.deepNullable[T](this)(f)
+
+  /**
+   * Reads/Writes a Option[T] (nullable field) at given JsPath
+   *
+   * @see [[JsPath.readDeepNullableWithDefault]] to see behavior in reads
+   * @see [[JsPath.writeNullable]] to see behavior in writes
+   */
+  def formatDeepNullableWithDefault[T](defaultValue: => Option[T])(implicit f: Format[T]): OFormat[Option[T]] = {
+    Format.deepNullableWithDefault[T](this, defaultValue)(f)
   }
 
   /**
