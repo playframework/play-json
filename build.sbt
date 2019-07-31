@@ -86,7 +86,7 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.4.1"
+val silencerVersion = "1.4.2"
 
 libraryDependencies in ThisBuild ++= Seq(
   compilerPlugin("com.github.ghik" %% "silencer-plugin" % silencerVersion),
