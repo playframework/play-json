@@ -322,7 +322,6 @@ class JsMacroImpl(val c: blackbox.Context) {
         effectiveUnapply.returnType match {
           case TypeRef(_, _, Nil) => {
             c.abort(c.enclosingPosition, s"Unapply of ${companioned.fullName} has no parameters. Are you using an empty case class?")
-            None
           }
 
           case TypeRef(_, _, args) => args.head match {

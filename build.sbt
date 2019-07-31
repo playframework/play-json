@@ -83,6 +83,14 @@ val scalacOpts = Seq(
   "-Xlint:nullary-unit",
   "-Xlint",
   "-Ywarn-dead-code",
+  "-Ywarn-macros:after"
+)
+
+val silencerVersion = "1.4.1"
+
+libraryDependencies in ThisBuild ++= Seq(
+  compilerPlugin("com.github.ghik" %% "silencer-plugin" % silencerVersion),
+  "com.github.ghik" %% "silencer-lib" % silencerVersion % Provided
 )
 
 lazy val commonSettings = Def.settings(
@@ -93,7 +101,8 @@ lazy val commonSettings = Def.settings(
     Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
     // Filtering tests that are not stable in Scala 2.13 yet.
-    Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
+    Tests.Argument(TestFrameworks.ScalaTest,
+      "-l", "play.api.libs.json.UnstableInScala213")
   ),
   publishTo := Some(
     if (isSnapshot.value)

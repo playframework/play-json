@@ -9,7 +9,6 @@ import java.util.{ Calendar, Date, TimeZone }
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
-import play.api.libs.json.jackson.JacksonJson
 
 class JsonSpec extends org.specs2.mutable.Specification {
   "JSON" title
@@ -165,7 +164,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
            |}""".stripMargin
       }
 
-      def bigNumbersJson(bigDec: String = BigDecimal(1).toString, bigInt: String = BigInt(1).toString) = {
+      def bigNumbersJson(bigDec: String, bigInt: String = BigInt(1).toString) = {
         s"""
            |{
            |  "bigInt": $bigInt,

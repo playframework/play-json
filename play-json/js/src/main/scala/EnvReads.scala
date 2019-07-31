@@ -7,3 +7,7 @@ package play.api.libs.json
 trait EnvReads {
   // No specific reader
 }
+
+trait EnvKeyReads { _: KeyReads.type =>
+  // No specific reader
+}

@@ -4,8 +4,7 @@
 
 package play.api.libs.json
 
-import scala.collection.MapOps
-import scala.collection.IterableOps
+import scala.collection.{ IterableOps, MapOps }
 
 object MapWrites {
 

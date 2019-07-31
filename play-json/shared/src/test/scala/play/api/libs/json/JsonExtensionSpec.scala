@@ -4,7 +4,6 @@
 
 package play.api.libs.json
 
-import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsonNaming.SnakeCase
 
@@ -67,8 +66,6 @@ object ForeignTest {
   implicit val foreignerReads: Reads[foreign.Foreigner] = Json.reads[foreign.Foreigner]
   implicit val foreignerWrites: OWrites[foreign.Foreigner] = Json.writes[foreign.Foreigner]
 }
-
-import play.api.libs.json._
 
 case class Person2(names: List[String])
 
