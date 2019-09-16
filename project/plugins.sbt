@@ -5,14 +5,14 @@
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 resolvers += Resolver.typesafeRepo("releases")
 
-addSbtPlugin("com.typesafe.play" % "interplay" % sys.props.get("interplay.version").getOrElse("2.0.8"))
+addSbtPlugin("com.typesafe.play" % "interplay" % sys.props.get("interplay.version").getOrElse("2.0.9"))
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.7")
 
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.6.0")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.6")
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.7")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")
 
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.3")
 
