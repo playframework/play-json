@@ -31,7 +31,13 @@ object JsValue {
 /**
  * Represents a Json null value.
  */
-case object JsNull extends JsValue
+object JsNull extends JsValue {
+  override def equals(that: Any): Boolean = that match {
+    case _: JsNull.type => true
+    case other: JsValue => other.equals(this)
+    case _ => false
+  }
+}
 
 /**
  * Represents a Json boolean value.
@@ -39,7 +45,10 @@ case object JsNull extends JsValue
 sealed abstract class JsBoolean(
   val value: Boolean) extends JsValue with Product with Serializable {
 
-  def canEqual(that: Any): Boolean = that.isInstanceOf[JsBoolean]
+  def canEqual(that: Any): Boolean = that match {
+    case _: JsBoolean => true
+    case _ => false
+  }
 
   @deprecated("No longer a case class", "2.6.0")
   val productArity = 1
@@ -53,8 +62,10 @@ sealed abstract class JsBoolean(
   def copy(value: Boolean = this.value): JsBoolean =
     if (value) JsTrue else JsFalse
 
-  override def equals(that: Any): Boolean =
-    canEqual(that) && (this.value == that.asInstanceOf[JsBoolean].value)
+  override def equals(that: Any): Boolean = that match {
+    case other: JsBoolean => value == other.value
+    case _ => false
+  }
 
   override def hashCode: Int = value.hashCode
 }
@@ -62,12 +73,16 @@ sealed abstract class JsBoolean(
 /**
  * Represents Json Boolean True value.
  */
-case object JsTrue extends JsBoolean(true)
+case object JsTrue extends JsBoolean(true) {
+  override val toString = "true"
+}
 
 /**
  * Represents Json Boolean False value.
  */
-case object JsFalse extends JsBoolean(false)
+case object JsFalse extends JsBoolean(false) {
+  override val toString = "false"
+}
 
 object JsBoolean extends (Boolean => JsBoolean) {
   def apply(value: Boolean): JsBoolean = if (value) JsTrue else JsFalse
@@ -78,17 +93,54 @@ object JsBoolean extends (Boolean => JsBoolean) {
 /**
  * Represent a Json number value.
  */
-case class JsNumber(value: BigDecimal) extends JsValue
+case class JsNumber(value: BigDecimal) extends JsValue {
+
+  def canEqual(that: Any): Boolean = that match {
+    case _: JsNumber | _: JsNull.type => true
+    case _ => false
+  }
+
+  override def equals(that: Any): Boolean = that match {
+    case other: JsNumber => value == other.value
+    case _: JsNull.type => value == null
+    case _ => false
+  }
+}
 
 /**
  * Represent a Json string value.
  */
-case class JsString(value: String) extends JsValue
+case class JsString(value: String) extends JsValue {
+  def canEqual(that: Any): Boolean = that match {
+    case _: JsString | _: JsNull.type => true
+    case _ => false
+  }
+
+  override def equals(that: Any): Boolean = that match {
+    case other: JsString => value == other.value
+    case _: JsNull.type => value == null
+    case _ => false
+  }
+
+  override def toString = value match {
+    case null => "null"
+    case _ => Json.stringify(this)
+  }
+}
+
+object JsString {
+  /** String factory */
+  @inline def apply(value: String): JsString = new JsString(value)
+
+  /** String extractor */
+  def unapply(other: JsString): Option[String] = Option(other.value)
+}
 
 /**
  * Represent a Json array value.
  */
-case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValue {
+case class JsArray(
+  value: IndexedSeq[JsValue] = IndexedSeq.empty) extends JsValue {
 
   // keeping this method will also help bincompat with older play-json versions
   private[json] def this(value: collection.Seq[JsValue]) = this(value.toArray[JsValue])
@@ -109,11 +161,28 @@ case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValu
    * Prepend an element to this array.
    */
   def +:(el: JsValue): JsArray = JsArray(el +: value)
+
   def prepend(el: JsValue): JsArray = this.+:(el)
+
+  def canEqual(that: Any): Boolean = that match {
+    case _: JsArray | _: JsNull.type => true
+    case _ => false
+  }
+
+  override def equals(that: Any): Boolean = that match {
+    case other: JsArray => value == other.value
+    case _: JsNull.type => value == null
+    case _ => false
+  }
+
+  override def toString = value match {
+    case null => "null"
+    case _ => Json.stringify(this)
+  }
 }
 
 object JsArray extends (IndexedSeq[JsValue] => JsArray) {
-  def apply(value: collection.Seq[JsValue]) = new JsArray(value.toArray[JsValue])
+  def apply(value: collection.Seq[JsValue]) = new JsArray(value.toIndexedSeq)
 
   def empty = JsArray(Array.empty[JsValue])
 }
@@ -128,7 +197,10 @@ case class JsObject(
   /**
    * The fields of this JsObject in the order passed to the constructor
    */
-  lazy val fields: collection.Seq[(String, JsValue)] = underlying.toSeq
+  lazy val fields: collection.Seq[(String, JsValue)] = underlying match {
+    case null => Seq.empty
+    case _ => underlying.toSeq
+  }
 
   /**
    * The value of this JsObject as an immutable map.
@@ -190,13 +262,22 @@ case class JsObject(
   }
 
   override def equals(other: Any): Boolean = other match {
-    case that @ JsObject(_) => (that canEqual this) && fieldSet == that.fieldSet
+    case that @ JsObject(_) => fieldSet == that.fieldSet
+    case _: JsNull.type => underlying == null
     case _ => false
   }
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[JsObject]
+  def canEqual(that: Any): Boolean = that match {
+    case _: JsObject | _: JsNull.type => true
+    case _ => false
+  }
 
   override def hashCode: Int = fieldSet.hashCode()
+
+  override def toString = underlying match {
+    case null => "null"
+    case _ => Json.stringify(this)
+  }
 }
 
 object JsObject extends (Seq[(String, JsValue)] => JsObject) {
