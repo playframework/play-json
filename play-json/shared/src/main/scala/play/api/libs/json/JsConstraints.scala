@@ -24,12 +24,6 @@ trait PathFormat {
 
   def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit f: Format[A]): OFormat[Option[A]] =
     OFormat(Reads.nullableWithDefault(path, defaultValue)(f), Writes.nullable(path)(f))
-
-  def deepNullable[A](path: JsPath)(implicit f: Format[A]): OFormat[Option[A]] =
-    OFormat(Reads.deepNullable(path)(f), Writes.nullable(path)(f))
-
-  def deepNullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit f: Format[A]): OFormat[Option[A]] =
-    OFormat(Reads.deepNullableWithDefault(path, defaultValue)(f), Writes.nullable(path)(f))
 }
 
 trait PathReads {
@@ -44,12 +38,10 @@ trait PathReads {
    * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
    * and other cases are Error).
    *
-   * It runs through JsValue following all JsPath nodes on JsValue except last node:
-   * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
-   * - If all nodes are found till last node, it runs through JsValue with last node =>
-   *   - If last node if not found => returns None
-   *   - If last node is found with value "null" => returns None
-   *   - If last node is found => applies implicit Reads[T]
+   * It runs through JsValue following all JsPath nodes on JsValue:
+   * - If any node in JsPath is not found => returns None
+   * - If any node in JsPath is found with value "null" => returns None
+   * - If the entire path is found => applies implicit Reads[T]
    */
   def nullable[A](path: JsPath)(implicit reads: Reads[A]): Reads[Option[A]] =
     nullableWithDefault(path, None)
@@ -58,52 +50,12 @@ trait PathReads {
    * Reads a Option[T] search nullable field at JsPath (null is None
    * and other cases are Error).
    *
-   * It runs through JsValue following all JsPath nodes on JsValue except last node:
-   * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
-   * - If all nodes are found till last node, it runs through JsValue with last node =>
-   *   - If last node if not found => returns JsError( "missing-path" )
-   *   - If last node is found with value "null" => returns None
-   *   - If last node is found => applies implicit Reads[T]
-   */
-  def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]): Reads[Option[A]] =
-    Reads[Option[A]] { json =>
-      path.applyTillLast(json).fold(identity, _.fold(
-        _ => JsSuccess(defaultValue),
-        {
-          case JsNull => JsSuccess(None)
-          case js => reads.reads(js).repath(path).map(Some(_))
-        }
-      ))
-    }
-
-  /**
-   * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
-   * and other cases are Error).
-   *
-   * This method is designed for cherry-picking deeply nested fields whose path at any level may
-   * not exist.
-   *
-   * It runs through JsValue following all JsPath nodes on JsValue:
-   * - If any node in JsPath is not found => returns None
-   * - If any node in JsPath is found with value "null" => returns None
-   * - If the entire path is found => applies implicit Reads[T]
-   */
-  def deepNullable[A](path: JsPath)(implicit reads: Reads[A]): Reads[Option[A]] =
-    deepNullableWithDefault(path, None)
-
-  /**
-   * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
-   * default value, null is None and other cases are Error).
-   *
-   * This method is designed for cherry-picking deeply nested fields whose path at any level may
-   * not exist.
-   *
    * It runs through JsValue following all JsPath nodes on JsValue:
    * - If any node in JsPath is not found => returns default value
    * - If the last node in JsPath is found with value "null" => returns None
    * - If the entire path is found => applies implicit Reads[T]
    */
-  def deepNullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]): Reads[Option[A]] =
+  def nullableWithDefault[A](path: JsPath, defaultValue: => Option[A])(implicit reads: Reads[A]): Reads[Option[A]] =
     Reads[Option[A]] { json =>
       path.asSingleJson(json) match {
         case JsDefined(JsNull) => JsSuccess(None)

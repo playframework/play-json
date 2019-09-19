@@ -195,16 +195,44 @@ case class JsPath(path: List[PathNode] = List()) {
 
   def apply(json: JsValue): List[JsValue] = path.foldLeft(List(json))((s, p) => s.flatMap(p.apply))
 
-  def asSingleJsResult(json: JsValue): JsResult[JsValue] = this(json) match {
-    case Nil => JsError(Seq(this -> Seq(JsonValidationError("error.path.missing"))))
-    case List(js) => JsSuccess(js)
-    case _ :: _ => JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple"))))
+  private lazy val PathMissingError = JsError(Seq(this -> JsonValidationError.PathMissing))
+
+  def asSingleJsResult(json: JsValue): JsResult[JsValue] = path match {
+    // Fast path, the most common place that this is invoked is by read, eg:
+    // (__ \ "foo").read[Foo]
+    // This fast path increases the performance of that operation as tested by JsonDeserialize_01_List by 35%
+    case List(KeyPathNode(key)) =>
+      json match {
+        case JsObject(underlying) => underlying.get(key) match {
+          case Some(value) => JsSuccess(value)
+          case None => PathMissingError
+        }
+        case _ => PathMissingError
+      }
+    case _ => this (json) match {
+      case Nil => PathMissingError
+      case List(js) => JsSuccess(js)
+      case _ :: _ => JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple"))))
+    }
   }
 
-  def asSingleJson(json: JsValue): JsLookupResult = this(json) match {
-    case Nil => JsUndefined("error.path.missing")
-    case List(js) => JsDefined(js)
-    case _ :: _ => JsUndefined("error.path.result.multiple")
+  def asSingleJson(json: JsValue): JsLookupResult = path match {
+    // Fast path, the most common place that this is invoked is by readNullable, eg:
+    // (__ \ "foo").readNullable[Foo]
+    // This fast path increases the performance of that operation as tested by JsonDeserialize_02_Nullable by 82%
+    case List(KeyPathNode(key)) =>
+      json match {
+        case JsObject(underlying) => underlying.get(key) match {
+          case Some(value) => JsDefined(value)
+          case None => JsLookupResult.PathMissing
+        }
+        case _ => JsLookupResult.PathMissing
+      }
+    case _ => this(json) match {
+      case Nil => JsLookupResult.PathMissing
+      case List(js) => JsDefined(js)
+      case _ :: _ => JsUndefined("error.path.result.multiple")
+    }
   }
 
   def applyTillLast(json: JsValue): Either[JsError, JsResult[JsValue]] = {
@@ -212,12 +240,12 @@ case class JsPath(path: List[PathNode] = List()) {
     def step(path: List[PathNode], json: JsValue): Either[JsError, JsResult[JsValue]] = path match {
       case Nil => Right(JsSuccess(json))
       case List(node) => node(json) match {
-        case Nil => Right(JsError(Seq(this -> Seq(JsonValidationError("error.path.missing")))))
+        case Nil => Right(PathMissingError)
         case List(js) => Right(JsSuccess(js))
         case _ :: _ => Right(JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple")))))
       }
       case head :: tail => head(json) match {
-        case Nil => Left(JsError(Seq(this -> Seq(JsonValidationError("error.path.missing")))))
+        case Nil => Left(PathMissingError)
         case List(js) => step(tail, js)
         case _ :: _ => Left(JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple")))))
       }
@@ -289,12 +317,10 @@ case class JsPath(path: List[PathNode] = List()) {
    * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
    * and other cases are Error).
    *
-   * It runs through JsValue following all JsPath nodes on JsValue except last node:
-   * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
-   * - If all nodes are found till last node, it runs through JsValue with last node =>
-   *   - If last node is not found => returns None
-   *   - If last node is found with value "null" => returns None
-   *   - If last node is found => applies implicit Reads[T]
+   * It runs through JsValue following all JsPath nodes on JsValue:
+   * - If any node in JsPath is not found => returns None
+   * - If any node in JsPath is found with value "null" => returns None
+   * - If the entire path is found => applies implicit Reads[T]
    */
   def readNullable[T](implicit r: Reads[T]): Reads[Option[T]] = Reads.nullable[T](this)(r)
 
@@ -303,41 +329,11 @@ case class JsPath(path: List[PathNode] = List()) {
    * default value, null is None and other cases are Error).
    *
    * It runs through JsValue following all JsPath nodes on JsValue except last node:
-   * - If one node in JsPath is not found before last node => returns JsError( "missing-path" )
-   * - If all nodes are found till last node, it runs through JsValue with last node =>
-   *   - If last node is not found => returns default value
-   *   - If last node is found with value "null" => returns None
-   *   - If last node is found => applies implicit Reads[T]
-   */
-  def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.nullableWithDefault[T](this, defaultValue)(r)
-
-  /**
-   * Reads a Option[T] search optional or nullable field at JsPath (field not found or null is None
-   * and other cases are Error).
-   *
-   * This method is designed for cherry-picking deeply nested fields whose path at any level may
-   * not exist.
-   *
-   * It runs through JsValue following all JsPath nodes on JsValue:
-   * - If any node in JsPath is not found => returns None
-   * - If any node in JsPath is found with value "null" => returns None
-   * - If the entire path is found => applies implicit Reads[T]
-   */
-  def readDeepNullable[T](implicit r: Reads[T]): Reads[Option[T]] = Reads.deepNullable[T](this)(r)
-
-  /**
-   * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
-   * default value, null is None and other cases are Error).
-   *
-   * This method is designed for cherry-picking deeply nested fields whose path at any level may
-   * not exist.
-   *
-   * It runs through JsValue following all JsPath nodes on JsValue:
    * - If any node in JsPath is not found => returns default value
    * - If any node in JsPath is found with value "null" => returns None
    * - If the entire path is found => applies implicit Reads[T]
    */
-  def readDeepNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.deepNullableWithDefault[T](this, defaultValue)(r)
+  def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = Reads.nullableWithDefault[T](this, defaultValue)(r)
 
   /**
    * Reads a T at JsPath using the explicit Reads[T] passed by name which is useful in case of
@@ -465,24 +461,6 @@ case class JsPath(path: List[PathNode] = List()) {
    */
   def formatNullableWithDefault[T](defaultValue: => Option[T])(implicit f: Format[T]): OFormat[Option[T]] = {
     Format.nullableWithDefault[T](this, defaultValue)(f)
-  }
-
-  /**
-   * Reads/Writes a Option[T] (optional or nullable field) at given JsPath
-   *
-   * @see JsPath.readDeepNullable to see behavior in reads
-   * @see JsPath.writeNullable to see behavior in writes
-   */
-  def formatDeepNullable[T](implicit f: Format[T]): OFormat[Option[T]] = Format.deepNullable[T](this)(f)
-
-  /**
-   * Reads/Writes a Option[T] (nullable field) at given JsPath
-   *
-   * @see [[JsPath.readDeepNullableWithDefault]] to see behavior in reads
-   * @see [[JsPath.writeNullable]] to see behavior in writes
-   */
-  def formatDeepNullableWithDefault[T](defaultValue: => Option[T])(implicit f: Format[T]): OFormat[Option[T]] = {
-    Format.deepNullableWithDefault[T](this, defaultValue)(f)
   }
 
   /**
