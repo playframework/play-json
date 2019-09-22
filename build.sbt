@@ -33,7 +33,7 @@ val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
-val jacksonVersion = "2.9.9"
+val jacksonVersion = "2.9.10"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
@@ -42,7 +42,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.3"
+  "joda-time" % "joda-time" % "2.10.4"
     //"org.joda" % "joda-convert" % "1.8.1")
 )
 
