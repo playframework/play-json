@@ -238,7 +238,11 @@ trait LowPriorityDefaultReads extends EnvReads {
   implicit def traversableReads[F[_], A](implicit bf: Factory[A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
     def reads(json: JsValue) = json match {
       case JsArray(ts) =>
-        ts.iterator.zipWithIndex.foldLeft(JsSuccess(bf.newBuilder): JsResult[Builder[A, F[A]]]) {
+        ts.iterator.zipWithIndex.foldLeft(JsSuccess({
+          val b = bf.newBuilder
+          b.sizeHint(ts)
+          b
+        }): JsResult[Builder[A, F[A]]]) {
           case (acc, (elem, idx)) => (acc, ra.reads(elem)) match {
             case (JsSuccess(vs, _), JsSuccess(v, _)) => JsSuccess(vs += v)
             case (_: JsSuccess[_], jsError: JsError) => jsError.repath(JsPath(idx))
