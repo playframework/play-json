@@ -14,4 +14,6 @@ case class JsonValidationError(messages: Seq[String], args: Any*) {
 object JsonValidationError {
   def apply(message: String, args: Any*): JsonValidationError =
     JsonValidationError(Seq(message), args: _*)
+
+  private[json] val PathMissing = Seq(JsonValidationError("error.path.missing"))
 }

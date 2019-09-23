@@ -168,6 +168,7 @@ sealed trait JsLookupResult extends Any with JsReadable {
 object JsLookupResult {
   import scala.language.implicitConversions
   implicit def jsLookupResultToJsLookup(value: JsLookupResult): JsLookup = JsLookup(value)
+  private[json] val PathMissing = JsUndefined("error.path.missing")
 }
 
 /**
