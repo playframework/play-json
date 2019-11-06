@@ -9,12 +9,6 @@ addSbtPlugin("com.typesafe.play" % "interplay" % sys.props.get("interplay.versio
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.7")
 
-
-// remove this resolved when https://github.com/lightbend/mima/issues/422 is solved
-resolvers += Resolver.url(
-  "typesafe sbt-plugins",
-  url("https://dl.bintray.com/typesafe/sbt-plugins")
-)(Resolver.ivyStylePatterns)
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.6.1")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.8")
