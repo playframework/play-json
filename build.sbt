@@ -54,8 +54,6 @@ def jsonDependencies(scalaVersion: String) = Seq(
 )
 
 // Common settings
-import com.typesafe.sbt.SbtScalariform, SbtScalariform.ScalariformKeys
-import scalariform.formatter.preferences._
 
 val previousVersions = Def.setting[Seq[String]] {
   Nil // Seq("2.8.0-M1") // TODO: switch to a release of 2.8, when available
@@ -113,7 +111,6 @@ lazy val commonSettings = Def.settings(
     else
       Opts.resolver.sonatypeStaging
   ),
-  scalariformAutoformat := true,
   headerLicense := {
     val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
     Some(HeaderLicense.Custom(
@@ -122,13 +119,6 @@ lazy val commonSettings = Def.settings(
   },
   scalaVersion := ScalaVersions.scala212,
   crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
-  SbtScalariform.projectSettings,
-  ScalariformKeys.preferences := ScalariformKeys.preferences.value
-    .setPreference(SpacesAroundMultiImports, true)
-    .setPreference(SpaceInsideParentheses, false)
-    .setPreference(DanglingCloseParenthesis, Preserve)
-    .setPreference(PreserveSpaceBeforeArguments, true)
-    .setPreference(DoubleIndentConstructorArguments, false),
 
   javacOptions in Compile ++= javacSettings,
   javacOptions in Test ++= javacSettings,
@@ -304,18 +294,4 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges
 )
 
-lazy val checkCodeFormat = taskKey[Unit]("Check that code format is following Scalariform rules")
-
-checkCodeFormat := {
-  val exitCode = "git diff --exit-code".!
-  if (exitCode != 0) {
-    sys.error(
-      """
-        |ERROR: Scalariform check failed, see differences above.
-        |To fix, format your sources using sbt scalariformFormat test:scalariformFormat before submitting a pull request.
-        |Additionally, please squash your commits (eg, use git commit --amend) if you're going to update this pull request.
-      """.stripMargin)
-  }
-}
-
-addCommandAlias("validateCode", ";scalariformFormat;test:scalariformFormat;headerCheck;test:headerCheck;checkCodeFormat")
+addCommandAlias("validateCode", ";headerCheck;test:headerCheck")
