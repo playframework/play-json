@@ -14,6 +14,7 @@ scala:
 
 script:
   - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues publishLocal
+  - sbt ++$TRAVIS_SCALA_VERSION docs/test docs/validateDocs
 
 cache:
   directories:
