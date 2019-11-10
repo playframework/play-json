@@ -28,12 +28,12 @@ val specsBuild = Def.setting[Seq[ModuleID]] {
   Seq("org.specs2" %% "specs2-core" % specsVersion)
 }
 
-val jacksonDatabindVersion = "2.10.0"
+val jacksonDatabindVersion = "2.10.1"
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
-val jacksonVersion = "2.10.0"
+val jacksonVersion = "2.10.1"
 val jacksons = Seq(
   "com.fasterxml.jackson.core" % "jackson-core",
   "com.fasterxml.jackson.core" % "jackson-annotations",
