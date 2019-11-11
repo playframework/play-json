@@ -25,7 +25,10 @@ val specsBuild = Def.setting[Seq[ModuleID]] {
     case _ => "4.5.1"
   }
 
-  Seq("org.specs2" %% "specs2-core" % specsVersion)
+  Seq(
+    "org.specs2" %% "specs2-core" % specsVersion,
+    "org.specs2" %% "specs2-junit" % specsVersion,
+  )
 }
 
 val jacksonDatabindVersion = "2.10.0"
@@ -260,6 +263,29 @@ lazy val benchmarks = project
   .enablePlugins(JmhPlugin, PlayNoPublish)
   .settings(commonSettings)
   .dependsOn(`play-jsonJVM`)
+
+lazy val docs = project
+    .in(file("docs"))
+    .enablePlugins(PlayDocsPlugin, PlayNoPublish)
+    .configs(Docs)
+    .settings(
+      libraryDependencies ++= specsBuild.value.map(_ % Test),
+      PlayDocsKeys.scalaManualSourceDirectories := (baseDirectory.value / "manual" / "working" / "scalaGuide" ** "code").get,
+      PlayDocsKeys.resources += {
+        val apiDocs = (doc in (`play-jsonJVM`, Compile)).value
+        // Copy the docs to a place so they have the correct api/scala prefix
+        val apiDocsStage = target.value / "api-docs-stage"
+        val cacheFile    = streams.value.cacheDirectory / "api-docs-stage"
+        val mappings = apiDocs.allPaths.filter(!_.isDirectory).get.pair(relativeTo(apiDocs)).map {
+          case (file, path) => file -> apiDocsStage / "api" / "scala" / path
+        }
+        Sync.sync(CacheStore(cacheFile))(mappings)
+        PlayDocsDirectoryResource(apiDocsStage)
+      },
+      SettingKey[Seq[File]]("migrationManualSources") := Nil
+    )
+    .settings(commonSettings)
+    .dependsOn(`play-jsonJVM`)
 
 playBuildRepoName in ThisBuild := "play-json"
 
