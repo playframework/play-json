@@ -13,7 +13,7 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
   def get: T = value
 
   val isSuccess = true
-  val isError = false
+  val isError   = false
 
   def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: T => U): U = valid(value)
 
@@ -54,14 +54,14 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
 
   def ++(error: JsError): JsError = JsError.merge(this, error)
 
-  def :+(error: (JsPath, JsonValidationError)): JsError = JsError.merge(this, JsError(error))
+  def :+(error: (JsPath, JsonValidationError)): JsError     = JsError.merge(this, JsError(error))
   def append(error: (JsPath, JsonValidationError)): JsError = this.:+(error)
 
-  def +:(error: (JsPath, JsonValidationError)): JsError = JsError.merge(JsError(error), this)
+  def +:(error: (JsPath, JsonValidationError)): JsError      = JsError.merge(JsError(error), this)
   def prepend(error: (JsPath, JsonValidationError)): JsError = this.+:(error)
 
   val isSuccess = false
-  val isError = true
+  val isError   = true
 
   def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: Nothing => U): U = invalid(errors)
 
@@ -108,7 +108,10 @@ object JsError {
 
   def apply(path: JsPath, error: String): JsError = JsError(path -> JsonValidationError(error))
 
-  def merge(e1: Seq[(JsPath, Seq[JsonValidationError])], e2: Seq[(JsPath, Seq[JsonValidationError])]): Seq[(JsPath, Seq[JsonValidationError])] = {
+  def merge(
+      e1: Seq[(JsPath, Seq[JsonValidationError])],
+      e2: Seq[(JsPath, Seq[JsonValidationError])]
+  ): Seq[(JsPath, Seq[JsonValidationError])] = {
     (e1 ++ e2).groupBy(_._1).mapValues(_.flatMap(_._2)).toList
   }
 
@@ -121,7 +124,9 @@ object JsError {
   def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])]): JsObject = toJson(errors, false)
 
   //def toJsonErrorsOnly: JsValue = original // TODO
-  def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map { case (path, seq) => path.toJsonString -> seq }
+  def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map {
+    case (path, seq) => path.toJsonString -> seq
+  }
 
   private def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])], flat: Boolean): JsObject = {
     errors.foldLeft(JsObject.empty) { (obj, error) =>
@@ -130,10 +135,12 @@ object JsError {
           if (flat) Array(JsString(err.message))
           else err.messages.map(JsString(_)).toArray[JsValue]
         })
-        arr :+ JsObject(Seq(
-          "msg" -> msg,
-          "args" -> JsArray(err.args.map(toJson).toArray[JsValue])
-        ))
+        arr :+ JsObject(
+          Seq(
+            "msg"  -> msg,
+            "args" -> JsArray(err.args.map(toJson).toArray[JsValue])
+          )
+        )
       }))
     }
   }
@@ -142,15 +149,15 @@ object JsError {
    * Serializer for Any, used for the args of errors.
    */
   private def toJson(a: Any): JsValue = a match {
-    case s: String => JsString(s)
-    case nb: Int => JsNumber(nb)
-    case nb: Short => JsNumber(nb)
-    case nb: Long => JsNumber(nb)
-    case nb: Double => JsNumber(nb)
-    case nb: Float => JsNumber(nb)
-    case b: Boolean => JsBoolean(b)
+    case s: String   => JsString(s)
+    case nb: Int     => JsNumber(nb)
+    case nb: Short   => JsNumber(nb)
+    case nb: Long    => JsNumber(nb)
+    case nb: Double  => JsNumber(nb)
+    case nb: Float   => JsNumber(nb)
+    case b: Boolean  => JsBoolean(b)
     case js: JsValue => js
-    case x => JsString(x.toString)
+    case x           => JsString(x.toString)
   }
 }
 
@@ -180,20 +187,28 @@ sealed trait JsResult[+A] { self =>
   def foreach(f: A => Unit): Unit
 
   def filterNot(error: JsError)(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) error else JsSuccess(a) }
+    flatMap { a =>
+      if (p(a)) error else JsSuccess(a)
+    }
 
   def filterNot(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) JsError() else JsSuccess(a) }
+    flatMap { a =>
+      if (p(a)) JsError() else JsSuccess(a)
+    }
 
   def filter(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) JsSuccess(a) else JsError() }
+    flatMap { a =>
+      if (p(a)) JsSuccess(a) else JsError()
+    }
 
   def filter(otherwise: JsError)(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) JsSuccess(a) else otherwise }
+    flatMap { a =>
+      if (p(a)) JsSuccess(a) else otherwise
+    }
 
   def collect[B](otherwise: JsonValidationError)(p: PartialFunction[A, B]): JsResult[B] = flatMap {
     case t if p.isDefinedAt(t) => JsSuccess(p(t))
-    case _ => JsError(otherwise)
+    case _                     => JsError(otherwise)
   }
 
   def withFilter(p: A => Boolean) = new WithFilter(p)
@@ -215,7 +230,7 @@ sealed trait JsResult[+A] { self =>
 
     def foreach(f: A => Unit): Unit = self match {
       case JsSuccess(a, _) if p(a) => f(a)
-      case _ => ()
+      case _                       => ()
     }
 
     def withFilter(q: A => Boolean) = new WithFilter(a => p(a) && q(a))
@@ -279,12 +294,14 @@ sealed trait JsResult[+A] { self =>
 }
 
 object JsResult {
-  import scala.util.{ Failure, Try, Success }
+  import scala.util.Failure
+  import scala.util.Try
+  import scala.util.Success
   import play.api.libs.functional._
 
   case class Exception(cause: JsError)
-    extends java.lang.Exception(Json stringify JsError.toJson(cause))
-    with scala.util.control.NoStackTrace
+      extends java.lang.Exception(Json.stringify(JsError.toJson(cause)))
+      with scala.util.control.NoStackTrace
 
   /**
    * Returns a JSON validation as a [[scala.util.Try]].
@@ -302,7 +319,7 @@ object JsResult {
    * }}}
    */
   def toTry[T](result: JsResult[T], err: JsError => Throwable = Exception(_)): Try[T] = result match {
-    case e @ JsError(_) => Failure(err(e))
+    case e @ JsError(_)      => Failure(err(e))
     case s @ JsSuccess(v, _) => Success(v)
   }
 
@@ -313,42 +330,43 @@ object JsResult {
    * @param result the result
    * @param err the function to be applied for [[scala.util.Failure]]
    */
-  def fromTry[T](result: Try[T], err: Throwable => JsError = { e => JsError(e.getMessage) }): JsResult[T] = result match {
+  def fromTry[T](result: Try[T], err: Throwable => JsError = { e =>
+    JsError(e.getMessage)
+  }): JsResult[T] = result match {
     case Success(v) => JsSuccess(v)
     case Failure(e) => err(e)
   }
 
-  implicit def alternativeJsResult(implicit a: Applicative[JsResult]): Alternative[JsResult] = new Alternative[JsResult] {
-    val app = a
-    def |[A, B >: A](alt1: JsResult[A], alt2: JsResult[B]): JsResult[B] = (alt1, alt2) match {
-      case (JsError(e), JsSuccess(t, p)) => JsSuccess(t, p)
-      case (JsSuccess(t, p), _) => JsSuccess(t, p)
-      case (JsError(e1), JsError(e2)) => JsError(JsError.merge(e1, e2))
+  implicit def alternativeJsResult(implicit a: Applicative[JsResult]): Alternative[JsResult] =
+    new Alternative[JsResult] {
+      val app = a
+      def |[A, B >: A](alt1: JsResult[A], alt2: JsResult[B]): JsResult[B] = (alt1, alt2) match {
+        case (JsError(e), JsSuccess(t, p)) => JsSuccess(t, p)
+        case (JsSuccess(t, p), _)          => JsSuccess(t, p)
+        case (JsError(e1), JsError(e2))    => JsError(JsError.merge(e1, e2))
+      }
+      def empty: JsResult[Nothing] = JsError(Seq.empty)
     }
-    def empty: JsResult[Nothing] = JsError(Seq.empty)
-  }
 
   implicit val applicativeJsResult: Applicative[JsResult] = new Applicative[JsResult] {
-
     def pure[A](f: => A): JsResult[A] = JsSuccess(f)
 
     def map[A, B](m: JsResult[A], f: A => B): JsResult[B] = m.map(f)
 
     def apply[A, B](mf: JsResult[A => B], ma: JsResult[A]): JsResult[B] = (mf, ma) match {
       case (JsSuccess(f, _), JsSuccess(a, _)) => JsSuccess(f(a))
-      case (JsError(e1), JsError(e2)) => JsError(JsError.merge(e1, e2))
-      case (JsError(e), _) => JsError(e)
-      case (_, JsError(e)) => JsError(e)
+      case (JsError(e1), JsError(e2))         => JsError(JsError.merge(e1, e2))
+      case (JsError(e), _)                    => JsError(e)
+      case (_, JsError(e))                    => JsError(e)
     }
   }
 
   implicit val functorJsResult: Functor[JsResult] = new Functor[JsResult] {
-    override def fmap[A, B](m: JsResult[A], f: A => B) = m map f
+    override def fmap[A, B](m: JsResult[A], f: A => B) = m.map(f)
   }
 
   private[JsResult] type Errors = Seq[(JsPath, Seq[JsonValidationError])]
 
   private[json] def repath(errors: Errors, path: JsPath): Errors =
     errors.map { case (p, s) => (path ++ p) -> s }
-
 }

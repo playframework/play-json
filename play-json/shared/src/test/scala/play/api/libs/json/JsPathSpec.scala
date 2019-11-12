@@ -13,13 +13,13 @@ class JsPathSpec extends WordSpec with MustMatchers {
     "retrieve simple path" in {
       val obj = Json.obj("key1" -> Json.obj("key11" -> "value11"), "key2" -> "value2")
 
-      (JsPath \ "key1" \ "key11")(obj) mustEqual (Seq(JsString("value11")))
+      (JsPath \ "key1" \ "key11")(obj).mustEqual(Seq(JsString("value11")))
     }
 
     "retrieve path with array index" in {
       val obj = Json.obj("key1" -> Json.arr(Json.obj("key11" -> "value11")))
 
-      (JsPath \ "key1" \ 0 \ "key11")(obj) mustEqual (Seq(JsString("value11")))
+      (JsPath \ "key1" \ 0 \ "key11")(obj).mustEqual(Seq(JsString("value11")))
     }
 
     "retrieve 1-level recursive path" in {
@@ -33,7 +33,8 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "key3" -> "blabla"
       )
 
-      (JsPath \\ "tags")(obj) mustEqual (Seq(Json.arr("alpha1", "beta1", "gamma1"), Json.arr("alpha2", "beta2", "gamma2")))
+      (JsPath \\ "tags")(obj)
+        .mustEqual(Seq(Json.arr("alpha1", "beta1", "gamma1"), Json.arr("alpha2", "beta2", "gamma2")))
     }
 
     "retrieve 2-level recursive path" in {
@@ -50,7 +51,8 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      (JsPath \ "level1" \\ "tags")(obj) mustEqual (Seq(Json.arr("alpha1", "beta1", "gamma1"), Json.arr("alpha2", "beta2", "gamma2")))
+      (JsPath \ "level1" \\ "tags")(obj)
+        .mustEqual(Seq(Json.arr("alpha1", "beta1", "gamma1"), Json.arr("alpha2", "beta2", "gamma2")))
     }
 
     "retrieve 2-level middle recursive path" in {
@@ -66,7 +68,7 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      (JsPath \\ "tags" \ "sub")(obj) mustEqual (Seq(JsString("alpha1"), JsString("beta2")))
+      (JsPath \\ "tags" \ "sub")(obj).mustEqual(Seq(JsString("alpha1"), JsString("beta2")))
     }
 
     "retrieve simple indexed path" in {
@@ -74,7 +76,7 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level1" -> Json.arr(5, "alpha", true)
       )
 
-      (JsPath \ "level1")(2)(obj) mustEqual (Seq(JsBoolean(true)))
+      (JsPath \ "level1")(2)(obj).mustEqual(Seq(JsBoolean(true)))
     }
 
     "retrieve 2-level recursive indexed path #1" in {
@@ -90,8 +92,7 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      (JsPath \ "level1" \\ "tags")(1)(obj) mustEqual (Seq(JsString("beta1"), JsString("beta2")))
-
+      (JsPath \ "level1" \\ "tags")(1)(obj).mustEqual(Seq(JsString("beta1"), JsString("beta2")))
     }
 
     "retrieve 2-level recursive indexed path #2" in {
@@ -109,8 +110,7 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      ((JsPath \ "level1" \ "key1")(1) \\ "tags")(obj) mustEqual (Seq(Json.arr("alpha1", "beta1", "gamma1")))
-
+      ((JsPath \ "level1" \ "key1")(1) \\ "tags")(obj).mustEqual(Seq(Json.arr("alpha1", "beta1", "gamma1")))
     }
 
     "retrieve recursive in jsobject and jsarray #1" in {
@@ -118,18 +118,20 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level1" -> Json.obj(
           "key1" -> Json.arr(
             "key11",
-            Json.obj("key111" -> Json.obj(
-              "key1111" -> Json.arr(
-                Json.obj("alpha" -> "value11111", "key11112" -> "value11112"),
-                "beta1",
-                Json.obj("key11121" -> "value11121", "key11122" -> "value111122")
+            Json.obj(
+              "key111" -> Json.obj(
+                "key1111" -> Json.arr(
+                  Json.obj("alpha" -> "value11111", "key11112" -> "value11112"),
+                  "beta1",
+                  Json.obj("key11121" -> "value11121", "key11122" -> "value111122")
+                )
               )
-            )),
+            ),
             "key12"
           ),
           "key2" -> Json.obj(
             "key21" -> Json.obj(
-              "alpha" -> Json.arr("a", "b", "c"),
+              "alpha"  -> Json.arr("a", "b", "c"),
               "key212" -> Json.obj("blabla" -> "xxx", "blibli" -> "yyy")
             )
           )
@@ -137,22 +139,20 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      (JsPath \ "level1" \\ "alpha")(obj) mustEqual (Seq(JsString("value11111"), Json.arr("a", "b", "c")))
-
+      (JsPath \ "level1" \\ "alpha")(obj).mustEqual(Seq(JsString("value11111"), Json.arr("a", "b", "c")))
     }
 
     "retrieve recursive in jsobject and jsarray #2" in {
       val obj = Json.obj(
         "nothing" -> "really",
         "array" -> Json.arr(
-          Json.obj("field" -> Json.obj("alpha" -> "v11", "beta" -> "v12", "gamma" -> "v13")),
-          Json.obj("field" -> Json.obj("alpha" -> "v21", "gamma" -> "v23", "beta" -> "v22")),
-          Json.obj("field" -> Json.obj("beta" -> "v32", "alpha" -> "v31", "gamma" -> "v33"))
+          Json.obj("field" -> Json.obj("alpha" -> "v11", "beta"  -> "v12", "gamma" -> "v13")),
+          Json.obj("field" -> Json.obj("alpha" -> "v21", "gamma" -> "v23", "beta"  -> "v22")),
+          Json.obj("field" -> Json.obj("beta"  -> "v32", "alpha" -> "v31", "gamma" -> "v33"))
         )
       )
 
-      (JsPath \ "array" \\ "beta")(obj) mustEqual (Seq(JsString("v12"), JsString("v22"), JsString("v32")))
-
+      (JsPath \ "array" \\ "beta")(obj).mustEqual(Seq(JsString("v12"), JsString("v22"), JsString("v32")))
     }
 
     "retrieve with symbol keys" in {
@@ -170,8 +170,8 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      ((JsPath \ Symbol("level1") \ Symbol("key1"))(1) \\ Symbol("tags"))(obj) mustEqual (Seq(Json.arr("alpha1", "beta1", "gamma1")))
-
+      ((JsPath \ Symbol("level1") \ Symbol("key1"))(1) \\ Symbol("tags"))(obj)
+        .mustEqual(Seq(Json.arr("alpha1", "beta1", "gamma1")))
     }
 
     "prune field from 1-level JsObject" in {
@@ -223,10 +223,12 @@ class JsPathSpec extends WordSpec with MustMatchers {
         "level2" -> 5
       )
 
-      (__ \ Symbol("level2")).prune(obj) mustEqual (JsSuccess(res, __ \ Symbol("level2")))
-      (__ \ Symbol("level1") \ Symbol("key1")).prune(obj).get mustEqual (res2)
-      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key21")).prune(obj).get mustEqual (res3)
-      (__ \\ Symbol("key21")).prune(obj) mustEqual (JsError(__ \\ "key21", JsonValidationError("error.expected.keypathnode")))
+      (__ \ Symbol("level2")).prune(obj).mustEqual(JsSuccess(res, __ \ Symbol("level2")))
+      (__ \ Symbol("level1") \ Symbol("key1")).prune(obj).get.mustEqual(res2)
+      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key21")).prune(obj).get.mustEqual(res3)
+      (__ \\ Symbol("key21"))
+        .prune(obj)
+        .mustEqual(JsError(__ \\ "key21", JsonValidationError("error.expected.keypathnode")))
     }
 
     "get JsPath till last node" in {
@@ -243,30 +245,44 @@ class JsPathSpec extends WordSpec with MustMatchers {
         )
       )
 
-      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key21")).applyTillLast(res) mustEqual (Right(JsSuccess(
-        Json.obj("tags" -> Json.arr("alpha2", "beta2", "gamma2"))
-      )))
+      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key21"))
+        .applyTillLast(res)
+        .mustEqual(
+          Right(
+            JsSuccess(
+              Json.obj("tags" -> Json.arr("alpha2", "beta2", "gamma2"))
+            )
+          )
+        )
 
-      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key23")).applyTillLast(res) mustEqual (
-        Right(JsError(__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key23"), JsonValidationError("error.path.missing")))
-      )
+      (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key23"))
+        .applyTillLast(res)
+        .mustEqual(
+          Right(
+            JsError(__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key23"), JsonValidationError("error.path.missing"))
+          )
+        )
 
-      (__ \ Symbol("level2") \ Symbol("key3")).applyTillLast(res) mustEqual (
-        Left(JsError(__ \ Symbol("level2") \ Symbol("key3"), JsonValidationError("error.path.missing")))
-      )
+      (__ \ Symbol("level2") \ Symbol("key3"))
+        .applyTillLast(res)
+        .mustEqual(
+          Left(JsError(__ \ Symbol("level2") \ Symbol("key3"), JsonValidationError("error.path.missing")))
+        )
     }
 
     "read deep nullable nested fields" in {
-      val path = __ \ "foo" \ "bar" \ "baz"
+      val path  = __ \ "foo" \ "bar" \ "baz"
       val reads = path.readNullable[String]
 
-      reads.reads(Json.obj()) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj())) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj()))) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> "blah")))) mustEqual JsSuccess(Some("blah"), path)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> JsNull)))) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> JsNull))) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> "blah"))) mustEqual JsSuccess(None)
+      reads.reads(Json.obj()).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj())).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj()))).mustEqual(JsSuccess(None))
+      reads
+        .reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> "blah"))))
+        .mustEqual(JsSuccess(Some("blah"), path))
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> JsNull)))).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> JsNull))).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> "blah"))).mustEqual(JsSuccess(None))
     }
 
     /*"set 1-level field in simple jsobject" in {
@@ -575,5 +591,4 @@ class JsPathSpec extends WordSpec with MustMatchers {
 
     }*/
   }
-
 }

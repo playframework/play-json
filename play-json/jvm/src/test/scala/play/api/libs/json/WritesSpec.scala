@@ -6,24 +6,21 @@ package play.api.libs.json
 
 import java.util.Locale
 
-import java.time.{
-  Instant,
-  Duration => JDuration,
-  Period,
-  LocalDateTime,
-  LocalDate,
-  LocalTime,
-  OffsetDateTime,
-  ZonedDateTime,
-  ZoneOffset,
-  ZoneId
-}
+import java.time.Instant
+import java.time.{ Duration => JDuration }
+import java.time.Period
+import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZonedDateTime
+import java.time.ZoneOffset
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 import org.specs2.specification.core.Fragment
 
 class WritesSpec extends org.specs2.mutable.Specification {
-
   title("JSON Writes")
 
   "Local date/time" should {
@@ -32,25 +29,33 @@ class WritesSpec extends org.specs2.mutable.Specification {
 
     @inline def dateTime(input: String) = LocalDateTime.parse(input)
 
-    val CustomWrites1 = Writes.
-      temporalWrites[LocalDateTime, String]("dd/MM/yyyy, HH:mm:ss")
+    val CustomWrites1 = Writes.temporalWrites[LocalDateTime, String]("dd/MM/yyyy, HH:mm:ss")
 
     "be written as number" in {
-      Writes.LocalDateTimeEpochMilliWrites.writes(LocalDateTime.ofInstant(
-        Instant.ofEpochMilli(1234567890L), ZoneOffset.UTC
-      )).
-        aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
+      Writes.LocalDateTimeEpochMilliWrites
+        .writes(
+          LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(1234567890L),
+            ZoneOffset.UTC
+          )
+        )
+        .aka("written date")
+        .must_==(JsNumber(BigDecimal.valueOf(1234567890L)))
     }
 
     "be written with default implicit as '2011-12-03T10:15:30'" in {
-      writes(dateTime("2011-12-03T10:15:30")) aka "written date" must_== (
-        JsString("2011-12-03T10:15:30")
-      )
+      writes(dateTime("2011-12-03T10:15:30"))
+        .aka("written date")
+        .must_==(
+          JsString("2011-12-03T10:15:30")
+        )
     }
 
     "be written with custom pattern as '03/12/2011, 10:15:30'" in {
-      CustomWrites1.writes(dateTime("2011-12-03T10:15:30")).
-        aka("written date") must_== JsString("03/12/2011, 10:15:30")
+      CustomWrites1
+        .writes(dateTime("2011-12-03T10:15:30"))
+        .aka("written date")
+        .must_==(JsString("03/12/2011, 10:15:30"))
     }
   }
 
@@ -58,18 +63,21 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val DefaultWrites = implicitly[Writes[OffsetDateTime]]
     import DefaultWrites.writes
 
-    val CustomWrites1 = Writes.
-      temporalWrites[OffsetDateTime, String]("dd/MM/yyyy, HH:mm:ss (XXX)")
+    val CustomWrites1 = Writes.temporalWrites[OffsetDateTime, String]("dd/MM/yyyy, HH:mm:ss (XXX)")
 
     "be written with default implicit as '2011-12-03T10:15:30-01:30'" in {
-      writes(OffsetDateTime.parse("2011-12-03T10:15:30-01:30")) aka "written date" must_== (
-        JsString("2011-12-03T10:15:30-01:30")
-      )
+      writes(OffsetDateTime.parse("2011-12-03T10:15:30-01:30"))
+        .aka("written date")
+        .must_==(
+          JsString("2011-12-03T10:15:30-01:30")
+        )
     }
 
     "be written with custom pattern as '03/12/2011, 10:15:30 (-01:30)'" in {
-      CustomWrites1.writes(OffsetDateTime.parse("2011-12-03T10:15:30-01:30")).
-        aka("written date") must_== JsString("03/12/2011, 10:15:30 (-01:30)")
+      CustomWrites1
+        .writes(OffsetDateTime.parse("2011-12-03T10:15:30-01:30"))
+        .aka("written date")
+        .must_==(JsString("03/12/2011, 10:15:30 (-01:30)"))
     }
   }
 
@@ -79,31 +87,41 @@ class WritesSpec extends org.specs2.mutable.Specification {
 
     @inline def dateTime(input: String) = ZonedDateTime.parse(input)
 
-    val CustomWrites1 = Writes.
-      temporalWrites[ZonedDateTime, String]("dd/MM/yyyy, HH:mm:ss")
+    val CustomWrites1 = Writes.temporalWrites[ZonedDateTime, String]("dd/MM/yyyy, HH:mm:ss")
 
     "be written as number" in {
-      Writes.ZonedDateTimeEpochMilliWrites.writes(ZonedDateTime.ofInstant(
-        Instant.ofEpochMilli(1234567890L), ZoneOffset.UTC
-      )).
-        aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
+      Writes.ZonedDateTimeEpochMilliWrites
+        .writes(
+          ZonedDateTime.ofInstant(
+            Instant.ofEpochMilli(1234567890L),
+            ZoneOffset.UTC
+          )
+        )
+        .aka("written date")
+        .must_==(JsNumber(BigDecimal.valueOf(1234567890L)))
     }
 
     "be written with default implicit as '2011-12-03T10:15:30+01:00[Europe/Paris]'" in {
-      writes(dateTime("2011-12-03T10:15:30+01:00[Europe/Paris]")) aka "written date" must_== (
-        JsString("2011-12-03T10:15:30+01:00[Europe/Paris]")
-      )
+      writes(dateTime("2011-12-03T10:15:30+01:00[Europe/Paris]"))
+        .aka("written date")
+        .must_==(
+          JsString("2011-12-03T10:15:30+01:00[Europe/Paris]")
+        )
     }
 
     "be written with default implicit as '2011-12-03T10:15:30+06:30'" in {
-      writes(dateTime("2011-12-03T10:15:30+06:30")) aka "written date" must_== (
-        JsString("2011-12-03T10:15:30+06:30")
-      )
+      writes(dateTime("2011-12-03T10:15:30+06:30"))
+        .aka("written date")
+        .must_==(
+          JsString("2011-12-03T10:15:30+06:30")
+        )
     }
 
     "be written with custom pattern as '03/12/2011, 10:15:30'" in {
-      CustomWrites1.writes(dateTime("2011-12-03T10:15:30+05:30")).
-        aka("written date") must_== JsString("03/12/2011, 10:15:30")
+      CustomWrites1
+        .writes(dateTime("2011-12-03T10:15:30+05:30"))
+        .aka("written date")
+        .must_==(JsString("03/12/2011, 10:15:30"))
     }
   }
 
@@ -116,22 +134,30 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val CustomWrites1 = Writes.temporalWrites[LocalDate, String]("dd/MM/yyyy")
 
     "be written as number" in {
-      Writes.LocalDateEpochMilliWrites.writes(
-        LocalDate ofEpochDay 1234567890L
-      ) aka "written date" must_== JsNumber(
-          BigDecimal valueOf 106666665696000000L
+      Writes.LocalDateEpochMilliWrites
+        .writes(
+          LocalDate.ofEpochDay(1234567890L)
+        )
+        .aka("written date")
+        .must_==(
+          JsNumber(
+            BigDecimal.valueOf(106666665696000000L)
+          )
         )
     }
 
     "be written with default implicit as '2011-12-03'" in {
-      writes(date("2011-12-03")) aka "written date" must_== JsString(
-        "2011-12-03"
-      )
+      writes(date("2011-12-03"))
+        .aka("written date")
+        .must_==(
+          JsString(
+            "2011-12-03"
+          )
+        )
     }
 
     "be written with custom pattern as '03/12/2011'" in {
-      CustomWrites1.writes(date("2011-12-03")).
-        aka("written date") must_== JsString("03/12/2011")
+      CustomWrites1.writes(date("2011-12-03")).aka("written date").must_==(JsString("03/12/2011"))
     }
   }
 
@@ -142,18 +168,20 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val CustomWrites1 = Writes.temporalWrites[LocalTime, String]("HH.mm.ss")
 
     "be written as number" in {
-      Writes.LocalTimeNanoOfDayWrites.writes(
-        LocalTime ofNanoOfDay 1234567890L
-      ) aka "written time" must_== JsNumber(BigDecimal valueOf 1234567890L)
+      Writes.LocalTimeNanoOfDayWrites
+        .writes(
+          LocalTime.ofNanoOfDay(1234567890L)
+        )
+        .aka("written time")
+        .must_==(JsNumber(BigDecimal.valueOf(1234567890L)))
     }
 
     "be written with default implicit as '10:15:30'" in {
-      writes(LocalTime.of(10, 15, 30)) must_== JsString("10:15:30")
+      writes(LocalTime.of(10, 15, 30)).must_==(JsString("10:15:30"))
     }
 
     "be written with custom pattern as '10.15.30'" in {
-      CustomWrites1.writes(
-        LocalTime.of(10, 15, 30)) must_== JsString("10.15.30")
+      CustomWrites1.writes(LocalTime.of(10, 15, 30)).must_==(JsString("10.15.30"))
     }
   }
 
@@ -164,20 +192,21 @@ class WritesSpec extends org.specs2.mutable.Specification {
     lazy val instant = Instant.parse("2011-12-03T10:15:30Z")
 
     val customPattern1 = "dd/MM/yyyy, HH:mm:ss"
-    val CustomWrites1 = Writes.temporalWrites[Instant, String](customPattern1)
+    val CustomWrites1  = Writes.temporalWrites[Instant, String](customPattern1)
 
     "be written as number" in {
-      Writes.InstantEpochMilliWrites.writes(Instant ofEpochMilli 1234567890L).
-        aka("written date") must_== JsNumber(BigDecimal valueOf 1234567890L)
+      Writes.InstantEpochMilliWrites
+        .writes(Instant.ofEpochMilli(1234567890L))
+        .aka("written date")
+        .must_==(JsNumber(BigDecimal.valueOf(1234567890L)))
     }
 
     "be written with default implicit as '2011-12-03T10:15:30Z'" in {
-      writes(instant) aka "written date" must_== JsString("2011-12-03T10:15:30Z")
+      writes(instant).aka("written date").must_==(JsString("2011-12-03T10:15:30Z"))
     }
 
     "be written with custom pattern as '03/12/2011, 10:15:30'" in {
-      CustomWrites1.writes(instant).
-        aka("written date") must_== JsString("03/12/2011, 10:15:30")
+      CustomWrites1.writes(instant).aka("written date").must_==(JsString("03/12/2011, 10:15:30"))
     }
   }
 
@@ -187,12 +216,13 @@ class WritesSpec extends org.specs2.mutable.Specification {
 
     val validTimeZones = "America/Los_Angeles" :: "UTC" :: "CET" :: "UTC-8" :: Nil
 
-    Fragment.foreach(validTimeZones)(tz =>
-      s"be written as time zone string $tz" in {
-        val zoneId = ZoneId.of(tz)
-        writes(zoneId) must_== JsString(zoneId.getId)
-      })
-
+    Fragment.foreach(validTimeZones)(
+      tz =>
+        s"be written as time zone string $tz" in {
+          val zoneId = ZoneId.of(tz)
+          writes(zoneId).must_==(JsString(zoneId.getId))
+        }
+    )
   }
 
   "OWrites" should {
@@ -207,7 +237,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
       })
       val written: JsObject = transformed.writes(Foo("Lorem"))
 
-      written must_== Json.obj("bar" -> "Lorem", "time" -> time)
+      written.must_==(Json.obj("bar" -> "Lorem", "time" -> time))
     }
 
     "be transformed with a value transformation" in {
@@ -217,20 +247,20 @@ class WritesSpec extends org.specs2.mutable.Specification {
 
         case (_, v) => v
       }
-      val foo = Foo("Lorem")
+      val foo              = Foo("Lorem")
       val written: JsValue = transformed.writes(foo)
 
-      written must_== Json.obj("bar" -> "Lorem", "hash" -> foo.hashCode)
+      written.must_==(Json.obj("bar" -> "Lorem", "hash" -> foo.hashCode))
     }
 
     "be transformed with an object transformation" in {
       val transformed: OWrites[Foo] = OWrites.transform(writes) { (foo, obj) =>
         obj ++ Json.obj("hash" -> foo.hashCode)
       }
-      val foo = Foo("Lorem")
+      val foo               = Foo("Lorem")
       val written: JsObject = transformed.writes(foo)
 
-      written must_== Json.obj("bar" -> "Lorem", "hash" -> foo.hashCode)
+      written.must_==(Json.obj("bar" -> "Lorem", "hash" -> foo.hashCode))
     }
 
     "be transformed with another OWrites" in {
@@ -240,36 +270,37 @@ class WritesSpec extends org.specs2.mutable.Specification {
         })
       val written: JsObject = transformed.writes(Foo("Lorem"))
 
-      written must_== Json.obj("bar" -> "Lorem", "time" -> time)
+      written.must_==(Json.obj("bar" -> "Lorem", "time" -> time))
     }
   }
 
   "Locale" should {
     import LocaleFixtures._
 
-    Fragment.foreach(locales zip objs) {
+    Fragment.foreach(locales.zip(objs)) {
       case (locale, obj) =>
         s"be ${locale.toLanguageTag} and be written as JSON object" in {
-          Json.toJson(locale)(Writes.localeObjectWrites) must_== obj
+          Json.toJson(locale)(Writes.localeObjectWrites).must_==(obj)
         }
     }
 
-    Fragment.foreach(locales zip tags) {
+    Fragment.foreach(locales.zip(tags)) {
       case (locale, tag) =>
         s"be ${locale.toLanguageTag} and be written as JSON string (tag)" in {
-          Json.toJson(locale) must_== JsString(tag)
+          Json.toJson(locale).must_==(JsString(tag))
         }
     }
   }
 
   "Java Duration" should {
     "be written as milliseconds" in {
-      Json.toJson(JDuration.of(1L, ChronoUnit.SECONDS))(
-        Writes.javaDurationMillisWrites) mustEqual JsNumber(BigDecimal(1000L))
+      Json
+        .toJson(JDuration.of(1L, ChronoUnit.SECONDS))(Writes.javaDurationMillisWrites)
+        .mustEqual(JsNumber(BigDecimal(1000L)))
     }
 
     "be written as ISO string" in {
-      Json.toJson(JDuration.of(2L, ChronoUnit.DAYS)) mustEqual JsString("PT48H")
+      Json.toJson(JDuration.of(2L, ChronoUnit.DAYS)).mustEqual(JsString("PT48H"))
     }
   }
 
@@ -278,23 +309,27 @@ class WritesSpec extends org.specs2.mutable.Specification {
     val period1 = Period.ofWeeks(3).minus(twoDays)
     val period2 = Period.ofMonths(4).plus(period1)
 
-    Fragment.foreach[(Period, String)](Seq(
-      twoDays -> "P2D",
-      period1 -> "P19D",
-      period2 -> "P4M19D"
-    )) {
+    Fragment.foreach[(Period, String)](
+      Seq(
+        twoDays -> "P2D",
+        period1 -> "P19D",
+        period2 -> "P4M19D"
+      )
+    ) {
       case (period, repr) =>
         s"be written as ISO string '$repr'" in {
-          Json.toJson(period) mustEqual JsString(repr)
+          Json.toJson(period).mustEqual(JsString(repr))
         }
     }
   }
 
   "Map" should {
     "be successfully written with custom (locale) keys" in {
-      Json.toJson(
-        Map(Locale.ENGLISH -> 1, Locale.FRENCH -> 2)
-      ) must_== Json.obj("en" -> 1, "fr" -> 2)
+      Json
+        .toJson(
+          Map(Locale.ENGLISH -> 1, Locale.FRENCH -> 2)
+        )
+        .must_==(Json.obj("en" -> 1, "fr" -> 2))
     }
   }
 

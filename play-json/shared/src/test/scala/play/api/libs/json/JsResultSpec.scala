@@ -4,7 +4,8 @@
 
 package play.api.libs.json
 
-import scala.util.{ Failure, Success }
+import scala.util.Failure
+import scala.util.Success
 
 import play.api.libs.functional.Functor
 
@@ -17,27 +18,28 @@ class JsResultSpec extends WordSpec with MustMatchers {
     "be functor" in {
       val jsres = JsSuccess("jsStr")
 
-      implicitly[Functor[JsResult]].
-        fmap[String, List[Char]](jsres, _.toList).mustEqual(
+      implicitly[Functor[JsResult]]
+        .fmap[String, List[Char]](jsres, _.toList)
+        .mustEqual(
           JsSuccess(List('j', 's', 'S', 't', 'r'))
         )
     }
 
     "be converted to Success" in {
-      JsResult.toTry(JsSuccess("foo")) mustEqual Success("foo")
+      JsResult.toTry(JsSuccess("foo")).mustEqual(Success("foo"))
     }
 
     "be converted to basic Failure" in {
       val err = JsError("bar")
-      JsResult.toTry(err) mustEqual Failure(JsResult.Exception(err))
+      JsResult.toTry(err).mustEqual(Failure(JsResult.Exception(err)))
     }
 
     "be created from a Success" in {
-      JsResult.fromTry(Success("foo")) mustEqual JsSuccess("foo")
+      JsResult.fromTry(Success("foo")).mustEqual(JsSuccess("foo"))
     }
 
     "be created from a Failure" in {
-      JsResult.fromTry(Failure(new Throwable("bar"))) mustEqual JsError("bar")
+      JsResult.fromTry(Failure(new Throwable("bar"))).mustEqual(JsError("bar"))
     }
   }
 
@@ -45,7 +47,11 @@ class JsResultSpec extends WordSpec with MustMatchers {
     "be recovered" in {
       val succ = JsSuccess("success")
 
-      succ.recoverWith { _ => JsSuccess("fallback") } mustEqual succ
+      succ
+        .recoverWith { _ =>
+          JsSuccess("fallback")
+        }
+        .mustEqual(succ)
     }
   }
 
@@ -53,12 +59,15 @@ class JsResultSpec extends WordSpec with MustMatchers {
     "be recovered" in {
       val succ = JsSuccess("success")
 
-      JsError("err").recoverWith { _ => succ } mustEqual succ
+      JsError("err")
+        .recoverWith { _ =>
+          succ
+        }
+        .mustEqual(succ)
     }
   }
 
   "JsResult" should {
-
     "return true for JsSuccess(x)#contains(x)" in {
       assert(JsSuccess(1).contains(1))
     }
@@ -82,11 +91,9 @@ class JsResultSpec extends WordSpec with MustMatchers {
     "return false for JsError(_).exists(_)" in {
       assert(!JsError().exists(_ == 1))
     }
-
   }
 
   "JsSuccess#forall" should {
-
     "return true for JsSuccess(x * 2).forall(_ % 2 == 0)" in {
       assert(JsSuccess(2).forall(_ % 2 == 0))
     }
@@ -94,15 +101,11 @@ class JsResultSpec extends WordSpec with MustMatchers {
     "return false for JsSuccess(x, {x < 0}).forall(_ >)" in {
       assert(!JsSuccess(-1).forall(_ > 0))
     }
-
   }
 
   "JsError#forall" should {
-
     "return true" in {
       assert(JsError("").forall(_ => false))
     }
-
   }
-
 }
