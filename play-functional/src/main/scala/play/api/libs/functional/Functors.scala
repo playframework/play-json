@@ -46,10 +46,10 @@ case class FunctorExtractor[M[_]](functor: Functor[M]) extends VariantExtractor[
 
 case class InvariantFunctorExtractor[M[_]](InvariantFunctor: InvariantFunctor[M]) extends VariantExtractor[M]
 
-case class ContravariantFunctorExtractor[M[_]](ContraVariantFunctor: ContravariantFunctor[M]) extends VariantExtractor[M]
+case class ContravariantFunctorExtractor[M[_]](ContraVariantFunctor: ContravariantFunctor[M])
+    extends VariantExtractor[M]
 
 object VariantExtractor {
-
   implicit def functor[M[_]: Functor]: FunctorExtractor[M] =
     FunctorExtractor(implicitly[Functor[M]])
 
@@ -58,5 +58,4 @@ object VariantExtractor {
 
   implicit def invariantFunctor[M[_]: InvariantFunctor]: InvariantFunctorExtractor[M] =
     InvariantFunctorExtractor(implicitly[InvariantFunctor[M]])
-
 }

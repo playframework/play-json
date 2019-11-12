@@ -9,11 +9,12 @@ env:
     - TRAVIS_JDK=11
 
 scala:
-  - 2.12.8
+  - 2.12.10
   - 2.13.0
 
 script:
   - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues publishLocal
+  - sbt ++$TRAVIS_SCALA_VERSION docs/test docs/validateDocs
 
 cache:
   directories:

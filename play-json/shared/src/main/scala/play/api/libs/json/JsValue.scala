@@ -7,7 +7,7 @@ package play.api.libs.json
 import scala.collection._
 
 case class JsResultException(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])])
-  extends RuntimeException(s"JsResultException(errors:$errors)")
+    extends RuntimeException(s"JsResultException(errors:$errors)")
 
 /**
  * Generic json value
@@ -36,9 +36,7 @@ case object JsNull extends JsValue
 /**
  * Represents a Json boolean value.
  */
-sealed abstract class JsBoolean(
-  val value: Boolean) extends JsValue with Product with Serializable {
-
+sealed abstract class JsBoolean(val value: Boolean) extends JsValue with Product with Serializable {
   def canEqual(that: Any): Boolean = that.isInstanceOf[JsBoolean]
 
   @deprecated("No longer a case class", "2.6.0")
@@ -89,7 +87,6 @@ case class JsString(value: String) extends JsValue
  * Represent a Json array value.
  */
 case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValue {
-
   // keeping this method will also help bincompat with older play-json versions
   private[json] def this(value: collection.Seq[JsValue]) = this(value.toArray[JsValue])
 
@@ -102,13 +99,13 @@ case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValu
   /**
    * Append an element to this array.
    */
-  def :+(el: JsValue): JsArray = JsArray(value :+ el)
+  def :+(el: JsValue): JsArray     = JsArray(value :+ el)
   def append(el: JsValue): JsArray = this.:+(el)
 
   /**
    * Prepend an element to this array.
    */
-  def +:(el: JsValue): JsArray = JsArray(el +: value)
+  def +:(el: JsValue): JsArray      = JsArray(el +: value)
   def prepend(el: JsValue): JsArray = this.+:(el)
 }
 
@@ -122,9 +119,8 @@ object JsArray extends (IndexedSeq[JsValue] => JsArray) {
  * Represent a Json object value.
  */
 case class JsObject(
-  private[json] val underlying: Map[String, JsValue]
+    private[json] val underlying: Map[String, JsValue]
 ) extends JsValue {
-
   /**
    * The fields of this JsObject in the order passed to the constructor
    */
@@ -135,7 +131,7 @@ case class JsObject(
    */
   lazy val value: Map[String, JsValue] = underlying match {
     case m: immutable.Map[String, JsValue] => m
-    case m => m.toMap
+    case m                                 => m.toMap
   }
 
   /**
@@ -180,7 +176,7 @@ case class JsObject(
 
           val newValue = (maybeExistingValue, otherValue) match {
             case (Some(e: JsObject), o: JsObject) => merge(e, o)
-            case _ => otherValue
+            case _                                => otherValue
           }
           otherKey -> newValue
       }
@@ -190,8 +186,8 @@ case class JsObject(
   }
 
   override def equals(other: Any): Boolean = other match {
-    case that @ JsObject(_) => (that canEqual this) && fieldSet == that.fieldSet
-    case _ => false
+    case that @ JsObject(_) => (that.canEqual(this)) && fieldSet == that.fieldSet
+    case _                  => false
   }
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[JsObject]
@@ -200,7 +196,6 @@ case class JsObject(
 }
 
 object JsObject extends (Seq[(String, JsValue)] => JsObject) {
-
   /**
    * INTERNAL API: create a fields map by wrapping a Java LinkedHashMap.
    *

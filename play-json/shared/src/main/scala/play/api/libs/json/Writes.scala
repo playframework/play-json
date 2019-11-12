@@ -21,6 +21,7 @@ import play.api.libs.functional.ContravariantFunctor
   "No Json serializer found for type ${A}. Try to implement an implicit Writes or Format for this type."
 )
 trait Writes[A] { self =>
+
   /**
    * Converts the `A` value into a [[JsValue]].
    */
@@ -57,17 +58,20 @@ trait OWrites[A] extends Writes[A] {
    * Transforms the resulting [[JsObject]] using a transformer function.
    */
   def transform(transformer: JsObject => JsObject): OWrites[A] =
-    OWrites[A] { a => transformer(this.writes(a)) }
+    OWrites[A] { a =>
+      transformer(this.writes(a))
+    }
 
   /**
    * Transforms the resulting [[JsValue]] using a `Writes[JsValue]`.
    */
   def transform(transformer: OWrites[JsObject]): OWrites[A] =
-    OWrites[A] { a => transformer.writes(this.writes(a)) }
+    OWrites[A] { a =>
+      transformer.writes(this.writes(a))
+    }
 
   override def contramap[B](f: B => A): OWrites[B] =
     OWrites[B](b => this.writes(f(b)))
-
 }
 
 object OWrites extends PathWrites with ConstraintWrites {
@@ -93,8 +97,8 @@ object OWrites extends PathWrites with ConstraintWrites {
         w.writes(a).underlying.foreach {
           case (key, value: JsObject) =>
             fieldsMap.put(key, fieldsMap.get(key) match {
-              case Some(o: JsObject) => o deepMerge value
-              case _ => value
+              case Some(o: JsObject) => o.deepMerge(value)
+              case _                 => value
             })
           case (key, value) =>
             fieldsMap.put(key, value)
@@ -120,10 +124,8 @@ object OWrites extends PathWrites with ConstraintWrites {
   }
 
   implicit val contravariantfunctorOWrites: ContravariantFunctor[OWrites] = new ContravariantFunctor[OWrites] {
-
     def contramap[A, B](wa: OWrites[A], f: B => A): OWrites[B] =
       wa.contramap[B](f)
-
   }
 
   def apply[A](f: A => JsObject): OWrites[A] = new OWrites[A] {
@@ -140,16 +142,17 @@ object OWrites extends PathWrites with ConstraintWrites {
    * @param f the transformer function
    */
   def transform[A](w: OWrites[A])(f: (A, JsObject) => JsObject): OWrites[A] =
-    OWrites[A] { a => f(a, w.writes(a)) }
+    OWrites[A] { a =>
+      f(a, w.writes(a))
+    }
 }
 
 /**
  * Default Serializers.
  */
 object Writes extends PathWrites with ConstraintWrites with DefaultWrites with GeneratedWrites {
-
   val constraints: ConstraintWrites = this
-  val path: PathWrites = this
+  val path: PathWrites              = this
 
   implicit val contravariantfunctorWrites: ContravariantFunctor[Writes] =
     new ContravariantFunctor[Writes] {
@@ -171,7 +174,9 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
    * @param f the transformer function
    */
   def transform[A](w: Writes[A])(f: (A, JsValue) => JsValue): Writes[A] =
-    Writes[A] { a => f(a, w.writes(a)) }
+    Writes[A] { a =>
+      f(a, w.writes(a))
+    }
 }
 
 /**
@@ -261,7 +266,9 @@ trait DefaultWrites extends LowPriorityWrites {
   implicit def arrayWrites[T: ClassTag: Writes]: Writes[Array[T]] = {
     val w = implicitly[Writes[T]]
 
-    Writes[Array[T]] { ts => JsArray(ts.map(w.writes(_)).toArray[JsValue]) }
+    Writes[Array[T]] { ts =>
+      JsArray(ts.map(w.writes(_)).toArray[JsValue])
+    }
   }
 
   /**
@@ -284,9 +291,10 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for Map[String,V] types.
    */
-  implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] = OWrites[M[String, V]] { ts =>
-    JsObject(ts.mapValues(w.writes(_)).toSeq)
-  }
+  implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] =
+    OWrites[M[String, V]] { ts =>
+      JsObject(ts.mapValues(w.writes(_)).toSeq)
+    }
 
   @deprecated("Use `jsValueWrites`", "2.8.0")
   object JsValueWrites extends Writes[JsValue] {
@@ -296,7 +304,9 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for JsValues.
    */
-  implicit def jsValueWrites[T <: JsValue]: Writes[T] = Writes[T] { js => js }
+  implicit def jsValueWrites[T <: JsValue]: Writes[T] = Writes[T] { js =>
+    js
+  }
 
   /**
    * Serializer for JsNull.
@@ -307,7 +317,9 @@ trait DefaultWrites extends LowPriorityWrites {
    * }}}
    */
   implicit val NoneWrites: Writes[None.type] =
-    Writes[None.type] { _ => JsNull }
+    Writes[None.type] { _ =>
+      JsNull
+    }
 
   /**
    * If `Some` is directly used (not as `Option`).
@@ -318,7 +330,9 @@ trait DefaultWrites extends LowPriorityWrites {
    * }}}
    */
   implicit def someWrites[T](implicit w: Writes[T]): Writes[Some[T]] =
-    Writes[Some[T]] { some => w.writes(some.get) }
+    Writes[Some[T]] { some =>
+      w.writes(some.get)
+    }
 
   /**
    * Serializer for Option.
@@ -326,7 +340,7 @@ trait DefaultWrites extends LowPriorityWrites {
   implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] = new Writes[Option[T]] {
     def writes(o: Option[T]) = o match {
       case Some(value) => fmt.writes(value)
-      case None => JsNull
+      case None        => JsNull
     }
   }
 
@@ -347,7 +361,9 @@ trait DefaultWrites extends LowPriorityWrites {
    * Default Serializer java.util.Date -> JsNumber(d.getTime (nb of ms))
    */
   implicit def defaultDateWrites[T <: Date]: Writes[T] =
-    Writes[T] { d => JsNumber(d.getTime) }
+    Writes[T] { d =>
+      JsNumber(d.getTime)
+    }
 
   /**
    * Serializer for java.sql.Date
@@ -369,7 +385,9 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for scala.Enumeration by name.
    */
   implicit def enumNameWrites[E <: Enumeration]: Writes[E#Value] =
-    Writes[E#Value] { value: E#Value => JsString(value.toString) }
+    Writes[E#Value] { value: E#Value =>
+      JsString(value.toString)
+    }
 
   /**
    * Serializer for [[scala.collection.immutable.Range]]
@@ -384,7 +402,6 @@ trait DefaultWrites extends LowPriorityWrites {
 }
 
 sealed trait LowPriorityWrites extends EnvWrites {
-
   /**
    * Serializer for java.net.URI
    */
