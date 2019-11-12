@@ -294,4 +294,4 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges
 )
 
-addCommandAlias("validateCode", ";headerCheck;test:headerCheck")
+addCommandAlias("validateCode", ";headerCheck;test:headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")

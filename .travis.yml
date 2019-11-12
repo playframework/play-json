@@ -9,7 +9,7 @@ env:
     - TRAVIS_JDK=11
 
 scala:
-  - 2.12.8
+  - 2.12.10
   - 2.13.0
 
 script:
