@@ -9,13 +9,12 @@ import org.joda.time._
 object JodaWrites extends JodaWrites
 
 trait JodaWrites {
-
   /**
    * Serializer for DateTime
    * @param pattern the pattern used by org.joda.time.format.DateTimeFormat
    */
   def jodaDateWrites(pattern: String): Writes[DateTime] = new Writes[DateTime] {
-    val df = org.joda.time.format.DateTimeFormat.forPattern(pattern)
+    val df                           = org.joda.time.format.DateTimeFormat.forPattern(pattern)
     def writes(d: DateTime): JsValue = JsString(d.toString(df))
   }
 
@@ -39,7 +38,9 @@ trait JodaWrites {
    */
   def jodaLocalDateWrites(pattern: String): Writes[LocalDate] = {
     val df = org.joda.time.format.DateTimeFormat.forPattern(pattern)
-    Writes[LocalDate] { d => JsString(d.toString(df)) }
+    Writes[LocalDate] { d =>
+      JsString(d.toString(df))
+    }
   }
 
   /**
@@ -54,7 +55,9 @@ trait JodaWrites {
    * @param pattern the pattern used by org.joda.time.format.DateTimeFormat
    */
   def jodaLocalTimeWrites(pattern: String): Writes[LocalTime] =
-    Writes[LocalTime] { d => JsString(d.toString(pattern)) }
+    Writes[LocalTime] { d =>
+      JsString(d.toString(pattern))
+    }
 
   /**
    * Default Serializer LocalDate -> JsString(ISO8601 format (HH:mm:ss.SSS))

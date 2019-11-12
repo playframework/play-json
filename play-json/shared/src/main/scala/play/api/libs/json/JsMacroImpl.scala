@@ -19,36 +19,35 @@ class JsMacroImpl(val c: blackbox.Context) {
   /** Only for internal purposes */
   object Placeholder {
     implicit object Format extends OFormat[Placeholder] {
-      val success = JsSuccess(new Placeholder())
+      val success                                     = JsSuccess(new Placeholder())
       def reads(json: JsValue): JsResult[Placeholder] = success
-      def writes(pl: Placeholder) = Json.obj()
+      def writes(pl: Placeholder)                     = Json.obj()
     }
   }
 
   def withOptionsReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
-    macroImpl[A, Reads, Reads](
-      withOptionsConfig, "read", "map", reads = true, writes = false)
+    macroImpl[A, Reads, Reads](withOptionsConfig, "read", "map", reads = true, writes = false)
 
-  def withOptionsWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
-    withOptionsConfig, "write", "contramap", reads = false, writes = true)
+  def withOptionsWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] =
+    macroImpl[A, OWrites, Writes](withOptionsConfig, "write", "contramap", reads = false, writes = true)
 
-  def withOptionsFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
-    withOptionsConfig, "format", "inmap", reads = true, writes = true)
+  def withOptionsFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] =
+    macroImpl[A, OFormat, Format](withOptionsConfig, "format", "inmap", reads = true, writes = true)
 
-  def implicitConfigReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
-    implicitOptionsConfig, "read", "map", reads = true, writes = false)
+  def implicitConfigReadsImpl[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
+    macroImpl[A, Reads, Reads](implicitOptionsConfig, "read", "map", reads = true, writes = false)
 
   def implicitConfigValueReads[A: c.WeakTypeTag]: c.Expr[Reads[A]] =
     valueImpl[A, Reads](implicitOptionsConfig, "read")
 
-  def implicitConfigWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
-    implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
+  def implicitConfigWritesImpl[A: c.WeakTypeTag]: c.Expr[OWrites[A]] =
+    macroImpl[A, OWrites, Writes](implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
 
   def implicitConfigValueWrites[A: c.WeakTypeTag]: c.Expr[Writes[A]] =
     valueImpl[A, Writes](implicitOptionsConfig, "write")
 
-  def implicitConfigFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
-    implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
+  def implicitConfigFormatImpl[A: c.WeakTypeTag]: c.Expr[OFormat[A]] =
+    macroImpl[A, OFormat, Format](implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
 
   def implicitConfigValueFormat[A: c.WeakTypeTag]: c.Expr[Format[A]] =
     valueImpl[A, Format](implicitOptionsConfig, "format")
@@ -57,16 +56,16 @@ class JsMacroImpl(val c: blackbox.Context) {
 
   // because binary compatibility...
   @deprecated("Use implicitConfigReadsImpl or withOptionsReadsImpl", "2.6.6")
-  protected def readsImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[Reads[A]] = macroImpl[A, Reads, Reads](
-    implicitOptionsConfig, "read", "map", reads = true, writes = false)
+  protected def readsImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[Reads[A]] =
+    macroImpl[A, Reads, Reads](implicitOptionsConfig, "read", "map", reads = true, writes = false)
 
   @deprecated("Use implicitConfigWritesImpl or withOptionsWritesImpl", "2.6.6")
-  protected def writesImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OWrites[A]] = macroImpl[A, OWrites, Writes](
-    implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
+  protected def writesImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OWrites[A]] =
+    macroImpl[A, OWrites, Writes](implicitOptionsConfig, "write", "contramap", reads = false, writes = true)
 
   @deprecated("Use implicitConfigFormatImpl or withOptionsFormatImpl", "2.6.6")
-  protected def formatImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OFormat[A]] = macroImpl[A, OFormat, Format](
-    implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
+  protected def formatImpl[A: c.WeakTypeTag, O: c.WeakTypeTag]: c.Expr[OFormat[A]] =
+    macroImpl[A, OFormat, Format](implicitOptionsConfig, "format", "inmap", reads = true, writes = true)
 
   private def withOptionsConfig: c.Expr[JsonConfiguration] =
     c.Expr[JsonConfiguration](c.typecheck(q"${c.prefix}.config"))
@@ -74,8 +73,10 @@ class JsMacroImpl(val c: blackbox.Context) {
   private def implicitOptionsConfig: c.Expr[JsonConfiguration] =
     c.Expr[JsonConfiguration](c.inferImplicitValue(c.typeOf[JsonConfiguration]))
 
-  private def valueImpl[A, M[_]](config: c.Expr[JsonConfiguration], methodName: String)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]]): c.Expr[M[A]] = {
-
+  private def valueImpl[A, M[_]](
+      config: c.Expr[JsonConfiguration],
+      methodName: String
+  )(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]]): c.Expr[M[A]] = {
     def debug(msg: => String): Unit = {
       if (debugEnabled) {
         c.info(c.enclosingPosition, msg, force = false)
@@ -104,9 +105,9 @@ class JsMacroImpl(val c: blackbox.Context) {
           }"""
 
         val tree = methodName match {
-          case "read" => reader
+          case "read"  => reader
           case "write" => writer
-          case _ => q"""$json.Format[$atpe]($reader, $writer)"""
+          case _       => q"""$json.Format[$atpe]($reader, $writer)"""
         }
 
         debug(showCode(tree))
@@ -115,10 +116,7 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       case _ =>
-        c.abort(
-          c.enclosingPosition,
-          s"Invalid ValueClass '${atpe}': single value expected")
-
+        c.abort(c.enclosingPosition, s"Invalid ValueClass '${atpe}': single value expected")
     }
   }
 
@@ -140,9 +138,13 @@ class JsMacroImpl(val c: blackbox.Context) {
    * @param matag The class of the reads/writes/format.
    * @param natag The class of the reads/writes/format.
    */
-  private def macroImpl[A, M[_], N[_]](config: c.Expr[JsonConfiguration], methodName: String, mapLikeMethod: String,
-    reads: Boolean, writes: Boolean)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
-
+  private def macroImpl[A, M[_], N[_]](
+      config: c.Expr[JsonConfiguration],
+      methodName: String,
+      mapLikeMethod: String,
+      reads: Boolean,
+      writes: Boolean
+  )(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
     def debug(msg: => String): Unit = {
       if (debugEnabled) {
         c.info(c.enclosingPosition, msg, force = false)
@@ -151,29 +153,28 @@ class JsMacroImpl(val c: blackbox.Context) {
 
     // All these can be sort of thought as imports
     // that can then be used later in quasi quote interpolation
-    val libs = q"_root_.play.api.libs"
-    val json = q"$libs.json"
+    val libs   = q"_root_.play.api.libs"
+    val json   = q"$libs.json"
     val syntax = q"$libs.functional.syntax"
     val JsPath = q"$json.JsPath"
     val unlift = q"$syntax.unlift"
-    val atpe = atag.tpe.dealias
+    val atpe   = atag.tpe.dealias
 
     // ---
 
     // Now we find all the implicits that we need
     final case class Implicit(
-      paramType: Type,
-      neededImplicit: Tree,
-      tpe: Type,
-      selfRef: Boolean
+        paramType: Type,
+        neededImplicit: Tree,
+        tpe: Type,
+        selfRef: Boolean
     )
 
-    val optTpeCtor = typeOf[Option[_]].typeConstructor
+    val optTpeCtor  = typeOf[Option[_]].typeConstructor
     val forwardName = TermName(c.freshName("forward"))
 
     // MacroOptions
-    val options = config.actualType.member(TypeName("Opts")).
-      asType.toTypeIn(config.actualType)
+    val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
 
     def hasOption[Flag: c.TypeTag]: Boolean = options <:< typeOf[Flag]
 
@@ -191,19 +192,25 @@ class JsMacroImpl(val c: blackbox.Context) {
        * by the given `replacement`.
        */
       @annotation.tailrec
-      private def refactor(in: List[Type], base: TypeSymbol, out: List[Type], tail: List[(List[Type], TypeSymbol, List[Type])], filter: Type => Boolean, replacement: Type, altered: Boolean): (Type, Boolean) = in match {
-        case tpe :: ts => resolvedType(tpe) match {
-          case t if (filter(t)) =>
-            refactor(ts, base, (replacement :: out), tail,
-              filter, replacement, true)
+      private def refactor(
+          in: List[Type],
+          base: TypeSymbol,
+          out: List[Type],
+          tail: List[(List[Type], TypeSymbol, List[Type])],
+          filter: Type => Boolean,
+          replacement: Type,
+          altered: Boolean
+      ): (Type, Boolean) = in match {
+        case tpe :: ts =>
+          resolvedType(tpe) match {
+            case t if (filter(t)) =>
+              refactor(ts, base, (replacement :: out), tail, filter, replacement, true)
 
-          case TypeRef(_, sym, as) if as.nonEmpty =>
-            refactor(as, sym.asType, List.empty, (ts, base, out) :: tail,
-              filter, replacement, altered)
+            case TypeRef(_, sym, as) if as.nonEmpty =>
+              refactor(as, sym.asType, List.empty, (ts, base, out) :: tail, filter, replacement, altered)
 
-          case t => refactor(ts, base, (t :: out), tail,
-            filter, replacement, altered)
-        }
+            case t => refactor(ts, base, (t :: out), tail, filter, replacement, altered)
+          }
 
         case _ => {
           val tpe = appliedType(base.toTypeConstructor, out.reverse)
@@ -226,23 +233,20 @@ class JsMacroImpl(val c: blackbox.Context) {
           case t if (t =:= subject) => PlaceholderType -> true
 
           case TypeRef(_, sym, args) if args.nonEmpty =>
-            refactor(args, sym.asType, List.empty, List.empty,
-              _ =:= subject, PlaceholderType, false)
+            refactor(args, sym.asType, List.empty, List.empty, _ =:= subject, PlaceholderType, false)
 
           case t => t.dealias -> false
         }
 
       private class ImplicitTransformer[T](
-        subject: Type
+          subject: Type
       ) extends Transformer {
-
         /* Restores reference to the type itself when Placeholder is found. */
         private def denormalized(ptype: Type): Type = ptype match {
           case PlaceholderType => subject
 
           case TypeRef(_, sym, args) if args.nonEmpty =>
-            refactor(args, sym.asType, List.empty, List.empty,
-              _ == PlaceholderType, subject, false)._1
+            refactor(args, sym.asType, List.empty, List.empty, _ == PlaceholderType, subject, false)._1
 
           case _ => ptype
         }
@@ -251,9 +255,11 @@ class JsMacroImpl(val c: blackbox.Context) {
           case tt: TypeTree =>
             super.transform(TypeTree(denormalized(tt.tpe).dealias))
 
-          case Select(Select(This(TypeName("JsMacroImpl")), t), sym) if (
-            t.toString == "Placeholder" && sym.toString == "Format"
-          ) => super.transform(q"$forwardName")
+          case Select(Select(This(TypeName("JsMacroImpl")), t), sym)
+              if (
+                t.toString == "Placeholder" && sym.toString == "Format"
+              ) =>
+            super.transform(q"$forwardName")
 
           case _ => super.transform(tree)
         }
@@ -269,28 +275,30 @@ class JsMacroImpl(val c: blackbox.Context) {
         }
 
         if (isOpt) { // Option special case was applied
-          val it = c.inferImplicitValue(
-            appliedType(ctag.typeConstructor, ptype), silent = true)
+          val it = c.inferImplicitValue(appliedType(ctag.typeConstructor, ptype), silent = true)
 
           if (it != EmptyTree) {
-            debug(s"Ignoring instance of ${ctag.typeSymbol.fullName} for ${ptype} (${it.pos.source}:${it.pos.line}:${it.pos.column}); Alias for Option[$tpe] will be handled by the nullable operations.")
+            debug(
+              s"Ignoring instance of ${ctag.typeSymbol.fullName} for ${ptype} (${it.pos.source}:${it.pos.line}:${it.pos.column}); Alias for Option[$tpe] will be handled by the nullable operations."
+            )
           }
         }
 
         val (ntpe, selfRef) = normalized(subject, tpe)
-        val ptpe = resolvedType(ntpe)
+        val ptpe            = resolvedType(ntpe)
 
         // infers implicit
         val neededImplicitType = appliedType(ctag.typeConstructor, ptpe)
-        val tx = new ImplicitTransformer(subject)
+        val tx                 = new ImplicitTransformer(subject)
         val neededImplicit = if (!selfRef) {
           c.inferImplicitValue(neededImplicitType)
-        } else c.untypecheck(
-          // Reset the type attributes on the refactored tree for the implicit
-          tx.transform(
-            c.inferImplicitValue(neededImplicitType)
+        } else
+          c.untypecheck(
+            // Reset the type attributes on the refactored tree for the implicit
+            tx.transform(
+              c.inferImplicitValue(neededImplicitType)
+            )
           )
-        )
 
         Implicit(ptype.dealias, neededImplicit, tpe.dealias, selfRef)
       }
@@ -301,11 +309,11 @@ class JsMacroImpl(val c: blackbox.Context) {
     // Utility about apply/unapply
     class CaseClass[T](tpeArgs: List[Type])(implicit tag: WeakTypeTag[T]) {
       // Common definitions
-      private val companioned = weakTypeOf[T].typeSymbol
+      private val companioned     = weakTypeOf[T].typeSymbol
       private val companionObject = companioned.companion
-      private val companionType = companionObject.typeSignature
+      private val companionType   = companionObject.typeSignature
 
-      private val unapply = companionType.decl(TermName("unapply"))
+      private val unapply    = companionType.decl(TermName("unapply"))
       private val unapplySeq = companionType.decl(TermName("unapplySeq"))
 
       private val hasVarArgs = unapplySeq != NoSymbol
@@ -313,7 +321,11 @@ class JsMacroImpl(val c: blackbox.Context) {
       // Returns the unapply symbol
       private lazy val effectiveUnapply: MethodSymbol =
         Seq(unapply, unapplySeq).find(_ != NoSymbol) match {
-          case None => c.abort(c.enclosingPosition, s"No unapply or unapplySeq function found for $companioned: $unapply / $unapplySeq")
+          case None =>
+            c.abort(
+              c.enclosingPosition,
+              s"No unapply or unapplySeq function found for $companioned: $unapply / $unapplySeq"
+            )
 
           case Some(s) => s.asMethod
         }
@@ -321,18 +333,22 @@ class JsMacroImpl(val c: blackbox.Context) {
       private lazy val unapplyReturnTypes: Option[List[Type]] =
         effectiveUnapply.returnType match {
           case TypeRef(_, _, Nil) => {
-            c.abort(c.enclosingPosition, s"Unapply of ${companioned.fullName} has no parameters. Are you using an empty case class?")
+            c.abort(
+              c.enclosingPosition,
+              s"Unapply of ${companioned.fullName} has no parameters. Are you using an empty case class?"
+            )
           }
 
-          case TypeRef(_, _, args) => args.head match {
-            case t @ TypeRef(_, _, Nil) => Some(List(t))
-            case t @ TypeRef(_, _, args) =>
-              import c.universe.definitions.TupleClass
-              if (!TupleClass.seq.exists(t.baseType(_) ne NoType)) Some(List(t))
-              else if (t <:< typeOf[Product]) Some(args)
-              else None
-            case _ => None
-          }
+          case TypeRef(_, _, args) =>
+            args.head match {
+              case t @ TypeRef(_, _, Nil) => Some(List(t))
+              case t @ TypeRef(_, _, args) =>
+                import c.universe.definitions.TupleClass
+                if (!TupleClass.seq.exists(t.baseType(_).ne(NoType))) Some(List(t))
+                else if (t <:< typeOf[Product]) Some(args)
+                else None
+              case _ => None
+            }
 
           case _ => None
         }
@@ -341,8 +357,7 @@ class JsMacroImpl(val c: blackbox.Context) {
       @annotation.tailrec
       private def conforms(types: Seq[(Type, Type)]): Boolean =
         types.headOption match {
-          case Some((TypeRef(NoPrefix, a, _),
-            TypeRef(NoPrefix, b, _))) => { // for generic parameter
+          case Some((TypeRef(NoPrefix, a, _), TypeRef(NoPrefix, b, _))) => { // for generic parameter
             if (a.fullName != b.fullName) {
               debug(s"Type symbols are not compatible: $a != $b")
 
@@ -356,7 +371,8 @@ class JsMacroImpl(val c: blackbox.Context) {
           }
 
           case Some((a, b)) if a.typeArgs.isEmpty =>
-            if (a =:= b) conforms(types.tail) else {
+            if (a =:= b) conforms(types.tail)
+            else {
               debug(s"Types are not compatible: $a != $b")
               false
             }
@@ -375,25 +391,29 @@ class JsMacroImpl(val c: blackbox.Context) {
       // The apply methods for the object
       private lazy val applies: List[MethodSymbol] =
         companionType.decl(TermName("apply")) match {
-          case NoSymbol => c.abort(
-            c.enclosingPosition,
-            s"No apply function found for ${companioned.fullName}"
-          )
+          case NoSymbol =>
+            c.abort(
+              c.enclosingPosition,
+              s"No apply function found for ${companioned.fullName}"
+            )
 
-          case s => s.asTerm.alternatives.flatMap { apply =>
-            val meth = apply.asMethod
+          case s =>
+            s.asTerm.alternatives.flatMap { apply =>
+              val meth = apply.asMethod
 
-            meth.paramLists match {
-              case ps :: pss if (
-                ps.nonEmpty && pss.forall {
-                  case p :: _ => p.isImplicit
-                  case _ => false
-                }
-              ) => List(meth)
+              meth.paramLists match {
+                case ps :: pss
+                    if (
+                      ps.nonEmpty && pss.forall {
+                        case p :: _ => p.isImplicit
+                        case _      => false
+                      }
+                    ) =>
+                  List(meth)
 
-              case _ => List.empty
+                case _ => List.empty
+              }
             }
-          }
         }
 
       /**
@@ -406,41 +426,41 @@ class JsMacroImpl(val c: blackbox.Context) {
       // Find an apply method that matches the unapply
       private val maybeApply: Option[MethodSymbol] = applies.collectFirst {
         case (apply: MethodSymbol) if hasVarArgs && {
-          // Option[List[c.universe.Type]]
-          val someApplyTypes = apply.paramLists.headOption.
-            map(_.map(_.asTerm.typeSignature))
+              // Option[List[c.universe.Type]]
+              val someApplyTypes = apply.paramLists.headOption.map(_.map(_.asTerm.typeSignature))
 
-          val someInitApply = someApplyTypes.map(_.init)
-          val someApplyLast = someApplyTypes.map(_.last)
-          val someInitUnapply = unapplyReturnTypes.map(_.init)
-          val someUnapplyLast = unapplyReturnTypes.map(_.last)
-          val initsMatch = someInitApply == someInitUnapply
-          val lastMatch = (for {
-            lastApply <- someApplyLast
-            lastUnapply <- someUnapplyLast
-          } yield lastApply <:< lastUnapply).getOrElse(false)
+              val someInitApply   = someApplyTypes.map(_.init)
+              val someApplyLast   = someApplyTypes.map(_.last)
+              val someInitUnapply = unapplyReturnTypes.map(_.init)
+              val someUnapplyLast = unapplyReturnTypes.map(_.last)
+              val initsMatch      = someInitApply == someInitUnapply
+              val lastMatch = (for {
+                lastApply   <- someApplyLast
+                lastUnapply <- someUnapplyLast
+              } yield lastApply <:< lastUnapply).getOrElse(false)
 
-          initsMatch && lastMatch
-        } => apply
+              initsMatch && lastMatch
+            } =>
+          apply
 
         case (apply: MethodSymbol) if {
-          val applyParams = apply.paramLists.headOption.
-            toList.flatMap(identity).map(_.typeSignature)
-          val unapplyParams = unapplyReturnTypes.toList.flatMap(identity)
+              val applyParams   = apply.paramLists.headOption.toList.flatMap(identity).map(_.typeSignature)
+              val unapplyParams = unapplyReturnTypes.toList.flatMap(identity)
 
-          (applyParams.size == unapplyParams.size &&
-            conforms((applyParams, unapplyParams).zipped.toSeq))
-
-        } => apply
+              (applyParams.size == unapplyParams.size &&
+              conforms((applyParams, unapplyParams).zipped.toSeq))
+            } =>
+          apply
       }
 
       // Parameters symbols -> Function tree
       lazy val applyFunction: Option[(Tree, List[TypeSymbol], List[Symbol], List[Option[Tree]])] =
         maybeApply.flatMap { app =>
           app.paramLists.headOption.map { params =>
-            val defaultValues = params.map(_.asTerm).zipWithIndex map {
+            val defaultValues = params.map(_.asTerm).zipWithIndex.map {
               case (p, i) =>
-                if (!p.isParamWithDefault) None else {
+                if (!p.isParamWithDefault) None
+                else {
                   val getter = TermName("apply$default$" + (i + 1))
                   Some(q"$companionObject.$getter")
                 }
@@ -450,9 +470,11 @@ class JsMacroImpl(val c: blackbox.Context) {
               val applyParams = params.foldLeft(List.empty[Tree]) { (l, e) =>
                 l :+ Ident(TermName(e.name.encodedName.toString))
               }
-              val vals = params.foldLeft(List.empty[Tree])((l, e) =>
-                // Let type inference infer the type by using the empty type
-                l :+ q"val ${TermName(e.name.encodedName.toString)}: ${TypeTree()}")
+              val vals = params.foldLeft(List.empty[Tree])(
+                (l, e) =>
+                  // Let type inference infer the type by using the empty type
+                  l :+ q"val ${TermName(e.name.encodedName.toString)}: ${TypeTree()}"
+              )
 
               q"(..$vals) => $companionObject.apply(..${applyParams.init}, ${applyParams.last}: _*)"
             } else if (tpeArgs.isEmpty) {
@@ -470,10 +492,14 @@ class JsMacroImpl(val c: blackbox.Context) {
       @inline private def params: List[(Name, Type)] = applyFunction match {
         case Some((_, _, ps, _)) => {
           val base = if (hasVarArgs) ps.init else ps
-          val defs = base.map { p => p.name -> p.typeSignature }.toList
-          val end = if (!hasVarArgs) List.empty[(Name, Type)] else {
-            List(ps.last.name -> unapplyReturnTypes.get.last)
-          }
+          val defs = base.map { p =>
+            p.name -> p.typeSignature
+          }.toList
+          val end =
+            if (!hasVarArgs) List.empty[(Name, Type)]
+            else {
+              List(ps.last.name -> unapplyReturnTypes.get.last)
+            }
 
           defs ++ end
         }
@@ -490,7 +516,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
         // if any implicit is missing, abort
         val missingImplicits = effectiveImplicits.collect {
-          case (_, Implicit(t, EmptyTree /* ~= not found */ , _, _)) => t
+          case (_, Implicit(t, EmptyTree /* ~= not found */, _, _)) => t
         }
 
         if (missingImplicits.nonEmpty) {
@@ -505,15 +531,20 @@ class JsMacroImpl(val c: blackbox.Context) {
 
       lazy val boundTypes: Map[String, Type] =
         applyFunction.fold(Map.empty[String, Type]) {
-          case (_, tparams, _, _) => tparams.zip(tpeArgs).map {
-            case (sym, ty) => sym.fullName -> ty
-          }.toMap
+          case (_, tparams, _, _) =>
+            tparams
+              .zip(tpeArgs)
+              .map {
+                case (sym, ty) => sym.fullName -> ty
+              }
+              .toMap
         }
 
       // To print the implicit types in the compiler messages
       private def prettyType(t: Type): String =
         boundTypes.getOrElse(t.typeSymbol.fullName, t).dealias match {
-          case TypeRef(_, base, args) if args.nonEmpty => s"""${base.asType.fullName}[${args.map(prettyType(_)).mkString(", ")}]"""
+          case TypeRef(_, base, args) if args.nonEmpty =>
+            s"""${base.asType.fullName}[${args.map(prettyType(_)).mkString(", ")}]"""
 
           case t => t.typeSymbol.fullName
         }
@@ -527,9 +558,10 @@ class JsMacroImpl(val c: blackbox.Context) {
 
       @annotation.tailrec
       def allSubclasses(path: Traversable[Symbol], subclasses: Set[Type]): Set[Type] = path.headOption match {
-        case Some(cls: ClassSymbol) if (
-          tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym)
-        ) => {
+        case Some(cls: ClassSymbol)
+            if (
+              tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym)
+            ) => {
           val newSub: Set[Type] = if (!cls.typeParams.isEmpty) {
             c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: type parameter not supported")
             Set.empty
@@ -538,18 +570,21 @@ class JsMacroImpl(val c: blackbox.Context) {
           allSubclasses(path.tail, subclasses ++ newSub)
         }
 
-        case Some(o: ModuleSymbol) if (
-          o.companion == NoSymbol && // not a companion object
-          tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
-        ) => {
+        case Some(o: ModuleSymbol)
+            if (
+              o.companion == NoSymbol && // not a companion object
+                tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
+            ) => {
           val newSub: Set[Type] = Set(o.typeSignature)
 
           allSubclasses(path.tail, subclasses ++ newSub)
         }
 
-        case Some(o: ModuleSymbol) if (
-          o.companion == NoSymbol // not a companion object
-        ) => allSubclasses(path.tail, subclasses)
+        case Some(o: ModuleSymbol)
+            if (
+              o.companion == NoSymbol // not a companion object
+            ) =>
+          allSubclasses(path.tail, subclasses)
 
         case Some(_) => allSubclasses(path.tail, subclasses)
 
@@ -563,7 +598,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
     // --- Sub implementations
 
-    val readsType = c.typeOf[Reads[_]]
+    val readsType  = c.typeOf[Reads[_]]
     val writesType = c.typeOf[Writes[_]]
 
     def macroSealedFamilyImpl(subTypes: List[Type]): c.Expr[M[A]] = {
@@ -572,22 +607,30 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       def readLambda: Tree = {
-        val resolver = new ImplicitResolver({ orig: Type => orig })
-        val cases = Match(q"dis", (subTypes.map { t =>
-          val rtpe = appliedType(readsType, List(t))
-          val reader = resolver.createImplicit(
-            atpe, rtpe
-          )(t).neededImplicit
+        val resolver = new ImplicitResolver({ orig: Type =>
+          orig
+        })
+        val cases = Match(
+          q"dis",
+          (subTypes.map { t =>
+            val rtpe = appliedType(readsType, List(t))
+            val reader = resolver
+              .createImplicit(
+                atpe,
+                rtpe
+              )(t)
+              .neededImplicit
 
-          if (reader.isEmpty) {
-            c.abort(
-              c.enclosingPosition,
-              s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
-            )
-          }
+            if (reader.isEmpty) {
+              c.abort(
+                c.enclosingPosition,
+                s"No instance of Reads is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+              )
+            }
 
-          cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)"
-        }) :+ cq"""_ => $json.JsError("error.invalid")""")
+            cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)"
+          }) :+ cq"""_ => $json.JsError("error.invalid")"""
+        )
 
         q"""(_: $json.JsValue) match {
           case obj @ $json.JsObject(_) => obj.value.get($config.discriminator) match {
@@ -604,23 +647,30 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       def writeLambda: Tree = {
-        val resolver = new ImplicitResolver({ orig: Type => orig })
-        val cases = Match(q"v", subTypes.map { t =>
-          val wtpe = appliedType(writesType, List(t))
-          val writer = resolver.createImplicit(
-            atpe, wtpe
-          )(t).neededImplicit
+        val resolver = new ImplicitResolver({ orig: Type =>
+          orig
+        })
+        val cases = Match(
+          q"v",
+          subTypes.map { t =>
+            val wtpe = appliedType(writesType, List(t))
+            val writer = resolver
+              .createImplicit(
+                atpe,
+                wtpe
+              )(t)
+              .neededImplicit
 
-          if (writer.isEmpty) {
-            c.abort(
-              c.enclosingPosition,
-              s"No instance of Writes is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
-            )
-          }
+            if (writer.isEmpty) {
+              c.abort(
+                c.enclosingPosition,
+                s"No instance of Writes is available for ${t.typeSymbol.fullName} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+              )
+            }
 
-          // ---
+            // ---
 
-          cq"""x: $t => {
+            cq"""x: $t => {
             val xjs = ${writer}.writes(x)
             @inline def jso = xjs match {
               case xo @ $json.JsObject(_) => xo
@@ -629,22 +679,23 @@ class JsMacroImpl(val c: blackbox.Context) {
 
             jso + ($config.discriminator -> $json.JsString($config.typeNaming(${t.typeSymbol.fullName})))
           }"""
-        })
+          }
+        )
 
         q"{ v: ${atpe} => $cases }"
       }
 
       def tree = methodName match {
-        case "read" => q"$json.Reads[${atpe}]($readLambda)"
+        case "read"  => q"$json.Reads[${atpe}]($readLambda)"
         case "write" => q"$json.OWrites[${atpe}]($writeLambda)"
-        case _ => q"$json.OFormat($readLambda, $writeLambda)"
+        case _       => q"$json.OFormat($readLambda, $writeLambda)"
       }
 
       c.Expr[M[A]](tree)
     }
 
     def macroCaseImpl(tpeArgs: List[Type]): c.Expr[M[A]] = {
-      val utility = new CaseClass[A](tpeArgs)
+      val utility               = new CaseClass[A](tpeArgs)
       val (companioned, isCase) = utility.validCaseClass
 
       if (!isCase) {
@@ -652,16 +703,16 @@ class JsMacroImpl(val c: blackbox.Context) {
           c.enclosingPosition,
           s"Type ${companioned.fullName} is not valid: must be a case class with at least one non empty list of parameter"
         )
-
       }
 
       val (applyFunction, tparams, params, defaultValues) = utility.applyFunction match {
         case Some(info) => info
 
-        case _ => c.abort(
-          c.enclosingPosition,
-          s"No apply function found matching unapply parameters"
-        )
+        case _ =>
+          c.abort(
+            c.enclosingPosition,
+            s"No apply function found matching unapply parameters"
+          )
       }
 
       // ---
@@ -676,48 +727,51 @@ class JsMacroImpl(val c: blackbox.Context) {
       })
 
       val defaultValueMap: Map[Name, Tree] =
-        if (!hasOption[Json.DefaultValues]) Map.empty else {
+        if (!hasOption[Json.DefaultValues]) Map.empty
+        else {
           (params, defaultValues).zipped.collect {
             case (p, Some(dv)) => p.name.encodedName -> dv
           }.toMap
         }
 
       val resolvedImplicits = utility.implicits(resolver)
-      val canBuild = resolvedImplicits.map {
-        case (name, Implicit(pt, impl, _, _)) =>
-          // Equivalent to __ \ "name", but uses a naming scheme
-          // of (String) => (String) to find the correct "name"
-          val cn = c.Expr[String](
-            q"$config.naming(${name.decodedName.toString})"
-          )
-          val jspathTree = q"$JsPath \ $cn"
-          val isOption = pt.typeConstructor <:< optTpeCtor
+      val canBuild = resolvedImplicits
+        .map {
+          case (name, Implicit(pt, impl, _, _)) =>
+            // Equivalent to __ \ "name", but uses a naming scheme
+            // of (String) => (String) to find the correct "name"
+            val cn = c.Expr[String](
+              q"$config.naming(${name.decodedName.toString})"
+            )
+            val jspathTree = q"$JsPath \ $cn"
+            val isOption   = pt.typeConstructor <:< optTpeCtor
 
-          val defaultValue = // not applicable for 'write' only
-            defaultValueMap.get(name).filter(_ => methodName != "write")
+            val defaultValue = // not applicable for 'write' only
+              defaultValueMap.get(name).filter(_ => methodName != "write")
 
-          // - If we're an default value, invoke the withDefault version
-          // - If we're an option with default value,
-          //   invoke the WithDefault version
-          (isOption, defaultValue) match {
-            case (true, Some(v)) =>
-              val c = TermName(s"${methodName}HandlerWithDefault")
-              q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
+            // - If we're an default value, invoke the withDefault version
+            // - If we're an option with default value,
+            //   invoke the WithDefault version
+            (isOption, defaultValue) match {
+              case (true, Some(v)) =>
+                val c = TermName(s"${methodName}HandlerWithDefault")
+                q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
 
-            case (true, _) =>
-              val c = TermName(s"${methodName}Handler")
-              q"$config.optionHandlers.$c($jspathTree)($impl)"
+              case (true, _) =>
+                val c = TermName(s"${methodName}Handler")
+                q"$config.optionHandlers.$c($jspathTree)($impl)"
 
-            case (false, Some(v)) =>
-              val c = TermName(s"${methodName}WithDefault")
-              q"$jspathTree.$c($v)($impl)"
+              case (false, Some(v)) =>
+                val c = TermName(s"${methodName}WithDefault")
+                q"$jspathTree.$c($v)($impl)"
 
-            case _ =>
-              q"$jspathTree.${TermName(methodName)}($impl)"
-          }
-      }.reduceLeft[Tree] { (acc, r) =>
-        q"$acc.and($r)"
-      }
+              case _ =>
+                q"$jspathTree.${TermName(methodName)}($impl)"
+            }
+        }
+        .reduceLeft[Tree] { (acc, r) =>
+          q"$acc.and($r)"
+        }
 
       val multiParam = params.length > 1
       // if case class has one single field, needs to use map/contramap/inmap on the Reads/Writes/Format instead of
@@ -730,7 +784,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         (if (reads) List(ifReads) else Nil) :::
           (if (writes) List(ifWrites) else Nil)
 
-      val syntaxImport = if (!multiParam && !writes) q"" else q"import $syntax._"
+      val syntaxImport      = if (!multiParam && !writes) q"" else q"import $syntax._"
       @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
       def readResult =
         if (multiParam) q"underlying.reads(obj)"
@@ -820,9 +874,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       def writer = q"$json.OWrites[$atpe]{_ => $json.JsObject.empty }"
 
       val tree = methodName match {
-        case "read" => reader
+        case "read"  => reader
         case "write" => writer
-        case _ => q"""$json.OFormat[$atpe]($reader, $writer)"""
+        case _       => q"""$json.OFormat[$atpe]($reader, $writer)"""
       }
 
       debug(showCode(tree))
@@ -835,21 +889,21 @@ class JsMacroImpl(val c: blackbox.Context) {
     directKnownSubclasses match {
       case Some(subTypes) => macroSealedFamilyImpl(subTypes)
 
-      case _ => atpe match {
-        case _: SingletonType => caseObjectImpl
-        case TypeRef(_, _, args) => macroCaseImpl(args)
-        case _ =>
-          c.abort(
-            c.enclosingPosition,
-            s"Type ${atpe.typeSymbol.fullName} is not a valid case class or an object"
-          )
-      }
+      case _ =>
+        atpe match {
+          case _: SingletonType    => caseObjectImpl
+          case TypeRef(_, _, args) => macroCaseImpl(args)
+          case _ =>
+            c.abort(
+              c.enclosingPosition,
+              s"Type ${atpe.typeSymbol.fullName} is not a valid case class or an object"
+            )
+        }
     }
   }
 
   private lazy val debugEnabled =
-    Option(System.getProperty("play.json.macro.debug")).
-      filterNot(_.isEmpty).map(_.toLowerCase).exists { v =>
-        "true".equals(v) || v.substring(0, 1) == "y"
-      }
+    Option(System.getProperty("play.json.macro.debug")).filterNot(_.isEmpty).map(_.toLowerCase).exists { v =>
+      "true".equals(v) || v.substring(0, 1) == "y"
+    }
 }

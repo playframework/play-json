@@ -4,7 +4,9 @@
 
 package play.api.libs.json
 
-import concurrent.{ Await, Future, ExecutionContext }
+import concurrent.Await
+import concurrent.Future
+import concurrent.ExecutionContext
 import java.util.concurrent.Executors
 import concurrent.duration.Duration
 
@@ -16,7 +18,6 @@ import concurrent.duration.Duration
  * test:run-main play.api.libs.json.JsonPerformanceTest
  */
 object JsonPerformanceTest extends App {
-
   println("Running serialization test...")
 
   println("Serialization run 1: " + testSerialization() + "ms")
@@ -54,7 +55,6 @@ object JsonPerformanceTest extends App {
         "f3" -> 30,
         "f4" -> "string"
       )
-
     ),
     "f2" -> "string",
     "f3" -> "string",
@@ -67,12 +67,12 @@ object JsonPerformanceTest extends App {
   lazy val json = Json.stringify(jsvalue)
 
   lazy val largeArrayJsValue = Json.obj(
-    "f1" -> Json.toJson((1 to 65536))
+    "f1" -> Json.toJson(1.to(65536))
   )
 
   lazy val largeArrayJson = Json.stringify(largeArrayJsValue)
 
-  lazy val largeObjectJsValue = (1 to 8192).map(i => Json.obj("f" + i -> "obj")).reduce(_ ++ _)
+  lazy val largeObjectJsValue = 1.to(8192).map(i => Json.obj("f" + i -> "obj")).reduce(_ ++ _)
 
   lazy val largeObjectJson = Json.stringify(largeObjectJsValue)
 
@@ -112,7 +112,7 @@ object JsonPerformanceTest extends App {
       import ExecutionContext.Implicits.global
       Await.ready(Future.sequence(List.range(0, threads).map { t =>
         Future {
-          for (i <- 0 to timesPerThread) {
+          for (i <- 0.to(timesPerThread)) {
             test
           }
         }(context)
@@ -122,6 +122,4 @@ object JsonPerformanceTest extends App {
       executor.shutdownNow()
     }
   }
-
 }
-

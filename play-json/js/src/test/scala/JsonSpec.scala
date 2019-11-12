@@ -13,8 +13,10 @@ class JsonSpec extends WordSpec with MustMatchers {
     "lose precision when parsing BigDecimals" in {
       val n = BigDecimal("12345678901234567890.123456789")
 
-      parse(stringify(toJson(n))) mustEqual JsNumber(
-        BigDecimal("12345678901234567000")
+      parse(stringify(toJson(n))).mustEqual(
+        JsNumber(
+          BigDecimal("12345678901234567000")
+        )
       )
     }
 
@@ -22,10 +24,10 @@ class JsonSpec extends WordSpec with MustMatchers {
       // By big integers, we just mean integers that overflow long,
       // since Jackson has different code paths for them from decimals
       val json = toJson(BigDecimal("1.2345678901234568E+29"))
-      parse(stringify(json)) mustEqual json
+      parse(stringify(json)).mustEqual(json)
     }
 
-    "keep similar object between serialized and deserialized data" taggedAs (UnstableInScala213) in {
+    "keep similar object between serialized and deserialized data".taggedAs(UnstableInScala213) in {
       val original = Json.obj(
         "key1" -> "value1",
         "key2" -> true,
@@ -37,10 +39,10 @@ class JsonSpec extends WordSpec with MustMatchers {
         )
       )
       val originalString = Json.stringify(original)
-      val parsed = Json.parse(originalString)
+      val parsed         = Json.parse(originalString)
 
-      parsed.asInstanceOf[JsObject].fields mustEqual original.fields
-      Json.stringify(parsed) mustEqual originalString
+      parsed.asInstanceOf[JsObject].fields.mustEqual(original.fields)
+      Json.stringify(parsed).mustEqual(originalString)
     }
 
     "parse from InputStream" in {
@@ -71,7 +73,7 @@ class JsonSpec extends WordSpec with MustMatchers {
         )
       )
 
-      Json.parse(stream) mustEqual expected
+      Json.parse(stream).mustEqual(expected)
     }
   }
 }

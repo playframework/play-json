@@ -17,20 +17,22 @@ import scala.util.control.NonFatal
  * @param digitsLimit how many digits are accepted, also related to the math context used.
  */
 final case class BigDecimalParseSettings(
-  mathContext: MathContext = MathContext.DECIMAL128,
-  scaleLimit: Int,
-  digitsLimit: Int
+    mathContext: MathContext = MathContext.DECIMAL128,
+    scaleLimit: Int,
+    digitsLimit: Int
 )
 
 final case class BigDecimalSerializerSettings(
-  minPlain: BigDecimal,
-  maxPlain: BigDecimal
+    minPlain: BigDecimal,
+    maxPlain: BigDecimal
 )
 
-final case class JsonParserSettings(bigDecimalParseSettings: BigDecimalParseSettings, bigDecimalSerializerSettings: BigDecimalSerializerSettings)
+final case class JsonParserSettings(
+    bigDecimalParseSettings: BigDecimalParseSettings,
+    bigDecimalSerializerSettings: BigDecimalSerializerSettings
+)
 
 object JsonParserSettings {
-
   val defaultMathContext: MathContext = MathContext.DECIMAL128
 
   // Limit for the scale considering the MathContext of 128
@@ -59,7 +61,7 @@ object JsonParserSettings {
   val settings: JsonParserSettings = {
     // Initialize the parser settings from System properties. This way it is possible to users
     // to easily replace the default values.
-    val scaleLimit = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
+    val scaleLimit  = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
     val digitsLimit = parseNum("play.json.parser.digitsLimit", defaultDigitsLimit)(_.toInt)
     val mathContext = parseMathContext("play.json.parser.mathContext")
 
@@ -81,15 +83,16 @@ object JsonParserSettings {
 
   private def parseMathContext(key: String): MathContext = sys.props.get(key).map(_.toLowerCase) match {
     case Some("decimal128") => MathContext.DECIMAL128
-    case Some("decimal64") => MathContext.DECIMAL64
-    case Some("decimal32") => MathContext.DECIMAL32
-    case Some("unlimited") => MathContext.UNLIMITED
-    case _ => defaultMathContext
+    case Some("decimal64")  => MathContext.DECIMAL64
+    case Some("decimal32")  => MathContext.DECIMAL32
+    case Some("unlimited")  => MathContext.UNLIMITED
+    case _                  => defaultMathContext
   }
 
-  private def parseNum[T](key: String, default: T)(f: String => T): T = try {
-    sys.props.get(key).map(f).getOrElse(default)
-  } catch {
-    case NonFatal(_) => default
-  }
+  private def parseNum[T](key: String, default: T)(f: String => T): T =
+    try {
+      sys.props.get(key).map(f).getOrElse(default)
+    } catch {
+      case NonFatal(_) => default
+    }
 }

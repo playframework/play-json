@@ -4,10 +4,10 @@
 
 package play.api.libs.json
 
-import scala.collection.{ IterableOps, MapOps }
+import scala.collection.IterableOps
+import scala.collection.MapOps
 
 object MapWrites {
-
   type Map[K, V] = MapOps[K, V, CC, _]
 
   //see scala.collection.AnyConstr
@@ -22,6 +22,8 @@ object MapWrites {
   def mapWrites[V: Writes]: OWrites[Map[String, V]] = {
     val w = implicitly[Writes[V]]
 
-    OWrites[Map[String, V]] { ts => JsObject(ts.iterator.map(kv => kv._1 -> w.writes(kv._2)).toSeq) }
+    OWrites[Map[String, V]] { ts =>
+      JsObject(ts.iterator.map(kv => kv._1 -> w.writes(kv._2)).toSeq)
+    }
   }
 }
