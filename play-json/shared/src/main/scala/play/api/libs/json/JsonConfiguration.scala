@@ -29,10 +29,10 @@ object JsonConfiguration {
   type Aux[O <: Json.MacroOptions] = JsonConfiguration { type Opts = O }
 
   private final class Impl[O <: Json.MacroOptions](
-    val naming: JsonNaming = JsonNaming.Identity,
-    val optionHandlers: OptionHandlers = OptionHandlers.Default,
-    val discriminator: String = defaultDiscriminator,
-    val typeNaming: JsonNaming = JsonNaming.Identity
+      val naming: JsonNaming = JsonNaming.Identity,
+      val optionHandlers: OptionHandlers = OptionHandlers.Default,
+      val discriminator: String = defaultDiscriminator,
+      val typeNaming: JsonNaming = JsonNaming.Identity
   ) extends JsonConfiguration {
     type Opts = O
 
@@ -42,7 +42,8 @@ object JsonConfiguration {
 
   // These methods exist for binary compatibility, since Scala protected methods are public from a binary perspective.
   protected def apply(naming: JsonNaming): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming)
-  protected def apply(naming: JsonNaming, optionHandlers: OptionHandlers): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming, optionHandlers)
+  protected def apply(naming: JsonNaming, optionHandlers: OptionHandlers): JsonConfiguration.Aux[Json.MacroOptions] =
+    new Impl(naming, optionHandlers)
   protected def default: JsonConfiguration.Aux[Json.MacroOptions] = apply()
 
   val defaultDiscriminator = "_type"
@@ -54,10 +55,10 @@ object JsonConfiguration {
    * @param typeNaming See [[JsonConfiguration.typeNaming]]
    */
   def apply[Opts <: Json.MacroOptions: Json.MacroOptions.Default](
-    naming: JsonNaming = JsonNaming.Identity,
-    optionHandlers: OptionHandlers = OptionHandlers.Default,
-    discriminator: String = defaultDiscriminator,
-    typeNaming: JsonNaming = JsonNaming.Identity
+      naming: JsonNaming = JsonNaming.Identity,
+      optionHandlers: OptionHandlers = OptionHandlers.Default,
+      discriminator: String = defaultDiscriminator,
+      typeNaming: JsonNaming = JsonNaming.Identity
   ): JsonConfiguration.Aux[Opts] = new Impl(naming, optionHandlers, discriminator, typeNaming)
 
   /** Default configuration instance */
@@ -78,14 +79,13 @@ trait JsonNaming extends (String => String) {
 
 /** Naming companion */
 object JsonNaming {
-
   /**
    * For each class property, use the name
    * as is for its column (e.g. fooBar -> fooBar).
    */
   object Identity extends JsonNaming {
     def apply(property: String): String = property
-    override val toString = "Identity"
+    override val toString               = "Identity"
   }
 
   /**
@@ -94,12 +94,12 @@ object JsonNaming {
    */
   object SnakeCase extends JsonNaming {
     def apply(property: String): String = {
-      val length = property.length
-      val result = new StringBuilder(length * 2)
-      var resultLength = 0
+      val length            = property.length
+      val result            = new StringBuilder(length * 2)
+      var resultLength      = 0
       var wasPrevTranslated = false
 
-      for (i <- 0 until length) {
+      for (i <- 0.until(length)) {
         var c = property.charAt(i)
         if (i > 0 || c != '_') {
           if (Character.isUpperCase(c)) {
@@ -154,20 +154,21 @@ trait OptionHandlers {
     OFormat(readHandler(jsPath), writeHandler(jsPath))
   }
 
-  final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit format: Format[T]): OFormat[Option[T]] = {
+  final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(
+      implicit format: Format[T]
+  ): OFormat[Option[T]] = {
     OFormat(readHandlerWithDefault(jsPath, defaultValue), writeHandler(jsPath))
   }
 }
 
 /** OptionHandlers companion */
 object OptionHandlers {
-
   /**
    * Default Option Handlers
    * Uses readNullable and writesNullable
    */
   object Default extends OptionHandlers {
-    def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]] = jsPath.readNullable
+    def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]]          = jsPath.readNullable
     def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeNullable
   }
 
@@ -176,7 +177,7 @@ object OptionHandlers {
    * Uses readNullable and writeOptionWithNull
    */
   object WritesNull extends OptionHandlers {
-    def readHandler[T](jsPath: JsPath)(implicit reads: Reads[T]): Reads[Option[T]] = jsPath.readNullable
+    def readHandler[T](jsPath: JsPath)(implicit reads: Reads[T]): Reads[Option[T]]      = jsPath.readNullable
     def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeOptionWithNull
   }
 }

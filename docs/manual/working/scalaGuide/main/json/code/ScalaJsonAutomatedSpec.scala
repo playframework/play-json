@@ -27,11 +27,11 @@ class ScalaJsonAutomatedSpec extends Specification {
   class Contributor(val organization: String) extends Role {
     override def equals(obj: Any): Boolean = obj match {
       case other: Contributor if obj != null => this.organization == other.organization
-      case _ => false
+      case _                                 => false
     }
   }
   object Contributor {
-    def apply(organization: String): Contributor = new Contributor(organization)
+    def apply(organization: String): Contributor            = new Contributor(organization)
     def unapply(contributor: Contributor): Option[(String)] = Some(contributor.organization)
   }
   //#model3
@@ -77,7 +77,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val residentReads = Json.reads[Resident]
         //#auto-reads
 
-        sampleJson.as[Resident] must_=== sampleData
+        sampleJson.as[Resident].must_===(sampleData)
       }
 
       "do the same thing as a manual Reads" in {
@@ -87,12 +87,12 @@ class ScalaJsonAutomatedSpec extends Specification {
 
         implicit val residentReads = (
           (__ \ "name").read[String] and
-          (__ \ "age").read[Int] and
-          (__ \ "role").readNullable[String]
+            (__ \ "age").read[Int] and
+            (__ \ "role").readNullable[String]
         )(Resident)
         //#manual-reads
 
-        sampleJson.as[Resident] must_=== sampleData
+        sampleJson.as[Resident].must_===(sampleData)
       }
 
       "produce a Writes" in {
@@ -102,7 +102,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val residentWrites = Json.writes[Resident]
         //#auto-writes
 
-        Json.toJson(sampleData) must_=== sampleJson
+        Json.toJson(sampleData).must_===(sampleJson)
       }
 
       "produce a Format" in {
@@ -112,8 +112,8 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val residentFormat = Json.format[Resident]
         //#auto-format
 
-        sampleJson.as[Resident] must_=== sampleData and {
-          Json.toJson(sampleData) must_=== sampleJson
+        sampleJson.as[Resident].must_===(sampleData) and {
+          Json.toJson(sampleData).must_===(sampleJson)
         }
       }
 
@@ -126,7 +126,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val userWrites: OWrites[PlayUser] = Json.writes[PlayUser]
         //#auto-naming-writes
 
-        Json.toJson(sampleData2) must_=== sampleJson2
+        Json.toJson(sampleData2).must_===(sampleJson2)
       }
 
       "produce a Format with SnakeCase" in {
@@ -138,8 +138,8 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val userFormat: OFormat[PlayUser] = Json.format[PlayUser]
         //#auto-naming-format
 
-        sampleJson2.as[PlayUser] must_=== sampleData2 and {
-          Json.toJson(sampleData2) must_=== sampleJson2
+        sampleJson2.as[PlayUser].must_===(sampleData2) and {
+          Json.toJson(sampleData2).must_===(sampleJson2)
         }
       }
 
@@ -152,7 +152,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val userReads: Reads[PlayUser] = Json.reads[PlayUser]
         //#auto-naming-reads
 
-        sampleJson2.as[PlayUser] must_=== sampleData2
+        sampleJson2.as[PlayUser].must_===(sampleData2)
       }
 
       "produce a Format with Custom Naming" in {
@@ -168,8 +168,8 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val customWrites: OFormat[PlayUser] = Json.format[PlayUser]
         //#auto-custom-naming-format
 
-        sampleJson3.as[PlayUser] must_=== sampleData2 and {
-          Json.toJson(sampleData2) must_=== sampleJson3
+        sampleJson3.as[PlayUser].must_===(sampleData2) and {
+          Json.toJson(sampleData2).must_===(sampleJson3)
         }
       }
 
@@ -184,7 +184,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         val residentJson: JsValue = Json.toJson(resident)
         //#auto-case-class-to-JSON
 
-        residentJson must_=== sampleJson
+        residentJson.must_===(sampleJson)
       }
 
       "automatically convert JSON to a case class" in {
@@ -214,7 +214,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         }
         //#auto-JSON-to-case-class
 
-        residentFromJson.get must_=== sampleData
+        residentFromJson.get.must_===(sampleData)
       }
     }
 
@@ -226,7 +226,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val idTextReads = Json.valueReads[IdText]
         //#value-reads
 
-        JsString("foo").as[IdText] must_=== (new IdText("foo"))
+        JsString("foo").as[IdText].must_===(new IdText("foo"))
       }
 
       "produce a Writes" in {
@@ -236,7 +236,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         implicit val idTextWrites = Json.valueWrites[IdText]
         //#value-writes
 
-        Json.toJson(new IdText("bar")) must_=== JsString("bar")
+        Json.toJson(new IdText("bar")).must_===(JsString("bar"))
       }
 
       "produce a Format" in {
@@ -248,8 +248,8 @@ class ScalaJsonAutomatedSpec extends Specification {
 
         val id = new IdText("lorem")
 
-        JsString("lorem").as[IdText] must_=== id and {
-          Json.toJson(id) must_=== JsString("lorem")
+        JsString("lorem").as[IdText].must_===(id) and {
+          Json.toJson(id).must_===(JsString("lorem"))
         }
       }
     }
@@ -275,12 +275,12 @@ class ScalaJsonAutomatedSpec extends Specification {
       import play.api.libs.json._
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](
-        Reads[Admin.type] {
-          case JsObject(_) => JsSuccess(Admin)
-          case _ => JsError("Empty object expected")
-        },
-        OWrites[Admin.type] { _ => Json.obj() })
+      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
+        case JsObject(_) => JsSuccess(Admin)
+        case _           => JsError("Empty object expected")
+      }, OWrites[Admin.type] { _ =>
+        Json.obj()
+      })
 
       implicit val contributorFormat = Json.format[Contributor]
 
@@ -294,12 +294,12 @@ class ScalaJsonAutomatedSpec extends Specification {
 
       val sampleContributor = Contributor("Foo")
 
-      writeAnyRole(Admin) must_=== adminJson and {
-        writeAnyRole(sampleContributor) must_=== contributorJson
+      writeAnyRole(Admin).must_===(adminJson) and {
+        writeAnyRole(sampleContributor).must_===(contributorJson)
       } and {
-        readAnyRole(adminJson) must_=== JsSuccess(Admin)
+        readAnyRole(adminJson).must_===(JsSuccess(Admin))
       } and {
-        readAnyRole(contributorJson) must_=== JsSuccess(sampleContributor)
+        readAnyRole(contributorJson).must_===(JsSuccess(sampleContributor))
       }
     }
 
@@ -323,19 +323,19 @@ class ScalaJsonAutomatedSpec extends Specification {
       implicit val cfg = JsonConfiguration(
         // Each JSON objects is marked with the admTpe, ...
         discriminator = "admTpe",
-
         // ... indicating the lower-cased name of sub-type
         typeNaming = JsonNaming { fullName =>
           fullName.drop(39 /* remove pkg */ ).toLowerCase
-        })
+        }
+      )
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](
-        Reads[Admin.type] {
-          case JsObject(_) => JsSuccess(Admin)
-          case _ => JsError("Empty object expected")
-        },
-        OWrites[Admin.type] { _ => Json.obj() })
+      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
+        case JsObject(_) => JsSuccess(Admin)
+        case _           => JsError("Empty object expected")
+      }, OWrites[Admin.type] { _ =>
+        Json.obj()
+      })
 
       implicit val contributorFormat = Json.format[Contributor]
 
@@ -349,12 +349,12 @@ class ScalaJsonAutomatedSpec extends Specification {
 
       val sampleContributor = Contributor("Foo")
 
-      writeAnyRole(Admin) must_=== adminJson and {
-        writeAnyRole(sampleContributor) must_=== contributorJson
+      writeAnyRole(Admin).must_===(adminJson) and {
+        writeAnyRole(sampleContributor).must_===(contributorJson)
       } and {
-        readAnyRole(adminJson) must_=== JsSuccess(Admin)
+        readAnyRole(adminJson).must_===(JsSuccess(Admin))
       } and {
-        readAnyRole(contributorJson) must_=== JsSuccess(sampleContributor)
+        readAnyRole(contributorJson).must_===(JsSuccess(sampleContributor))
       }
     }
 
@@ -362,13 +362,13 @@ class ScalaJsonAutomatedSpec extends Specification {
       //#auto-writes-null
       import play.api.libs.json._
 
-      implicit val config = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      implicit val config         = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
       implicit val residentWrites = Json.writes[Resident]
       //#auto-writes-null
 
       val resident = Resident(name = "Fiver", age = 4, role = None)
 
-      Json.toJson(resident) must_=== sampleJson4
+      Json.toJson(resident).must_===(sampleJson4)
     }
   }
 }

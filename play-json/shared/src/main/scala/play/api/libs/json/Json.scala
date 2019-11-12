@@ -154,7 +154,6 @@ sealed trait JsonFacade {
 
   /** Returns a [[JsArray]] with given items. */
   def arr(items: Json.JsValueWrapper*): JsArray
-
 }
 
 /**
@@ -165,7 +164,6 @@ sealed trait JsonFacade {
  * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
  */
 object Json extends JsonFacade {
-
   def parse(input: String): JsValue = StaticBinding.parseJsValue(input)
 
   def parse(input: InputStream): JsValue = StaticBinding.parseJsValue(input)
@@ -213,9 +211,11 @@ object Json extends JsonFacade {
 
   import scala.language.implicitConversions
 
-  implicit def toJsFieldJsValueWrapper[T](field: T)(implicit w: Writes[T]): JsValueWrapper = JsValueWrapperImpl(w.writes(field))
+  implicit def toJsFieldJsValueWrapper[T](field: T)(implicit w: Writes[T]): JsValueWrapper =
+    JsValueWrapperImpl(w.writes(field))
 
-  def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map(f => (f._1, f._2.asInstanceOf[JsValueWrapperImpl].field)))
+  def obj(fields: (String, JsValueWrapper)*): JsObject =
+    JsObject(fields.map(f => (f._1, f._2.asInstanceOf[JsValueWrapperImpl].field)))
 
   def arr(items: JsValueWrapper*): JsArray =
     JsArray(items.iterator.map(_.asInstanceOf[JsValueWrapperImpl].field).toArray[JsValue])
@@ -376,7 +376,8 @@ object Json extends JsonFacade {
    * @param enum Enumeration object
    * @tparam E type of Enum
    */
-  def formatEnum[E <: Enumeration](enum: E): Format[E#Value] = Format(Reads.enumNameReads(enum), Writes.enumNameWrites[E])
+  def formatEnum[E <: Enumeration](enum: E): Format[E#Value] =
+    Format(Reads.enumNameReads(enum), Writes.enumNameWrites[E])
 
   /**
    * JSON facade with some macro options.
@@ -387,13 +388,12 @@ object Json extends JsonFacade {
    * @define macroTypeParam @tparam A the type for which the handler must be materialized
    */
   final class WithOptions[Opts <: MacroOptions](val config: JsonConfiguration.Aux[Opts]) extends JsonFacade {
-
     def this() = this(JsonConfiguration.default)
 
-    @inline def parse(input: String): JsValue = Json.parse(input)
-    @inline def parse(input: InputStream): JsValue = Json.parse(input)
-    @inline def parse(input: Array[Byte]): JsValue = Json.parse(input)
-    @inline def stringify(json: JsValue): String = Json.stringify(json)
+    @inline def parse(input: String): JsValue       = Json.parse(input)
+    @inline def parse(input: InputStream): JsValue  = Json.parse(input)
+    @inline def parse(input: Array[Byte]): JsValue  = Json.parse(input)
+    @inline def stringify(json: JsValue): String    = Json.stringify(json)
     @inline def toBytes(json: JsValue): Array[Byte] = Json.toBytes(json)
 
     @inline def asciiStringify(json: JsValue): String =
@@ -518,7 +518,6 @@ object Json extends JsonFacade {
     }
 
     object Default extends LowPriorityDefaultImplicits {
-
       /**
        * This will be the default that's passed when no MacroOptions is passed.
        */
@@ -535,7 +534,8 @@ object Json extends JsonFacade {
    * MacroOptions with DefaultValues
    * }}}
    */
-  trait DefaultValues { _: MacroOptions => }
+  trait DefaultValues { _: MacroOptions =>
+  }
 
   /**
    * Alias for `MacroOptions with DefaultValues`

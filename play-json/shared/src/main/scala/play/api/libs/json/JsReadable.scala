@@ -8,7 +8,6 @@ package play.api.libs.json
  * A trait representing a Json node which can be read as an arbitrary type A using a Reads[A]
  */
 trait JsReadable extends Any {
-
   /**
    * Tries to convert the node into a T. An implicit Reads[T] must be defined.
    * Any error is mapped to None
