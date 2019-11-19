@@ -1,16 +1,15 @@
 language: scala
 
-before_install: curl -Ls https://git.io/jabba | bash && . ~/.jabba/jabba.sh
-install: jabba install "adopt@~1.$TRAVIS_JDK.0-0" && jabba use "$_" && java -Xmx32m -version
-
 env:
-  matrix:
-    - TRAVIS_JDK=8
-    - TRAVIS_JDK=11
+  - TRAVIS_JDK=8
+  - TRAVIS_JDK=11
 
 scala:
   - 2.12.10
-  - 2.13.0
+  - 2.13.1
+
+before_install: curl -Ls https://git.io/jabba | bash && . ~/.jabba/jabba.sh
+install: jabba install "adopt@~1.$TRAVIS_JDK.0-0" && jabba use "$_" && java -Xmx32m -version
 
 script:
   - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues publishLocal
@@ -19,6 +18,7 @@ script:
 cache:
   directories:
     - "$HOME/.ivy2/cache"
+    - "$HOME/.cousier/cache"
     - "$HOME/.sbt"
     - "$HOME/.jabba/jdk"
 

@@ -22,7 +22,7 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _             => "4.5.1"
+    case _             => "4.8.1"
   }
 
   Seq(
@@ -46,7 +46,6 @@ val jacksons = Seq(
 
 val joda = Seq(
   "joda-time" % "joda-time" % "2.10.5"
-  //"org.joda" % "joda-convert" % "1.8.1")
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
@@ -88,11 +87,11 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.4.2"
+val silencerVersion = "1.4.4"
 
 libraryDependencies in ThisBuild ++= Seq(
-  compilerPlugin("com.github.ghik" %% "silencer-plugin" % silencerVersion),
-  "com.github.ghik" %% "silencer-lib" % silencerVersion % Provided
+  compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
+  ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided).cross(CrossVersion.full)
 )
 
 lazy val commonSettings = Def.settings(
