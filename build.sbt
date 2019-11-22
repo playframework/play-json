@@ -126,7 +126,7 @@ lazy val commonSettings = Def.settings(
 
 lazy val root = project
   .in(file("."))
-  .enablePlugins(PlayRootProject, ScalaJSPlugin, PlayNoPublish)
+  .enablePlugins(PlayRootProject, ScalaJSPlugin)
   .aggregate(
     `play-jsonJS`,
     `play-jsonJVM`,
@@ -219,15 +219,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   )
   .dependsOn(`play-functional`)
 
-lazy val `play-json-joda` = project
-  .in(file("play-json-joda"))
-  .enablePlugins(PlayLibrary)
-  .settings(
-    commonSettings ++ playJsonMimaSettings ++ Seq(
-      libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
-    )
-  )
-  .dependsOn(`play-jsonJVM`)
+lazy val `play-jsonJS` = `play-json`.js
 
 lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   libraryDependencies ++=
@@ -238,7 +230,15 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
 )
 
-lazy val `play-jsonJS` = `play-json`.js
+lazy val `play-json-joda` = project
+  .in(file("play-json-joda"))
+  .enablePlugins(PlayLibrary)
+  .settings(
+    commonSettings ++ playJsonMimaSettings ++ Seq(
+      libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
+    )
+  )
+  .dependsOn(`play-jsonJVM`)
 
 lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
