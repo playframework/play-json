@@ -18,17 +18,10 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 playBuildRepoName in ThisBuild := "play-json"
 publishTo in ThisBuild := sonatypePublishToBundle.value
 
-val specsBuild = Def.setting[Seq[ModuleID]] {
-  val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 10)) => "3.9.1"
-    case _             => "4.8.1"
-  }
-
-  Seq(
-    "org.specs2" %% "specs2-core"  % specsVersion,
-    "org.specs2" %% "specs2-junit" % specsVersion,
-  )
-}
+val specs2 = Seq(
+  "org.specs2" %% "specs2-core"  % "4.8.1" % Test,
+  "org.specs2" %% "specs2-junit" % "4.8.1" % Test,
+)
 
 val jacksonDatabindVersion = "2.10.1"
 val jacksonDatabind = Seq(
@@ -222,7 +215,7 @@ lazy val `play-jsonJS` = `play-json`.js
 lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   libraryDependencies ++=
     joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specsBuild.value.map(_ % Test) :+ (
+      jacksons ++ specs2 :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
   unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
@@ -233,7 +226,7 @@ lazy val `play-json-joda` = project
   .enablePlugins(PlayLibrary)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
-      libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
+      libraryDependencies ++= joda ++ specs2
     )
   )
   .dependsOn(`play-jsonJVM`)
@@ -260,7 +253,7 @@ lazy val docs = project
   .enablePlugins(PlayDocsPlugin, PlayNoPublish)
   .configs(Docs)
   .settings(
-    libraryDependencies ++= specsBuild.value.map(_ % Test),
+    libraryDependencies ++= specs2,
     PlayDocsKeys.scalaManualSourceDirectories := (baseDirectory.value / "manual" / "working" / "scalaGuide" ** "code").get,
     PlayDocsKeys.resources += {
       val apiDocs = (doc in (`play-jsonJVM`, Compile)).value
