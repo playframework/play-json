@@ -8,7 +8,6 @@ import sbt.io.Path._
 import interplay.ScalaVersions
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import com.typesafe.tools.mima.plugin.MimaKeys.mimaBinaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
@@ -55,7 +54,7 @@ def jsonDependencies(scalaVersion: String) = Seq(
 // Common settings
 
 val previousVersions = Def.setting[Seq[String]] {
-  Nil // Seq("2.8.0-M1") // TODO: switch to a release of 2.8, when available
+  Seq("2.8.0")
 }
 
 ThisBuild / mimaFailOnNoPrevious := false
@@ -143,7 +142,6 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
-      mimaBinaryIssueFilters ++= Seq(),
       libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
         "org.scalatest"  %%% "scalatest"    % "3.0.8"            % Test,
         "org.scalacheck" %%% "scalacheck"   % "1.14.2"           % Test,
@@ -244,9 +242,7 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("play-functional"))
   .settings(
-    commonSettings ++ playJsonMimaSettings ++ Seq(
-      mimaBinaryIssueFilters ++= Seq()
-    )
+    commonSettings ++ playJsonMimaSettings
   )
   .enablePlugins(PlayLibrary)
 
