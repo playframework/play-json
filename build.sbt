@@ -8,7 +8,6 @@ import sbt.io.Path._
 import interplay.ScalaVersions
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import com.typesafe.tools.mima.plugin.MimaKeys.mimaBinaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
@@ -19,17 +18,10 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 playBuildRepoName in ThisBuild := "play-json"
 publishTo in ThisBuild := sonatypePublishToBundle.value
 
-val specsBuild = Def.setting[Seq[ModuleID]] {
-  val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 10)) => "3.9.1"
-    case _             => "4.8.1"
-  }
-
-  Seq(
-    "org.specs2" %% "specs2-core"  % specsVersion,
-    "org.specs2" %% "specs2-junit" % specsVersion,
-  )
-}
+val specs2 = Seq(
+  "org.specs2" %% "specs2-core"  % "4.8.1" % Test,
+  "org.specs2" %% "specs2-junit" % "4.8.1" % Test,
+)
 
 val jacksonDatabindVersion = "2.10.1"
 val jacksonDatabind = Seq(
@@ -55,7 +47,7 @@ def jsonDependencies(scalaVersion: String) = Seq(
 // Common settings
 
 val previousVersions = Def.setting[Seq[String]] {
-  Nil // Seq("2.8.0-M1") // TODO: switch to a release of 2.8, when available
+  Seq("2.8.0")
 }
 
 ThisBuild / mimaFailOnNoPrevious := false
@@ -143,7 +135,6 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
-      mimaBinaryIssueFilters ++= Seq(),
       libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
         "org.scalatest"  %%% "scalatest"    % "3.0.8"            % Test,
         "org.scalacheck" %%% "scalacheck"   % "1.14.2"           % Test,
@@ -224,7 +215,7 @@ lazy val `play-jsonJS` = `play-json`.js
 lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   libraryDependencies ++=
     joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specsBuild.value.map(_ % Test) :+ (
+      jacksons ++ specs2 :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
   unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
@@ -235,7 +226,7 @@ lazy val `play-json-joda` = project
   .enablePlugins(PlayLibrary)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
-      libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
+      libraryDependencies ++= joda ++ specs2
     )
   )
   .dependsOn(`play-jsonJVM`)
@@ -244,9 +235,7 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("play-functional"))
   .settings(
-    commonSettings ++ playJsonMimaSettings ++ Seq(
-      mimaBinaryIssueFilters ++= Seq()
-    )
+    commonSettings ++ playJsonMimaSettings
   )
   .enablePlugins(PlayLibrary)
 
@@ -264,7 +253,7 @@ lazy val docs = project
   .enablePlugins(PlayDocsPlugin, PlayNoPublish)
   .configs(Docs)
   .settings(
-    libraryDependencies ++= specsBuild.value.map(_ % Test),
+    libraryDependencies ++= specs2,
     PlayDocsKeys.scalaManualSourceDirectories := (baseDirectory.value / "manual" / "working" / "scalaGuide" ** "code").get,
     PlayDocsKeys.resources += {
       val apiDocs = (doc in (`play-jsonJVM`, Compile)).value
