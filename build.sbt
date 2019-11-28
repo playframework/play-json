@@ -3,26 +3,26 @@
  */
 import sbt._
 import sbt.util._
-import scala.sys.process._
 import sbt.io.Path._
 
 import interplay.ScalaVersions
-import ReleaseTransformations._
 
-import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaBinaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 
-import sbtcrossproject.crossProject
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import sbtcrossproject.CrossType
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
+playBuildRepoName in ThisBuild := "play-json"
+publishTo in ThisBuild := sonatypePublishToBundle.value
+
 val specsBuild = Def.setting[Seq[ModuleID]] {
   val specsVersion = CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 10)) => "3.9.1"
-    case _             => "4.5.1"
+    case _             => "4.8.1"
   }
 
   Seq(
@@ -46,7 +46,6 @@ val jacksons = Seq(
 
 val joda = Seq(
   "joda-time" % "joda-time" % "2.10.5"
-  //"org.joda" % "joda-convert" % "1.8.1")
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
@@ -88,11 +87,11 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.4.2"
+val silencerVersion = "1.4.4"
 
 libraryDependencies in ThisBuild ++= Seq(
-  compilerPlugin("com.github.ghik" %% "silencer-plugin" % silencerVersion),
-  "com.github.ghik" %% "silencer-lib" % silencerVersion % Provided
+  compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
+  ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided).cross(CrossVersion.full)
 )
 
 lazy val commonSettings = Def.settings(
@@ -104,12 +103,6 @@ lazy val commonSettings = Def.settings(
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
     // Filtering tests that are not stable in Scala 2.13 yet.
     Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
-  ),
-  publishTo := Some(
-    if (isSnapshot.value)
-      Opts.resolver.sonatypeSnapshots
-    else
-      Opts.resolver.sonatypeStaging
   ),
   headerLicense := {
     val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
@@ -141,10 +134,7 @@ lazy val root = project
     `play-functionalJVM`,
     `play-json-joda`
   )
-  .settings(
-    commonSettings,
-    publishTo := None
-  )
+  .settings(commonSettings)
 
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
@@ -229,15 +219,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   )
   .dependsOn(`play-functional`)
 
-lazy val `play-json-joda` = project
-  .in(file("play-json-joda"))
-  .enablePlugins(PlayLibrary)
-  .settings(
-    commonSettings ++ playJsonMimaSettings ++ Seq(
-      libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
-    )
-  )
-  .dependsOn(`play-jsonJVM`)
+lazy val `play-jsonJS` = `play-json`.js
 
 lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   libraryDependencies ++=
@@ -248,7 +230,15 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
 )
 
-lazy val `play-jsonJS` = `play-json`.js
+lazy val `play-json-joda` = project
+  .in(file("play-json-joda"))
+  .enablePlugins(PlayLibrary)
+  .settings(
+    commonSettings ++ playJsonMimaSettings ++ Seq(
+      libraryDependencies ++= joda ++ specsBuild.value.map(_ % Test)
+    )
+  )
+  .dependsOn(`play-jsonJVM`)
 
 lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
@@ -291,22 +281,5 @@ lazy val docs = project
   )
   .settings(commonSettings)
   .dependsOn(`play-jsonJVM`)
-
-playBuildRepoName in ThisBuild := "play-json"
-
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
-  inquireVersions,
-  runClean,
-  runTest,
-  setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
-  releaseStepCommandAndRemaining("+publishSigned"),
-  setNextVersion,
-  commitNextVersion,
-  releaseStepCommand("+sonatypeReleaseAll"),
-  pushChanges
-)
 
 addCommandAlias("validateCode", ";headerCheck;test:headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")
