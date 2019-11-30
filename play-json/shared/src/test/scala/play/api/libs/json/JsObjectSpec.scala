@@ -7,8 +7,10 @@ package play.api.libs.json
 import play.api.libs.json.Json._
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsObjectSpec extends WordSpec with MustMatchers {
+class JsObjectSpec extends AnyWordSpec with Matchers {
   "JsObject.deepMerge" should {
     "not fail when the objects are empty" in {
       Json.obj().deepMerge(Json.obj()).mustEqual(Json.obj())

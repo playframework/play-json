@@ -8,8 +8,10 @@ import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsonValidSharedSpec extends WordSpec with MustMatchers {
+class JsonValidSharedSpec extends AnyWordSpec with Matchers {
   "JSON reads" should {
     "validate simple types" in {
       JsString("string").validate[String].mustEqual(JsSuccess("string"))
