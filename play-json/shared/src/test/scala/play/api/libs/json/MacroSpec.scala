@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 object TestFormats {
   implicit def eitherReads[A: Reads, B: Reads] = Reads[Either[A, B]] { js =>
     implicitly[Reads[A]].reads(js) match {
@@ -35,7 +37,7 @@ final class TextId(val value: String) extends AnyVal
 import org.scalatest._
 import org.scalacheck.Gen
 
-class MacroSpec extends WordSpec with MustMatchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
   "Reads" should {
     "be generated for simple case class" in {
       val json     = Json.obj("bar" -> "lorem")

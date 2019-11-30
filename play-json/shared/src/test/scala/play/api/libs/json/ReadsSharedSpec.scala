@@ -9,8 +9,10 @@ import java.math.BigInteger
 import java.net.URI
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class ReadsSharedSpec extends WordSpec with MustMatchers {
+class ReadsSharedSpec extends AnyWordSpec with Matchers {
   "Reads" should {
     "not repath the second result on flatMap" when {
       val aPath                 = JsPath \ "a"
