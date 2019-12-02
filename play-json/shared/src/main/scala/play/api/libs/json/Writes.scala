@@ -135,8 +135,6 @@ object OWrites extends PathWrites with ConstraintWrites {
   /**
    * Transforms the resulting [[JsObject]] using the given function,
    * which is also applied with the initial input.
-   * def transform(transformer: (A, JsObject) => JsObject): OWrites[A] =
-   * OWrites[A] { a => transformer(a, this.writes(a)) }
    *
    * @param w the initial writer
    * @param f the transformer function
@@ -312,6 +310,8 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for JsNull.
    *
    * {{{
+   * import play.api.libs.json.Json
+   *
    * Json.obj("foo" -> None)
    * // equivalent to Json.obj("foo" -> JsNull)
    * }}}
@@ -325,8 +325,11 @@ trait DefaultWrites extends LowPriorityWrites {
    * If `Some` is directly used (not as `Option`).
    *
    * {{{
-   * Json.obj("foo" -> Some(writeableValue))
-   * // equivalent to Json.obj("foo" -> writeableValue)
+   * import play.api.libs.json.{ Json, Writes }
+   *
+   * def foo[T: Writes](writeableValue: T) =
+   *   Json.obj("foo" -> Some(writeableValue))
+   *   // equivalent to Json.obj("foo" -> writeableValue)
    * }}}
    */
   implicit def someWrites[T](implicit w: Writes[T]): Writes[Some[T]] =

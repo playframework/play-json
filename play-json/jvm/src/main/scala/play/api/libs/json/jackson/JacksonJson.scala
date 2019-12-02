@@ -7,21 +7,27 @@ package play.api.libs.json.jackson
 import java.io.InputStream
 import java.io.StringWriter
 
-import com.fasterxml.jackson.core._
+import scala.annotation.switch
+import scala.annotation.tailrec
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
+
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.JsonTokenId
+import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+
 import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
-import play.api.libs.json._
 
-import scala.annotation.switch
-import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ListBuffer
+import play.api.libs.json._
 
 /**
  * The Play JSON module for Jackson.
@@ -30,11 +36,16 @@ import scala.collection.mutable.ListBuffer
  * with JsValue.  To use this:
  *
  * {{{
- *   import com.fasterxml.jackson.databind.ObjectMapper
+ * import com.fasterxml.jackson.databind.ObjectMapper
  *
- *   val jsonParseSettings = JsonParserSettings()
- *   val mapper = new ObjectMapper().registerModule(PlayJsonModule(jsonParseSettings))
- *   val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
+ * import play.api.libs.json.JsValue
+ * import play.api.libs.json.jackson.PlayJsonModule
+ * import play.api.libs.json.JsonParserSettings
+ *
+ * val jsonParseSettings = JsonParserSettings()
+ * val mapper = new ObjectMapper().registerModule(
+ *   new PlayJsonModule(jsonParseSettings))
+ * val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
  * }}}
  */
 sealed class PlayJsonModule(parserSettings: JsonParserSettings)
