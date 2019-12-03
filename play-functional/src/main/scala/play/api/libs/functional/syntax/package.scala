@@ -10,8 +10,8 @@ import scala.language.implicitConversions
 import play.api.libs.functional._
 
 /**
- * Don't forget to {{{import play.api.libs.functional.syntax._}}} to enable functional combinators
- * when using Json API.
+ * Don't forget to `import play.api.libs.functional.syntax._`
+ * to enable functional combinators when using Json API.
  */
 object `package` {
   implicit def toAlternativeOps[M[_], A](a: M[A])(implicit app: Alternative[M]): AlternativeOps[M, A] =

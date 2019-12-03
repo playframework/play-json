@@ -123,13 +123,19 @@ case class IdxPathNode(idx: Int) extends PathNode {
  * Companion object and root path.
  *
  * For an object `{ "name": "foo" }`, the path to the `name` property is:
+ *
  * {{{
+ * import play.api.libs.json.JsPath
+ *
  * JsPath \ "name"
  * }}}
  *
  * For an object `{ "id": 1, "nested": { "score": 0.12 } }`,
  * the path to the nested `score` is:
+ *
  * {{{
+ * import play.api.libs.json.JsPath
+ *
  * JsPath \ "nested" \ "score"
  * }}}
  */
@@ -350,6 +356,9 @@ case class JsPath(path: List[PathNode] = List()) {
    * recursive case classes for ex.
    *
    * {{{
+   * import play.api.libs.functional.syntax._
+   * import play.api.libs.json.{ Reads, __ }
+   *
    * case class User(id: Long, name: String, friend: User)
    *
    * implicit lazy val UserReads: Reads[User] = (
@@ -366,6 +375,9 @@ case class JsPath(path: List[PathNode] = List()) {
    * passed by name which is useful in case of recursive case classes for ex.
    *
    * {{{
+   * import play.api.libs.functional.syntax._
+   * import play.api.libs.json.{ Reads, __ }
+   *
    * case class User(id: Long, name: String, friend: Option[User])
    *
    * implicit lazy val UserReads: Reads[User] = (
@@ -403,16 +415,20 @@ case class JsPath(path: List[PathNode] = List()) {
    * recursive case classes for ex
    *
    * {{{
+   * import play.api.libs.functional.syntax._
+   * import play.api.libs.json.{ Writes, __ }
+   *
    * case class User(id: Long, name: String, friend: User)
    *
-   * implicit lazy val UserReads: Reads[User] = (
+   * implicit lazy val UserWrites: Writes[User] = (
    *   (__ \ 'id).write[Long] and
    *   (__ \ 'name).write[String] and
-   *   (__ \ 'friend).lazyWrite(UserReads)
-   * )(User.apply _)
+   *   (__ \ 'friend).lazyWrite(UserWrites)
+   * )(unlift(User.unapply))
    * }}}
    */
-  def lazyWrite[T](w: => Writes[T]): OWrites[T] = OWrites((t: T) => Writes.at[T](this)(w).writes(t))
+  def lazyWrite[T](w: => Writes[T]): OWrites[T] =
+    OWrites((t: T) => Writes.at[T](this)(w).writes(t))
 
   /**
    * Writes a Option[T] at JsPath using the explicit Writes[T] passed by name which is useful in case of
@@ -421,13 +437,16 @@ case class JsPath(path: List[PathNode] = List()) {
    * Please note that it's not writeOpt to be coherent with readNullable
    *
    * {{{
+   * import play.api.libs.functional.syntax._
+   * import play.api.libs.json.{ Writes, __ }
+   *
    * case class User(id: Long, name: String, friend: Option[User])
    *
-   * implicit lazy val UserReads: Reads[User] = (
+   * implicit lazy val UserWrites: Writes[User] = (
    *   (__ \ 'id).write[Long] and
    *   (__ \ 'name).write[String] and
-   *   (__ \ 'friend).lazyWriteNullable(UserReads)
-   * )(User.apply _)
+   *   (__ \ 'friend).lazyWriteNullable(UserWrites)
+   * )(unlift(User.unapply))
    * }}}
    */
   def lazyWriteNullable[T](w: => Writes[T]): OWrites[Option[T]] =
@@ -517,132 +536,156 @@ case class JsPath(path: List[PathNode] = List()) {
 
   object json {
     /**
-     * (`__` \ 'key).json.pick[A <: JsValue] is a Reads[A] that:
-     * - picks the given value at the given JsPath (WITHOUT THE PATH) from the input JS
+     * `(__ \ 'key).json.pick[A <: JsValue]` is a `Reads[A]` that:
+     * - picks the given value at the given `JsPath` (WITHOUT THE PATH) from the input JS
      * - validates this element as an object of type A (inheriting JsValue)
-     * - returns a JsResult[A]
+     * - returns a `JsResult[A]`
      *
      * Useful to pick a typed JsValue at a given JsPath
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, JsNumber, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> 123)
      * js.validate((__ \ 'key2).json.pick[JsNumber])
-     * => JsSuccess(JsNumber(123),/key2)
+     * // => JsSuccess(JsNumber(123),/key2)
      * }}}
      */
     def pick[A <: JsValue](implicit r: Reads[A]): Reads[A] = Reads.jsPick(self)
 
     /**
-     * (`__` \ 'key).json.pick is a Reads[JsValue] that:
-     * - picks the given value at the given JsPath (WITHOUT THE PATH) from the input JS
-     * - validates this element as an object of type JsValue
-     * - returns a JsResult[JsValue]
+     * `(__ \ 'key).json.pick` is a `Reads[JsValue]` that:
+     * - picks the given value at the given `JsPath` (WITHOUT THE PATH) from the input JS
+     * - validates this element as an object of type [[JsValue]]
+     * - returns a `JsResult[JsValue]`
      *
-     * Useful to pick a JsValue at a given JsPath
+     * Useful to pick a [[JsValue]] at a given `JsPath`
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> "value2")
      * js.validate((__ \ 'key2).json.pick)
-     * => JsSuccess("value2",/key2)
+     * // => JsSuccess("value2",/key2)
      * }}}
      */
     def pick: Reads[JsValue] = pick[JsValue]
 
     /**
-     * (`__` \ 'key).json.pickBranch[A <: JsValue](readsOfA) is a Reads[JsObject] that:
-     * - copies the given branch (JsPath + relative JsValue) from the input JS at this given JsPath
-     * - validates this relative JsValue as an object of type A (inheriting JsValue) potentially modifying it
-     * - creates a JsObject from JsPath and validated JsValue
-     * - returns a JsResult[JsObject]
+     * `(__ \ 'key).json.pickBranch[A <: JsValue](readsOfA)` is a `Reads[JsObject]` that:
+     * - copies the given branch (`JsPath` + relative [[JsValue]]) from the input JS at this given `JsPath`
+     * - validates this relative `JsValue` as an object of type A (inheriting `JsValue`) potentially modifying it
+     * - creates a [[JsObject]] from `JsPath` and validated `JsValue`
+     * - returns a `JsResult[JsObject]`
      *
-     * Useful to create/validate an JsObject from a single JsPath (potentially modifying it)
+     * Useful to create/validate an [[JsObject]] from a single `JsPath` (potentially modifying it)
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, JsString, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> Json.obj( "key21" -> "value2") )
      * js.validate( (__ \ 'key2).json.pickBranch[JsString]( (__ \ 'key21).json.pick[JsString].map( (js: JsString) => JsString(js.value ++ "3456") ) ) )
-     * => JsSuccess({"key2":"value23456"},/key2/key21)
+     * // => JsSuccess({"key2":"value23456"},/key2/key21)
      * }}}
      */
     def pickBranch[A <: JsValue](reads: Reads[A]): Reads[JsObject] = Reads.jsPickBranch[A](self)(reads)
 
     /**
-     * (`__` \ 'key).json.pickBranch is a Reads[JsObject] that:
-     * - copies the given branch (JsPath + relative JsValue) from the input JS at this given JsPath
-     * - creates a JsObject from JsPath and JsValue
-     * - returns a JsResult[JsObject]
+     * `(__ \ 'key).json.pickBranch` is a `Reads[JsObject]` that:
+     * - copies the given branch (`JsPath` + relative [[JsValue]]) from the input JS at this given `JsPath`
+     * - creates a `JsObject` from `JsPath` and `JsValue`
+     * - returns a `JsResult[JsObject]`
      *
-     * Useful to create/validate an JsObject from a single JsPath (potentially modifying it)
+     * Useful to create/validate an [[JsObject]] from a single `JsPath` (potentially modifying it)
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> Json.obj( "key21" -> "value2") )
      * js.validate( (__ \ 'key2).json.pickBranch )
-     * => JsSuccess({"key2":{"key21":"value2"}},/key2)
+     * // => JsSuccess({"key2":{"key21":"value2"}},/key2)
      * }}}
      */
     def pickBranch: Reads[JsObject] = Reads.jsPickBranch[JsValue](self)
 
     /**
-     * (`__` \ 'key).put(fixedValue) is a Reads[JsObject] that:
-     * - creates a JsObject setting A (inheriting JsValue) at given JsPath
-     * - returns a JsResult[JsObject]
+     * `(__ \ 'key).put(fixedValue)` is a `Reads[JsObject]` that:
+     * - creates a [[JsObject]] setting A (inheriting [[JsValue]]) at given `JsPath`
+     * - returns a `JsResult[JsObject]`
      *
-     * This Reads doesn't care about the input JS and is mainly used to set a fixed at a given JsPath
-     * Please that A is passed by name allowing to use an expression reevaluated at each time.
+     * This `Reads` doesn't care about the input JS and is mainly used to set a fixed at a given `JsPath`
+     * Please that `A` is passed by name allowing to use an expression reevaluated at each time.
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, JsNumber, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> "value2")
      * js.validate( (__ \ 'key3).json.put( { JsNumber((new java.util.Date).getTime()) } ) )
-     * => JsSuccess({"key3":1376419773171},)
+     * // => JsSuccess({"key3":1376419773171},)
      * }}}
      */
     def put(a: => JsValue): Reads[JsObject] = Reads.jsPut(self, a)
 
     /**
-     * (`__` \ 'key).json.copyFrom(reads) is a Reads[JsObject] that:
-     * - copies a JsValue using passed Reads[A]
-     * - creates a new branch from JsPath and copies previous value into it
+     * `(__ \ 'key).json.copyFrom(reads)` is a `Reads[JsObject]` that:
+     * - copies a [[JsValue]] using passed `Reads[A]`
+     * - creates a new branch from `JsPath` and copies previous value into it
      *
-     * Useful to copy a value from a Json branch into another branch
+     * Useful to copy a value from a JSON branch into another branch.
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> "value2")
      * js.validate( (__ \ 'key3).json.copyFrom((__ \ 'key2).json.pick))
-     * => JsSuccess({"key3":"value2"},/key2)
+     * // => JsSuccess({"key3":"value2"},/key2)
      * }}}
      */
     def copyFrom[A <: JsValue](reads: Reads[A]): Reads[JsObject] = Reads.jsCopyTo(self)(reads)
 
     /**
-     * (`__` \ 'key).json.update(reads) is the most complex Reads[JsObject] but the most powerful:
-     * - copies the whole JsValue => A
-     * - applies the passed Reads[A] on JsValue => B
-     * - deep merges both JsValues (A ++ B) so B overwrites A identical branches
+     * `(__ \ 'key).json.update(reads)` is the most complex `Reads[JsObject]` but the most powerful:
+     * - copies the whole `JsValue => A`
+     * - applies the passed `Reads[A]` on `JsValue => B`
+     * - deep merges both `JsValues (A ++ B)` so `B` overwrites `A` identical branches
      *
-     * Please note that if you have prune a branch in B, it is still in A so you'll see it in the result
+     * Please note that if you have prune a branch in `B`, it is still in `A` so you'll see it in the result
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, JsString, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> "value2")
      * js.validate(__.json.update((__ \ 'key3).json.put(JsString("value3"))))
-     * => JsSuccess({"key1":"value1","key2":"value2","key3":"value3"},)
+     * // => JsSuccess({"key1":"value1","key2":"value2","key3":"value3"},)
      * }}}
      */
     def update[A <: JsValue](reads: Reads[A]): Reads[JsObject] = Reads.jsUpdate(self)(reads)
 
     /**
-     * (`__` \ 'key).json.prune is Reads[JsObject] that prunes the branch and returns remaining JsValue
+     * `(__ \ 'key).json.prune` is `Reads[JsObject]` that prunes the branch and returns remaining [[JsValue]].
      *
-     * Example :
+     * Example:
+     *
      * {{{
+     * import play.api.libs.json.{ Json, __ }
+     *
      * val js = Json.obj("key1" -> "value1", "key2" -> "value2")
      * js.validate( (__ \ 'key2).json.prune )
-     * => JsSuccess({"key1":"value1"},/key2)
+     * // => JsSuccess({"key1":"value1"},/key2)
      * }}}
      */
     def prune: Reads[JsObject] = Reads.jsPrune(self)

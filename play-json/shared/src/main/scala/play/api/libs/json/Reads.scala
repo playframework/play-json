@@ -131,10 +131,11 @@ trait Reads[A] { self =>
    * {{{
    * import play.api.libs.json.Reads
    *
-   * def simple(r: Reads[Dog]): Reads[Animal] = r.widen[Animal]
+   * sealed trait Animal
+   * case class Dog(name: String) extends Animal
+   * case class Cat(name: String) extends Animal
    *
-   * def combine(dog: Reads[Dog], cat: Reads[Cat]): Reads[Animal] =
-   *   dog.orElse(cat).orElse(Reads.failed[Animal]("Unsupported Animal"))
+   * def simple(r: Reads[Dog]): Reads[Animal] = r.widen[Animal]
    * }}}
    */
   def widen[B >: A]: Reads[B] = Reads[B] { self.reads(_) }

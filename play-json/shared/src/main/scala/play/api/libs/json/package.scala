@@ -6,7 +6,9 @@ package play.api.libs
 
 /**
  * Json API
+ *
  * For example:
+ *
  * {{{
  * import play.api.libs.json._
  * import play.api.libs.functional.syntax._
@@ -23,15 +25,14 @@ package play.api.libs
  *   )(User.apply, unlift(User.unapply))
  * }
  *
- * //then in a controller:
- *
- * object MyController extends Controller {
+ * object MyController extends play.api.mvc.Controller {
  *    def displayUserAsJson(id: String) = Action {
  *       Ok(Json.toJson(User(id.toLong, "myName")))
  *    }
+ *
  *    def saveUser(jsonString: String)= Action {
  *      val user = Json.parse(jsonString).as[User]
- *      myDataStore.save(user)
+ *      //myDataStore.save(user)
  *      Ok
  *    }
  * }

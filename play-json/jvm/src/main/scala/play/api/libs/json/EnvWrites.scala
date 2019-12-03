@@ -102,10 +102,12 @@ trait EnvWrites {
    *
    * {{{
    * import java.time.LocalDateTime
+   * import java.time.format.DateTimeFormatter
+   *
    * import play.api.libs.json.Writes
    *
-   * implicit val temporalWrites: Writes[LocalDateTime] =
-   *   temporalWrites[LocalDateTime, DateTimeFormatter](
+   * implicit val w: Writes[LocalDateTime] =
+   *   Writes.temporalWrites[LocalDateTime, DateTimeFormatter](
    *     DateTimeFormatter.ISO_LOCAL_DATE_TIME)
    * }}}
    */
@@ -174,7 +176,7 @@ trait EnvWrites {
    * import java.time.LocalTime
    * import play.api.libs.json.Writes
    *
-   * implicit val ltnWrites = Writes.LocalTimeNumberWrites
+   * implicit val ltnWrites = Writes.LocalTimeNanoOfDayWrites
    * }}}
    */
   val LocalTimeNanoOfDayWrites: Writes[LocalTime] = Writes[LocalTime] { t =>
@@ -232,7 +234,8 @@ trait EnvWrites {
    * import java.time.LocalDate
    * import play.api.libs.json.Writes
    *
-   * implicit val ldnWrites = Writes.LocalDateEpochMilliWrites
+   * implicit val ldnWrites: Writes[LocalDate] =
+   *   Writes.LocalDateEpochMilliWrites
    * }}}
    */
   val LocalDateEpochMilliWrites: Writes[LocalDate] = Writes[LocalDate] { t =>
@@ -251,7 +254,7 @@ trait EnvWrites {
    * import java.time.Instant
    * import play.api.libs.json.Writes
    *
-   * implicit val inWrites = Writes.InstantNumberWrites
+   * implicit val inWrites: Writes[Instant] = Writes.InstantEpochMilliWrites
    * }}}
    */
   val InstantEpochMilliWrites: Writes[Instant] = new Writes[Instant] {

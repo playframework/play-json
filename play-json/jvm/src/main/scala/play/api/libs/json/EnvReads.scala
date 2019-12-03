@@ -311,6 +311,8 @@ trait EnvReads {
    * @see [[DefaultWrites.TemporalFormatter]]
    *
    * {{{
+   * import java.time.format.DateTimeFormatter
+   *
    * import play.api.libs.json.Reads.localDateTimeReads
    *
    * val customReads1 = localDateTimeReads("dd/MM/yyyy, HH:mm:ss")
@@ -346,6 +348,8 @@ trait EnvReads {
    * @see [[DefaultWrites.TemporalFormatter]]
    *
    * {{{
+   * import java.time.format.DateTimeFormatter
+   *
    * import play.api.libs.json.Reads.offsetDateTimeReads
    *
    * val customReads1 = offsetDateTimeReads("dd/MM/yyyy, HH:mm:ss (Z)")
@@ -394,7 +398,10 @@ trait EnvReads {
    * @param corrector a simple string transformation function that can be used to transform input String before parsing. Useful when standards are not exactly respected and require a few tweaks. Function `identity` can be passed if no correction is needed.
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
+   *
    * {{{
+   * import java.time.format.DateTimeFormatter
+   *
    * import play.api.libs.json.Reads.zonedDateTimeReads
    *
    * val customReads1 = zonedDateTimeReads("dd/MM/yyyy, HH:mm:ss")
@@ -425,7 +432,10 @@ trait EnvReads {
    * @param corrector a simple string transformation function that can be used to transform input String before parsing. Useful when standards are not exactly respected and require a few tweaks. Function `identity` can be passed if no correction is needed.
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
+   *
    * {{{
+   * import java.time.format.DateTimeFormatter
+   *
    * import play.api.libs.json.Reads.localDateReads
    *
    * val customReads1 = localDateReads("dd/MM/yyyy, HH:mm:ss")
@@ -479,7 +489,10 @@ trait EnvReads {
    * @param corrector a simple string transformation function that can be used to transform input String before parsing. Useful when standards are not exactly respected and require a few tweaks. Function `identity` can be passed if no correction is needed.
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
+   *
    * {{{
+   * import java.time.format.DateTimeFormatter
+   *
    * import play.api.libs.json.Reads.instantReads
    *
    * val customReads1 = instantReads("dd/MM/yyyy, HH:mm:ss")
@@ -508,7 +521,10 @@ trait EnvReads {
    * @param corrector a simple string transformation function that can be used to transform input String before parsing. Useful when standards are not exactly respected and require a few tweaks. Function `identity` can be passed if no correction is needed.
    * @param p Typeclass instance based on `parsing`
    * @see [[DefaultWrites.TemporalFormatter]]
+   *
    * {{{
+   * import java.time.format.DateTimeFormatter
+   *
    * import play.api.libs.json.Reads.localTimeReads
    *
    * val customReads1 = localTimeReads("dd/MM/yyyy, HH:mm:ss")
