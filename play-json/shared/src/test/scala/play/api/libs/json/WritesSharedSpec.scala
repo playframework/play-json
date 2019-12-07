@@ -60,6 +60,12 @@ class WritesSharedSpec extends WordSpec with MustMatchers {
     }
   }
 
+  "Iterable writes" should {
+    "write maps" in {
+      Json.toJson(Map(1 -> "one")).mustEqual(Json.arr(Json.arr(1, "one")))
+    }
+  }
+
   "Big integer Writes" should {
     "write as JsNumber" in {
       val jsNum = JsNumber(BigDecimal("123"))

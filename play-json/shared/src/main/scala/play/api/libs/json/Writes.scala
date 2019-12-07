@@ -428,11 +428,20 @@ sealed trait LowPriorityWrites extends EnvWrites {
 
   /**
    * Serializer for Iterable types.
+   *
+   * Deprecated due to incompatibility with non `_[_]` shapes, #368.
    */
-  implicit def iterableWrites[A, M[T] <: Iterable[T]](implicit w: Writes[A]): Writes[M[A]] = {
+  @deprecated("Use `iterableWrites2`", "2.8.1")
+  def iterableWrites[A, M[T] <: Iterable[T]](implicit w: Writes[A]): Writes[M[A]] =
+    iterableWrites2[A, M[A]]
+
+  /**
+   * Serializer for Iterable types.
+   */
+  implicit def iterableWrites2[A, I](implicit ev: I <:< Iterable[A], w: Writes[A]): Writes[I] = {
     // Use Iterable rather than Traversable, for 2.13 compat
 
-    Writes[M[A]] { as =>
+    Writes[I] { as =>
       val builder = mutable.ArrayBuilder.make[JsValue]
 
       as.foreach { a: A =>
