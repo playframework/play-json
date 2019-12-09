@@ -604,11 +604,10 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     val validTimeZones = "America/Los_Angeles" :: "UTC" :: "CET" :: "UTC-8" :: Nil
 
-    Fragment.foreach(validTimeZones)(
-      tz =>
-        s"be successfully read from $tz" in {
-          reads(JsString(tz)).aka("read ZoneId").must_==(JsSuccess(ZoneId.of(tz)))
-        }
+    Fragment.foreach(validTimeZones)(tz =>
+      s"be successfully read from $tz" in {
+        reads(JsString(tz)).aka("read ZoneId").must_==(JsSuccess(ZoneId.of(tz)))
+      }
     )
 
     "not be read from number" in {

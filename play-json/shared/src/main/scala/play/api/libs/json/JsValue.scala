@@ -121,6 +121,7 @@ object JsArray extends (IndexedSeq[JsValue] => JsArray) {
 case class JsObject(
     private[json] val underlying: Map[String, JsValue]
 ) extends JsValue {
+
   /**
    * The fields of this JsObject in the order passed to the constructor
    */
@@ -196,6 +197,7 @@ case class JsObject(
 }
 
 object JsObject extends (Seq[(String, JsValue)] => JsObject) {
+
   /**
    * INTERNAL API: create a fields map by wrapping a Java LinkedHashMap.
    *
