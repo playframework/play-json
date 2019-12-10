@@ -9,6 +9,7 @@ import org.joda.time._
 object JodaWrites extends JodaWrites
 
 trait JodaWrites {
+
   /**
    * Serializer for DateTime
    * @param pattern the pattern used by org.joda.time.format.DateTimeFormat

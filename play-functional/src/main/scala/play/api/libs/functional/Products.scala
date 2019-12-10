@@ -167,9 +167,8 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4) =>
-          reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A)
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4) =>
+        reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A)
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4)] =
@@ -229,10 +228,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) =>
-          reducer
-            .append(reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A), a5: A)
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) =>
+        reducer
+          .append(reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A), a5: A)
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5)] =
@@ -298,13 +296,12 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) =>
-          reducer.append(
-            reducer
-              .append(reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A), a5: A),
-            a6: A
-          )
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) =>
+        reducer.append(
+          reducer
+            .append(reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A), a5: A),
+          a6: A
+        )
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6)] =
@@ -374,18 +371,17 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) =>
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) =>
+        reducer.append(
           reducer.append(
             reducer.append(
-              reducer.append(
-                reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
-                a5: A
-              ),
-              a6: A
+              reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
+              a5: A
             ),
-            a7: A
-          )
+            a6: A
+          ),
+          a7: A
+        )
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7)] =
@@ -459,21 +455,20 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8) =>
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8) =>
+        reducer.append(
           reducer.append(
             reducer.append(
               reducer.append(
-                reducer.append(
-                  reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
-                  a5: A
-                ),
-                a6: A
+                reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
+                a5: A
               ),
-              a7: A
+              a6: A
             ),
-            a8: A
-          )
+            a7: A
+          ),
+          a8: A
+        )
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8)] =
@@ -551,24 +546,23 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9) =>
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9) =>
+        reducer.append(
           reducer.append(
             reducer.append(
               reducer.append(
                 reducer.append(
-                  reducer.append(
-                    reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
-                    a5: A
-                  ),
-                  a6: A
+                  reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
+                  a5: A
                 ),
-                a7: A
+                a6: A
               ),
-              a8: A
+              a7: A
             ),
-            a9: A
-          )
+            a8: A
+          ),
+          a9: A
+        )
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9)] =
@@ -657,27 +651,26 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10) =>
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10) =>
+        reducer.append(
           reducer.append(
             reducer.append(
               reducer.append(
                 reducer.append(
                   reducer.append(
-                    reducer.append(
-                      reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
-                      a5: A
-                    ),
-                    a6: A
+                    reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
+                    a5: A
                   ),
-                  a7: A
+                  a6: A
                 ),
-                a8: A
+                a7: A
               ),
-              a9: A
+              a8: A
             ),
-            a10: A
-          )
+            a9: A
+          ),
+          a10: A
+        )
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)] =
@@ -775,30 +768,29 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11) =>
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11) =>
+        reducer.append(
           reducer.append(
             reducer.append(
               reducer.append(
                 reducer.append(
                   reducer.append(
                     reducer.append(
-                      reducer.append(
-                        reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
-                        a5: A
-                      ),
-                      a6: A
+                      reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
+                      a5: A
                     ),
-                    a7: A
+                    a6: A
                   ),
-                  a8: A
+                  a7: A
                 ),
-                a9: A
+                a8: A
               ),
-              a10: A
+              a9: A
             ),
-            a11: A
-          )
+            a10: A
+          ),
+          a11: A
+        )
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)] =
@@ -908,8 +900,8 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         fu: Functor[M],
         reducer: Reducer[A, B]
     ): M[B] =
-      apply[B](
-        (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12) =>
+      apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12) =>
+        reducer.append(
           reducer.append(
             reducer.append(
               reducer.append(
@@ -917,24 +909,23 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   reducer.append(
                     reducer.append(
                       reducer.append(
-                        reducer.append(
-                          reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
-                          a5: A
-                        ),
-                        a6: A
+                        reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A),
+                        a5: A
                       ),
-                      a7: A
+                      a6: A
                     ),
-                    a8: A
+                    a7: A
                   ),
-                  a9: A
+                  a8: A
                 ),
-                a10: A
+                a9: A
               ),
-              a11: A
+              a10: A
             ),
-            a12: A
-          )
+            a11: A
+          ),
+          a12: A
+        )
       )(fu)
 
     def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)] =
@@ -1035,8 +1026,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness13: <:<[A, A13],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) => (a: A1, a: A2, a: A3, a: A4, a: A5, a: A6, a: A7, a: A8, a: A9, a: A10, a: A11, a: A12, a: A13)
+      apply[A]((a: A) => (a: A1, a: A2, a: A3, a: A4, a: A5, a: A6, a: A7, a: A8, a: A9, a: A10, a: A11, a: A12, a: A13)
       )(fu)
 
     def reduce[A >: A1, B](
@@ -1242,9 +1232,8 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness14: <:<[A, A14],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (a: A1, a: A2, a: A3, a: A4, a: A5, a: A6, a: A7, a: A8, a: A9, a: A10, a: A11, a: A12, a: A13, a: A14)
+      apply[A]((a: A) =>
+        (a: A1, a: A2, a: A3, a: A4, a: A5, a: A6, a: A7, a: A8, a: A9, a: A10, a: A11, a: A12, a: A13, a: A14)
       )(fu)
 
     def reduce[A >: A1, B](
@@ -1466,25 +1455,24 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness15: <:<[A, A15],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15
+        )
       )(fu)
 
     def reduce[A >: A1, B](
@@ -1723,26 +1711,25 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness16: <:<[A, A16],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15,
-            a: A16
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15,
+          a: A16
+        )
       )(fu)
 
     def reduce[A >: A1, B](
@@ -2000,27 +1987,26 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness17: <:<[A, A17],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15,
-            a: A16,
-            a: A17
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15,
+          a: A16,
+          a: A17
+        )
       )(fu)
 
     def reduce[A >: A1, B](
@@ -2328,28 +2314,27 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness18: <:<[A, A18],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15,
-            a: A16,
-            a: A17,
-            a: A18
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15,
+          a: A16,
+          a: A17,
+          a: A18
+        )
       )(fu)
 
     def reduce[A >: A1, B](
@@ -2687,29 +2672,28 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness19: <:<[A, A19],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15,
-            a: A16,
-            a: A17,
-            a: A18,
-            a: A19
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15,
+          a: A16,
+          a: A17,
+          a: A18,
+          a: A19
+        )
       )(fu)
 
     def reduce[A >: A1, B](
@@ -3063,30 +3047,29 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness20: <:<[A, A20],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15,
-            a: A16,
-            a: A17,
-            a: A18,
-            a: A19,
-            a: A20
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15,
+          a: A16,
+          a: A17,
+          a: A18,
+          a: A19,
+          a: A20
+        )
       )(fu)
 
     def reduce[A >: A1, B](
@@ -3478,31 +3461,30 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness21: <:<[A, A21],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15,
-            a: A16,
-            a: A17,
-            a: A18,
-            a: A19,
-            a: A20,
-            a: A21
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15,
+          a: A16,
+          a: A17,
+          a: A18,
+          a: A19,
+          a: A20,
+          a: A21
+        )
       )(fu)
 
     def reduce[A >: A1, B](
@@ -3885,32 +3867,31 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         witness22: <:<[A, A22],
         fu: ContravariantFunctor[M]
     ): M[A] =
-      apply[A](
-        (a: A) =>
-          (
-            a: A1,
-            a: A2,
-            a: A3,
-            a: A4,
-            a: A5,
-            a: A6,
-            a: A7,
-            a: A8,
-            a: A9,
-            a: A10,
-            a: A11,
-            a: A12,
-            a: A13,
-            a: A14,
-            a: A15,
-            a: A16,
-            a: A17,
-            a: A18,
-            a: A19,
-            a: A20,
-            a: A21,
-            a: A22
-          )
+      apply[A]((a: A) =>
+        (
+          a: A1,
+          a: A2,
+          a: A3,
+          a: A4,
+          a: A5,
+          a: A6,
+          a: A7,
+          a: A8,
+          a: A9,
+          a: A10,
+          a: A11,
+          a: A12,
+          a: A13,
+          a: A14,
+          a: A15,
+          a: A16,
+          a: A17,
+          a: A18,
+          a: A19,
+          a: A20,
+          a: A21,
+          a: A22
+        )
       )(fu)
 
     def reduce[A >: A1, B](

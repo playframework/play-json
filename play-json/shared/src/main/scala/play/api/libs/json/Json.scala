@@ -11,6 +11,7 @@ import java.io.InputStream
  * @define returnStringRepr A String with the json representation
  */
 sealed trait JsonFacade {
+
   /**
    * Parses a String representing a JSON input, and returns it as a [[JsValue]].
    *
@@ -522,6 +523,7 @@ object Json extends JsonFacade {
   sealed trait MacroOptions
 
   object MacroOptions {
+
     /**
      * Defines the default macro options if no type is supplied.
      *
@@ -531,6 +533,7 @@ object Json extends JsonFacade {
     trait Default[O <: Json.MacroOptions]
 
     trait LowPriorityDefaultImplicits {
+
       /**
        * Low priority implicit used when some explicit Json.MacroOptions instance is passed.
        */
@@ -538,6 +541,7 @@ object Json extends JsonFacade {
     }
 
     object Default extends LowPriorityDefaultImplicits {
+
       /**
        * This will be the default that's passed when no MacroOptions is passed.
        */
