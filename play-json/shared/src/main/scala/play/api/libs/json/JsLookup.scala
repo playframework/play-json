@@ -8,6 +8,7 @@ package play.api.libs.json
  * A value representing the value at a particular JSON path, either an actual JSON node or undefined.
  */
 case class JsLookup(result: JsLookupResult) extends AnyVal {
+
   /**
    * Access the head of this array.
    */
@@ -116,12 +117,11 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    */
   def \\(fieldName: String): collection.Seq[JsValue] = result match {
     case JsDefined(obj: JsObject) =>
-      obj.value.foldLeft(Seq[JsValue]())(
-        (o, pair) =>
-          pair match {
-            case (key, value) if key == fieldName => o ++ (value +: (value \\ fieldName))
-            case (_, value)                       => o ++ (value \\ fieldName)
-          }
+      obj.value.foldLeft(Seq[JsValue]())((o, pair) =>
+        pair match {
+          case (key, value) if key == fieldName => o ++ (value +: (value \\ fieldName))
+          case (_, value)                       => o ++ (value \\ fieldName)
+        }
       )
 
     case JsDefined(arr: JsArray) =>
@@ -132,6 +132,7 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
 }
 
 sealed trait JsLookupResult extends Any with JsReadable {
+
   /**
    * Tries to convert the node into a JsValue
    */

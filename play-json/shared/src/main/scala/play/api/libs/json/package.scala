@@ -39,6 +39,7 @@ package play.api.libs
  * }}}
  */
 package object json {
+
   /**
    * Alias for `JsPath` companion object
    */

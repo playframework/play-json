@@ -69,14 +69,13 @@ trait PathReads {
   def jsPick[A <: JsValue](path: JsPath)(implicit reads: Reads[A]): Reads[A] = at(path)(reads)
 
   def jsPickBranch[A <: JsValue](path: JsPath)(implicit reads: Reads[A]): Reads[JsObject] =
-    Reads[JsObject](
-      js =>
-        path
-          .asSingleJsResult(js)
-          .flatMap { jsv =>
-            reads.reads(jsv).repath(path)
-          }
-          .map(jsv => JsPath.createObj(path -> jsv))
+    Reads[JsObject](js =>
+      path
+        .asSingleJsResult(js)
+        .flatMap { jsv =>
+          reads.reads(jsv).repath(path)
+        }
+        .map(jsv => JsPath.createObj(path -> jsv))
     )
 
   def jsPut(path: JsPath, a: => JsValue) = Reads[JsObject](json => JsSuccess(JsPath.createObj(path -> a)))
@@ -100,6 +99,7 @@ trait PathReads {
 }
 
 trait ConstraintReads {
+
   /** The simpler of all Reads that just finds an implicit Reads[A] of the expected type */
   @inline def of[A](implicit r: Reads[A]) = r
 
@@ -148,11 +148,10 @@ trait ConstraintReads {
    * Defines a regular expression constraint for `String` values, i.e. the string must match the regular expression pattern
    */
   def pattern(regex: => scala.util.matching.Regex, error: String = "error.pattern")(implicit reads: Reads[String]) =
-    Reads[String](
-      js =>
-        reads.reads(js).flatMap { o =>
-          regex.unapplySeq(o).map(_ => JsSuccess(o)).getOrElse(JsError(error))
-        }
+    Reads[String](js =>
+      reads.reads(js).flatMap { o =>
+        regex.unapplySeq(o).map(_ => JsSuccess(o)).getOrElse(JsError(error))
+      }
     )
 
   def email(implicit reads: Reads[String]): Reads[String] =

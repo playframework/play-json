@@ -10,6 +10,7 @@ import scalajs.js
 import js.JSON
 
 object StaticBinding {
+
   /** Parses a [[JsValue]] from raw data (assuming UTF-8). */
   def parseJsValue(data: Array[Byte]): JsValue =
     parseJsValue(new String(data, "UTF-8"))

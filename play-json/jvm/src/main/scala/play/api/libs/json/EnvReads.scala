@@ -171,6 +171,7 @@ trait EnvReads {
 
   /** Parsing companion */
   object TemporalParser {
+
     /** Instance of local date/time based on specified pattern. */
     implicit def LocalDateTimePatternParser(pattern: String): TemporalParser[LocalDateTime] =
       LocalDateTimeFormatterParser(DateTimeFormatter.ofPattern(pattern))

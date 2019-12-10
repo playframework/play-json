@@ -535,6 +535,7 @@ case class JsPath(path: List[PathNode] = List()) {
   private val self = this
 
   object json {
+
     /**
      * `(__ \ 'key).json.pick[A <: JsValue]` is a `Reads[A]` that:
      * - picks the given value at the given `JsPath` (WITHOUT THE PATH) from the input JS

@@ -7,6 +7,7 @@ package play.api.libs.json
 import play.api.libs.json.jackson.JacksonJson
 
 object StaticBinding {
+
   /** Parses a [[JsValue]] from raw data. */
   def parseJsValue(data: Array[Byte]): JsValue =
     JacksonJson.parseJsValue(data)

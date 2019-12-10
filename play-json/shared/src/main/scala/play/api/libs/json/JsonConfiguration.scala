@@ -6,6 +6,7 @@ package play.api.libs.json
 
 /** JSON configuration */
 sealed trait JsonConfiguration {
+
   /** Compile-time options for the JSON macros */
   type Opts <: Json.MacroOptions
 
@@ -69,6 +70,7 @@ object JsonConfiguration {
  * Naming strategy, to map each class property to the corresponding column.
  */
 trait JsonNaming extends (String => String) {
+
   /**
    * Returns the column name for the class property.
    *
@@ -79,6 +81,7 @@ trait JsonNaming extends (String => String) {
 
 /** Naming companion */
 object JsonNaming {
+
   /**
    * For each class property, use the name
    * as is for its column (e.g. fooBar -> fooBar).
@@ -163,6 +166,7 @@ trait OptionHandlers {
 
 /** OptionHandlers companion */
 object OptionHandlers {
+
   /**
    * Default Option Handlers
    * Uses readNullable and writesNullable
