@@ -9,6 +9,7 @@ import scala.collection.mutable
 
 /** Copied from scala-collection-compat, because its binary API isn't stable. */
 private[json] object ScalaCollectionCompat {
+
   /**
    * A factory that builds a collection of type `C` with elements of type `A`.
    *

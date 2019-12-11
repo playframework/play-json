@@ -181,6 +181,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
  * Default Serializers.
  */
 trait DefaultWrites extends LowPriorityWrites {
+
   /**
    * Serializer for Int types.
    */
@@ -405,6 +406,7 @@ trait DefaultWrites extends LowPriorityWrites {
 }
 
 sealed trait LowPriorityWrites extends EnvWrites {
+
   /**
    * Serializer for java.net.URI
    */
