@@ -131,10 +131,11 @@ trait Reads[A] { self =>
    * {{{
    * import play.api.libs.json.Reads
    *
-   * def simple(r: Reads[Dog]): Reads[Animal] = r.widen[Animal]
+   * sealed trait Animal
+   * case class Dog(name: String) extends Animal
+   * case class Cat(name: String) extends Animal
    *
-   * def combine(dog: Reads[Dog], cat: Reads[Cat]): Reads[Animal] =
-   *   dog.orElse(cat).orElse(Reads.failed[Animal]("Unsupported Animal"))
+   * def simple(r: Reads[Dog]): Reads[Animal] = r.widen[Animal]
    * }}}
    */
   def widen[B >: A]: Reads[B] = Reads[B] { self.reads(_) }
@@ -368,33 +369,31 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for BigDecimal
    */
-  implicit val bigDecReads = Reads[BigDecimal](
-    js =>
-      js match {
-        case JsString(s) =>
-          control.Exception
-            .catching(classOf[NumberFormatException])
-            .opt(JsSuccess(BigDecimal(new java.math.BigDecimal(s))))
-            .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
-        case JsNumber(d) => JsSuccess(d.underlying)
-        case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
-      }
+  implicit val bigDecReads = Reads[BigDecimal](js =>
+    js match {
+      case JsString(s) =>
+        control.Exception
+          .catching(classOf[NumberFormatException])
+          .opt(JsSuccess(BigDecimal(new java.math.BigDecimal(s))))
+          .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
+      case JsNumber(d) => JsSuccess(d.underlying)
+      case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
+    }
   )
 
   /**
    * Deserializer for BigDecimal
    */
-  implicit val javaBigDecReads = Reads[java.math.BigDecimal](
-    js =>
-      js match {
-        case JsString(s) =>
-          control.Exception
-            .catching(classOf[NumberFormatException])
-            .opt(JsSuccess(new java.math.BigDecimal(s)))
-            .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
-        case JsNumber(d) => JsSuccess(d.underlying)
-        case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
-      }
+  implicit val javaBigDecReads = Reads[java.math.BigDecimal](js =>
+    js match {
+      case JsString(s) =>
+        control.Exception
+          .catching(classOf[NumberFormatException])
+          .opt(JsSuccess(new java.math.BigDecimal(s)))
+          .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
+      case JsNumber(d) => JsSuccess(d.underlying)
+      case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
+    }
   )
 
   /**

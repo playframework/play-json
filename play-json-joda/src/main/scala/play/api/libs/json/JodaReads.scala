@@ -10,6 +10,7 @@ import org.joda.time.format._
 object JodaReads extends JodaReads
 
 trait JodaReads {
+
   /**
    * Reads for the `org.joda.time.DateTime` type.
    *

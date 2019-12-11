@@ -216,12 +216,11 @@ class WritesSpec extends org.specs2.mutable.Specification {
 
     val validTimeZones = "America/Los_Angeles" :: "UTC" :: "CET" :: "UTC-8" :: Nil
 
-    Fragment.foreach(validTimeZones)(
-      tz =>
-        s"be written as time zone string $tz" in {
-          val zoneId = ZoneId.of(tz)
-          writes(zoneId).must_==(JsString(zoneId.getId))
-        }
+    Fragment.foreach(validTimeZones)(tz =>
+      s"be written as time zone string $tz" in {
+        val zoneId = ZoneId.of(tz)
+        writes(zoneId).must_==(JsString(zoneId.getId))
+      }
     )
   }
 

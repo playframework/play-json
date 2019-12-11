@@ -135,8 +135,6 @@ object OWrites extends PathWrites with ConstraintWrites {
   /**
    * Transforms the resulting [[JsObject]] using the given function,
    * which is also applied with the initial input.
-   * def transform(transformer: (A, JsObject) => JsObject): OWrites[A] =
-   * OWrites[A] { a => transformer(a, this.writes(a)) }
    *
    * @param w the initial writer
    * @param f the transformer function
@@ -183,6 +181,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
  * Default Serializers.
  */
 trait DefaultWrites extends LowPriorityWrites {
+
   /**
    * Serializer for Int types.
    */
@@ -312,6 +311,8 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for JsNull.
    *
    * {{{
+   * import play.api.libs.json.Json
+   *
    * Json.obj("foo" -> None)
    * // equivalent to Json.obj("foo" -> JsNull)
    * }}}
@@ -325,8 +326,11 @@ trait DefaultWrites extends LowPriorityWrites {
    * If `Some` is directly used (not as `Option`).
    *
    * {{{
-   * Json.obj("foo" -> Some(writeableValue))
-   * // equivalent to Json.obj("foo" -> writeableValue)
+   * import play.api.libs.json.{ Json, Writes }
+   *
+   * def foo[T: Writes](writeableValue: T) =
+   *   Json.obj("foo" -> Some(writeableValue))
+   *   // equivalent to Json.obj("foo" -> writeableValue)
    * }}}
    */
   implicit def someWrites[T](implicit w: Writes[T]): Writes[Some[T]] =
@@ -402,6 +406,7 @@ trait DefaultWrites extends LowPriorityWrites {
 }
 
 sealed trait LowPriorityWrites extends EnvWrites {
+
   /**
    * Serializer for java.net.URI
    */
@@ -425,11 +430,20 @@ sealed trait LowPriorityWrites extends EnvWrites {
 
   /**
    * Serializer for Iterable types.
+   *
+   * Deprecated due to incompatibility with non `_[_]` shapes, #368.
    */
-  implicit def iterableWrites[A, M[T] <: Iterable[T]](implicit w: Writes[A]): Writes[M[A]] = {
+  @deprecated("Use `iterableWrites2`", "2.8.1")
+  def iterableWrites[A, M[T] <: Iterable[T]](implicit w: Writes[A]): Writes[M[A]] =
+    iterableWrites2[A, M[A]]
+
+  /**
+   * Serializer for Iterable types.
+   */
+  implicit def iterableWrites2[A, I](implicit ev: I <:< Iterable[A], w: Writes[A]): Writes[I] = {
     // Use Iterable rather than Traversable, for 2.13 compat
 
-    Writes[M[A]] { as =>
+    Writes[I] { as =>
       val builder = mutable.ArrayBuilder.make[JsValue]
 
       as.foreach { a: A =>

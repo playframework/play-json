@@ -11,6 +11,7 @@ import java.io.InputStream
  * @define returnStringRepr A String with the json representation
  */
 sealed trait JsonFacade {
+
   /**
    * Parses a String representing a JSON input, and returns it as a [[JsValue]].
    *
@@ -40,16 +41,17 @@ sealed trait JsonFacade {
    * Converts a [[JsValue]] to its string representation.
    *
    * {{{
-   * scala> Json.stringify(Json.obj(
+   * import play.api.libs.json.Json
+   *
+   * val input = Json.obj(
    *   "field1" -> Json.obj(
    *     "field11" -> "value11",
    *     "field12" -> Json.arr("alpha", 123L)
    *   )
-   * ))
-   * res0: String = {"field1":{"field11":"value11","field12":["alpha",123]}}
+   * )
    *
-   * scala> Json.stringify(res0)
-   * res1: String = {"field1":{"field11":"value11","field12":["alpha",123]}}
+   * Json.stringify(input)
+   * // => {"field1":{"field11":"value11","field12":["alpha",123]}}
    * }}}
    *
    * $jsonParam
@@ -74,11 +76,13 @@ sealed trait JsonFacade {
    * (see <a href="http://timelessrepo.com/json-isnt-a-javascript-subset">JSON: The JavaScript subset that isn't</a>).
    *
    * {{{
-   * scala> Json.asciiStringify(JsString("some\u005Cu2028text\u005Cu2029"))
-   * res0: String = "some\u005Cu2028text\u005Cu2029"
+   * import play.api.libs.json.{ Json, JsString }
    *
-   * scala> Json.stringify(JsString("some\u005Cu2028text\u005Cu2029"))
-   * res1: String = "sometext"
+   * Json.asciiStringify(JsString("some\\u005Ctext\\u005C"))
+   * // => "some\\u005Ctext\\u005C"
+   *
+   * Json.stringify(JsString("some\\u005Ctext\\u005C"))
+   * // => "sometext"
    * }}}
    *
    * $jsonParam
@@ -91,22 +95,24 @@ sealed trait JsonFacade {
    * pretty printer (line feeds after each fields and 2-spaces indentation).
    *
    * {{{
-   * scala> Json.stringify(Json.obj(
+   * import play.api.libs.json.Json
+   *
+   * val res0 = Json.obj(
    *   "field1" -> Json.obj(
    *     "field11" -> "value11",
    *     "field12" -> Json.arr("alpha", 123L)
    *   )
-   * ))
-   * res0: String = {"field1":{"field11":"value11","field12":["alpha",123]}}
+   * )
+   * // => {"field1":{"field11":"value11","field12":["alpha",123]}}
    *
-   * scala> Json.prettyPrint(res0)
-   * res1: String =
-   * {
-   *   "field1" : {
-   *     "field11" : "value11",
-   *     "field12" : [ "alpha", 123 ]
-   *   }
-   * }
+   * Json.prettyPrint(res0)
+   * // =>
+   * // {
+   * //   "field1" : {
+   * //     "field11" : "value11",
+   * //     "field12" : [ "alpha", 123 ]
+   * //   }
+   * // }
    * }}}
    *
    * $jsonParam
@@ -191,15 +197,19 @@ object Json extends JsonFacade {
   /**
    * Next is the trait that allows Simplified Json syntax :
    *
-   * Example :
+   * Example:
+   *
    * {{{
+   * import play.api.libs.json._
+   *
    * JsObject(Seq(
    *    "key1" -> JsString("value"),
    *    "key2" -> JsNumber(123),
    *    "key3" -> JsObject(Seq("key31" -> JsString("value31")))
-   * )) == Json.obj( "key1" -> "value", "key2" -> 123, "key3" -> obj("key31" -> "value31"))
+   * )) == Json.obj(
+   *   "key1" -> "value", "key2" -> 123, "key3" -> Json.obj("key31" -> "value31"))
    *
-   * JsArray(JsString("value"), JsNumber(123), JsBoolean(true)) == Json.arr( "value", 123, true )
+   * JsArray(Seq(JsString("value"), JsNumber(123), JsBoolean(true))) == Json.arr("value", 123, true)
    * }}}
    *
    * There is an implicit conversion from any Type with a Json Writes to JsValueWrapper
@@ -231,14 +241,15 @@ object Json extends JsonFacade {
    * $macroTypeParam
    *
    * {{{
-   * import play.api.libs.json.Json
+   * import play.api.libs.functional.syntax._
+   * import play.api.libs.json.{ Json, JsonConfiguration, __ }
    *
    * case class User(userName: String, age: Int)
    *
-   * implicit val userReads = Json.reads[User]
+   * implicit val userReads1 = Json.reads[User]
    * // macro-compiler replaces Json.reads[User] by injecting into compile chain
    * // the exact code you would write yourself. This is strictly equivalent to:
-   * implicit val userReads = (
+   * implicit val userReads2 = (
    *    (__ \ implicitly[JsonConfiguration].naming("userName")).read[String] and
    *    (__ \ implicitly[JsonConfiguration].naming("age")).read[Int]
    * )(User)
@@ -274,17 +285,18 @@ object Json extends JsonFacade {
    * $macroTypeParam
    *
    * {{{
-   *   import play.api.libs.json.Json
+   * import play.api.libs.functional.syntax._
+   * import play.api.libs.json.{ Json, JsonConfiguration, __ }
    *
-   *   case class User(userName: String, age: Int)
+   * case class User(userName: String, age: Int)
    *
-   *   implicit val userWrites = Json.writes[User]
-   *   // macro-compiler replaces Json.writes[User] by injecting into compile chain
-   *   // the exact code you would write yourself. This is strictly equivalent to:
-   *   implicit val userWrites = (
-   *      (__ \ implicitly[JsonConfiguration].naming("userName")).write[String] and
-   *      (__ \ implicitly[JsonConfiguration].naming("age")).write[Int]
-   *   )(unlift(User.unapply))
+   * implicit val userWrites1 = Json.writes[User]
+   * // macro-compiler replaces Json.writes[User] by injecting into compile chain
+   * // the exact code you would write yourself. This is strictly equivalent to:
+   * implicit val userWrites2 = (
+   *    (__ \ implicitly[JsonConfiguration].naming("userName")).write[String] and
+   *    (__ \ implicitly[JsonConfiguration].naming("age")).write[Int]
+   * )(unlift(User.unapply))
    * }}}
    */
   def writes[A]: OWrites[A] = macro JsMacroImpl.implicitConfigWritesImpl[A]
@@ -303,7 +315,7 @@ object Json extends JsonFacade {
    * final class TextId(val value: String) extends AnyVal
    *
    * // Based on provided Writes[String] corresponding to `value: String`
-   * val w: Writes[TextId] = Json.writes[TextId]
+   * val w: Writes[TextId] = Json.valueWrites[TextId]
    * }}}
    */
   def valueWrites[A]: Writes[A] = macro JsMacroImpl.implicitConfigValueWrites[A]
@@ -317,14 +329,15 @@ object Json extends JsonFacade {
    * $macroTypeParam
    *
    * {{{
-   * import play.api.libs.json.Json
+   * import play.api.libs.functional.syntax._
+   * import play.api.libs.json.{ Json, JsonConfiguration, __ }
    *
    * case class User(userName: String, age: Int)
    *
-   * implicit val userWrites = Json.format[User]
+   * val userFormat1 = Json.format[User]
    * // macro-compiler replaces Json.format[User] by injecting into compile chain
    * // the exact code you would write yourself. This is strictly equivalent to:
-   * implicit val userWrites = (
+   * val userFormat2 = (
    *    (__ \ implicitly[JsonConfiguration].naming("userName")).format[String] and
    *    (__ \ implicitly[JsonConfiguration].naming("age")).format[Int]
    * )(User.apply, unlift(User.unapply))
@@ -354,7 +367,7 @@ object Json extends JsonFacade {
    * Creates a `Format[E]` by automatically creating Reads[E] and Writes[E] for any Enumeration E
    *
    * {{{
-   * import play.api.libs.json.Json
+   * import play.api.libs.json.{ Format, Json }
    *
    * object DayOfWeek extends Enumeration {
    *
@@ -365,13 +378,13 @@ object Json extends JsonFacade {
    *  val Wed = Value("Wednesday")
    *  // etc.
    *
-   *   implicit val format: Format[DayOfWeek] = Json.formatEnum(DayOfWeek)
+   *   implicit val format1: Format[DayOfWeek] = Json.formatEnum(DayOfWeek)
    *   // or 'this' if defining directly in Enum
-   *   implicit val format: Format[DayOfWeek] = Json.formatEnum(this)
+   *   implicit val format2: Format[DayOfWeek] = Json.formatEnum(this)
    * }
    * }}}
    *
-   * '''Json.toJson(Mon)''' will produce '''"Monday"'''
+   * `Json.toJson(Mon)` will produce `"Monday"`.
    *
    * @param enum Enumeration object
    * @tparam E type of Enum
@@ -421,7 +434,7 @@ object Json extends JsonFacade {
      * $macroTypeParam
      *
      * {{{
-     * import play.api.libs.json.Json
+     * import play.api.libs.json.{ Json, Reads }
      *
      * case class User(userName: String, age: Int)
      *
@@ -440,7 +453,7 @@ object Json extends JsonFacade {
      * $macroTypeParam
      *
      * {{{
-     * import play.api.libs.json.Json
+     * import play.api.libs.json.{ Json, OWrites }
      *
      * case class User(userName: String, age: Int)
      *
@@ -459,7 +472,7 @@ object Json extends JsonFacade {
      * $macroTypeParam
      *
      * {{{
-     * import play.api.libs.json.Json
+     * import play.api.libs.json.{ Json, OFormat }
      *
      * case class User(userName: String, age: Int)
      *
@@ -476,6 +489,10 @@ object Json extends JsonFacade {
    * @tparam C the type of compile-time configuration
    *
    * {{{
+   * import play.api.libs.json.{ Json, Reads }
+   *
+   * case class Foo(v: String)
+   *
    * // Materializes a `Reads[Foo]`,
    * // with the configuration resolved at compile time
    * val r: Reads[Foo] = Json.configured.reads[Foo]
@@ -495,6 +512,10 @@ object Json extends JsonFacade {
    * Compile-time base options for macro usage.
    *
    * {{{
+   * import play.api.libs.json.Json
+   *
+   * case class Foo(v: String)
+   *
    * Json.using[Json.MacroOptions].format[Foo]
    * // equivalent to Json.format[Foo]
    * }}}
@@ -502,6 +523,7 @@ object Json extends JsonFacade {
   sealed trait MacroOptions
 
   object MacroOptions {
+
     /**
      * Defines the default macro options if no type is supplied.
      *
@@ -511,6 +533,7 @@ object Json extends JsonFacade {
     trait Default[O <: Json.MacroOptions]
 
     trait LowPriorityDefaultImplicits {
+
       /**
        * Low priority implicit used when some explicit Json.MacroOptions instance is passed.
        */
@@ -518,6 +541,7 @@ object Json extends JsonFacade {
     }
 
     object Default extends LowPriorityDefaultImplicits {
+
       /**
        * This will be the default that's passed when no MacroOptions is passed.
        */
@@ -531,7 +555,9 @@ object Json extends JsonFacade {
    * when applicable.
    *
    * {{{
-   * MacroOptions with DefaultValues
+   * import play.api.libs.json._, Json._
+   *
+   * type Opts = MacroOptions with DefaultValues
    * }}}
    */
   trait DefaultValues { _: MacroOptions =>
@@ -541,7 +567,9 @@ object Json extends JsonFacade {
    * Alias for `MacroOptions with DefaultValues`
    *
    * {{{
-   * Json.using[WithDefaultValues]
+   * import play.api.libs.json.Json
+   *
+   * Json.using[Json.WithDefaultValues]
    * }}}
    */
   type WithDefaultValues = MacroOptions with DefaultValues
