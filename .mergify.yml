@@ -1,4 +1,16 @@
 pull_request_rules:
+
+  - name: Merge ScalaSteward's PRs that are ready
+    conditions:
+      - author=scala-steward
+      - status-success=Travis CI - Pull Request
+      - "#review-requested=0"
+      - "#changes-requested-reviews-by=0"
+      - label!=status:block-merge
+    actions:
+      merge:
+        method: merge
+
   - name: Merge PRs that are ready
     conditions:
       - status-success=Travis CI - Pull Request
