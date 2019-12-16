@@ -100,25 +100,6 @@ Global / onLoad := (Global / onLoad).value.andThen { s =>
   s
 }
 
-// this overrides interplay release settings with some adaptations for working with sbt-dynver
-// moreover, it contain only bits necessary for play-json, nothing else
-lazy val releaseSettings: Seq[Setting[_]] = Seq(
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-  releaseTagName := (version in ThisBuild).value,
-  releaseCrossBuild := true,
-  releaseProcess := {
-    import ReleaseTransformations._
-    Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      runClean,
-      releaseStepCommandAndRemaining("+test"),
-      releaseStepCommandAndRemaining("+publishSigned"),
-      releaseStepCommand("sonatypeBundleRelease"),
-      pushChanges // <- this needs to be removed when releasing from tag
-    )
-  }
-)
-
 lazy val commonSettings = Def.settings(
   // Do not buffer test output
   logBuffered in Test := false,
@@ -160,7 +141,22 @@ lazy val root = project
     `play-json-joda`
   )
   .settings(commonSettings)
-  .settings(releaseSettings)
+  .settings(
+    Seq(
+      // this overrides releaseProcess to make it work with sbt-dynver
+      releaseProcess := {
+        import ReleaseTransformations._
+        Seq[ReleaseStep](
+          checkSnapshotDependencies,
+          runClean,
+          releaseStepCommandAndRemaining("+test"),
+          releaseStepCommandAndRemaining("+publishSigned"),
+          releaseStepCommand("sonatypeBundleRelease"),
+          pushChanges // <- this needs to be removed when releasing from tag
+        )
+      }
+    )
+  )
 
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
