@@ -127,6 +127,7 @@ lazy val root = project
     `play-json-joda`
   )
   .settings(commonSettings)
+  .settings(releaseSettings)
 
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
@@ -272,3 +273,36 @@ lazy val docs = project
   .dependsOn(`play-jsonJVM`)
 
 addCommandAlias("validateCode", ";headerCheck;test:headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")
+
+// Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
+dynverVTagPrefix in ThisBuild := false
+
+// Sanity-check: assert that version comes from a tag (e.g. not a too-shallow clone)
+// https://github.com/dwijnand/sbt-dynver/#sanity-checking-the-version
+Global / onLoad := (Global / onLoad).value.andThen { s =>
+  val v = version.value
+  if (dynverGitDescribeOutput.value.hasNoTags)
+    throw new MessageOnlyException(
+      s"Failed to derive version from git tags. Maybe run `git fetch --unshallow`? Version: $v"
+    )
+  s
+}
+
+// this is overrides interplay release settings with some adaptations for working with sbt-dynver
+// moreover, it contain only bits necessary for play-json, nothing else
+lazy val releaseSettings: Seq[Setting[_]] = Seq(
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  releaseTagName := (version in ThisBuild).value,
+  releaseCrossBuild := true,
+  releaseProcess := {
+    import ReleaseTransformations._
+    Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      runClean,
+      releaseStepCommandAndRemaining("+test"),
+      releaseStepCommandAndRemaining("+publishSigned"),
+      releaseStepCommand("sonatypeBundleRelease"),
+      pushChanges // <- this needs to be removed when releasing from tag
+    )
+  }
+)
