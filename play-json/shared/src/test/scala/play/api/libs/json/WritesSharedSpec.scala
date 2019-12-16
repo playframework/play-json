@@ -5,8 +5,10 @@
 package play.api.libs.json
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class WritesSharedSpec extends WordSpec with MustMatchers {
+class WritesSharedSpec extends AnyWordSpec with Matchers {
   "Functional Writes" should {
     implicit val locationWrites = Writes[Location] { location =>
       Json.obj(

@@ -7,8 +7,10 @@ package play.api.libs.json
 import play.api.libs.json.Json._
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsonSpec extends WordSpec with MustMatchers {
+class JsonSpec extends AnyWordSpec with Matchers {
   "Complete JSON should create full object" when {
     "lose precision when parsing BigDecimals" in {
       val n = BigDecimal("12345678901234567890.123456789")

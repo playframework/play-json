@@ -10,8 +10,10 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsonTransSpec extends WordSpec with MustMatchers {
+class JsonTransSpec extends AnyWordSpec with Matchers {
   "JSON transformers " should {
     val js = Json.obj(
       "field1" -> "alpha",
