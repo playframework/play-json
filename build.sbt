@@ -100,7 +100,7 @@ Global / onLoad := (Global / onLoad).value.andThen { s =>
   s
 }
 
-// this is overrides interplay release settings with some adaptations for working with sbt-dynver
+// this overrides interplay release settings with some adaptations for working with sbt-dynver
 // moreover, it contain only bits necessary for play-json, nothing else
 lazy val releaseSettings: Seq[Setting[_]] = Seq(
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
