@@ -11,22 +11,22 @@ To get started, you can add play-json as a dependency in your project:
 
 * sbt
   ```scala
-  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.3"
+  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.1"
   ```
 * Gradle
   ```
-  compile group: 'com.typesafe.play', name: 'play-json_2.12', version: '2.7.3'
+  compile group: 'com.typesafe.play', name: 'play-json_2.13', version: '2.8.1'
   ```
 * Maven
   ```xml
   <dependency>
     <groupId>com.typesafe.play</groupId>
-    <artifactId>play-json_2.12</artifactId>
-    <version>2.7.3</version>
+    <artifactId>play-json_2.13</artifactId>
+    <version>2.8.1</version>
   </dependency>
   ```
  
-Play JSON supports Scala 2.10, 2.11 and 2.12. Choosing the right JAR is automatically managed in sbt. If you're using Gradle or Maven then you need to use the correct version in the `artifactId`.
+Play JSON supports Scala 2.12 and 2.13. Choosing the right JAR is automatically managed in sbt. If you're using Gradle or Maven then you need to use the correct version in the `artifactId`.
 
 ## JSON AST
 
