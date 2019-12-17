@@ -46,14 +46,12 @@ def jsonDependencies(scalaVersion: String) = Seq(
 
 // Common settings
 
-val previousVersions = Def.setting[Seq[String]] {
-  Seq("2.8.0")
-}
+val previousVersion = Some("2.8.1")
 
 ThisBuild / mimaFailOnNoPrevious := false
 
 def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
-  mimaPreviousArtifacts := previousVersions.value.map(organization.value %%% moduleName.value % _).toSet
+  mimaPreviousArtifacts := previousVersion.map(organization.value %%% moduleName.value % _).toSet
 )
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
