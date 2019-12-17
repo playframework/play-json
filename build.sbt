@@ -147,7 +147,7 @@ lazy val root = project
         Seq[ReleaseStep](
           checkSnapshotDependencies,
           runClean,
-          releaseStepCommandAndRemaining("+test"),
+          releaseStepCommandAndRemaining("+test"), // <- this needs to be removed when releasing from Travis
           releaseStepCommandAndRemaining("+publishSigned"),
           releaseStepCommand("sonatypeBundleRelease"),
           pushChanges // <- this needs to be removed when releasing from tag
