@@ -224,8 +224,16 @@ object Json extends JsonFacade {
   implicit def toJsFieldJsValueWrapper[T](field: T)(implicit w: Writes[T]): JsValueWrapper =
     JsValueWrapperImpl(w.writes(field))
 
-  def obj(fields: (String, JsValueWrapper)*): JsObject =
-    JsObject(fields.map(f => (f._1, f._2.asInstanceOf[JsValueWrapperImpl].field)))
+  def obj(fields: (String, JsValueWrapper)*): JsObject = {
+    JsObject(
+      fields.map {
+        // when 'null' is passed, it won't be wrapped in JsValueWrapperImpl since we get a null:JsValueWrapper
+        // this extra check make sure that 'null' becomes a JsNull
+        case (key, null)  => (key, JsNull) 
+        case (key, value) => (key, value.asInstanceOf[JsValueWrapperImpl].field)
+      }
+    )
+  }
 
   def arr(items: JsValueWrapper*): JsArray =
     JsArray(items.iterator.map(_.asInstanceOf[JsValueWrapperImpl].field).toArray[JsValue])
