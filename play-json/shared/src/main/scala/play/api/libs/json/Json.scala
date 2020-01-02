@@ -229,14 +229,24 @@ object Json extends JsonFacade {
       fields.map {
         // when 'null' is passed, it won't be wrapped in JsValueWrapperImpl since we get a null:JsValueWrapper
         // this extra check make sure that 'null' becomes a JsNull
-        case (key, null)  => (key, JsNull)
-        case (key, value:JsValueWrapperImpl) => (key, value.field)
+        case (key, null)                      => (key, JsNull)
+        case (key, value: JsValueWrapperImpl) => (key, value.field)
       }
     )
   }
 
-  def arr(items: JsValueWrapper*): JsArray =
-    JsArray(items.iterator.map(_.asInstanceOf[JsValueWrapperImpl].field).toArray[JsValue])
+  def arr(items: JsValueWrapper*): JsArray = {
+    JsArray(
+      items.iterator
+        .map {
+          // when 'null' is passed, it won't be wrapped in JsValueWrapperImpl since we get a null:JsValueWrapper
+          // this extra check make sure that 'null' becomes a JsNull
+          case null                      => JsNull
+          case value: JsValueWrapperImpl => value.field
+        }
+        .toArray[JsValue]
+    )
+  }
 
   import language.experimental.macros
 

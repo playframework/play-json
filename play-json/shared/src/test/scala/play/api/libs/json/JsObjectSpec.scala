@@ -251,18 +251,27 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
 
   "JsObject" should {
     // see https://github.com/playframework/play-json/issues/390
-    "accept null filelds" in {
+    "accept null fields when calling Json.obj" in {
       val originalObj = Json.obj(
         "field1" -> null,
         "field2" -> (null: String),
         "field3" -> JsNull
       )
       val expected = """{"field1":null,"field2":null,"field3":null}"""
-      Json.obj(
-        "field1" -> null,
-        "field2" -> (null: String),
-        "field3" -> JsNull
+
+      Json.stringify(originalObj).mustEqual(expected)
+    }
+
+    "accept null fields when calling Json.arr" in {
+      val originalObj = Json.obj(
+        "arrayWithNulls" -> Json.arr(
+          null,
+          (null: String),
+          JsNull
+        )
       )
+      val expected = """{"arrayWithNulls":[null,null,null]}"""
+
       Json.stringify(originalObj).mustEqual(expected)
     }
   }
