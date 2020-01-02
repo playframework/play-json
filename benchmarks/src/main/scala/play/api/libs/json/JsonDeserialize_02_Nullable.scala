@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2019 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.json
@@ -25,4 +25,3 @@ class JsonDeserialize_02_Nullable {
     assert(result == NullableFields(Some("value1"), Some("value2"), None))
   }
 }
-
