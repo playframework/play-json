@@ -229,8 +229,8 @@ object Json extends JsonFacade {
       fields.map {
         // when 'null' is passed, it won't be wrapped in JsValueWrapperImpl since we get a null:JsValueWrapper
         // this extra check make sure that 'null' becomes a JsNull
-        case (key, null)  => (key, JsNull) 
-        case (key, value) => (key, value.asInstanceOf[JsValueWrapperImpl].field)
+        case (key, null)  => (key, JsNull)
+        case (key, value:JsValueWrapperImpl) => (key, value.field)
       }
     )
   }
