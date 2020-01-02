@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package play.api.libs.json
 
 import org.openjdk.jmh.annotations._
