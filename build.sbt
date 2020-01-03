@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2019 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
  */
 import sbt._
 import sbt.util._
@@ -109,10 +109,9 @@ lazy val commonSettings = Def.settings(
     Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
   ),
   headerLicense := {
-    val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
     Some(
       HeaderLicense.Custom(
-        s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
+        s"Copyright (C) Lightbend Inc. <https://www.lightbend.com>"
       )
     )
   },
