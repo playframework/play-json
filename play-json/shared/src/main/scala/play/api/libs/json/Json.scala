@@ -224,28 +224,13 @@ object Json extends JsonFacade {
   implicit def toJsFieldJsValueWrapper[T](field: T)(implicit w: Writes[T]): JsValueWrapper =
     JsValueWrapperImpl(w.writes(field))
 
-  def obj(fields: (String, JsValueWrapper)*): JsObject = {
-    JsObject(
-      fields.map {
-        // when 'null' is passed, it won't be wrapped in JsValueWrapperImpl since we get a null:JsValueWrapper
-        // this extra check make sure that 'null' becomes a JsNull
-        case (key, null)                      => (key, JsNull)
-        case (key, value: JsValueWrapperImpl) => (key, value.field)
-      }
-    )
-  }
+  def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map(f => (f._1, unwrap(f._2))))
+  def arr(items: JsValueWrapper*): JsArray             = JsArray(items.iterator.map(unwrap).toArray[JsValue])
 
-  def arr(items: JsValueWrapper*): JsArray = {
-    JsArray(
-      items.iterator
-        .map {
-          // when 'null' is passed, it won't be wrapped in JsValueWrapperImpl since we get a null:JsValueWrapper
-          // this extra check make sure that 'null' becomes a JsNull
-          case null                      => JsNull
-          case value: JsValueWrapperImpl => value.field
-        }
-        .toArray[JsValue]
-    )
+  // Passed nulls will typecheck without needing the implicit conversion, so they need to checked at runtime
+  private def unwrap(wrapper: JsValueWrapper) = wrapper match {
+    case null                      => JsNull
+    case JsValueWrapperImpl(value) => value
   }
 
   import language.experimental.macros
