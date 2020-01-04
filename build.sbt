@@ -173,7 +173,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
       libraryDependencies ++=
         (CrossVersion.partialVersion(scalaVersion.value) match {
           case Some((2, 13)) => Seq()
-          case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.0").cross(CrossVersion.full)))
+          case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
         }),
       unmanagedSourceDirectories in Compile += {
         //val sourceDir = (sourceDirectory in Compile).value
