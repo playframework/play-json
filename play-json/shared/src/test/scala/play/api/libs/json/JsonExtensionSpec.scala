@@ -10,6 +10,8 @@ import play.api.libs.json.JsonNaming.SnakeCase
 import play.api.libs.json.Json._
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 case class User(age: Int, name: String)
 case class Dog(name: String, master: User)
@@ -121,7 +123,7 @@ case class WithDefaultSnake(firstProp: String, defaultProp: String = "the defaul
 case class Optional(props: Option[String])
 case class OptionalWithDefault(props: Option[String] = None)
 
-class JsonExtensionSpec extends WordSpec with MustMatchers {
+class JsonExtensionSpec extends AnyWordSpec with Matchers {
   "JsonExtension" should {
     "create a reads[User]" in {
       import play.api.libs.json.Json

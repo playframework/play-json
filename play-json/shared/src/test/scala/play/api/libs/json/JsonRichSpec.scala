@@ -7,8 +7,10 @@ package play.api.libs.json
 import play.api.libs.json.Json._
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsonRichSpec extends WordSpec with MustMatchers {
+class JsonRichSpec extends AnyWordSpec with Matchers {
   "JSON" should {
     "create json with rich syntax" in {
       def js = Json.obj(

@@ -7,8 +7,10 @@ package play.api.libs.json
 import play.api.libs.json.Json._
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsPathSpec extends WordSpec with MustMatchers {
+class JsPathSpec extends AnyWordSpec with Matchers {
   "JsPath" should {
     "retrieve simple path" in {
       val obj = Json.obj("key1" -> Json.obj("key11" -> "value11"), "key2" -> "value2")

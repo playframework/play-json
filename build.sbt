@@ -163,10 +163,11 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-        "org.scalatest"  %%% "scalatest"    % "3.0.8"            % Test,
-        "org.scalacheck" %%% "scalacheck"   % "1.14.2"           % Test,
-        "com.chuusai"    %% "shapeless"     % "2.3.3"            % Test,
-        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
+        "org.scalatest"     %%% "scalatest"       % "3.1.0"            % Test,
+        "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.0"          % Test,
+        "org.scalacheck"    %%% "scalacheck"      % "1.14.3"           % Test,
+        "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test,
+        "org.scala-lang"    % "scala-compiler"    % scalaVersion.value % "provided"
       ),
       libraryDependencies ++=
         (CrossVersion.partialVersion(scalaVersion.value) match {

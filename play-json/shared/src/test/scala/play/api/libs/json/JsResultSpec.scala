@@ -12,8 +12,10 @@ import play.api.libs.functional.Functor
 import JsResult.functorJsResult
 
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsResultSpec extends WordSpec with MustMatchers {
+class JsResultSpec extends AnyWordSpec with Matchers {
   "JSON Result" should {
     "be functor" in {
       val jsres = JsSuccess("jsStr")
