@@ -77,7 +77,7 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.4.4"
+val silencerVersion = "1.5.0"
 
 libraryDependencies in ThisBuild ++= Seq(
   compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
@@ -164,7 +164,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.1.0"            % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.1.1"            % Test,
         "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.1.1"          % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.14.3"           % Test,
         "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test,
