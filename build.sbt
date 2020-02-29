@@ -19,8 +19,8 @@ playBuildRepoName in ThisBuild := "play-json"
 publishTo in ThisBuild := sonatypePublishToBundle.value
 
 val specs2 = Seq(
-  "org.specs2" %% "specs2-core"  % "4.8.3" % Test,
-  "org.specs2" %% "specs2-junit" % "4.8.3" % Test,
+  "org.specs2" %% "specs2-core"  % "4.9.0" % Test,
+  "org.specs2" %% "specs2-junit" % "4.9.0" % Test,
 )
 
 val jacksonDatabindVersion = "2.10.2"
