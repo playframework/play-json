@@ -11,7 +11,7 @@ addSbtPlugin("com.typesafe.play" % "play-docs-sbt-plugin" % sys.props.getOrElse(
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.7")
 
-addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.6.4")
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.7.0")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.8.1")
 
