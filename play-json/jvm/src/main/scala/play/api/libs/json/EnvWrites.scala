@@ -351,46 +351,6 @@ trait EnvWrites {
     Writes[Period] { d =>
       JsString(d.toString)
     }
-
-  // TODO: remove joda after 2.6.0
-  import org.joda.time.DateTime
-  import org.joda.time.LocalDate
-  import org.joda.time.LocalTime
-
-  @deprecated("Include play-json-joda as a dependency and use JodaWrites.jodaDateWrites", "2.6.0")
-  def jodaDateWrites(pattern: String): Writes[DateTime] = new Writes[DateTime] {
-    val df                           = org.joda.time.format.DateTimeFormat.forPattern(pattern)
-    def writes(d: DateTime): JsValue = JsString(d.toString(df))
-  }
-
-  @deprecated("Include play-json-joda as a dependency and use JodaWrites.JodaDateNumberWrites", "2.6.0")
-  object DefaultJodaDateWrites extends Writes[DateTime] {
-    def writes(d: DateTime): JsValue = JsNumber(d.getMillis)
-  }
-
-  @deprecated("Include play-json-joda as a dependency and use JodaWrites.jodaLocalDateWrites", "2.6.0")
-  def jodaLocalDateWrites(pattern: String): Writes[LocalDate] = {
-    val df = org.joda.time.format.DateTimeFormat.forPattern(pattern)
-    Writes[LocalDate] { d =>
-      JsString(d.toString(df))
-    }
-  }
-
-  @deprecated("Include play-json-joda as a dependency and use JodaWrites.DefaultJodaLocalDateWrites", "2.6.0")
-  object DefaultJodaLocalDateWrites extends Writes[LocalDate] {
-    def writes(d: LocalDate): JsValue = JsString(d.toString)
-  }
-
-  @deprecated("Include play-json-joda as a dependency and use JodaWrites.jodaLocalTimeWrites", "2.6.0")
-  def jodaLocalTimeWrites(pattern: String): Writes[LocalTime] =
-    Writes[LocalTime] { d =>
-      JsString(d.toString(pattern))
-    }
-
-  @deprecated("Include play-json-joda as a dependency and use JodaWrites.DefaultJodaLocalTimeWrites", "2.6.0")
-  object DefaultJodaLocalTimeWrites extends Writes[LocalTime] {
-    def writes(d: LocalTime): JsValue = JsString(d.toString)
-  }
 }
 
 trait EnvKeyWrites {
