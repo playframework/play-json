@@ -77,6 +77,13 @@ trait OWrites[A] extends Writes[A] {
 object OWrites extends PathWrites with ConstraintWrites {
   import play.api.libs.functional._
 
+  def of[A](implicit w: OWrites[A]): OWrites[A] = w
+
+  def pure[A](fixed: => A)(implicit wrs: OWrites[A]): OWrites[JsValue] =
+    OWrites[JsValue] { js =>
+      wrs.writes(fixed)
+    }
+
   /**
    * An `OWrites` merging the results of two separate `OWrites`.
    */
