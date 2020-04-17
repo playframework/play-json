@@ -213,5 +213,6 @@ object JsObject extends (Seq[(String, JsValue)] => JsObject) {
    */
   def apply(fields: collection.Seq[(String, JsValue)]): JsObject = new JsObject(createFieldsMap(fields))
 
+  /** An empty JSON object */
   def empty = JsObject(Seq.empty)
 }
