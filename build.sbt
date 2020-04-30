@@ -19,8 +19,8 @@ playBuildRepoName in ThisBuild := "play-json"
 publishTo in ThisBuild := sonatypePublishToBundle.value
 
 val specs2 = Seq(
-  "org.specs2" %% "specs2-core"  % "4.9.3" % Test,
-  "org.specs2" %% "specs2-junit" % "4.9.3" % Test,
+  "org.specs2" %% "specs2-core"  % "4.9.4" % Test,
+  "org.specs2" %% "specs2-junit" % "4.9.4" % Test,
 )
 
 val jacksonDatabindVersion = "2.11.0"
@@ -37,7 +37,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.5"
+  "joda-time" % "joda-time" % "2.10.6"
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
