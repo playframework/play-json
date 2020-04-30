@@ -23,12 +23,12 @@ val specs2 = Seq(
   "org.specs2" %% "specs2-junit" % "4.9.4" % Test,
 )
 
-val jacksonDatabindVersion = "2.10.3"
+val jacksonDatabindVersion = "2.11.0"
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
-val jacksonVersion = "2.10.3"
+val jacksonVersion = "2.11.0"
 val jacksons = Seq(
   "com.fasterxml.jackson.core"     % "jackson-core",
   "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -37,7 +37,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.5"
+  "joda-time" % "joda-time" % "2.10.6"
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
