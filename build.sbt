@@ -40,13 +40,14 @@ def jsonDependencies(scalaVersion: String) = Seq(
 
 // Common settings
 
-def playJsonMimaSettings =
-  Seq(
-    mimaPreviousArtifacts := Set(
-      (organization.value %%% moduleName.value % previousStableVersion.value
-        .getOrElse(throw new Error("Unable to determine previous version")))
-    )
-  )
+// Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
+def playJsonMimaSettings = Seq(
+  mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
+    case (Some(JSPlatform), Some("2.8.1")) => Set.empty
+    case (_, Some(previousVersion))             => Set(organization.value %%% moduleName.value % previousVersion)
+    case _ => throw new Error("Unable to determine previous version")
+  })
+)
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
 // Use "sbt -DscalaJSStage=full" in .travis.yml
