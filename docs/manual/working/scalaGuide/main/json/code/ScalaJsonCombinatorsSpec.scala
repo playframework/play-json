@@ -106,7 +106,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
 
       //#reads-complex-builder
       import play.api.libs.functional.syntax._ // Combinator syntax
-      
+
       val locationReadsBuilder =
         (JsPath \ "lat").read[Double] and
           (JsPath \ "long").read[Double]
