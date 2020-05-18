@@ -19,16 +19,16 @@ playBuildRepoName in ThisBuild := "play-json"
 publishTo in ThisBuild := sonatypePublishToBundle.value
 
 val specs2 = Seq(
-  "org.specs2" %% "specs2-core"  % "4.8.3" % Test,
-  "org.specs2" %% "specs2-junit" % "4.8.3" % Test,
+  "org.specs2" %% "specs2-core"  % "4.9.4" % Test,
+  "org.specs2" %% "specs2-junit" % "4.9.4" % Test,
 )
 
-val jacksonDatabindVersion = "2.10.2"
+val jacksonDatabindVersion = "2.11.0"
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
-val jacksonVersion = "2.10.2"
+val jacksonVersion = "2.11.0"
 val jacksons = Seq(
   "com.fasterxml.jackson.core"     % "jackson-core",
   "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -37,7 +37,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.5"
+  "joda-time" % "joda-time" % "2.10.6"
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
@@ -77,7 +77,7 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.4.4"
+val silencerVersion = "1.6.0"
 
 libraryDependencies in ThisBuild ++= Seq(
   compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
@@ -164,8 +164,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.1.0"            % Test,
-        "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1"          % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.1.2"            % Test,
+        "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.2.0"          % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.14.3"           % Test,
         "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test,
         "org.scala-lang"    % "scala-compiler"    % scalaVersion.value % "provided"
