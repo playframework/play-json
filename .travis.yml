@@ -11,7 +11,7 @@ scala:
   - 2.12.10
   - 2.13.1
 
-before_install: curl -Ls https://git.io/jabba | bash && . ~/.jabba/jabba.sh
+before_install: curl -Ls https://raw.githubusercontent.com/shyiko/jabba/0.11.2/install.sh | bash && . ~/.jabba/jabba.sh
 install: jabba install "adopt@~1.$TRAVIS_JDK.0-0" && jabba use "$_" && java -Xmx32m -version
 
 script:
