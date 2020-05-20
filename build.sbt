@@ -23,12 +23,12 @@ val specs2 = Seq(
   "org.specs2" %% "specs2-junit" % "4.9.4" % Test,
 )
 
-val jacksonDatabindVersion = "2.11.0"
+val jacksonDatabindVersion = "2.10.1"
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
-val jacksonVersion = "2.11.0"
+val jacksonVersion = "2.10.1"
 val jacksons = Seq(
   "com.fasterxml.jackson.core"     % "jackson-core",
   "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -109,10 +109,9 @@ lazy val commonSettings = Def.settings(
     Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
   ),
   headerLicense := {
-    val currentYear = java.time.Year.now(java.time.Clock.systemUTC).getValue
     Some(
       HeaderLicense.Custom(
-        s"Copyright (C) 2009-$currentYear Lightbend Inc. <https://www.lightbend.com>"
+        s"Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>"
       )
     )
   },

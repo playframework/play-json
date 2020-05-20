@@ -25,4 +25,3 @@ class JsonDeserialize_02_Nullable {
     assert(result == NullableFields(Some("value1"), Some("value2"), None))
   }
 }
-
