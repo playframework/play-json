@@ -8,7 +8,7 @@ import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class WritesSharedSpec extends AnyWordSpec with Matchers {
+final class WritesSharedSpec extends AnyWordSpec with Matchers {
   "Functional Writes" should {
     implicit val locationWrites = Writes[Location] { location =>
       Json.obj(
@@ -98,6 +98,35 @@ class WritesSharedSpec extends AnyWordSpec with Matchers {
 
       Json.toJson(new java.net.URI(strRepr)).mustEqual(JsString(strRepr))
     }
+  }
+
+  "Identity writes" should {
+    import scala.reflect.ClassTag
+    import scala.language.higherKinds
+
+    def success[T <: JsValue, W[A] <: Writes[A]](fixture: T)(implicit w: W[T], ct: ClassTag[T], wt: ClassTag[W[_]]) =
+      s"be resolved as ${wt.runtimeClass.getSimpleName}[${ct.runtimeClass.getSimpleName}] for $fixture" in {
+        w.writes(fixture).mustEqual(fixture)
+      }
+
+    success[JsArray, Writes](Json.arr("foo", 2))
+    success[JsValue, Writes](Json.arr("foo", 2))
+
+    success[JsBoolean, Writes](JsTrue)
+    success[JsValue, Writes](JsFalse)
+
+    success[JsNull.type, Writes](JsNull)
+    success[JsValue, Writes](JsNull)
+
+    success[JsNumber, Writes](JsNumber(1))
+    success[JsValue, Writes](JsNumber(1))
+
+    success[JsObject, Writes](JsObject(Map("foo"  -> JsNumber(1))))
+    success[JsValue, Writes](JsObject(Map("foo"   -> JsNumber(1))))
+    success[JsObject, OWrites](JsObject(Map("foo" -> JsNumber(1))))
+
+    success[JsString, Writes](JsString("foo"))
+    success[JsValue, Writes](JsString("foo"))
   }
 
   // ---
