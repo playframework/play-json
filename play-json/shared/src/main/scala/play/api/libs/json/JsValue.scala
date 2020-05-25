@@ -31,7 +31,12 @@ object JsValue {
 /**
  * Represents a Json null value.
  */
-case object JsNull extends JsValue
+case object JsNull extends JsValue {
+  implicit val reads: Reads[JsNull.type] = Reads[JsNull.type] {
+    case JsNull => JsSuccess(JsNull)
+    case _      => JsError("error.expected.null")
+  }
+}
 
 /**
  * Represents a Json boolean value.
@@ -213,5 +218,9 @@ object JsObject extends (Seq[(String, JsValue)] => JsObject) {
    */
   def apply(fields: collection.Seq[(String, JsValue)]): JsObject = new JsObject(createFieldsMap(fields))
 
+  /** An empty JSON object */
   def empty = JsObject(Seq.empty)
+
+  /** Identity writes */
+  implicit def writes: OWrites[JsObject] = OWrites[JsObject](identity)
 }

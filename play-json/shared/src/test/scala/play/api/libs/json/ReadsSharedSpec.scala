@@ -12,7 +12,7 @@ import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class ReadsSharedSpec extends AnyWordSpec with Matchers {
+final class ReadsSharedSpec extends AnyWordSpec with Matchers {
   "Reads" should {
     "not repath the second result on flatMap" when {
       val aPath                 = JsPath \ "a"
@@ -225,6 +225,31 @@ class ReadsSharedSpec extends AnyWordSpec with Matchers {
         case _ => ()
       }
     }
+  }
+
+  "Identity reads" should {
+    def success[T <: JsValue](fixture: T)(implicit r: Reads[T], ct: scala.reflect.ClassTag[T]) =
+      s"be resolved for $fixture as ${ct.runtimeClass.getSimpleName}" in {
+        r.reads(fixture).mustEqual(JsSuccess(fixture))
+      }
+
+    success[JsArray](Json.arr("foo", 2))
+    success[JsValue](Json.arr("foo", 2))
+
+    success[JsBoolean](JsFalse)
+    success[JsValue](JsTrue)
+
+    success[JsNull.type](JsNull)
+    success[JsValue](JsNull)
+
+    success[JsNumber](JsNumber(1))
+    success[JsValue](JsNumber(1))
+
+    success[JsObject](JsObject(Map("foo" -> JsNumber(1))))
+    success[JsValue](JsObject(Map("foo"  -> JsNumber(1))))
+
+    success[JsString](JsString("foo"))
+    success[JsValue](JsString("foo"))
   }
 
   // ---
