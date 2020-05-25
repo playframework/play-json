@@ -125,7 +125,7 @@ lazy val root = project
     `play-json-joda`
   )
   .settings(commonSettings)
-  .setting(publish / skip := true)
+  .settings(publish / skip := true)
 
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
