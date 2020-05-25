@@ -13,10 +13,9 @@ object Publish extends AutoPlugin {
   override def projectSettings =
     Seq(
       bintrayOrganization := Some("playframework"),
-      bintrayRepository := (if (isSnapshot.value) "maven" else "snapshots"),
+      bintrayRepository := (if (isSnapshot.value) "snapshots" else "maven"),
       bintrayPackage := "play-json",
       bintrayReleaseOnPublish := false,
-      // maven style should only be used for libraries, not for plugins
       publishMavenStyle := true,
       bintrayPackageLabels := Seq("playframework", "JSON", "Scala.js")
     )
