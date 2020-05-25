@@ -30,6 +30,6 @@ object Common extends AutoPlugin {
         "https://gitter.im/playframework/contributors",
         url("https://github.com/playframework")
       ),
-      description := "Play mailer plugin"
+      description := "Play JSON"
     )
 }

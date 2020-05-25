@@ -117,7 +117,6 @@ lazy val commonSettings = Def.settings(
 
 lazy val root = project
   .in(file("."))
-  //  .enablePlugins(PlayRootProject, ScalaJSPlugin)
   .enablePlugins(ScalaJSPlugin)
   .disablePlugins(MimaPlugin)
   .aggregate(
@@ -133,8 +132,7 @@ lazy val root = project
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("play-json"))
-  //  .enablePlugins(PlayLibrary, Playdoc)
-  .enablePlugins(Publish, Playdoc)
+  .enablePlugins(Omnidoc, Publish, Playdoc)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
@@ -227,7 +225,6 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
 
 lazy val `play-json-joda` = project
   .in(file("play-json-joda"))
-  //  .enablePlugins(PlayLibrary)
   .enablePlugins(Omnidoc, Publish)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
@@ -242,7 +239,6 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings
   )
-  //  .enablePlugins(PlayLibrary)
   .enablePlugins(Omnidoc, Publish)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm
