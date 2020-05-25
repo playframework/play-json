@@ -18,11 +18,18 @@ before_install: curl -Ls https://raw.githubusercontent.com/shyiko/jabba/0.11.2/i
 install: jabba install "adopt@~1.$TRAVIS_JDK.0-0" && jabba use "$_" && java -Xmx32m -version
 
 script:
-  - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues publishLocal
-  - sbt ++$TRAVIS_SCALA_VERSION docs/test docs/validateDocs
+  - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION test publishLocal
+  - sbt ++$TRAVIS_SCALA_VERSION docs/test
 
 jobs:
   include:
+    - stage: check
+      name: "Code style check. Run locally with: sbt validateCode mimaReportBinaryIssues docs/validateDocs"
+      script: sbt validateCode mimaReportBinaryIssues docs/validateDocs
+      scala: 2.13.1
+      env:
+        - TRAVIS_JDK=11
+
     - stage: publish
       name: "TEMPORARY, will become Publish artifacts to Bintray"
       script: sbt +mimaReportBinaryIssues
@@ -31,6 +38,7 @@ jobs:
         - TRAVIS_JDK=11
 
 stages:
+  - name: check
   - name: test
   - name: publish
 #    if: ((branch = master AND type = push) OR (tag IS present)) AND NOT fork
