@@ -30,6 +30,9 @@ jobs:
       env:
         - TRAVIS_JDK=11
 
+    - stage: test
+      # uses the default `script` and Travis Matrix of `scala` and `env matrix`
+
     - stage: publish
       name: "TEMPORARY, will become Publish artifacts to Bintray"
       script: sbt +mimaReportBinaryIssues
