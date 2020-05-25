@@ -5,39 +5,48 @@ language: scala
 git:
   depth: false # Avoid sbt-dynver not seeing the tag
 
-env:
-  matrix:
-    - TRAVIS_JDK=8
-    - TRAVIS_JDK=11
-
-scala:
-  - 2.12.10
-  - 2.13.1
-
 before_install: curl -Ls https://raw.githubusercontent.com/shyiko/jabba/0.11.2/install.sh | bash && . ~/.jabba/jabba.sh
 install: jabba install "adopt@~1.$TRAVIS_JDK.0-0" && jabba use "$_" && java -Xmx32m -version
-
-script:
-  - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION test publishLocal
-  - sbt ++$TRAVIS_SCALA_VERSION docs/test
 
 jobs:
   include:
     - stage: check
       name: "Code style check. Run locally with: sbt validateCode mimaReportBinaryIssues docs/validateDocs"
       script: sbt validateCode mimaReportBinaryIssues docs/validateDocs
-      scala: 2.13.1
       env:
+        - TRAVIS_SCALA_VERSION=2.13.1
         - TRAVIS_JDK=11
 
     - stage: test
-      # uses the default `script` and Travis Matrix of `scala` and `env matrix`
+      name: "Run tests with Scala 2.12 and AdoptOpenJDK 11"
+      script: scripts/test-code.sh
+      env:
+        - TRAVIS_SCALA_VERSION=2.12.10
+        - TRAVIS_JDK=11
+
+    - name: "Run tests with Scala 2.13 and AdoptOpenJDK 11"
+      script: scripts/test-code.sh
+      env:
+        - TRAVIS_SCALA_VERSION=2.13.1
+        - TRAVIS_JDK=11
+
+    - name: "Run tests with Scala 2.12 and AdoptOpenJDK 8"
+      script: scripts/test-code.sh
+      env:
+        - TRAVIS_SCALA_VERSION=2.12.10
+        - TRAVIS_JDK=8
+
+    - name: "Run tests with Scala 2.13 and AdoptOpenJDK 8"
+      script: scripts/test-code.sh
+      env:
+        - TRAVIS_SCALA_VERSION=2.13.1
+        - TRAVIS_JDK=8
 
     - stage: publish
       name: "TEMPORARY, will become Publish artifacts to Bintray"
       script: sbt +mimaReportBinaryIssues
-      scala: 2.13.1
       env:
+        - TRAVIS_SCALA_VERSION=2.13.1
         - TRAVIS_JDK=11
 
 stages:
