@@ -1,11 +1,14 @@
+version: ~> 1.0
+
 language: scala
 
 git:
   depth: false # Avoid sbt-dynver not seeing the tag
 
 env:
-  - TRAVIS_JDK=8
-  - TRAVIS_JDK=11
+  matrix:
+    - TRAVIS_JDK=8
+    - TRAVIS_JDK=11
 
 scala:
   - 2.12.10
@@ -17,6 +20,21 @@ install: jabba install "adopt@~1.$TRAVIS_JDK.0-0" && jabba use "$_" && java -Xmx
 script:
   - sbt -DscalaJSStage=full ++$TRAVIS_SCALA_VERSION validateCode test mimaReportBinaryIssues publishLocal
   - sbt ++$TRAVIS_SCALA_VERSION docs/test docs/validateDocs
+
+jobs:
+  include:
+    - stage: publish
+      name: "TEMPORARY, will become Publish artifacts to Bintray"
+      script: sbt +mimaReportBinaryIssues
+      scala: 2.13.1
+      env:
+        - TRAVIS_JDK=11
+
+stages:
+  - name: test
+  - name: publish
+#    if: ((branch = master AND type = push) OR (tag IS present)) AND NOT fork
+
 
 cache:
   directories:
