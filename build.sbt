@@ -44,8 +44,8 @@ def jsonDependencies(scalaVersion: String) = Seq(
 def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
-    case (_, Some(previousVersion))             => Set(organization.value %%% moduleName.value % previousVersion)
-    case _ => throw new Error("Unable to determine previous version")
+    case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
+    case _                                 => throw new Error("Unable to determine previous version")
   })
 )
 
