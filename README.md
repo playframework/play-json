@@ -3,7 +3,7 @@ Play JSON
 
 Play JSON is a powerful Scala JSON library, originally developed by the Play team for use with Play Framework. It uses Jackson for JSON parsing and has no Play dependencies.
 
-We've provided some documentation here on how to use Play JSON in your app (without Play). For more information on how to use Play JSON in Play, please refer to the [Play documentation](https://www.playframework.com/documentation/2.7.x/ScalaJson).
+We've provided some documentation here on how to use Play JSON in your app (without Play). For more information on how to use Play JSON in Play, please refer to the [Play documentation](https://www.playframework.com/documentation/2.8.x/ScalaJson).
 
 ## Getting Started
 
@@ -11,20 +11,22 @@ To get started, you can add play-json as a dependency in your project:
 
 * sbt
   ```scala
-  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.1"
+  libraryDependencies += "com.typesafe.play" %% "play-json" % -version-
   ```
 * Gradle
   ```
-  compile group: 'com.typesafe.play', name: 'play-json_2.13', version: '2.8.1'
+  compile group: 'com.typesafe.play', name: 'play-json_2.13', version: -version-
   ```
 * Maven
   ```xml
   <dependency>
     <groupId>com.typesafe.play</groupId>
     <artifactId>play-json_2.13</artifactId>
-    <version>2.8.1</version>
+    <version>-version-</version>
   </dependency>
   ```
+
+See [GitHub releases](https://github.com/playframework/play-json/releases) for the correct version.
  
 Play JSON supports Scala 2.12 and 2.13. Choosing the right JAR is automatically managed in sbt. If you're using Gradle or Maven then you need to use the correct version in the `artifactId`.
 
