@@ -1,6 +1,6 @@
 # Releasing
 
-This is released from the `master` branch from `2.9.0` forward. Unless and older version needs patching, when it is release from the `2.8.x` branch. If there is no branch for the release that needs patching, create it from the tag.
+This is released from the `master` branch from `2.9.0` forward. Unless an older version needs patching, then it must be released from the maintenance branch, for instance `2.8.x` branch. If there is no maintenance branch for the release that needs patching, create it from the tag.
 
 ## Cutting the release
 
@@ -19,4 +19,3 @@ This is released from the `master` branch from `2.9.0` forward. Unless and older
 ### Check Maven Central
 
 - The artifacts will become visible at https://repo1.maven.org/maven2/com/typesafe/play/ 
-
