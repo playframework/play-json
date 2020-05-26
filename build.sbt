@@ -5,9 +5,6 @@ import sbt._
 import sbt.util._
 import sbt.io.Path._
 
-import interplay.ScalaVersions
-
-import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
@@ -15,20 +12,17 @@ import sbtcrossproject.CrossType
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-playBuildRepoName in ThisBuild := "play-json"
-publishTo in ThisBuild := sonatypePublishToBundle.value
-
 val specs2 = Seq(
   "org.specs2" %% "specs2-core"  % "4.9.4" % Test,
   "org.specs2" %% "specs2-junit" % "4.9.4" % Test,
 )
 
-val jacksonDatabindVersion = "2.10.1"
+val jacksonDatabindVersion = "2.10.4"
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
-val jacksonVersion = "2.10.1"
+val jacksonVersion = "2.10.4"
 val jacksons = Seq(
   "com.fasterxml.jackson.core"     % "jackson-core",
   "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -46,13 +40,13 @@ def jsonDependencies(scalaVersion: String) = Seq(
 
 // Common settings
 
-val previousVersion = Some("2.8.1")
-
-ThisBuild / mimaFailOnNoPrevious := false
-
-def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
-  mimaPreviousArtifacts := previousVersion.map(organization.value %%% moduleName.value % _).toSet
-)
+def playJsonMimaSettings =
+  Seq(
+    mimaPreviousArtifacts := Set(
+      (organization.value %%% moduleName.value % previousStableVersion.value
+        .getOrElse(throw new Error("Unable to determine previous version")))
+    )
+  )
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
 // Use "sbt -DscalaJSStage=full" in .travis.yml
@@ -108,15 +102,9 @@ lazy val commonSettings = Def.settings(
     // Filtering tests that are not stable in Scala 2.13 yet.
     Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
   ),
-  headerLicense := {
-    Some(
-      HeaderLicense.Custom(
-        s"Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>"
-      )
-    )
-  },
-  scalaVersion := ScalaVersions.scala212,
-  crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
+  headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>")),
+  scalaVersion := Dependencies.Scala212,
+  crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213),
   javacOptions in Compile ++= javacSettings,
   javacOptions in Test ++= javacSettings,
   javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
@@ -129,7 +117,8 @@ lazy val commonSettings = Def.settings(
 
 lazy val root = project
   .in(file("."))
-  .enablePlugins(PlayRootProject, ScalaJSPlugin)
+  .enablePlugins(ScalaJSPlugin)
+  .disablePlugins(MimaPlugin)
   .aggregate(
     `play-jsonJS`,
     `play-jsonJVM`,
@@ -138,27 +127,12 @@ lazy val root = project
     `play-json-joda`
   )
   .settings(commonSettings)
-  .settings(
-    Seq(
-      // this overrides releaseProcess to make it work with sbt-dynver
-      releaseProcess := {
-        import ReleaseTransformations._
-        Seq[ReleaseStep](
-          checkSnapshotDependencies,
-          runClean,
-          releaseStepCommandAndRemaining("+test"), // <- this needs to be removed when releasing from Travis
-          releaseStepCommandAndRemaining("+publishSigned"),
-          releaseStepCommand("sonatypeBundleRelease"),
-          pushChanges // <- this needs to be removed when releasing from tag
-        )
-      }
-    )
-  )
+  .settings(publish / skip := true)
 
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("play-json"))
-  .enablePlugins(PlayLibrary, Playdoc)
+  .enablePlugins(Omnidoc, Publish, Playdoc)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
@@ -251,7 +225,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
 
 lazy val `play-json-joda` = project
   .in(file("play-json-joda"))
-  .enablePlugins(PlayLibrary)
+  .enablePlugins(Omnidoc, Publish)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= joda ++ specs2
@@ -265,22 +239,26 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings
   )
-  .enablePlugins(PlayLibrary)
+  .enablePlugins(Omnidoc, Publish)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm
 lazy val `play-functionalJS`  = `play-functional`.js
 
 lazy val benchmarks = project
   .in(file("benchmarks"))
-  .enablePlugins(JmhPlugin, PlayNoPublish)
+  .enablePlugins(JmhPlugin)
+  .disablePlugins(MimaPlugin)
   .settings(commonSettings)
+  .settings(publish / skip := true)
   .dependsOn(`play-jsonJVM`)
 
 lazy val docs = project
   .in(file("docs"))
-  .enablePlugins(PlayDocsPlugin, PlayNoPublish)
+  .enablePlugins(PlayDocsPlugin)
+  .disablePlugins(MimaPlugin)
   .configs(Docs)
   .settings(
+    publish / skip := true,
     libraryDependencies ++= specs2,
     PlayDocsKeys.scalaManualSourceDirectories := (baseDirectory.value / "manual" / "working" / "scalaGuide" ** "code").get,
     PlayDocsKeys.resources += {
