@@ -20,10 +20,11 @@ trait JsReadable extends Any {
   /**
    * Tries to convert the node into a T, throwing an exception if it can't. An implicit Reads[T] must be defined.
    */
-  def as[T](implicit fjs: Reads[T]): T = validate(fjs).fold(
-    valid = identity,
-    invalid = e => throw JsResultException(e)
-  )
+  def as[T](implicit fjs: Reads[T]): T =
+    validate(fjs).fold(
+      valid = identity,
+      invalid = e => throw JsResultException(e)
+    )
 
   /**
    * Transforms this node into a JsResult using provided Json transformer Reads[JsValue]

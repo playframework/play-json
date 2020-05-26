@@ -58,22 +58,24 @@ class JsonSpec extends AnyWordSpec with Matchers {
           "key7" -> BigDecimal("12345678901234567890.123456789")
         )
       )
-      def stream = new java.io.ByteArrayInputStream(
-        orig.toString.getBytes("UTF-8")
-      )
+      def stream =
+        new java.io.ByteArrayInputStream(
+          orig.toString.getBytes("UTF-8")
+        )
 
-      def expected = Json.obj(
-        "key1" -> "value1",
-        "key2" -> true,
-        "key3" -> JsNull,
-        "key4" -> Json.arr(1, 2.5, "value2", false, JsNull),
-        "key5" -> Json.obj(
-          "key6" -> "こんにちは",
-          "key7" -> BigDecimal( // JS loose precision on BigDec
-            "12345678901234567000"
+      def expected =
+        Json.obj(
+          "key1" -> "value1",
+          "key2" -> true,
+          "key3" -> JsNull,
+          "key4" -> Json.arr(1, 2.5, "value2", false, JsNull),
+          "key5" -> Json.obj(
+            "key6" -> "こんにちは",
+            "key7" -> BigDecimal( // JS loose precision on BigDec
+              "12345678901234567000"
+            )
           )
         )
-      )
 
       Json.parse(stream).mustEqual(expected)
     }

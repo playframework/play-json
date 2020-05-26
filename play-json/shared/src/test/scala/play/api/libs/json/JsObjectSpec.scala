@@ -17,11 +17,12 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
     }
 
     "merge correctly when the source object is empty" in {
-      def populatedObj = Json.obj(
-        "field1" -> 123,
-        "field2" -> "abc",
-        "field3" -> JsNull
-      )
+      def populatedObj =
+        Json.obj(
+          "field1" -> 123,
+          "field2" -> "abc",
+          "field3" -> JsNull
+        )
 
       populatedObj.deepMerge(Json.obj()).mustEqual(populatedObj)
     }

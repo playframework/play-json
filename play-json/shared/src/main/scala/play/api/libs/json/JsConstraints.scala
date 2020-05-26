@@ -104,10 +104,11 @@ trait ConstraintReads {
   @inline def of[A](implicit r: Reads[A]) = r
 
   /** very simple optional field Reads that maps "null" to None */
-  def optionWithNull[T](implicit rds: Reads[T]): Reads[Option[T]] = Reads {
-    case JsNull => JsSuccess(None)
-    case js     => rds.reads(js).map(Some(_))
-  }
+  def optionWithNull[T](implicit rds: Reads[T]): Reads[Option[T]] =
+    Reads {
+      case JsNull => JsSuccess(None)
+      case js     => rds.reads(js).map(Some(_))
+    }
 
   /** Stupidly reads a field as an Option mapping any error (format or missing field) to None */
   def optionNoError[A](implicit reads: Reads[A]): Reads[Option[A]] =
@@ -177,9 +178,10 @@ trait ConstraintReads {
       }
     }
 
-  def pure[A](a: => A) = Reads[A] { js =>
-    JsSuccess(a)
-  }
+  def pure[A](a: => A) =
+    Reads[A] { js =>
+      JsSuccess(a)
+    }
 }
 
 trait PathWrites {
@@ -234,13 +236,15 @@ trait ConstraintWrites {
 
   @com.github.ghik.silencer.silent
   @deprecated("Use `pruned` without `Writes[A]`", "2.8.0")
-  def pruned[A](implicit w: Writes[A]): Writes[A] = new Writes[A] {
-    def writes(a: A): JsValue = JsNull
-  }
+  def pruned[A](implicit w: Writes[A]): Writes[A] =
+    new Writes[A] {
+      def writes(a: A): JsValue = JsNull
+    }
 
-  def pruned[A]: Writes[A] = new Writes[A] {
-    def writes(a: A): JsValue = JsNull
-  }
+  def pruned[A]: Writes[A] =
+    new Writes[A] {
+      def writes(a: A): JsValue = JsNull
+    }
 
   def list[A](implicit writes: Writes[A]): Writes[List[A]] = Writes.iterableWrites[A, List]
 
@@ -254,8 +258,9 @@ trait ConstraintWrites {
    * Pure Option Writer[T] which writes "null" when None which is different
    * from `JsPath.writeNullable` which omits the field when None
    */
-  def optionWithNull[A](implicit wa: Writes[A]) = Writes[Option[A]] {
-    case Some(av) => wa.writes(av)
-    case _        => JsNull
-  }
+  def optionWithNull[A](implicit wa: Writes[A]) =
+    Writes[Option[A]] {
+      case Some(av) => wa.writes(av)
+      case _        => JsNull
+    }
 }

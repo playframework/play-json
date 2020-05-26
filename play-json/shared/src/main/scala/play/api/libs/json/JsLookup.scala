@@ -12,85 +12,91 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
   /**
    * Access the head of this array.
    */
-  def head: JsLookupResult = result match {
-    case JsDefined(JsArray(head +: tail)) => JsDefined(head)
-    case JsDefined(arr @ JsArray(_))      => JsUndefined(s"Cannot get head of $arr")
-    case JsDefined(o)                     => JsUndefined(s"$o is not an array")
-    case undef                            => undef
-  }
+  def head: JsLookupResult =
+    result match {
+      case JsDefined(JsArray(head +: tail)) => JsDefined(head)
+      case JsDefined(arr @ JsArray(_))      => JsUndefined(s"Cannot get head of $arr")
+      case JsDefined(o)                     => JsUndefined(s"$o is not an array")
+      case undef                            => undef
+    }
 
   /**
    * Access the tail of this array.
    */
-  def tail: JsLookupResult = result match {
-    case JsDefined(JsArray(head +: tail)) => JsDefined(JsArray(tail))
-    case JsDefined(arr @ JsArray(_))      => JsUndefined(s"Cannot get tail of $arr")
-    case JsDefined(o)                     => JsUndefined(s"$o is not an array")
-    case undef                            => undef
-  }
+  def tail: JsLookupResult =
+    result match {
+      case JsDefined(JsArray(head +: tail)) => JsDefined(JsArray(tail))
+      case JsDefined(arr @ JsArray(_))      => JsUndefined(s"Cannot get tail of $arr")
+      case JsDefined(o)                     => JsUndefined(s"$o is not an array")
+      case undef                            => undef
+    }
 
   /**
    * Access the last element of this array.
    */
-  def last: JsLookupResult = result match {
-    case JsDefined(JsArray(values)) if values.nonEmpty => JsDefined(values.last)
-    case JsDefined(arr @ JsArray(_))                   => JsUndefined(s"Cannot get last element of $arr")
-    case JsDefined(o)                                  => JsUndefined(s"$o is not an array")
-    case undef                                         => undef
-  }
+  def last: JsLookupResult =
+    result match {
+      case JsDefined(JsArray(values)) if values.nonEmpty => JsDefined(values.last)
+      case JsDefined(arr @ JsArray(_))                   => JsUndefined(s"Cannot get last element of $arr")
+      case JsDefined(o)                                  => JsUndefined(s"$o is not an array")
+      case undef                                         => undef
+    }
 
   /**
    * Access a value of this array.
    *
    * @param index Element index.
    */
-  def apply(index: Int): JsValue = result match {
-    case JsDefined(x) =>
-      x match {
-        case arr: JsArray =>
-          arr.value.lift(index) match {
-            case Some(x) => x
-            case None    => throw new IndexOutOfBoundsException(String.valueOf(index))
-          }
-        case _ =>
-          throw new Exception(x + " is not a JsArray")
-      }
-    case x: JsUndefined =>
-      throw new Exception(String.valueOf(x.error))
-  }
+  def apply(index: Int): JsValue =
+    result match {
+      case JsDefined(x) =>
+        x match {
+          case arr: JsArray =>
+            arr.value.lift(index) match {
+              case Some(x) => x
+              case None    => throw new IndexOutOfBoundsException(String.valueOf(index))
+            }
+          case _ =>
+            throw new Exception(x + " is not a JsArray")
+        }
+      case x: JsUndefined =>
+        throw new Exception(String.valueOf(x.error))
+    }
 
   /**
    * Access a value of this array.
    *
    * @param fieldName Element index.
    */
-  def apply(fieldName: String): JsValue = result match {
-    case JsDefined(x) =>
-      x match {
-        case arr: JsObject =>
-          arr.value.lift(fieldName) match {
-            case Some(x) => x
-            case None    => throw new NoSuchElementException(String.valueOf(fieldName))
-          }
-        case _ =>
-          throw new Exception(x + " is not a JsObject")
-      }
-    case x: JsUndefined =>
-      throw new Exception(String.valueOf(x.error))
-  }
+  def apply(fieldName: String): JsValue =
+    result match {
+      case JsDefined(x) =>
+        x match {
+          case arr: JsObject =>
+            arr.value.lift(fieldName) match {
+              case Some(x) => x
+              case None    => throw new NoSuchElementException(String.valueOf(fieldName))
+            }
+          case _ =>
+            throw new Exception(x + " is not a JsObject")
+        }
+      case x: JsUndefined =>
+        throw new Exception(String.valueOf(x.error))
+    }
 
   /**
    * Access a value of this array.
    *
    * @param index Element index
    */
-  def \(index: Int): JsLookupResult = result match {
-    case JsDefined(arr: JsArray) =>
-      arr.value.lift(index).map(JsDefined.apply).getOrElse(JsUndefined(s"Array index out of bounds in $arr"))
-    case JsDefined(o) =>
-      JsUndefined(s"$o is not an array")
-    case undef => undef
-  }
+  def \(index: Int): JsLookupResult =
+    result match {
+      case JsDefined(arr: JsArray) =>
+        arr.value.lift(index).map(JsDefined.apply).getOrElse(JsUndefined(s"Array index out of bounds in $arr"))
+      case JsDefined(o) =>
+        JsUndefined(s"$o is not an array")
+      case undef => undef
+    }
 
   /**
    * Return the property corresponding to the fieldName, supposing we have a JsObject.
@@ -99,36 +105,38 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    * @return the resulting JsValue wrapped in a JsLookup. If the current node is not a JsObject or doesn't have the
    *         property, a JsUndefined will be returned.
    */
-  def \(fieldName: String): JsLookupResult = result match {
-    case JsDefined(obj @ JsObject(_)) =>
-      obj.value
-        .get(fieldName)
-        .map(JsDefined.apply)
-        .getOrElse(JsUndefined(s"'$fieldName' is undefined on object: $obj"))
-    case JsDefined(o) =>
-      JsUndefined(s"$o is not an object")
-    case undef => undef
-  }
+  def \(fieldName: String): JsLookupResult =
+    result match {
+      case JsDefined(obj @ JsObject(_)) =>
+        obj.value
+          .get(fieldName)
+          .map(JsDefined.apply)
+          .getOrElse(JsUndefined(s"'$fieldName' is undefined on object: $obj"))
+      case JsDefined(o) =>
+        JsUndefined(s"$o is not an object")
+      case undef => undef
+    }
 
   /**
    * Look up fieldName in the current object and all descendants.
    *
    * @return the list of matching nodes
    */
-  def \\(fieldName: String): collection.Seq[JsValue] = result match {
-    case JsDefined(obj: JsObject) =>
-      obj.value.foldLeft(Seq[JsValue]())((o, pair) =>
-        pair match {
-          case (key, value) if key == fieldName => o ++ (value +: (value \\ fieldName))
-          case (_, value)                       => o ++ (value \\ fieldName)
-        }
-      )
+  def \\(fieldName: String): collection.Seq[JsValue] =
+    result match {
+      case JsDefined(obj: JsObject) =>
+        obj.value.foldLeft(Seq[JsValue]())((o, pair) =>
+          pair match {
+            case (key, value) if key == fieldName => o ++ (value +: (value \\ fieldName))
+            case (_, value)                       => o ++ (value \\ fieldName)
+          }
+        )
 
-    case JsDefined(arr: JsArray) =>
-      arr.value.flatMap(_ \\ fieldName)
+      case JsDefined(arr: JsArray) =>
+        arr.value.flatMap(_ \\ fieldName)
 
-    case _ => Seq.empty
-  }
+      case _ => Seq.empty
+    }
 }
 
 sealed trait JsLookupResult extends Any with JsReadable {
@@ -136,23 +144,26 @@ sealed trait JsLookupResult extends Any with JsReadable {
   /**
    * Tries to convert the node into a JsValue
    */
-  def toOption: Option[JsValue] = this match {
-    case JsDefined(v) => Some(v)
-    case _            => None
-  }
+  def toOption: Option[JsValue] =
+    this match {
+      case JsDefined(v) => Some(v)
+      case _            => None
+    }
 
-  def toEither: Either[JsonValidationError, JsValue] = this match {
-    case JsDefined(v)       => Right(v)
-    case undef: JsUndefined => Left(undef.validationError)
-  }
+  def toEither: Either[JsonValidationError, JsValue] =
+    this match {
+      case JsDefined(v)       => Right(v)
+      case undef: JsUndefined => Left(undef.validationError)
+    }
 
   def get: JsValue = toOption.get
 
   def getOrElse(v: => JsValue): JsValue = toOption.getOrElse(v)
-  def isEmpty: Boolean = this match {
-    case JsUndefined() => true
-    case JsDefined(_)  => false
-  }
+  def isEmpty: Boolean =
+    this match {
+      case JsUndefined() => true
+      case JsDefined(_)  => false
+    }
   def isDefined: Boolean = !isEmpty
 
   /**
@@ -161,10 +172,11 @@ sealed trait JsLookupResult extends Any with JsReadable {
   def orElse(alternative: => JsLookupResult): JsLookupResult =
     if (isDefined) this else alternative
 
-  def validate[A](implicit rds: Reads[A]): JsResult[A] = this match {
-    case JsDefined(v)       => v.validate[A]
-    case undef: JsUndefined => JsError(undef.validationError)
-  }
+  def validate[A](implicit rds: Reads[A]): JsResult[A] =
+    this match {
+      case JsDefined(v)       => v.validate[A]
+      case undef: JsUndefined => JsError(undef.validationError)
+    }
 
   /**
    * If this result contains `JsNull` or is undefined, returns `JsSuccess(None)`.

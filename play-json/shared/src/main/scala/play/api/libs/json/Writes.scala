@@ -36,16 +36,18 @@ trait Writes[A] { self =>
   /**
    * Transforms the resulting [[JsValue]] using transformer function.
    */
-  def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a =>
-    transformer(self.writes(a))
-  }
+  def transform(transformer: JsValue => JsValue): Writes[A] =
+    Writes[A] { a =>
+      transformer(self.writes(a))
+    }
 
   /**
    * Transforms the resulting [[JsValue]] using a `Writes[JsValue]`.
    */
-  def transform(transformer: Writes[JsValue]): Writes[A] = Writes[A] { a =>
-    transformer.writes(self.writes(a))
-  }
+  def transform(transformer: Writes[JsValue]): Writes[A] =
+    Writes[A] { a =>
+      transformer.writes(self.writes(a))
+    }
 }
 
 @implicitNotFound(
@@ -97,20 +99,24 @@ object OWrites extends PathWrites with ConstraintWrites {
         }
       }
 
-    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: Writes[A], a: A): Unit = wa match {
-      case wff: OWritesFromFields[A] =>
-        wff.writeFields(fieldsMap, a)
-      case w: OWrites[A] =>
-        w.writes(a).underlying.foreach {
-          case (key, value: JsObject) =>
-            fieldsMap.put(key, fieldsMap.get(key) match {
-              case Some(o: JsObject) => o.deepMerge(value)
-              case _                 => value
-            })
-          case (key, value) =>
-            fieldsMap.put(key, value)
-        }
-    }
+    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: Writes[A], a: A): Unit =
+      wa match {
+        case wff: OWritesFromFields[A] =>
+          wff.writeFields(fieldsMap, a)
+        case w: OWrites[A] =>
+          w.writes(a).underlying.foreach {
+            case (key, value: JsObject) =>
+              fieldsMap.put(
+                key,
+                fieldsMap.get(key) match {
+                  case Some(o: JsObject) => o.deepMerge(value)
+                  case _                 => value
+                }
+              )
+            case (key, value) =>
+              fieldsMap.put(key, value)
+          }
+      }
   }
 
   /**
@@ -135,9 +141,10 @@ object OWrites extends PathWrites with ConstraintWrites {
       wa.contramap[B](f)
   }
 
-  def apply[A](f: A => JsObject): OWrites[A] = new OWrites[A] {
-    def writes(a: A): JsObject = f(a)
-  }
+  def apply[A](f: A => JsObject): OWrites[A] =
+    new OWrites[A] {
+      def writes(a: A): JsObject = f(a)
+    }
 
   /**
    * Transforms the resulting [[JsObject]] using the given function,
@@ -165,9 +172,10 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
         wa.contramap[B](f)
     }
 
-  def apply[A](f: A => JsValue): Writes[A] = new Writes[A] {
-    def writes(a: A): JsValue = f(a)
-  }
+  def apply[A](f: A => JsValue): Writes[A] =
+    new Writes[A] {
+      def writes(a: A): JsValue = f(a)
+    }
 
   /**
    * Transforms the resulting [[JsValue]] using the given function,
@@ -310,9 +318,10 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for JsValues.
    */
-  implicit def jsValueWrites[T <: JsValue]: Writes[T] = Writes[T] { js =>
-    js
-  }
+  implicit def jsValueWrites[T <: JsValue]: Writes[T] =
+    Writes[T] { js =>
+      js
+    }
 
   /**
    * Serializer for JsNull.
@@ -348,20 +357,23 @@ trait DefaultWrites extends LowPriorityWrites {
   /**
    * Serializer for Option.
    */
-  implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] = new Writes[Option[T]] {
-    def writes(o: Option[T]) = o match {
-      case Some(value) => fmt.writes(value)
-      case None        => JsNull
+  implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] =
+    new Writes[Option[T]] {
+      def writes(o: Option[T]) =
+        o match {
+          case Some(value) => fmt.writes(value)
+          case None        => JsNull
+        }
     }
-  }
 
   /**
    * Serializer for java.util.Date
    * @param pattern the pattern used by SimpleDateFormat
    */
-  def dateWrites(pattern: String): Writes[java.util.Date] = new Writes[java.util.Date] {
-    def writes(d: java.util.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
-  }
+  def dateWrites(pattern: String): Writes[java.util.Date] =
+    new Writes[java.util.Date] {
+      def writes(d: java.util.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
+    }
 
   @deprecated("Use `defaultDateWrites`", "2.8.0")
   object DefaultDateWrites extends Writes[Date] {
@@ -381,9 +393,10 @@ trait DefaultWrites extends LowPriorityWrites {
    * @param pattern the pattern used by SimpleDateFormat
    */
   @deprecated("Use `dateWrites`", "2.8.0")
-  def sqlDateWrites(pattern: String): Writes[java.sql.Date] = new Writes[java.sql.Date] {
-    def writes(d: java.sql.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
-  }
+  def sqlDateWrites(pattern: String): Writes[java.sql.Date] =
+    new Writes[java.sql.Date] {
+      def writes(d: java.sql.Date): JsValue = JsString(new java.text.SimpleDateFormat(pattern).format(d))
+    }
 
   /**
    * Serializer for java.util.UUID
@@ -404,12 +417,13 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for [[scala.collection.immutable.Range]]
    * (aka specialized `Seq` of `Int`).
    */
-  implicit def rangeWrites[T <: Range]: Writes[T] = Writes[T] { range =>
-    // `iterableWrites` cannot be resolved for as,
-    // even if `Range <: Traversable[_]`, it's not a parametrized one
-    // and so doesn't accept a type parameter (doesn't match `M[_]` constraint).
-    JsArray(range.map(JsNumber(_)))
-  }
+  implicit def rangeWrites[T <: Range]: Writes[T] =
+    Writes[T] { range =>
+      // `iterableWrites` cannot be resolved for as,
+      // even if `Range <: Traversable[_]`, it's not a parametrized one
+      // and so doesn't accept a type parameter (doesn't match `M[_]` constraint).
+      JsArray(range.map(JsNumber(_)))
+    }
 }
 
 sealed trait LowPriorityWrites extends EnvWrites {

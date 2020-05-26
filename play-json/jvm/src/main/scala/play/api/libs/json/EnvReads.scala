@@ -69,27 +69,28 @@ trait EnvReads {
    */
   def dateReads(pattern: String, corrector: String => String = identity): Reads[java.util.Date] =
     new Reads[java.util.Date] {
-      def reads(json: JsValue): JsResult[java.util.Date] = json match {
-        case n: JsNumber => n.validate[Long].map(l => new java.util.Date(l))
-        case JsString(s) =>
-          parseJDate(pattern, corrector(s)) match {
-            case Some(d) => JsSuccess(d)
-            case None =>
-              JsError(
-                Seq(
-                  JsPath ->
-                    Seq(JsonValidationError("error.expected.date.isoformat", pattern))
+      def reads(json: JsValue): JsResult[java.util.Date] =
+        json match {
+          case n: JsNumber => n.validate[Long].map(l => new java.util.Date(l))
+          case JsString(s) =>
+            parseJDate(pattern, corrector(s)) match {
+              case Some(d) => JsSuccess(d)
+              case None =>
+                JsError(
+                  Seq(
+                    JsPath ->
+                      Seq(JsonValidationError("error.expected.date.isoformat", pattern))
+                  )
                 )
+            }
+          case _ =>
+            JsError(
+              Seq(
+                JsPath ->
+                  Seq(JsonValidationError("error.expected.date"))
               )
-          }
-        case _ =>
-          JsError(
-            Seq(
-              JsPath ->
-                Seq(JsonValidationError("error.expected.date"))
             )
-          )
-      }
+        }
     }
 
   private def parseJDate(pattern: String, input: String): Option[java.util.Date] = {
@@ -126,28 +127,29 @@ trait EnvReads {
 
     val WithTz = """^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^.]+$""".r
 
-    def reads(json: JsValue): JsResult[Date] = json match {
-      case n: JsNumber => n.validate[Long].map(l => new Date(l))
+    def reads(json: JsValue): JsResult[Date] =
+      json match {
+        case n: JsNumber => n.validate[Long].map(l => new Date(l))
 
-      case JsString(s) =>
-        (s match {
-          case WithMillisAndTz() => millisAndTz -> parseJDate(millisAndTz, s)
-          case WithMillis()      => millis      -> parseJDate(millis, s)
-          case WithTz()          => tz          -> parseJDate(tz, s)
-          case _                 => mini        -> parseJDate(mini, s)
-        }) match {
-          case (_, Some(d)) => JsSuccess(d)
-          case (p, None) =>
-            JsError(
-              Seq(
-                JsPath ->
-                  Seq(JsonValidationError("error.expected.date.isoformat", p))
+        case JsString(s) =>
+          (s match {
+            case WithMillisAndTz() => millisAndTz -> parseJDate(millisAndTz, s)
+            case WithMillis()      => millis      -> parseJDate(millis, s)
+            case WithTz()          => tz          -> parseJDate(tz, s)
+            case _                 => mini        -> parseJDate(mini, s)
+          }) match {
+            case (_, Some(d)) => JsSuccess(d)
+            case (p, None) =>
+              JsError(
+                Seq(
+                  JsPath ->
+                    Seq(JsonValidationError("error.expected.date.isoformat", p))
+                )
               )
-            )
-        }
+          }
 
-      case js => JsError("error.expected.date.isoformat")
-    }
+        case js => JsError("error.expected.date.isoformat")
+      }
   }
 
   /**
@@ -279,27 +281,28 @@ trait EnvReads {
       p: A => TemporalParser[B],
       epoch: Long => B
   ) extends Reads[B] {
-    def reads(json: JsValue): JsResult[B] = json match {
-      case n: JsNumber => n.validate[Long].map(epoch)
-      case JsString(s) =>
-        p(parsing).parse(corrector(s)) match {
-          case Some(d) => JsSuccess(d)
-          case None =>
-            JsError(
-              Seq(
-                JsPath ->
-                  Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+    def reads(json: JsValue): JsResult[B] =
+      json match {
+        case n: JsNumber => n.validate[Long].map(epoch)
+        case JsString(s) =>
+          p(parsing).parse(corrector(s)) match {
+            case Some(d) => JsSuccess(d)
+            case None =>
+              JsError(
+                Seq(
+                  JsPath ->
+                    Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+                )
               )
+          }
+        case _ =>
+          JsError(
+            Seq(
+              JsPath ->
+                Seq(JsonValidationError("error.expected.date"))
             )
-        }
-      case _ =>
-        JsError(
-          Seq(
-            JsPath ->
-              Seq(JsonValidationError("error.expected.date"))
           )
-        )
-    }
+      }
   }
 
   /**
@@ -322,12 +325,17 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_DATE_TIME, _.drop(1))
    * }}}
    */
-  def localDateTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[LocalDateTime]
+  def localDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[LocalDateTime]
   ): Reads[LocalDateTime] =
-    new TemporalReads[T, LocalDateTime](parsing, corrector, p, { millis: Long =>
-      LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-    })
+    new TemporalReads[T, LocalDateTime](
+      parsing,
+      corrector,
+      p,
+      { millis: Long =>
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      }
+    )
 
   /**
    * The default typeclass to reads `java.time.LocalDateTime` from JSON.
@@ -359,30 +367,32 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_OFFSET_DATE_TIME, _.drop(1))
    * }}}
    */
-  def offsetDateTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[OffsetDateTime]
-  ): Reads[OffsetDateTime] = new Reads[OffsetDateTime] {
-    def reads(json: JsValue): JsResult[OffsetDateTime] = json match {
-      case JsString(s) =>
-        p(parsing).parse(corrector(s)) match {
-          case Some(d) => JsSuccess(d)
-          case None =>
+  def offsetDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[OffsetDateTime]
+  ): Reads[OffsetDateTime] =
+    new Reads[OffsetDateTime] {
+      def reads(json: JsValue): JsResult[OffsetDateTime] =
+        json match {
+          case JsString(s) =>
+            p(parsing).parse(corrector(s)) match {
+              case Some(d) => JsSuccess(d)
+              case None =>
+                JsError(
+                  Seq(
+                    JsPath ->
+                      Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+                  )
+                )
+            }
+          case _ =>
             JsError(
               Seq(
                 JsPath ->
-                  Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+                  Seq(JsonValidationError("error.expected.date"))
               )
             )
         }
-      case _ =>
-        JsError(
-          Seq(
-            JsPath ->
-              Seq(JsonValidationError("error.expected.date"))
-          )
-        )
     }
-  }
 
   /**
    * The default typeclass to reads `java.time.OffsetDateTime` from JSON.
@@ -411,12 +421,17 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_DATE_TIME, _.drop(1))
    * }}}
    */
-  def zonedDateTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[ZonedDateTime]
+  def zonedDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[ZonedDateTime]
   ): Reads[ZonedDateTime] =
-    new TemporalReads[T, ZonedDateTime](parsing, corrector, p, { millis: Long =>
-      ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-    })
+    new TemporalReads[T, ZonedDateTime](
+      parsing,
+      corrector,
+      p,
+      { millis: Long =>
+        ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      }
+    )
 
   /**
    * The default typeclass to reads `java.time.ZonedDateTime` from JSON.
@@ -444,35 +459,37 @@ trait EnvReads {
    * val customReads3 = localDateReads(DateTimeFormatter.ISO_DATE, _.drop(1))
    * }}}
    */
-  def localDateReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[LocalDate]
+  def localDateReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[LocalDate]
   ): Reads[LocalDate] =
     new Reads[LocalDate] {
-      def reads(json: JsValue): JsResult[LocalDate] = json match {
-        case n: JsNumber => n.validate[Long].map(epoch)
-        case JsString(s) =>
-          p(parsing).parse(corrector(s)) match {
-            case Some(d) => JsSuccess(d)
-            case _ =>
-              JsError(
-                Seq(
-                  JsPath ->
-                    Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+      def reads(json: JsValue): JsResult[LocalDate] =
+        json match {
+          case n: JsNumber => n.validate[Long].map(epoch)
+          case JsString(s) =>
+            p(parsing).parse(corrector(s)) match {
+              case Some(d) => JsSuccess(d)
+              case _ =>
+                JsError(
+                  Seq(
+                    JsPath ->
+                      Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+                  )
                 )
+            }
+          case _ =>
+            JsError(
+              Seq(
+                JsPath ->
+                  Seq(JsonValidationError("error.expected.date"))
               )
-          }
-        case _ =>
-          JsError(
-            Seq(
-              JsPath ->
-                Seq(JsonValidationError("error.expected.date"))
             )
-          )
-      }
+        }
 
-      @inline def epoch(millis: Long): LocalDate = LocalDate.now(
-        Clock.fixed(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-      )
+      @inline def epoch(millis: Long): LocalDate =
+        LocalDate.now(
+          Clock.fixed(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+        )
     }
 
   /**
@@ -501,8 +518,8 @@ trait EnvReads {
    * val customReads3 = instantReads(DateTimeFormatter.ISO_INSTANT, _.drop(1))
    * }}}
    */
-  def instantReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[Instant]
+  def instantReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[Instant]
   ): Reads[Instant] = new TemporalReads[T, Instant](parsing, corrector, p, Instant.ofEpochMilli(_))
 
   /**
@@ -533,31 +550,32 @@ trait EnvReads {
    * val customReads3 = localTimeReads(DateTimeFormatter.ISO_TIME, _.drop(1))
    * }}}
    */
-  def localTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[LocalTime]
+  def localTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[LocalTime]
   ): Reads[LocalTime] =
     new Reads[LocalTime] {
-      def reads(json: JsValue): JsResult[LocalTime] = json match {
-        case n: JsNumber => n.validate[Long].map(epoch)
-        case JsString(s) =>
-          p(parsing).parse(corrector(s)) match {
-            case Some(d) => JsSuccess(d)
-            case _ =>
-              JsError(
-                Seq(
-                  JsPath ->
-                    Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+      def reads(json: JsValue): JsResult[LocalTime] =
+        json match {
+          case n: JsNumber => n.validate[Long].map(epoch)
+          case JsString(s) =>
+            p(parsing).parse(corrector(s)) match {
+              case Some(d) => JsSuccess(d)
+              case _ =>
+                JsError(
+                  Seq(
+                    JsPath ->
+                      Seq(JsonValidationError("error.expected.date.isoformat", parsing))
+                  )
                 )
+            }
+          case _ =>
+            JsError(
+              Seq(
+                JsPath ->
+                  Seq(JsonValidationError("error.expected.date"))
               )
-          }
-        case _ =>
-          JsError(
-            Seq(
-              JsPath ->
-                Seq(JsonValidationError("error.expected.date"))
             )
-          )
-      }
+        }
 
       @inline def epoch(nanos: Long): LocalTime = LocalTime.ofNanoOfDay(nanos)
     }
@@ -721,22 +739,24 @@ trait EnvReads {
   import org.joda.time.LocalTime
 
   @deprecated("Include play-json-joda as a dependency and use JodaReads.jodaDateReads", "2.6.0")
-  def jodaDateReads(pattern: String, corrector: String => String = identity): Reads[DateTime] = new Reads[DateTime] {
-    val df = DateTimeFormat.forPattern(pattern)
+  def jodaDateReads(pattern: String, corrector: String => String = identity): Reads[DateTime] =
+    new Reads[DateTime] {
+      val df = DateTimeFormat.forPattern(pattern)
 
-    def reads(json: JsValue): JsResult[DateTime] = json match {
-      case n: JsNumber => n.validate[Long].map(l => new DateTime(l))
-      case JsString(s) =>
-        parseDate(corrector(s)) match {
-          case Some(d) => JsSuccess(d)
-          case _       => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+      def reads(json: JsValue): JsResult[DateTime] =
+        json match {
+          case n: JsNumber => n.validate[Long].map(l => new DateTime(l))
+          case JsString(s) =>
+            parseDate(corrector(s)) match {
+              case Some(d) => JsSuccess(d)
+              case _       => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+            }
+          case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
         }
-      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
-    }
 
-    private def parseDate(input: String): Option[DateTime] =
-      scala.util.control.Exception.allCatch[DateTime].opt(DateTime.parse(input, df))
-  }
+      private def parseDate(input: String): Option[DateTime] =
+        scala.util.control.Exception.allCatch[DateTime].opt(DateTime.parse(input, df))
+    }
 
   @deprecated("Include play-json-joda as a dependency and use JodaReads.DefaultJodaDateTimeReads", "2.6.0")
   val DefaultJodaDateReads = jodaDateReads("yyyy-MM-dd")
@@ -746,14 +766,15 @@ trait EnvReads {
     new Reads[org.joda.time.LocalDate] {
       val df = if (pattern == "") ISODateTimeFormat.localDateParser else DateTimeFormat.forPattern(pattern)
 
-      def reads(json: JsValue): JsResult[LocalDate] = json match {
-        case JsString(s) =>
-          parseDate(corrector(s)) match {
-            case Some(d) => JsSuccess(d)
-            case _       => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
-          }
-        case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
-      }
+      def reads(json: JsValue): JsResult[LocalDate] =
+        json match {
+          case JsString(s) =>
+            parseDate(corrector(s)) match {
+              case Some(d) => JsSuccess(d)
+              case _       => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+            }
+          case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
+        }
 
       private def parseDate(input: String): Option[LocalDate] =
         scala.util.control.Exception.allCatch[LocalDate].opt(LocalDate.parse(input, df))
@@ -767,15 +788,16 @@ trait EnvReads {
     new Reads[LocalTime] {
       val df = if (pattern == "") ISODateTimeFormat.localTimeParser else DateTimeFormat.forPattern(pattern)
 
-      def reads(json: JsValue): JsResult[LocalTime] = json match {
-        case n: JsNumber => n.validate[Long].map(l => new LocalTime(l))
-        case JsString(s) =>
-          parseTime(corrector(s)) match {
-            case Some(d) => JsSuccess(d)
-            case None    => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodatime.format", pattern))))
-          }
-        case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
-      }
+      def reads(json: JsValue): JsResult[LocalTime] =
+        json match {
+          case n: JsNumber => n.validate[Long].map(l => new LocalTime(l))
+          case JsString(s) =>
+            parseTime(corrector(s)) match {
+              case Some(d) => JsSuccess(d)
+              case None    => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodatime.format", pattern))))
+            }
+          case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
+        }
 
       private def parseTime(input: String): Option[LocalTime] =
         scala.util.control.Exception.allCatch[LocalTime].opt(LocalTime.parse(input, df))

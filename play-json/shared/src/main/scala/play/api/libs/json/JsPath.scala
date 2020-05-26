@@ -16,105 +16,114 @@ sealed trait PathNode {
 }
 
 case class RecursiveSearch(key: String) extends PathNode {
-  def apply(json: JsValue): List[JsValue] = json match {
-    case obj: JsObject => (json \\ key).toList
-    case arr: JsArray  => (json \\ key).toList
-    case _             => Nil
-  }
+  def apply(json: JsValue): List[JsValue] =
+    json match {
+      case obj: JsObject => (json \\ key).toList
+      case arr: JsArray  => (json \\ key).toList
+      case _             => Nil
+    }
   override def toString = "//" + key
   def toJsonString      = "*" + key
 
   /**
    * First found, first set and never goes down after setting
    */
-  def set(json: JsValue, transform: JsValue => JsValue): JsValue = json match {
-    case JsObject(fields) => {
-      JsObject(fields.map {
-        case (k, v) =>
-          if (k == this.key) {
-            k -> transform(v)
-          } else k -> set(v, transform)
-      })
+  def set(json: JsValue, transform: JsValue => JsValue): JsValue =
+    json match {
+      case JsObject(fields) => {
+        JsObject(fields.map {
+          case (k, v) =>
+            if (k == this.key) {
+              k -> transform(v)
+            } else k -> set(v, transform)
+        })
+      }
+
+      case _ => json
     }
 
-    case _ => json
-  }
+  private[json] def splitChildren(json: JsValue) =
+    json match {
+      case obj: JsObject =>
+        obj.fields.toList.map {
+          case (k, v) =>
+            if (k == this.key) Right(this -> v)
+            else Left(KeyPathNode(k)      -> v)
+        }
+      case arr: JsArray =>
+        arr.value.toList.zipWithIndex.map { case (js, j) => Left(IdxPathNode(j) -> js) }
 
-  private[json] def splitChildren(json: JsValue) = json match {
-    case obj: JsObject =>
-      obj.fields.toList.map {
-        case (k, v) =>
-          if (k == this.key) Right(this -> v)
-          else Left(KeyPathNode(k)      -> v)
-      }
-    case arr: JsArray =>
-      arr.value.toList.zipWithIndex.map { case (js, j) => Left(IdxPathNode(j) -> js) }
-
-    case _ => List()
-  }
+      case _ => List()
+    }
 }
 
 case class KeyPathNode(key: String) extends PathNode {
-  def apply(json: JsValue): List[JsValue] = json match {
-    case obj: JsObject => obj.underlying.get(key).toList
-    case _             => List()
-  }
+  def apply(json: JsValue): List[JsValue] =
+    json match {
+      case obj: JsObject => obj.underlying.get(key).toList
+      case _             => List()
+    }
 
   override def toString = "/" + key
   def toJsonString      = "." + key
 
-  def set(json: JsValue, transform: JsValue => JsValue): JsValue = json match {
-    case obj: JsObject =>
-      var found = false
-      val o = JsObject(obj.fields.map {
-        case (k, v) =>
-          if (k == this.key) {
-            found = true
-            k -> transform(v)
-          } else k -> v
-      })
-      if (!found) o ++ JsObject(Seq(this.key -> transform(JsObject.empty)))
-      else o
-    case _ => transform(json)
-  }
+  def set(json: JsValue, transform: JsValue => JsValue): JsValue =
+    json match {
+      case obj: JsObject =>
+        var found = false
+        val o = JsObject(obj.fields.map {
+          case (k, v) =>
+            if (k == this.key) {
+              found = true
+              k -> transform(v)
+            } else k -> v
+        })
+        if (!found) o ++ JsObject(Seq(this.key -> transform(JsObject.empty)))
+        else o
+      case _ => transform(json)
+    }
 
-  private[json] def splitChildren(json: JsValue) = json match {
-    case obj: JsObject =>
-      obj.fields.toList.map {
-        case (k, v) =>
-          if (k == this.key) Right(this -> v)
-          else Left(KeyPathNode(k)      -> v)
-      }
-    case _ => List()
-  }
+  private[json] def splitChildren(json: JsValue) =
+    json match {
+      case obj: JsObject =>
+        obj.fields.toList.map {
+          case (k, v) =>
+            if (k == this.key) Right(this -> v)
+            else Left(KeyPathNode(k)      -> v)
+        }
+      case _ => List()
+    }
 
   private[json] override def toJsonField(value: JsValue) =
     JsObject(Seq(key -> value))
 }
 
 case class IdxPathNode(idx: Int) extends PathNode {
-  def apply(json: JsValue): List[JsValue] = json match {
-    case arr: JsArray => List(arr \ idx).flatMap(_.toOption)
-    case _            => List()
-  }
+  def apply(json: JsValue): List[JsValue] =
+    json match {
+      case arr: JsArray => List(arr \ idx).flatMap(_.toOption)
+      case _            => List()
+    }
 
   override def toString = "(%d)".format(idx)
   def toJsonString      = "[%d]".format(idx)
 
-  def set(json: JsValue, transform: JsValue => JsValue): JsValue = json match {
-    case arr: JsArray => JsArray(arr.value.zipWithIndex.map { case (js, j) => if (j == idx) transform(js) else js })
-    case _            => transform(json)
-  }
+  def set(json: JsValue, transform: JsValue => JsValue): JsValue =
+    json match {
+      case arr: JsArray => JsArray(arr.value.zipWithIndex.map { case (js, j) => if (j == idx) transform(js) else js })
+      case _            => transform(json)
+    }
 
-  private[json] def splitChildren(json: JsValue) = json match {
-    case arr: JsArray =>
-      arr.value.toList.zipWithIndex.map {
-        case (js, j) =>
-          if (j == idx) Right(this -> js)
-          else Left(IdxPathNode(j) -> js)
-      }
-    case _ => List()
-  }
+  private[json] def splitChildren(json: JsValue) =
+    json match {
+      case arr: JsArray =>
+        arr.value.toList.zipWithIndex.map {
+          case (js, j) =>
+            if (j == idx) Right(this -> js)
+            else Left(IdxPathNode(j) -> js)
+        }
+      case _ => List()
+    }
 
   private[json] override def toJsonField(value: JsValue) = value
 }
@@ -205,65 +214,68 @@ case class JsPath(path: List[PathNode] = List()) {
 
   private lazy val PathMissingError = JsError(Seq(this -> JsonValidationError.PathMissing))
 
-  def asSingleJsResult(json: JsValue): JsResult[JsValue] = path match {
-    // Fast path, the most common place that this is invoked is by read, eg:
-    // (__ \ "foo").read[Foo]
-    // This fast path increases the performance of that operation as tested by JsonDeserialize_01_List by 35%
-    case List(KeyPathNode(key)) =>
-      json match {
-        case JsObject(underlying) =>
-          underlying.get(key) match {
-            case Some(value) => JsSuccess(value)
-            case None        => PathMissingError
-          }
-        case _ => PathMissingError
-      }
-    case _ =>
-      this(json) match {
-        case Nil      => PathMissingError
-        case List(js) => JsSuccess(js)
-        case _ :: _   => JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple"))))
-      }
-  }
+  def asSingleJsResult(json: JsValue): JsResult[JsValue] =
+    path match {
+      // Fast path, the most common place that this is invoked is by read, eg:
+      // (__ \ "foo").read[Foo]
+      // This fast path increases the performance of that operation as tested by JsonDeserialize_01_List by 35%
+      case List(KeyPathNode(key)) =>
+        json match {
+          case JsObject(underlying) =>
+            underlying.get(key) match {
+              case Some(value) => JsSuccess(value)
+              case None        => PathMissingError
+            }
+          case _ => PathMissingError
+        }
+      case _ =>
+        this(json) match {
+          case Nil      => PathMissingError
+          case List(js) => JsSuccess(js)
+          case _ :: _   => JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple"))))
+        }
+    }
 
-  def asSingleJson(json: JsValue): JsLookupResult = path match {
-    // Fast path, the most common place that this is invoked is by readNullable, eg:
-    // (__ \ "foo").readNullable[Foo]
-    // This fast path increases the performance of that operation as tested by JsonDeserialize_02_Nullable by 82%
-    case List(KeyPathNode(key)) =>
-      json match {
-        case JsObject(underlying) =>
-          underlying.get(key) match {
-            case Some(value) => JsDefined(value)
-            case None        => JsLookupResult.PathMissing
-          }
-        case _ => JsLookupResult.PathMissing
-      }
-    case _ =>
-      this(json) match {
-        case Nil      => JsLookupResult.PathMissing
-        case List(js) => JsDefined(js)
-        case _ :: _   => JsUndefined("error.path.result.multiple")
-      }
-  }
+  def asSingleJson(json: JsValue): JsLookupResult =
+    path match {
+      // Fast path, the most common place that this is invoked is by readNullable, eg:
+      // (__ \ "foo").readNullable[Foo]
+      // This fast path increases the performance of that operation as tested by JsonDeserialize_02_Nullable by 82%
+      case List(KeyPathNode(key)) =>
+        json match {
+          case JsObject(underlying) =>
+            underlying.get(key) match {
+              case Some(value) => JsDefined(value)
+              case None        => JsLookupResult.PathMissing
+            }
+          case _ => JsLookupResult.PathMissing
+        }
+      case _ =>
+        this(json) match {
+          case Nil      => JsLookupResult.PathMissing
+          case List(js) => JsDefined(js)
+          case _ :: _   => JsUndefined("error.path.result.multiple")
+        }
+    }
 
   def applyTillLast(json: JsValue): Either[JsError, JsResult[JsValue]] = {
     @annotation.tailrec
-    def step(path: List[PathNode], json: JsValue): Either[JsError, JsResult[JsValue]] = path match {
-      case Nil => Right(JsSuccess(json))
-      case List(node) =>
-        node(json) match {
-          case Nil      => Right(PathMissingError)
-          case List(js) => Right(JsSuccess(js))
-          case _ :: _   => Right(JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple")))))
-        }
-      case head :: tail =>
-        head(json) match {
-          case Nil      => Left(PathMissingError)
-          case List(js) => step(tail, js)
-          case _ :: _   => Left(JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple")))))
-        }
-    }
+    def step(path: List[PathNode], json: JsValue): Either[JsError, JsResult[JsValue]] =
+      path match {
+        case Nil => Right(JsSuccess(json))
+        case List(node) =>
+          node(json) match {
+            case Nil      => Right(PathMissingError)
+            case List(js) => Right(JsSuccess(js))
+            case _ :: _   => Right(JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple")))))
+          }
+        case head :: tail =>
+          head(json) match {
+            case Nil      => Left(PathMissingError)
+            case List(js) => step(tail, js)
+            case _ :: _   => Left(JsError(Seq(this -> Seq(JsonValidationError("error.path.result.multiple")))))
+          }
+      }
 
     step(path, json)
   }

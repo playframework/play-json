@@ -358,10 +358,11 @@ trait EnvWrites {
   import org.joda.time.LocalTime
 
   @deprecated("Include play-json-joda as a dependency and use JodaWrites.jodaDateWrites", "2.6.0")
-  def jodaDateWrites(pattern: String): Writes[DateTime] = new Writes[DateTime] {
-    val df                           = org.joda.time.format.DateTimeFormat.forPattern(pattern)
-    def writes(d: DateTime): JsValue = JsString(d.toString(df))
-  }
+  def jodaDateWrites(pattern: String): Writes[DateTime] =
+    new Writes[DateTime] {
+      val df                           = org.joda.time.format.DateTimeFormat.forPattern(pattern)
+      def writes(d: DateTime): JsValue = JsString(d.toString(df))
+    }
 
   @deprecated("Include play-json-joda as a dependency and use JodaWrites.JodaDateNumberWrites", "2.6.0")
   object DefaultJodaDateWrites extends Writes[DateTime] {

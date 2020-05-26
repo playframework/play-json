@@ -50,10 +50,11 @@ object JsonParserSettings {
   // Minimum magnitude of BigDecimal to write out as a plain string
   val MinPlain: BigDecimal = 1e-10
 
-  def apply(): JsonParserSettings = JsonParserSettings(
-    BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit),
-    BigDecimalSerializerSettings(minPlain = MinPlain, maxPlain = MaxPlain)
-  )
+  def apply(): JsonParserSettings =
+    JsonParserSettings(
+      BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit),
+      BigDecimalSerializerSettings(minPlain = MinPlain, maxPlain = MaxPlain)
+    )
 
   /**
    * Return the parse settings that are configured.
@@ -81,13 +82,14 @@ object JsonParserSettings {
     )
   }
 
-  private def parseMathContext(key: String): MathContext = sys.props.get(key).map(_.toLowerCase) match {
-    case Some("decimal128") => MathContext.DECIMAL128
-    case Some("decimal64")  => MathContext.DECIMAL64
-    case Some("decimal32")  => MathContext.DECIMAL32
-    case Some("unlimited")  => MathContext.UNLIMITED
-    case _                  => defaultMathContext
-  }
+  private def parseMathContext(key: String): MathContext =
+    sys.props.get(key).map(_.toLowerCase) match {
+      case Some("decimal128") => MathContext.DECIMAL128
+      case Some("decimal64")  => MathContext.DECIMAL64
+      case Some("decimal32")  => MathContext.DECIMAL32
+      case Some("unlimited")  => MathContext.UNLIMITED
+      case _                  => defaultMathContext
+    }
 
   private def parseNum[T](key: String, default: T)(f: String => T): T =
     try {

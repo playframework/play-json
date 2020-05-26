@@ -273,11 +273,12 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     }
 
     "JSON pretty print" in json { js =>
-      def jo = js.obj(
-        "key1" -> "toto",
-        "key2" -> js.obj("key21" -> "tata", "key22" -> 123),
-        "key3" -> js.arr(1, "tutu")
-      )
+      def jo =
+        js.obj(
+          "key1" -> "toto",
+          "key2" -> js.obj("key21" -> "tata", "key22" -> 123),
+          "key3" -> js.arr(1, "tutu")
+        )
 
       js.prettyPrint(jo).replaceAllLiterally("\r\n", "\n").mustEqual("""{
   "key1" : "toto",
@@ -290,12 +291,13 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     }
 
     "asciiStringify should escape non-ascii characters" in json { js =>
-      def jo = js.obj(
-        "key1" -> "\u2028\u2029\u2030",
-        "key2" -> "\u00E1\u00E9\u00ED\u00F3\u00FA",
-        "key3" -> "\u00A9\u00A3",
-        "key4" -> "\u6837\u54C1"
-      )
+      def jo =
+        js.obj(
+          "key1" -> "\u2028\u2029\u2030",
+          "key2" -> "\u00E1\u00E9\u00ED\u00F3\u00FA",
+          "key3" -> "\u00A9\u00A3",
+          "key4" -> "\u6837\u54C1"
+        )
 
       js.asciiStringify(jo)
         .mustEqual(
@@ -307,10 +309,11 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     }
 
     "asciiStringify should escape ascii characters properly" in json { js =>
-      def jo = Json.obj(
-        "key1" -> "ab\n\tcd",
-        "key2" -> "\"\r"
-      )
+      def jo =
+        Json.obj(
+          "key1" -> "ab\n\tcd",
+          "key2" -> "\"\r"
+        )
 
       js.asciiStringify(jo).mustEqual("""{"key1":"ab\n\tcd","key2":"\"\r"}""")
     }
@@ -353,13 +356,14 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     "write in 2nd level" in json { js =>
       case class TestCase(id: String, attr1: String, attr2: String)
 
-      def jo = Json.obj(
-        "id" -> "my-id",
-        "data" -> Json.obj(
-          "attr1" -> "foo",
-          "attr2" -> "bar"
+      def jo =
+        Json.obj(
+          "id" -> "my-id",
+          "data" -> Json.obj(
+            "attr1" -> "foo",
+            "attr2" -> "bar"
+          )
         )
-      )
 
       implicit val testCaseWrites: Writes[TestCase] = (
         (__ \ "id").write[String] and
@@ -371,13 +375,14 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     }
 
     "keep the insertion order on ListMap".taggedAs(UnstableInScala213) in json { js =>
-      def test = js.toJson(
-        ListMap(
-          "name" -> "foo",
-          "zip"  -> "foo",
-          "city" -> "foo"
+      def test =
+        js.toJson(
+          ListMap(
+            "name" -> "foo",
+            "zip"  -> "foo",
+            "city" -> "foo"
+          )
         )
-      )
       val req = """{"name":"foo", "zip":"foo", "city":"foo"}"""
 
       test.toString.mustEqual(js.parse(req).toString)
@@ -385,45 +390,46 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     }
 
     "keep insertion order on large ListMap".taggedAs(UnstableInScala213) in json { js =>
-      def test = js.toJson(
-        ListMap(
-          "name"      -> "a",
-          "zip"       -> "foo",
-          "city"      -> "foo",
-          "address"   -> "foo",
-          "phone"     -> "foo",
-          "latitude"  -> "foo",
-          "longitude" -> "foo",
-          "hny"       -> "foo",
-          "hz"        -> "foo",
-          "hek"       -> "foo",
-          "hev"       -> "foo",
-          "kny"       -> "foo",
-          "kz"        -> "foo",
-          "kek"       -> "foo",
-          "kev"       -> "foo",
-          "szeny"     -> "foo",
-          "szez"      -> "foo",
-          "szeek"     -> "foo",
-          "szeev"     -> "foo",
-          "csny"      -> "foo",
-          "csz"       -> "foo",
-          "csek"      -> "foo",
-          "csev"      -> "foo",
-          "pny"       -> "foo",
-          "pz"        -> "foo",
-          "pek"       -> "foo",
-          "pev"       -> "foo",
-          "szony"     -> "foo",
-          "szoz"      -> "foo",
-          "szoek"     -> "foo",
-          "szoev"     -> "foo",
-          "vny"       -> "foo",
-          "vz"        -> "foo",
-          "vek"       -> "foo",
-          "vev"       -> "foo"
+      def test =
+        js.toJson(
+          ListMap(
+            "name"      -> "a",
+            "zip"       -> "foo",
+            "city"      -> "foo",
+            "address"   -> "foo",
+            "phone"     -> "foo",
+            "latitude"  -> "foo",
+            "longitude" -> "foo",
+            "hny"       -> "foo",
+            "hz"        -> "foo",
+            "hek"       -> "foo",
+            "hev"       -> "foo",
+            "kny"       -> "foo",
+            "kz"        -> "foo",
+            "kek"       -> "foo",
+            "kev"       -> "foo",
+            "szeny"     -> "foo",
+            "szez"      -> "foo",
+            "szeek"     -> "foo",
+            "szeev"     -> "foo",
+            "csny"      -> "foo",
+            "csz"       -> "foo",
+            "csek"      -> "foo",
+            "csev"      -> "foo",
+            "pny"       -> "foo",
+            "pz"        -> "foo",
+            "pek"       -> "foo",
+            "pev"       -> "foo",
+            "szony"     -> "foo",
+            "szoz"      -> "foo",
+            "szoek"     -> "foo",
+            "szoev"     -> "foo",
+            "vny"       -> "foo",
+            "vz"        -> "foo",
+            "vek"       -> "foo",
+            "vev"       -> "foo"
+          )
         )
-      )
 
       def req =
         """{"name": "a", "zip": "foo", "city": "foo", "address": "foo", "phone": "foo", "latitude": "foo", "longitude": "foo", "hny": "foo", "hz": "foo", "hek": "foo", "hev": "foo", "kny": "foo", "kz": "foo", "kek": "foo", "kev": "foo", "szeny": "foo", "szez": "foo", "szeek": "foo", "szeev": "foo", "csny": "foo", "csz": "foo", "csek": "foo", "csev": "foo", "pny": "foo", "pz": "foo", "pek": "foo", "pev": "foo", "szony": "foo", "szoz": "foo", "szoek": "foo", "szoev": "foo", "vny": "foo", "vz": "foo", "vek": "foo", "vev": "foo"}"""
@@ -441,10 +447,11 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
   ) extends org.scalatest.matchers.BeMatcher[String] {
     val right = expected.replaceAll("\\s", "")
 
-    def apply(left: String) = org.scalatest.matchers.MatchResult(
-      left.replaceAll("\\s", "") == right,
-      s"$left is not equal to $right",
-      s"$left is equal to $right"
-    )
+    def apply(left: String) =
+      org.scalatest.matchers.MatchResult(
+        left.replaceAll("\\s", "") == right,
+        s"$left is not equal to $right",
+        s"$left is equal to $right"
+      )
   }
 }

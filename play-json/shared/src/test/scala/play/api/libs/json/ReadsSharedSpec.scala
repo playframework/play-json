@@ -211,14 +211,14 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers {
 
       JsString(strRepr).validate[URI] match {
         case JsError(
-            List(
-              (
-                JsPath,
-                List(
-                  JsonValidationError(List(msg))
+              List(
+                (
+                  JsPath,
+                  List(
+                    JsonValidationError(List(msg))
+                  )
                 )
               )
-            )
             ) =>
           msg.must(include("invalid"))
 
@@ -246,7 +246,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers {
     success[JsValue](JsNumber(1))
 
     success[JsObject](JsObject(Map("foo" -> JsNumber(1))))
-    success[JsValue](JsObject(Map("foo"  -> JsNumber(1))))
+    success[JsValue](JsObject(Map("foo" -> JsNumber(1))))
 
     success[JsString](JsString("foo"))
     success[JsValue](JsString("foo"))

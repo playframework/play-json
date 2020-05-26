@@ -40,9 +40,10 @@ val joda = Seq(
   "joda-time" % "joda-time" % "2.10.6"
 )
 
-def jsonDependencies(scalaVersion: String) = Seq(
-  "org.scala-lang" % "scala-reflect" % scalaVersion
-)
+def jsonDependencies(scalaVersion: String) =
+  Seq(
+    "org.scala-lang" % "scala-reflect" % scalaVersion
+  )
 
 // Common settings
 
@@ -50,9 +51,10 @@ val previousVersion = Some("2.8.1")
 
 ThisBuild / mimaFailOnNoPrevious := false
 
-def playJsonMimaSettings = mimaDefaultSettings ++ Seq(
-  mimaPreviousArtifacts := previousVersion.map(organization.value %%% moduleName.value % _).toSet
-)
+def playJsonMimaSettings =
+  mimaDefaultSettings ++ Seq(
+    mimaPreviousArtifacts := previousVersion.map(organization.value %%% moduleName.value % _).toSet
+  )
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
 // Use "sbt -DscalaJSStage=full" in .travis.yml
@@ -81,7 +83,7 @@ val silencerVersion = "1.6.0"
 
 libraryDependencies in ThisBuild ++= Seq(
   compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
-  ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided).cross(CrossVersion.full)
+  ("com.github.ghik"                % "silencer-lib"    % silencerVersion % Provided).cross(CrossVersion.full)
 )
 
 // Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
@@ -166,8 +168,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         "org.scalatest"     %%% "scalatest"       % "3.1.2"            % Test,
         "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.2.0"          % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.14.3"           % Test,
-        "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test,
-        "org.scala-lang"    % "scala-compiler"    % scalaVersion.value % "provided"
+        "com.chuusai"        %% "shapeless"       % "2.3.3"            % Test,
+        "org.scala-lang"      % "scala-compiler"  % scalaVersion.value % "provided"
       ),
       libraryDependencies ++=
         (CrossVersion.partialVersion(scalaVersion.value) match {

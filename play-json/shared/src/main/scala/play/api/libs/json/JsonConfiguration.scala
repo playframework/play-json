@@ -139,9 +139,10 @@ object JsonNaming {
   }
 
   /** Naming using a custom transformation function. */
-  def apply(transformation: String => String): JsonNaming = new JsonNaming {
-    def apply(property: String): String = transformation(property)
-  }
+  def apply(transformation: String => String): JsonNaming =
+    new JsonNaming {
+      def apply(property: String): String = transformation(property)
+    }
 }
 
 /** Configure how options should be handled */
@@ -157,8 +158,8 @@ trait OptionHandlers {
     OFormat(readHandler(jsPath), writeHandler(jsPath))
   }
 
-  final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(
-      implicit format: Format[T]
+  final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit
+      format: Format[T]
   ): OFormat[Option[T]] = {
     OFormat(readHandlerWithDefault(jsPath, defaultValue), writeHandler(jsPath))
   }

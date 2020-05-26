@@ -110,13 +110,16 @@ object JsonPerformanceTest extends App {
       val start = System.currentTimeMillis()
 
       import ExecutionContext.Implicits.global
-      Await.ready(Future.sequence(List.range(0, threads).map { t =>
-        Future {
-          for (i <- 0.to(timesPerThread)) {
-            test
-          }
-        }(context)
-      }), Duration.Inf)
+      Await.ready(
+        Future.sequence(List.range(0, threads).map { t =>
+          Future {
+            for (i <- 0.to(timesPerThread)) {
+              test
+            }
+          }(context)
+        }),
+        Duration.Inf
+      )
       System.currentTimeMillis() - start
     } finally {
       executor.shutdownNow()

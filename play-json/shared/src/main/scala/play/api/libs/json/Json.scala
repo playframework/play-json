@@ -228,10 +228,11 @@ object Json extends JsonFacade {
   def arr(items: JsValueWrapper*): JsArray             = JsArray(items.iterator.map(unwrap).toArray[JsValue])
 
   // Passed nulls will typecheck without needing the implicit conversion, so they need to checked at runtime
-  private def unwrap(wrapper: JsValueWrapper) = wrapper match {
-    case null                      => JsNull
-    case JsValueWrapperImpl(value) => value
-  }
+  private def unwrap(wrapper: JsValueWrapper) =
+    wrapper match {
+      case null                      => JsNull
+      case JsValueWrapperImpl(value) => value
+    }
 
   import language.experimental.macros
 
@@ -563,8 +564,7 @@ object Json extends JsonFacade {
    * type Opts = MacroOptions with DefaultValues
    * }}}
    */
-  trait DefaultValues { _: MacroOptions =>
-  }
+  trait DefaultValues { _: MacroOptions => }
 
   /**
    * Alias for `MacroOptions with DefaultValues`

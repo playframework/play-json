@@ -7,24 +7,27 @@ package play.api.libs.json
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 object TestFormats {
-  implicit def eitherReads[A: Reads, B: Reads] = Reads[Either[A, B]] { js =>
-    implicitly[Reads[A]].reads(js) match {
-      case JsSuccess(a, _) => JsSuccess(Left(a))
-      case _               => implicitly[Reads[B]].reads(js).map(Right(_))
+  implicit def eitherReads[A: Reads, B: Reads] =
+    Reads[Either[A, B]] { js =>
+      implicitly[Reads[A]].reads(js) match {
+        case JsSuccess(a, _) => JsSuccess(Left(a))
+        case _               => implicitly[Reads[B]].reads(js).map(Right(_))
+      }
     }
-  }
 
-  implicit def eitherWrites[A: Writes, B: Writes] = Writes[Either[A, B]] {
-    case Left(a)  => implicitly[Writes[A]].writes(a)
-    case Right(b) => implicitly[Writes[B]].writes(b)
-  }
+  implicit def eitherWrites[A: Writes, B: Writes] =
+    Writes[Either[A, B]] {
+      case Left(a)  => implicitly[Writes[A]].writes(a)
+      case Right(b) => implicitly[Writes[B]].writes(b)
+    }
 
-  implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)] = Reads { js =>
-    for {
-      a <- (js \ "_1").validate[A]
-      b <- (js \ "_2").validate[B]
-    } yield a -> b
-  }
+  implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)] =
+    Reads { js =>
+      for {
+        a <- (js \ "_1").validate[A]
+        b <- (js \ "_2").validate[B]
+      } yield a -> b
+    }
 
   implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)] =
     OWrites {
@@ -518,7 +521,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         id = "foo",
         ls = List(1.2d, 23.45d),
         set = Set(1, 3, 4, 7),
-        seq = Seq(2       -> "bar", 4   -> "lorem", 5 -> "ipsum"),
+        seq = Seq(2 -> "bar", 4 -> "lorem", 5 -> "ipsum"),
         scores = Map("A1" -> 0.1f, "EF" -> 12.3f)
       )
 
@@ -671,7 +674,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     implicit val familyWrites = Json.writes[Family] // Failing:
     /* java.lang.IllegalArgumentException:
      requirement failed: familyWrites  is not a valid identifier
-   */
+     */
   }
 
   object Foo {
@@ -735,6 +738,6 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     /* Should fail, as there is no implicit for Family2Member,
      for now due to the contravariance `w` being defined is self resolved
      as Writes instance this subtype Family2Member
-   */
+     */
   }
 }

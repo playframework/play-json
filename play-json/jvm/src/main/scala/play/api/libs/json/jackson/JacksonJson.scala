@@ -316,16 +316,17 @@ private[json] object JacksonJson {
       sw.getBuffer.toString
     }
 
-  def prettyPrint(jsValue: JsValue): String = withStringWriter { sw =>
-    val gen = stringJsonGenerator(sw).setPrettyPrinter(
-      new DefaultPrettyPrinter()
-    )
-    val writer: ObjectWriter = mapper.writerWithDefaultPrettyPrinter()
+  def prettyPrint(jsValue: JsValue): String =
+    withStringWriter { sw =>
+      val gen = stringJsonGenerator(sw).setPrettyPrinter(
+        new DefaultPrettyPrinter()
+      )
+      val writer: ObjectWriter = mapper.writerWithDefaultPrettyPrinter()
 
-    writer.writeValue(gen, jsValue)
-    sw.flush()
-    sw.getBuffer.toString
-  }
+      writer.writeValue(gen, jsValue)
+      sw.flush()
+      sw.getBuffer.toString
+    }
 
   def jsValueToBytes(jsValue: JsValue): Array[Byte] =
     mapper.writeValueAsBytes(jsValue)

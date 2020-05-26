@@ -25,10 +25,11 @@ class ScalaJsonAutomatedSpec extends Specification {
   sealed trait Role
   case object Admin extends Role
   class Contributor(val organization: String) extends Role {
-    override def equals(obj: Any): Boolean = obj match {
-      case other: Contributor if obj != null => this.organization == other.organization
-      case _                                 => false
-    }
+    override def equals(obj: Any): Boolean =
+      obj match {
+        case other: Contributor if obj != null => this.organization == other.organization
+        case _                                 => false
+      }
   }
   object Contributor {
     def apply(organization: String): Contributor            = new Contributor(organization)
@@ -275,12 +276,15 @@ class ScalaJsonAutomatedSpec extends Specification {
       import play.api.libs.json._
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
-        case JsObject(_) => JsSuccess(Admin)
-        case _           => JsError("Empty object expected")
-      }, OWrites[Admin.type] { _ =>
-        Json.obj()
-      })
+      implicit val adminFormat = OFormat[Admin.type](
+        Reads[Admin.type] {
+          case JsObject(_) => JsSuccess(Admin)
+          case _           => JsError("Empty object expected")
+        },
+        OWrites[Admin.type] { _ =>
+          Json.obj()
+        }
+      )
 
       implicit val contributorFormat = Json.format[Contributor]
 
@@ -330,12 +334,15 @@ class ScalaJsonAutomatedSpec extends Specification {
       )
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
-        case JsObject(_) => JsSuccess(Admin)
-        case _           => JsError("Empty object expected")
-      }, OWrites[Admin.type] { _ =>
-        Json.obj()
-      })
+      implicit val adminFormat = OFormat[Admin.type](
+        Reads[Admin.type] {
+          case JsObject(_) => JsSuccess(Admin)
+          case _           => JsError("Empty object expected")
+        },
+        OWrites[Admin.type] { _ =>
+          Json.obj()
+        }
+      )
 
       implicit val contributorFormat = Json.format[Contributor]
 

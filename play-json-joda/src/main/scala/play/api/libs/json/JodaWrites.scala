@@ -14,10 +14,11 @@ trait JodaWrites {
    * Serializer for DateTime
    * @param pattern the pattern used by org.joda.time.format.DateTimeFormat
    */
-  def jodaDateWrites(pattern: String): Writes[DateTime] = new Writes[DateTime] {
-    val df                           = org.joda.time.format.DateTimeFormat.forPattern(pattern)
-    def writes(d: DateTime): JsValue = JsString(d.toString(df))
-  }
+  def jodaDateWrites(pattern: String): Writes[DateTime] =
+    new Writes[DateTime] {
+      val df                           = org.joda.time.format.DateTimeFormat.forPattern(pattern)
+      def writes(d: DateTime): JsValue = JsString(d.toString(df))
+    }
 
   /**
    * Serializer DateTime -> JsNumber(d.getMillis (number of milliseconds since the Epoch))

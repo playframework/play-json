@@ -140,26 +140,29 @@ class ScalaJsonSpec extends Specification {
       import play.api.libs.json._
 
       implicit val locationWrites = new Writes[Location] {
-        def writes(location: Location) = Json.obj(
-          "lat"  -> location.lat,
-          "long" -> location.long
-        )
+        def writes(location: Location) =
+          Json.obj(
+            "lat"  -> location.lat,
+            "long" -> location.long
+          )
       }
 
       implicit val residentWrites = new Writes[Resident] {
-        def writes(resident: Resident) = Json.obj(
-          "name" -> resident.name,
-          "age"  -> resident.age,
-          "role" -> resident.role
-        )
+        def writes(resident: Resident) =
+          Json.obj(
+            "name" -> resident.name,
+            "age"  -> resident.age,
+            "role" -> resident.role
+          )
       }
 
       implicit val placeWrites = new Writes[Place] {
-        def writes(place: Place) = Json.obj(
-          "name"      -> place.name,
-          "location"  -> place.location,
-          "residents" -> place.residents
-        )
+        def writes(place: Place) =
+          Json.obj(
+            "name"      -> place.name,
+            "location"  -> place.location,
+            "residents" -> place.residents
+          )
       }
 
       val place = Place(
@@ -413,7 +416,7 @@ class ScalaJsonSpec extends Specification {
       // JsSuccess(Resident(Bigwig,6,Some(Owsla)),)
       //#convert-to-model
 
-      placeResult.must(beLike { case JsSuccess(Place(name, _, _), _)       => name === "Watership Down" })
+      placeResult.must(beLike { case JsSuccess(Place(name, _, _), _) => name === "Watership Down" })
       residentResult.must(beLike { case JsSuccess(Resident(name, _, _), _) => name === "Bigwig" })
     }
   }
