@@ -216,8 +216,7 @@ lazy val `play-jsonJS` = `play-json`.js
 
 lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   libraryDependencies ++=
-    joda ++ // TODO: remove joda after 2.6.0
-      jacksons ++ specs2 :+ (
+    jacksons ++ specs2 :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
   unmanagedSourceDirectories in Test ++= (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
