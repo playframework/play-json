@@ -13,8 +13,8 @@ import sbtcrossproject.CrossType
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 val specs2 = Seq(
-  "org.specs2" %% "specs2-core"  % "4.10.0" % Test,
-  "org.specs2" %% "specs2-junit" % "4.10.0" % Test,
+  "org.specs2" %% "specs2-core"  % "4.10.1" % Test,
+  "org.specs2" %% "specs2-junit" % "4.10.1" % Test,
 )
 
 val jacksonDatabindVersion = "2.10.4"
