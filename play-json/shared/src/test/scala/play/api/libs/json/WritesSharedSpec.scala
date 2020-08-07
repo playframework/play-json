@@ -32,7 +32,32 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
 
       w.contramap[Int](_.toString).writes(1) mustEqual JsString("1")
 
-      ow.contramap[Char](_.toString).writes('A') mustEqual Json.obj("string" -> "A")
+      val owc: OWrites[Char] = ow.contramap[Char](_.toString)
+
+      owc.writes('A').mustEqual(Json.obj("string" -> "A"))
+    }
+
+    "be narrow'ed" when {
+      "simple JSON value" in {
+        val w = implicitly[Writes[JsValue]]
+
+        w.narrow[JsString].writes(JsString("foo")) mustEqual JsString("foo")
+        w.narrow[JsNumber].writes(JsNumber(2d)) mustEqual JsNumber(2d)
+      }
+
+      "JSON object" in {
+        trait Foo {
+          def bar: String
+        }
+        class Lorem(val bar: String) extends Foo
+
+        val ow = OWrites[Foo] { foo =>
+          Json.obj("bar" -> foo.bar)
+        }
+        val owc: OWrites[Lorem] = ow.narrow[Lorem]
+
+        owc.writes(new Lorem("ipsum")) mustEqual Json.obj("bar" -> "ipsum")
+      }
     }
   }
 

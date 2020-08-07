@@ -34,6 +34,11 @@ trait Writes[A] { self =>
   def contramap[B](f: B => A): Writes[B] = Writes[B](b => self.writes(f(b)))
 
   /**
+   * Narrows to any `B` super-type of `A`.
+   */
+  def narrow[B <: A]: Writes[B] = this.asInstanceOf[Writes[B]]
+
+  /**
    * Transforms the resulting [[JsValue]] using transformer function.
    */
   def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a =>
@@ -72,6 +77,8 @@ trait OWrites[A] extends Writes[A] {
 
   override def contramap[B](f: B => A): OWrites[B] =
     OWrites[B](b => this.writes(f(b)))
+
+  override def narrow[B <: A]: OWrites[B] = this.asInstanceOf[OWrites[B]]
 }
 
 object OWrites extends PathWrites with ConstraintWrites {
