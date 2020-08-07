@@ -20,25 +20,25 @@ jobs:
       name: "Run tests with Scala 2.12 and AdoptOpenJDK 11"
       script: scripts/test-code.sh
       env:
-        - TRAVIS_SCALA_VERSION=2.12.10
+        - TRAVIS_SCALA_VERSION=2.12.12
         - TRAVIS_JDK=11
 
     - name: "Run tests with Scala 2.13 and AdoptOpenJDK 11"
       script: scripts/test-code.sh
       env:
-        - TRAVIS_SCALA_VERSION=2.13.1
+        - TRAVIS_SCALA_VERSION=2.13.2
         - TRAVIS_JDK=11
 
     - name: "Run tests with Scala 2.12 and AdoptOpenJDK 8"
       script: scripts/test-code.sh
       env:
-        - TRAVIS_SCALA_VERSION=2.12.10
+        - TRAVIS_SCALA_VERSION=2.12.12
         - TRAVIS_JDK=8
 
     - name: "Run tests with Scala 2.13 and AdoptOpenJDK 8"
       script: scripts/test-code.sh
       env:
-        - TRAVIS_SCALA_VERSION=2.13.1
+        - TRAVIS_SCALA_VERSION=2.13.2
         - TRAVIS_JDK=8
 
     - stage: publish
@@ -52,7 +52,6 @@ stages:
   - name: test
   - name: publish
     if: ((branch = master AND type = push) OR (tag IS present)) AND NOT fork
-
 
 cache:
   directories:
