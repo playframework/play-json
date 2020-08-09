@@ -152,25 +152,18 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       jp: JsonParser,
       parserContext: List[DeserializerContext]
   ): (Some[JsNumber], List[DeserializerContext]) = {
-    val inputText   = jp.getText
-    val inputLength = inputText.length
+    val inputText = jp.getText
 
-    // There is a limit of how large the numbers can be since parsing extremely
-    // large numbers (think thousand of digits) and operating on the parsed values
-    // can potentially cause a DDoS.
-    if (inputLength > parserSettings.bigDecimalParseSettings.digitsLimit) {
-      throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
-    }
-
-    // Must create the BigDecimal with a MathContext that is consistent with the limits used.
-    val bigDecimal = BigDecimal(inputText, parserSettings.bigDecimalParseSettings.mathContext)
-
-    // We should also avoid numbers with scale that are out of a safe limit
-    if (Math.abs(bigDecimal.scale) > parserSettings.bigDecimalParseSettings.scaleLimit) {
-      throw new IllegalArgumentException(
-        s"""Number scale (${bigDecimal.scale}) is out of limits for field "${jp.currentName()}""""
-      )
-    }
+    val bigDecimal =
+      try BigNumberParser.parseBigDecimal(inputText, parserSettings)
+      catch {
+        case _: BigNumberParser.DigitLimitException =>
+          throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
+        case e: BigNumberParser.ScaleLimitException =>
+          throw new IllegalArgumentException(
+            s"""Number scale (${e.scale}) is out of limits for field "${jp.currentName()}""""
+          )
+      }
 
     (Some(JsNumber(bigDecimal)), parserContext)
   }

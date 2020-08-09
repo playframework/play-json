@@ -5,9 +5,7 @@
 package play.api.libs.json
 
 import java.math.{ BigDecimal => JBigDec }
-
 import java.util.Locale
-
 import java.time.{ Duration => JDuration }
 import java.time.Instant
 import java.time.Period
@@ -742,6 +740,70 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         .must(beLike {
           case JsError((_, JsonValidationError("error.expected.long" :: Nil) :: Nil) :: Nil) => ok
         })
+    }
+  }
+
+  "BigDecimal numbers" should {
+    val DefaultReads = implicitly[Reads[BigDecimal]]
+    import DefaultReads.reads
+
+    val settings = JsonParserSettings.settings.bigDecimalParseSettings
+
+    val longNumberString =
+      Iterator
+        .fill(settings.digitsLimit)("1")
+        .mkString
+
+    "parse long string" in {
+      val input = JsString(longNumberString)
+      reads(input).must(beLike {
+        case JsSuccess(_, _) => ok
+      })
+    }
+
+    "not parse string exceeding length limit" in {
+      val input = JsString(longNumberString + "1")
+      reads(input).must(beLike {
+        case JsError((_, JsonValidationError("error.expected.numberdigitlimit" :: Nil) :: Nil) :: Nil) => ok
+      })
+    }
+
+    "parse string with acceptable scale" in {
+      val numberString = s"1E+${settings.scaleLimit}"
+      reads(JsString(numberString)).must_===(JsSuccess(BigDecimal(numberString)))
+    }
+
+    "not parse string exceeding scale limit" in {
+      val numberString = s"1E+${settings.scaleLimit + 1}"
+      reads(JsString(numberString)).must(beLike {
+        case JsError((_, JsonValidationError("error.expected.numberscalelimit" :: Nil) :: Nil) :: Nil) => ok
+      })
+    }
+  }
+
+  "BigDecimal numbers" should {
+    val DefaultReads = implicitly[Reads[BigInt]]
+    import DefaultReads.reads
+
+    val settings = JsonParserSettings.settings.bigDecimalParseSettings
+
+    val longNumberString =
+      Iterator
+        .fill(settings.digitsLimit)("1")
+        .mkString
+
+    "parse long string" in {
+      val input = JsString(longNumberString)
+      reads(input).must(beLike {
+        case JsSuccess(_, _) => ok
+      })
+    }
+
+    "not parse string exceeding length limit" in {
+      val input = JsString(longNumberString + "1")
+      reads(input).must(beLike {
+        case JsError((_, JsonValidationError("error.expected.numberdigitlimit" :: Nil) :: Nil) :: Nil) => ok
+      })
     }
   }
 
