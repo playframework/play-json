@@ -16,7 +16,7 @@ addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.7.0")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.0")
 
 // "It is not forward binary compatible with 1.0.x: libraries compiled with 1.1.0 cannot be used with 1.0.x."
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.0.1")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.1.1")
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
 
