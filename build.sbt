@@ -13,16 +13,16 @@ import sbtcrossproject.CrossType
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 val specs2 = Seq(
-  "org.specs2" %% "specs2-core"  % "4.9.4" % Test,
-  "org.specs2" %% "specs2-junit" % "4.9.4" % Test,
+  "org.specs2" %% "specs2-core"  % "4.10.2" % Test,
+  "org.specs2" %% "specs2-junit" % "4.10.2" % Test,
 )
 
-val jacksonDatabindVersion = "2.10.4"
+val jacksonDatabindVersion = "2.10.5"
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
-val jacksonVersion = "2.10.4"
+val jacksonVersion = "2.10.5"
 val jacksons = Seq(
   "com.fasterxml.jackson.core"     % "jackson-core",
   "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -138,7 +138,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.1.2"            % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.2.0"            % Test,
         "org.scalatestplus" %%% "scalacheck-1-14" % "3.2.0.0"          % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.14.3"           % Test,
         "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test,
