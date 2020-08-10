@@ -20,25 +20,23 @@ class JsonRichSpec extends AnyWordSpec with Matchers {
         "key4" -> Json.arr("value41", 345.6, JsString("test"), JsObject(Seq("key411" -> obj("key4111" -> 987.654))))
       )
 
-      js.mustEqual(
-        JsObject(
-          Seq(
-            "key1" -> JsObject(
-              Seq(
-                "key11" -> JsString("value11"),
-                "key12" -> JsNumber(123L),
-                "key13" -> JsNull
-              )
-            ),
-            "key2" -> JsNumber(123),
-            "key3" -> JsTrue,
-            "key4" -> JsArray(
-              Array(
-                JsString("value41"),
-                JsNumber(345.6),
-                JsString("test"),
-                JsObject(Seq("key411" -> JsObject(Seq("key4111" -> JsNumber(987.654)))))
-              )
+      js mustEqual JsObject(
+        Seq(
+          "key1" -> JsObject(
+            Seq(
+              "key11" -> JsString("value11"),
+              "key12" -> JsNumber(123L),
+              "key13" -> JsNull
+            )
+          ),
+          "key2" -> JsNumber(123),
+          "key3" -> JsTrue,
+          "key4" -> JsArray(
+            Array(
+              JsString("value41"),
+              JsNumber(345.6),
+              JsString("test"),
+              JsObject(Seq("key411" -> JsObject(Seq("key4111" -> JsNumber(987.654)))))
             )
           )
         )

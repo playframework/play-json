@@ -131,7 +131,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       //object User {def apply(age:Int):User = User(age,"")}
       implicit val userReads = Json.reads[User]
 
-      Json.fromJson[User](Json.obj("name" -> "toto", "age" -> 45)).mustEqual(JsSuccess(User(45, "toto")))
+      Json.fromJson[User](Json.obj("name" -> "toto", "age" -> 45)) mustEqual JsSuccess(User(45, "toto"))
     }
 
     "create a writes[User]" in {
@@ -139,7 +139,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       implicit val userWrites = Json.writes[User]
 
-      Json.toJson(User(45, "toto")).mustEqual(Json.obj("name" -> "toto", "age" -> 45))
+      Json.toJson(User(45, "toto")) mustEqual Json.obj("name" -> "toto", "age" -> 45)
     }
 
     "create a format[User]" in {
@@ -147,8 +147,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       implicit val userFormat = Json.format[User]
 
-      Json.fromJson[User](Json.obj("name" -> "toto", "age" -> 45)).mustEqual(JsSuccess(User(45, "toto")))
-      Json.toJson(User(45, "toto")).mustEqual(Json.obj("name" -> "toto", "age" -> 45))
+      Json.fromJson[User](Json.obj("name" -> "toto", "age" -> 45)) mustEqual (JsSuccess(User(45, "toto")))
+
+      Json.toJson(User(45, "toto")) mustEqual Json.obj("name" -> "toto", "age" -> 45)
     }
 
     "create a reads[Dog]" in {
@@ -173,14 +174,10 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val userWrites = Json.writes[User]
       implicit val dogWrites  = Json.writes[Dog]
 
-      Json
-        .toJson(Dog("medor", User(45, "toto")))
-        .mustEqual(
-          Json.obj(
-            "name"   -> "medor",
-            "master" -> Json.obj("name" -> "toto", "age" -> 45)
-          )
-        )
+      Json.toJson(Dog("medor", User(45, "toto"))) mustEqual Json.obj(
+        "name"   -> "medor",
+        "master" -> Json.obj("name" -> "toto", "age" -> 45)
+      )
     }
 
     "create a format[Dog]" in {
@@ -198,14 +195,10 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
         )
         .mustEqual(JsSuccess(Dog("medor", User(45, "toto"))))
 
-      Json
-        .toJson(Dog("medor", User(45, "toto")))
-        .mustEqual(
-          Json.obj(
-            "name"   -> "medor",
-            "master" -> Json.obj("name" -> "toto", "age" -> 45)
-          )
-        )
+      Json.toJson(Dog("medor", User(45, "toto"))) mustEqual Json.obj(
+        "name"   -> "medor",
+        "master" -> Json.obj("name" -> "toto", "age" -> 45)
+      )
     }
 
     "create a reads[RecUser]" in {
@@ -402,8 +395,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       val expectedJsObj = Json.obj(
         "int" -> Json.obj("obj" -> 1)
       )
-      Json.toJson(wrapped).mustEqual(expectedJsObj)
-      Json.fromJson[WrappedGenericInt](expectedJsObj).get.mustEqual(wrapped)
+
+      Json.toJson(wrapped) mustEqual expectedJsObj
+      Json.fromJson[WrappedGenericInt](expectedJsObj) mustEqual JsSuccess(wrapped)
     }
 
     "create a format[WrappedGenericIntString]" in {
@@ -425,8 +419,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       val expectedJsObj = Json.obj(
         "intString" -> Json.obj("obj1" -> 1, "obj2" -> "hello")
       )
-      Json.toJson(genericHolder).mustEqual(expectedJsObj)
-      Json.fromJson[WrappedGenericIntString](expectedJsObj).get.mustEqual(genericHolder)
+      Json.toJson(genericHolder) mustEqual expectedJsObj
+      Json.fromJson[WrappedGenericIntString](expectedJsObj) mustEqual JsSuccess(genericHolder)
     }
 
     "VarArgsOnly reads, writes, format" should {
@@ -438,17 +432,17 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       val jsObj = Json.obj("ints" -> Seq(1, 2, 3))
 
       "formats should be able to read and write" in {
-        Json.toJson(obj)(format).mustEqual(jsObj)
-        jsObj.as[VarArgsOnly](format).mustEqual(obj)
+        Json.toJson(obj)(format) mustEqual jsObj
+        jsObj.as[VarArgsOnly](format) mustEqual obj
       }
 
       "reads should be able to read valid Json and ignore invalid Json" in {
-        jsObj.as[VarArgsOnly](reads).mustEqual(obj)
-        Json.fromJson[VarArgsOnly](Json.obj("hello" -> "world"))(reads).isError.mustEqual(true)
+        jsObj.as[VarArgsOnly](reads) mustEqual obj
+        Json.fromJson[VarArgsOnly](Json.obj("hello" -> "world"))(reads).isError mustEqual true
       }
 
       "writes should be able to spit out valid json" in {
-        Json.toJson(obj)(writes).mustEqual(jsObj)
+        Json.toJson(obj)(writes) mustEqual jsObj
       }
     }
 
@@ -466,12 +460,12 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       }
 
       "reads should be able to read valid Json and ignore invalid Json" in {
-        jsObj.as[LastVarArg](reads).mustEqual(obj)
-        Json.fromJson[LastVarArg](Json.obj("hello" -> "world"))(reads).isError.mustEqual(true)
+        jsObj.as[LastVarArg](reads) mustEqual obj
+        Json.fromJson[LastVarArg](Json.obj("hello" -> "world"))(reads).isError mustEqual true
       }
 
       "writes should be able to spit out valid json" in {
-        Json.toJson(obj)(writes).mustEqual(jsObj)
+        Json.toJson(obj)(writes) mustEqual jsObj
       }
     }
 
@@ -509,7 +503,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       val js = Json.obj("id" -> 123L, "name" -> "toto")
 
-      js.validate(c1Reads[Long]).get.mustEqual(C1[Long](Id[Long](123L), "toto"))
+      js.validate(c1Reads[Long]) mustEqual JsSuccess(C1[Long](Id[Long](123L), "toto"))
     }
 
     /**
@@ -630,9 +624,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       implicit val fmt = Json.format[CustomApply]
 
-      Json.fromJson[CustomApply](Json.obj("a" -> 5, "b" -> "foo")).mustEqual(JsSuccess(CustomApply(5, "foo")))
-      Json.toJson(CustomApply(5, "foo")).mustEqual(Json.obj("a" -> 5, "b"  -> "foo"))
-      Json.toJson(CustomApply()).mustEqual(Json.obj("a"         -> 10, "b" -> "foo"))
+      Json.fromJson[CustomApply](Json.obj("a" -> 5, "b" -> "foo")) mustEqual JsSuccess(CustomApply(5, "foo"))
+      Json.toJson(CustomApply(5, "foo")) mustEqual Json.obj("a" -> 5, "b"  -> "foo")
+      Json.toJson(CustomApply()) mustEqual Json.obj("a"         -> 10, "b" -> "foo")
     }
 
     "create a writes[UserProfile] with SnakeCase" in {
@@ -641,7 +635,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
       implicit val writes            = Json.writes[UserProfile]
 
-      Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json1)
+      Json.toJson(UserProfile.obj1) mustEqual UserProfile.json1
     }
 
     "create a reads[UserProfile] with SnakeCase" in {
@@ -650,7 +644,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
       implicit val reads             = Json.reads[UserProfile]
 
-      Json.fromJson(UserProfile.json1).mustEqual(JsSuccess(UserProfile.obj1))
+      Json.fromJson(UserProfile.json1) mustEqual JsSuccess(UserProfile.obj1)
     }
 
     "create a format[UserProfile] with SnakeCase" in {
@@ -659,8 +653,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
       implicit val format            = Json.format[UserProfile]
 
-      Json.fromJson(UserProfile.json1).mustEqual(JsSuccess(UserProfile.obj1))
-      Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json1)
+      Json.fromJson(UserProfile.json1) mustEqual JsSuccess(UserProfile.obj1)
+      Json.toJson(UserProfile.obj1) mustEqual UserProfile.json1
     }
 
     "create a writes[UserProfile] with PascalCase" in {
@@ -669,7 +663,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
       implicit val writes            = Json.writes[UserProfile]
 
-      Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json3)
+      Json.toJson(UserProfile.obj1) mustEqual UserProfile.json3
     }
 
     "create a reads[UserProfile] with PascalCase" in {
@@ -678,7 +672,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
       implicit val reads             = Json.reads[UserProfile]
 
-      Json.fromJson(UserProfile.json3).mustEqual(JsSuccess(UserProfile.obj1))
+      Json.fromJson(UserProfile.json3) mustEqual JsSuccess(UserProfile.obj1)
     }
 
     "create a format[UserProfile] with PascalCase" in {
@@ -687,8 +681,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
       implicit val format            = Json.format[UserProfile]
 
-      Json.fromJson(UserProfile.json3).mustEqual(JsSuccess(UserProfile.obj1))
-      Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json3)
+      Json.fromJson(UserProfile.json3) mustEqual JsSuccess(UserProfile.obj1)
+      Json.toJson(UserProfile.obj1) mustEqual UserProfile.json3
     }
 
     "create a writes[UserProfile] with CustomNaming" in {
@@ -701,7 +695,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(LightbendJsonNaming)
       implicit val writes            = Json.writes[UserProfile]
 
-      Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json2)
+      Json.toJson(UserProfile.obj1) mustEqual UserProfile.json2
     }
 
     "create a reads[UserProfile] with CustomNaming" in {
@@ -714,7 +708,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(LightbendJsonNaming)
       implicit val reads             = Json.reads[UserProfile]
 
-      Json.fromJson(UserProfile.json2).mustEqual(JsSuccess(UserProfile.obj1))
+      Json.fromJson(UserProfile.json2) mustEqual JsSuccess(UserProfile.obj1)
     }
 
     "create a format[UserProfile] with CustomNaming" in {
@@ -727,8 +721,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration = JsonConfiguration(LightbendJsonNaming)
       implicit val format            = Json.format[UserProfile]
 
-      Json.fromJson(UserProfile.json2).mustEqual(JsSuccess(UserProfile.obj1))
-      Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json2)
+      Json.fromJson(UserProfile.json2) mustEqual JsSuccess(UserProfile.obj1)
+      Json.toJson(UserProfile.obj1) mustEqual UserProfile.json2
     }
 
     "create a stacked format[UserProfile] with SnakeCase" in {
@@ -815,35 +809,35 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       "allow supplying configuration via implicit config" in {
         implicit val config = JsonConfiguration[Json.WithDefaultValues](naming = SnakeCase)
-        json.as(Json.reads[WithDefaultSnake]).mustEqual(data)
+        json.as(Json.reads[WithDefaultSnake]) mustEqual data
       }
 
       "allow supplying configuration via WithOptions" in {
         val config = JsonConfiguration[Json.WithDefaultValues](naming = SnakeCase)
-        json.as(Json.configured(config).reads[WithDefaultSnake]).mustEqual(data)
+        json.as(Json.configured(config).reads[WithDefaultSnake]) mustEqual data
       }
     }
 
     "create a Writes[Optional] with optionHandlers=WritesNull" in {
       implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
       val writer                     = Json.writes[Optional]
-      writer.writes(Optional(None)).mustEqual(Json.obj("props" -> JsNull))
+      writer.writes(Optional(None)) mustEqual Json.obj("props" -> JsNull)
     }
 
     "create a Format[Optional] with optionHandlers=WritesNull" in {
       implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
       val formatter                  = Json.format[Optional]
-      formatter.writes(Optional(None)).mustEqual(Json.obj("props" -> JsNull))
+      formatter.writes(Optional(None)) mustEqual Json.obj("props" -> JsNull)
 
-      formatter.reads(Json.obj()).mustEqual(JsSuccess(Optional(None)))
-      formatter.reads(Json.obj("props" -> JsNull)).mustEqual(JsSuccess(Optional(None)))
-      formatter.reads(Json.obj("props" -> Some("foo"))).mustEqual(JsSuccess(Optional(Some("foo"))))
+      formatter.reads(Json.obj()) mustEqual JsSuccess(Optional(None))
+      formatter.reads(Json.obj("props" -> JsNull)) mustEqual JsSuccess(Optional(None))
+      formatter.reads(Json.obj("props" -> Some("foo"))) mustEqual JsSuccess(Optional(Some("foo")))
     }
 
     "create a Writes[OptionalWithDefault] with optionHandlers=WritesNull" in {
       implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
       val writer                     = Json.writes[OptionalWithDefault]
-      writer.writes(OptionalWithDefault()).mustEqual(Json.obj("props" -> JsNull))
+      writer.writes(OptionalWithDefault()) mustEqual Json.obj("props" -> JsNull)
     }
 
     "create a Format[OptionalWithDefault] with optionHandlers=WritesNull" in {
@@ -852,28 +846,28 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props"            -> JsNull))
       formatter.writes(OptionalWithDefault(Some("foo"))).mustEqual(Json.obj("props" -> "foo"))
 
-      formatter.reads(Json.obj()).mustEqual(JsSuccess(OptionalWithDefault()))
-      formatter.reads(Json.obj("props" -> JsNull)).mustEqual(JsSuccess(OptionalWithDefault()))
-      formatter.reads(Json.obj("props" -> Some("foo"))).mustEqual(JsSuccess(OptionalWithDefault(Some("foo"))))
+      formatter.reads(Json.obj()) mustEqual JsSuccess(OptionalWithDefault())
+      formatter.reads(Json.obj("props" -> JsNull)) mustEqual JsSuccess(OptionalWithDefault())
+      formatter.reads(Json.obj("props" -> Some("foo"))) mustEqual JsSuccess(OptionalWithDefault(Some("foo")))
     }
 
     "create a Writes[OptionalWithDefault] with DefaultValues and optionHandlers=WritesNull" in {
       implicit val jsonConfiguration =
         JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
       val writer = Json.writes[OptionalWithDefault]
-      writer.writes(OptionalWithDefault()).mustEqual(Json.obj("props" -> JsNull))
+      writer.writes(OptionalWithDefault()) mustEqual Json.obj("props" -> JsNull)
     }
 
     "create a Format[OptionalWithDefault] with DefaultValues and optionHandlers=WritesNull" in {
       implicit val jsonConfiguration =
         JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
       val formatter = Json.format[OptionalWithDefault]
-      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props"            -> JsNull))
-      formatter.writes(OptionalWithDefault(Some("foo"))).mustEqual(Json.obj("props" -> "foo"))
+      formatter.writes(OptionalWithDefault()) mustEqual Json.obj("props"            -> JsNull)
+      formatter.writes(OptionalWithDefault(Some("foo"))) mustEqual Json.obj("props" -> "foo")
 
-      formatter.reads(Json.obj()).mustEqual(JsSuccess(OptionalWithDefault()))
-      formatter.reads(Json.obj("props" -> JsNull)).mustEqual(JsSuccess(OptionalWithDefault(None)))
-      formatter.reads(Json.obj("props" -> Some("foo"))).mustEqual(JsSuccess(OptionalWithDefault(Some("foo"))))
+      formatter.reads(Json.obj()) mustEqual JsSuccess(OptionalWithDefault())
+      formatter.reads(Json.obj("props" -> JsNull)) mustEqual JsSuccess(OptionalWithDefault(None))
+      formatter.reads(Json.obj("props" -> Some("foo"))) mustEqual JsSuccess(OptionalWithDefault(Some("foo")))
     }
   }
 }

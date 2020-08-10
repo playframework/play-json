@@ -28,20 +28,20 @@ class JsResultSpec extends AnyWordSpec with Matchers {
     }
 
     "be converted to Success" in {
-      JsResult.toTry(JsSuccess("foo")).mustEqual(Success("foo"))
+      JsResult.toTry(JsSuccess("foo")) mustEqual Success("foo")
     }
 
     "be converted to basic Failure" in {
       val err = JsError("bar")
-      JsResult.toTry(err).mustEqual(Failure(JsResult.Exception(err)))
+      JsResult.toTry(err) mustEqual Failure(JsResult.Exception(err))
     }
 
     "be created from a Success" in {
-      JsResult.fromTry(Success("foo")).mustEqual(JsSuccess("foo"))
+      JsResult.fromTry(Success("foo")) mustEqual JsSuccess("foo")
     }
 
     "be created from a Failure" in {
-      JsResult.fromTry(Failure(new Throwable("bar"))).mustEqual(JsError("bar"))
+      JsResult.fromTry(Failure(new Throwable("bar"))) mustEqual JsError("bar")
     }
   }
 

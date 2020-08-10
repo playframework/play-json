@@ -18,10 +18,10 @@ jobs:
 
     - stage: test
       name: "Run tests with Scala 2.12 and AdoptOpenJDK 11"
-      script: scripts/test-code.sh
       env:
         - TRAVIS_SCALA_VERSION=2.12.12
         - TRAVIS_JDK=11
+      script: echo "Foo: ${TRAVIS_SCALA_VERSION}" && scripts/test-code.sh
 
     - name: "Run tests with Scala 2.13 and AdoptOpenJDK 11"
       script: scripts/test-code.sh
