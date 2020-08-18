@@ -368,9 +368,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for BigDecimal
    */
-  implicit val bigDecReads = Reads[BigDecimal](js =>
+  implicit val javaBigDecReads = Reads[java.math.BigDecimal](js =>
     js match {
-      case JsString(s) => parseBigDecimal(s).map(BigDecimal(_))
+      case JsString(s) => parseBigDecimal(s)
       case JsNumber(d) => JsSuccess(d.underlying)
       case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
     }
@@ -379,13 +379,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for BigDecimal
    */
-  implicit val javaBigDecReads = Reads[java.math.BigDecimal](js =>
-    js match {
-      case JsString(s) => parseBigDecimal(s)
-      case JsNumber(d) => JsSuccess(d.underlying)
-      case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
-    }
-  )
+  implicit val bigDecReads: Reads[BigDecimal] = javaBigDecReads.map(BigDecimal(_))
 
   /**
    * Deserializer for BigInt
