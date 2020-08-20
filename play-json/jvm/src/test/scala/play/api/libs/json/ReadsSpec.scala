@@ -755,15 +755,13 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         .mkString
 
     "parse long string" in {
-      val input = JsString(longNumberString)
-      reads(input) must beLike {
+      reads(JsString(longNumberString)) must beLike {
         case JsSuccess(_, _) => ok
       }
     }
 
     "not parse string exceeding length limit" in {
-      val input = JsString(longNumberString + "1")
-      reads(input) must beLike {
+      reads(JsString(longNumberString + "1")) must beLike {
         case JsError((_, JsonValidationError("error.expected.numberdigitlimit" :: Nil) :: Nil) :: Nil) => ok
       }
     }
@@ -781,7 +779,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
   }
 
-  "BigDecimal numbers" should {
+  "BigInt numbers" should {
     val DefaultReads = implicitly[Reads[BigInt]]
     import DefaultReads.reads
 
@@ -793,15 +791,13 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         .mkString
 
     "parse long string" in {
-      val input = JsString(longNumberString)
-      reads(input) must beLike {
+      reads(JsString(longNumberString)) must beLike {
         case JsSuccess(_, _) => ok
       }
     }
 
     "not parse string exceeding length limit" in {
-      val input = JsString(longNumberString + "1")
-      reads(input) must beLike {
+      reads(JsString(longNumberString + "1")) must beLike {
         case JsError((_, JsonValidationError("error.expected.numberdigitlimit" :: Nil) :: Nil) :: Nil) => ok
       }
     }
