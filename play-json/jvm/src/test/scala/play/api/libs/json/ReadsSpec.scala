@@ -755,15 +755,13 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         .mkString
 
     "parse long string" in {
-      reads(JsString(longNumberString)) must beLike {
-        case JsSuccess(_, _) => ok
-      }
+      reads(JsString(longNumberString)) must_=== JsSuccess(
+        BigDecimal(longNumberString, settings.mathContext)
+      )
     }
 
     "not parse string exceeding length limit" in {
-      reads(JsString(longNumberString + "1")) must beLike {
-        case JsError((_, JsonValidationError("error.expected.numberdigitlimit" :: Nil) :: Nil) :: Nil) => ok
-      }
+      reads(JsString(longNumberString + "1")) must_=== JsError(JsonValidationError("error.expected.numberdigitlimit"))
     }
 
     "parse string with acceptable scale" in {
@@ -773,9 +771,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     "not parse string exceeding scale limit" in {
       val numberString = s"1E+${settings.scaleLimit + 1}"
-      reads(JsString(numberString)) must beLike {
-        case JsError((_, JsonValidationError("error.expected.numberscalelimit" :: Nil) :: Nil) :: Nil) => ok
-      }
+      reads(JsString(numberString)) must_=== JsError(JsonValidationError("error.expected.numberscalelimit"))
     }
   }
 
@@ -791,15 +787,11 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         .mkString
 
     "parse long string" in {
-      reads(JsString(longNumberString)) must beLike {
-        case JsSuccess(_, _) => ok
-      }
+      reads(JsString(longNumberString)) must_=== JsSuccess(BigInt(longNumberString))
     }
 
     "not parse string exceeding length limit" in {
-      reads(JsString(longNumberString + "1")) must beLike {
-        case JsError((_, JsonValidationError("error.expected.numberdigitlimit" :: Nil) :: Nil) :: Nil) => ok
-      }
+      reads(JsString(longNumberString + "1")) must_=== JsError(JsonValidationError("error.expected.numberdigitlimit"))
     }
   }
 
