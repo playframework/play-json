@@ -714,28 +714,37 @@ trait EnvReads {
   }
 
   protected def parseBigDecimal(input: String): JsResult[java.math.BigDecimal] = {
-    try {
-      val javaBigDecimal = BigNumberParser.parseBigDecimal(input, JsonParserSettings.settings)
-      JsSuccess(javaBigDecimal)
-    } catch {
-      case _: NumberFormatException =>
-        JsError(JsonValidationError("error.expected.numberformatexception"))
-      case _: BigNumberParser.DigitLimitException =>
-        JsError(JsonValidationError("error.expected.numberdigitlimit"))
-      case _: BigNumberParser.ScaleLimitException =>
-        JsError(JsonValidationError("error.expected.numberscalelimit"))
-    }
+    BigDecimalParser
+      .parse(input, JsonParserSettings.settings)
+      .fold(
+        {
+          case BigDecimalParser.Error.ParsingError(e) =>
+            e match {
+              case _: NumberFormatException =>
+                JsError(JsonValidationError("error.expected.numberformatexception"))
+              case _ => throw e
+            }
+          case BigDecimalParser.Error.DigitLimitError() =>
+            JsError(JsonValidationError("error.expected.numberdigitlimit"))
+          case BigDecimalParser.Error.ScaleLimitError(_) =>
+            JsError(JsonValidationError("error.expected.numberscalelimit"))
+        },
+        JsSuccess(_)
+      )
   }
 
   protected def parseBigInteger(input: String): JsResult[java.math.BigInteger] = {
-    try {
-      val javaBigInteger = BigNumberParser.parseBigInteger(input, JsonParserSettings.settings)
-      JsSuccess(javaBigInteger)
-    } catch {
-      case _: NumberFormatException =>
-        JsError(JsonValidationError("error.expected.numberformatexception"))
-      case _: BigNumberParser.DigitLimitException =>
-        JsError(JsonValidationError("error.expected.numberdigitlimit"))
+
+    if (input.length > JsonParserSettings.settings.bigDecimalParseSettings.digitsLimit) {
+      JsError(JsonValidationError("error.expected.numberdigitlimit"))
+    } else {
+      try {
+        val javaBigInteger = new java.math.BigInteger(input)
+        JsSuccess(javaBigInteger)
+      } catch {
+        case _: NumberFormatException =>
+          JsError(JsonValidationError("error.expected.numberformatexception"))
+      }
     }
   }
 }

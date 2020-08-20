@@ -155,15 +155,21 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     val inputText = jp.getText
 
     val bigDecimal =
-      try BigNumberParser.parseBigDecimal(inputText, parserSettings)
-      catch {
-        case _: BigNumberParser.DigitLimitException =>
-          throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
-        case e: BigNumberParser.ScaleLimitException =>
-          throw new IllegalArgumentException(
-            s"""Number scale (${e.scale}) is out of limits for field "${jp.currentName()}""""
-          )
-      }
+      BigDecimalParser
+        .parse(inputText, parserSettings)
+        .fold(
+          {
+            case BigDecimalParser.Error.DigitLimitError() =>
+              throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
+            case BigDecimalParser.Error.ScaleLimitError(scale) =>
+              throw new IllegalArgumentException(
+                s"""Number scale ($scale) is out of limits for field "${jp.currentName()}""""
+              )
+            case BigDecimalParser.Error.ParsingError(e) =>
+              throw e
+          },
+          identity
+        )
 
     (Some(JsNumber(bigDecimal)), parserContext)
   }
