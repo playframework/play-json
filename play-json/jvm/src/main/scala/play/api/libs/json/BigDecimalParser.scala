@@ -6,7 +6,7 @@ package play.api.libs.json
 
 import scala.util.control.NonFatal
 
-object BigDecimalParser {
+private[json] object BigDecimalParser {
 
   def parse(input: String, settings: JsonParserSettings): Either[Error, java.math.BigDecimal] = {
 
