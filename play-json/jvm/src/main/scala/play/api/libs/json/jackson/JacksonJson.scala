@@ -155,14 +155,17 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     BigDecimalParser.parse(jp.getText, parserSettings) match {
       case JsSuccess(bigDecimal, _) =>
         (Some(JsNumber(bigDecimal)), parserContext)
+
       case JsError((_, error +: _) +: _) =>
         error match {
           case JsonValidationError("error.expected.numberdigitlimit" +: _) =>
             throw new IllegalArgumentException(s"Number is larger than supported for field '${jp.currentName()}'")
+
           case JsonValidationError("error.expected.numberscalelimit" +: _, scale) =>
             throw new IllegalArgumentException(
               s"Number scale ($scale) is out of limits for field '${jp.currentName()}'"
             )
+
           case JsonValidationError("error.expected.numberformatexception" +: _) =>
             throw new NumberFormatException
         }
