@@ -152,26 +152,21 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       jp: JsonParser,
       parserContext: List[DeserializerContext]
   ): (Some[JsNumber], List[DeserializerContext]) = {
-    val inputText = jp.getText
-
-    val bigDecimal =
-      BigDecimalParser
-        .parse(inputText, parserSettings)
-        .fold(
-          {
-            case BigDecimalParser.Error.DigitLimitError() =>
-              throw new IllegalArgumentException(s"""Number is larger than supported for field "${jp.currentName()}"""")
-            case BigDecimalParser.Error.ScaleLimitError(scale) =>
-              throw new IllegalArgumentException(
-                s"""Number scale ($scale) is out of limits for field "${jp.currentName()}""""
-              )
-            case BigDecimalParser.Error.ParsingError(e) =>
-              throw e
-          },
-          identity
-        )
-
-    (Some(JsNumber(bigDecimal)), parserContext)
+    BigDecimalParser.parse(jp.getText, parserSettings) match {
+      case JsSuccess(bigDecimal, _) =>
+        (Some(JsNumber(bigDecimal)), parserContext)
+      case JsError((_, error +: _) +: _) =>
+        error match {
+          case JsonValidationError("error.expected.numberdigitlimit" +: _) =>
+            throw new IllegalArgumentException(s"Number is larger than supported for field '${jp.currentName()}'")
+          case JsonValidationError("error.expected.numberscalelimit" +: _, scale) =>
+            throw new IllegalArgumentException(
+              s"Number scale ($scale) is out of limits for field '${jp.currentName()}'"
+            )
+          case JsonValidationError("error.expected.numberformatexception" +: _) =>
+            throw new NumberFormatException
+        }
+    }
   }
 
   @tailrec

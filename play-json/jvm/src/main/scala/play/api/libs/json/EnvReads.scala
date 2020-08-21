@@ -713,34 +713,15 @@ trait EnvReads {
     case js => javaPeriodDaysReads.reads(js)
   }
 
-  protected def parseBigDecimal(input: String): JsResult[java.math.BigDecimal] = {
-    BigDecimalParser
-      .parse(input, JsonParserSettings.settings)
-      .fold(
-        {
-          case BigDecimalParser.Error.ParsingError(e) =>
-            e match {
-              case _: NumberFormatException =>
-                JsError(JsonValidationError("error.expected.numberformatexception"))
-              case _ => throw e
-            }
-          case BigDecimalParser.Error.DigitLimitError() =>
-            JsError(JsonValidationError("error.expected.numberdigitlimit"))
-          case BigDecimalParser.Error.ScaleLimitError(_) =>
-            JsError(JsonValidationError("error.expected.numberscalelimit"))
-        },
-        JsSuccess(_)
-      )
-  }
+  protected def parseBigDecimal(input: String): JsResult[java.math.BigDecimal] =
+    BigDecimalParser.parse(input, JsonParserSettings.settings)
 
   protected def parseBigInteger(input: String): JsResult[java.math.BigInteger] = {
-
     if (input.length > JsonParserSettings.settings.bigDecimalParseSettings.digitsLimit) {
-      JsError(JsonValidationError("error.expected.numberdigitlimit"))
+      JsError("error.expected.numberdigitlimit")
     } else {
       try {
-        val javaBigInteger = new java.math.BigInteger(input)
-        JsSuccess(javaBigInteger)
+        JsSuccess(new java.math.BigInteger(input))
       } catch {
         case _: NumberFormatException =>
           JsError(JsonValidationError("error.expected.numberformatexception"))

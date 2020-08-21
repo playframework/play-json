@@ -4,43 +4,30 @@
 
 package play.api.libs.json
 
-import scala.util.control.NonFatal
-
 private[json] object BigDecimalParser {
 
-  def parse(input: String, settings: JsonParserSettings): Either[Error, java.math.BigDecimal] = {
+  def parse(input: String, settings: JsonParserSettings): JsResult[java.math.BigDecimal] = {
 
     // There is a limit of how large the numbers can be since parsing extremely
     // large numbers (think thousand of digits) and operating on the parsed values
     // can potentially cause a DDoS.
     if (input.length > settings.bigDecimalParseSettings.digitsLimit) {
-      Left(Error.DigitLimitError())
+      JsError("error.expected.numberdigitlimit")
     } else {
       // Must create the BigDecimal with a MathContext that is consistent with the limits used.
       try {
         val bigDecimal = new java.math.BigDecimal(input, settings.bigDecimalParseSettings.mathContext)
 
         // We should also avoid numbers with scale that are out of a safe limit
-        if (Math.abs(bigDecimal.scale) > settings.bigDecimalParseSettings.scaleLimit) {
-          Left(Error.ScaleLimitError(bigDecimal.scale))
+        val scale = bigDecimal.scale
+        if (Math.abs(scale) > settings.bigDecimalParseSettings.scaleLimit) {
+          JsError(JsonValidationError("error.expected.numberscalelimit", scale))
         } else {
-          Right(bigDecimal)
+          JsSuccess(bigDecimal)
         }
-
       } catch {
-        case NonFatal(e) => Left(Error.ParsingError(e))
+        case _: NumberFormatException => JsError("error.expected.numberformatexception")
       }
     }
-  }
-
-  sealed trait Error
-
-  object Error {
-
-    case class DigitLimitError() extends Error
-
-    case class ScaleLimitError(scale: Int) extends Error
-
-    case class ParsingError(cause: Throwable) extends Error
   }
 }

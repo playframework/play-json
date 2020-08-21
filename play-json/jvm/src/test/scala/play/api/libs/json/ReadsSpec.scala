@@ -760,8 +760,8 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       )
     }
 
-    "not parse string exceeding length limit" in {
-      reads(JsString(longNumberString + "1")) must_=== JsError(JsonValidationError("error.expected.numberdigitlimit"))
+    "not parse string exceeding digit limit" in {
+      reads(JsString(longNumberString + "1")) must_=== JsError("error.expected.numberdigitlimit")
     }
 
     "parse string with acceptable scale" in {
@@ -771,7 +771,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     "not parse string exceeding scale limit" in {
       val numberString = s"1E+${settings.scaleLimit + 1}"
-      reads(JsString(numberString)) must_=== JsError(JsonValidationError("error.expected.numberscalelimit"))
+      reads(JsString(numberString)) must_=== JsError(JsonValidationError("error.expected.numberscalelimit", -6179))
     }
   }
 
@@ -790,8 +790,8 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       reads(JsString(longNumberString)) must_=== JsSuccess(BigInt(longNumberString))
     }
 
-    "not parse string exceeding length limit" in {
-      reads(JsString(longNumberString + "1")) must_=== JsError(JsonValidationError("error.expected.numberdigitlimit"))
+    "not parse string exceeding digit limit" in {
+      reads(JsString(longNumberString + "1")) must_=== JsError("error.expected.numberdigitlimit")
     }
   }
 
