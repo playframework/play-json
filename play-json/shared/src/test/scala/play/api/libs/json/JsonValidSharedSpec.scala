@@ -241,11 +241,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           "error"
         } mustEqual "error"
 
-      JsNumber(123)
-        .validate[Int]
-        .recoverTotal { _ =>
-          0
-        } mustEqual 123
+      JsNumber(123).validate[Int].recoverTotal(_ => 0) mustEqual 123
     }
   }
 
