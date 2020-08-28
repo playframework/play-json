@@ -712,6 +712,22 @@ trait EnvReads {
 
     case js => javaPeriodDaysReads.reads(js)
   }
+
+  protected def parseBigDecimal(input: String): JsResult[java.math.BigDecimal] =
+    BigDecimalParser.parse(input, JsonParserSettings.settings)
+
+  protected def parseBigInteger(input: String): JsResult[java.math.BigInteger] = {
+    if (input.length > JsonParserSettings.settings.bigDecimalParseSettings.digitsLimit) {
+      JsError("error.expected.numberdigitlimit")
+    } else {
+      try {
+        JsSuccess(new java.math.BigInteger(input))
+      } catch {
+        case _: NumberFormatException =>
+          JsError(JsonValidationError("error.expected.numberformatexception"))
+      }
+    }
+  }
 }
 
 trait EnvKeyReads { _: KeyReads.type =>

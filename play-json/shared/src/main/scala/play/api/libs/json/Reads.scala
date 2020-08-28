@@ -10,7 +10,6 @@ import scala.language.higherKinds
 
 import scala.annotation.implicitNotFound
 
-import scala.util.control
 import scala.util.Try
 
 import scala.collection.Seq
@@ -369,13 +368,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for BigDecimal
    */
-  implicit val bigDecReads = Reads[BigDecimal](js =>
+  implicit val javaBigDecReads = Reads[java.math.BigDecimal](js =>
     js match {
-      case JsString(s) =>
-        control.Exception
-          .catching(classOf[NumberFormatException])
-          .opt(JsSuccess(BigDecimal(new java.math.BigDecimal(s))))
-          .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
+      case JsString(s) => parseBigDecimal(s)
       case JsNumber(d) => JsSuccess(d.underlying)
       case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
     }
@@ -384,39 +379,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for BigDecimal
    */
-  implicit val javaBigDecReads = Reads[java.math.BigDecimal](js =>
-    js match {
-      case JsString(s) =>
-        control.Exception
-          .catching(classOf[NumberFormatException])
-          .opt(JsSuccess(new java.math.BigDecimal(s)))
-          .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
-      case JsNumber(d) => JsSuccess(d.underlying)
-      case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
-    }
-  )
-
-  /**
-   * Deserializer for BigInt
-   */
-  implicit object BigIntReads extends Reads[BigInt] {
-    def reads(json: JsValue) = json match {
-      case JsString(s) =>
-        control.Exception
-          .catching(classOf[NumberFormatException])
-          .opt(JsSuccess(BigInt(new java.math.BigInteger(s))))
-          .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
-
-      case JsNumber(d) =>
-        d.toBigIntExact match {
-          case Some(i) => JsSuccess(i)
-          case _       => JsError(JsonValidationError("error.invalid.biginteger"))
-        }
-
-      case _ =>
-        JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
-    }
-  }
+  implicit val bigDecReads: Reads[BigDecimal] = javaBigDecReads.map(BigDecimal(_))
 
   /**
    * Deserializer for BigInteger
@@ -424,10 +387,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
   implicit object BigIntegerReads extends Reads[java.math.BigInteger] {
     def reads(json: JsValue) = json match {
       case JsString(s) =>
-        control.Exception
-          .catching(classOf[NumberFormatException])
-          .opt(JsSuccess(new java.math.BigInteger(s)))
-          .getOrElse(JsError(JsonValidationError("error.expected.numberformatexception")))
+        parseBigInteger(s)
 
       case JsNumber(d) =>
         d.toBigIntExact match {
@@ -438,6 +398,13 @@ trait DefaultReads extends LowPriorityDefaultReads {
       case _ =>
         JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
     }
+  }
+
+  /**
+   * Deserializer for BigInt
+   */
+  implicit object BigIntReads extends Reads[BigInt] {
+    def reads(json: JsValue) = BigIntegerReads.reads(json).map(BigInt(_))
   }
 
   /**

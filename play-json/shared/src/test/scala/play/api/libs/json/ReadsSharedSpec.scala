@@ -141,7 +141,26 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "Big integer Reads" should {
+  "BigDecimal Reads" should {
+    Seq("123", "23", "1.23", "1E+1").foreach { repr =>
+      s"""be successful for JsString("$repr")""" in {
+        val jsStr = JsString(repr)
+        jsStr.validate[BigDecimal] mustEqual JsSuccess(BigDecimal(repr))
+        jsStr.validate[java.math.BigDecimal] mustEqual JsSuccess(new java.math.BigDecimal(repr))
+      }
+    }
+
+    Seq("1..0", "A").foreach { repr =>
+      s"fail for '$repr'" in {
+        val jsStr   = JsString(repr)
+        val jsError = JsError("error.expected.numberformatexception")
+        jsStr.validate[BigDecimal] mustEqual jsError
+        jsStr.validate[java.math.BigDecimal] mustEqual jsError
+      }
+    }
+  }
+
+  "BigInteger Reads" should {
     Seq("123", "23").foreach { repr =>
       val jb = new BigInteger(repr)
       val sb = BigInt(jb)
@@ -163,19 +182,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers {
 
     Seq("1.0", "A").foreach { repr =>
       s"fails for '$repr'" in {
-        val jsStr = JsString(repr)
-        val jsErr = JsError(
-          List(
-            (
-              JsPath,
-              List(
-                JsonValidationError("error.expected.numberformatexception")
-              )
-            )
-          )
-        )
-
-        jsStr.validate[BigInteger] mustEqual jsErr
+        JsString(repr).validate[BigInteger] mustEqual JsError("error.expected.numberformatexception")
       }
     }
   }
