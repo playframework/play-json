@@ -12,7 +12,7 @@ import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-final class ReadsSharedSpec extends AnyWordSpec with Matchers {
+final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
   "Reads" should {
     "not repath the second result on flatMap" when {
       val aPath                 = JsPath \ "a"
@@ -212,20 +212,8 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers {
     "not be read from invalid JsString" in {
       val strRepr = " invalid"
 
-      JsString(strRepr).validate[URI] match {
-        case JsError(
-            List(
-              (
-                JsPath,
-                List(
-                  JsonValidationError(List(msg))
-                )
-              )
-            )
-            ) =>
-          msg.must(include("invalid"))
-
-        case _ => ()
+      inside(JsString(strRepr).validate[URI]) {
+        case JsError.Message(msg) => msg.must(include("invalid"))
       }
     }
   }
