@@ -143,6 +143,14 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         jsSimple.validate[Family] mustEqual JsSuccess(simple)
         jsOptional.validate[Family] mustEqual JsSuccess(optional)
       }
+
+      "subtype is a sealed trait itself" in {
+        val expected   = Leaf2(1)
+        val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroSpec.Leaf2", "value" -> 1)
+
+        Json.toJson[TreeValue](expected) mustEqual expectedJs
+        expectedJs.validate[TreeValue] mustEqual JsSuccess(expected)
+      }
     }
 
     "be generated for a ValueClass" in {
@@ -659,6 +667,21 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     /* java.lang.IllegalArgumentException:
      requirement failed: familyWrites  is not a valid identifier
    */
+  }
+
+  sealed trait TreeValue
+
+  sealed trait SubLevel extends TreeValue
+
+  case class Leaf1(value: String) extends TreeValue
+  case class Leaf2(value: Int)    extends SubLevel
+
+  object TreeValue {
+    private implicit val leaf1: OFormat[Leaf1]       = Json.format
+    private implicit val leaf2: OFormat[Leaf2]       = Json.format
+    private implicit val subLevel: OFormat[SubLevel] = Json.format
+
+    implicit val format: OFormat[TreeValue] = Json.format
   }
 
   object Foo {
