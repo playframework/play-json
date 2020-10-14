@@ -172,11 +172,11 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
       "for Long" should {
         "success for valid positive number" in {
-          Json.parse(intsJson(long = 123.toString)).as[IntNumbers].long.mustEqual(123)
+          Json.parse(intsJson(long = 123.toString)).as[IntNumbers].long.mustEqual(123L)
         }
 
         "success for valid negative number" in {
-          Json.parse(intsJson(long = (-123).toString)).as[IntNumbers].long.mustEqual(-123)
+          Json.parse(intsJson(long = (-123).toString)).as[IntNumbers].long.mustEqual(-123L)
         }
 
         "success for max value" in {
