@@ -16,7 +16,8 @@ class JsonParsing_01_ParseManyFields {
   @Setup
   def setup(): Unit = {
     val value = "42"
-    stringToParse = HashCodeCollider.zeroHashCodeStrings.take(n)
+    stringToParse = HashCodeCollider.zeroHashCodeStrings
+      .take(n)
       .mkString("""{"s":"s","""", s"""":$value,"""", s"""":$value,"i":1}""")
   }
 

@@ -76,7 +76,7 @@ val silencerVersion = "1.7.1"
 
 libraryDependencies in ThisBuild ++= Seq(
   compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
-  ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided).cross(CrossVersion.full)
+  ("com.github.ghik"                % "silencer-lib"    % silencerVersion % Provided).cross(CrossVersion.full)
 )
 
 // Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
@@ -141,8 +141,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         "org.scalatest"     %%% "scalatest"       % "3.1.2"            % Test,
         "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.2.0"          % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.14.3"           % Test,
-        "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test,
-        "org.scala-lang"    % "scala-compiler"    % scalaVersion.value % "provided"
+        "com.chuusai"        %% "shapeless"       % "2.3.3"            % Test,
+        "org.scala-lang"      % "scala-compiler"  % scalaVersion.value % "provided"
       ),
       libraryDependencies ++=
         (CrossVersion.partialVersion(scalaVersion.value) match {
@@ -164,22 +164,23 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         val file = dir / "Generated.scala"
         val (writes, reads) = 1
           .to(22)
-          .map {
-            i =>
-              def commaSeparated(s: Int => String)   = 1.to(i).map(s).mkString(", ")
-              def newlineSeparated(s: Int => String) = 1.to(i).map(s).mkString("\n")
-              val writerTypes                        = commaSeparated(j => s"T$j: Writes")
-              val readerTypes                        = commaSeparated(j => s"T$j: Reads")
-              val typeTuple                          = commaSeparated(j => s"T$j")
-              val written                            = commaSeparated(j => s"implicitly[Writes[T$j]].writes(x._$j)")
-              val readValues                         = commaSeparated(j => s"t$j")
-              val readGenerators                     = newlineSeparated(j => s"t$j <- implicitly[Reads[T$j]].reads(arr(${j - 1}))")
+          .map { i =>
+            def commaSeparated(s: Int => String)   = 1.to(i).map(s).mkString(", ")
+            def newlineSeparated(s: Int => String) = 1.to(i).map(s).mkString("\n")
+            val writerTypes                        = commaSeparated(j => s"T$j: Writes")
+            val readerTypes                        = commaSeparated(j => s"T$j: Reads")
+            val typeTuple                          = commaSeparated(j => s"T$j")
+            val written                            = commaSeparated(j => s"implicitly[Writes[T$j]].writes(x._$j)")
+            val readValues                         = commaSeparated(j => s"t$j")
+            val readGenerators                     = newlineSeparated(j => s"t$j <- implicitly[Reads[T$j]].reads(arr(${j - 1}))")
 
-              (s"""
+            (
+              s"""
           implicit def Tuple${i}W[$writerTypes]: Writes[Tuple${i}[$typeTuple]] = Writes[Tuple${i}[$typeTuple]](
             x => JsArray(Array($written))
           )
-          """, s"""
+          """,
+              s"""
           implicit def Tuple${i}R[$readerTypes]: Reads[Tuple${i}[$typeTuple]] = Reads[Tuple${i}[$typeTuple]]{
             case JsArray(arr) if arr.size == $i =>
               for{
@@ -189,7 +190,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
             case _ =>
               JsError(Seq(JsPath() -> Seq(JsonValidationError("Expected array of $i elements"))))
           }
-        """)
+        """
+            )
           }
           .unzip
 
@@ -266,8 +268,8 @@ lazy val docs = project
       // Copy the docs to a place so they have the correct api/scala prefix
       val apiDocsStage = target.value / "api-docs-stage"
       val cacheFile    = streams.value.cacheDirectory / "api-docs-stage"
-      val mappings = apiDocs.allPaths.filter(!_.isDirectory).get.pair(relativeTo(apiDocs)).map {
-        case (file, path) => file -> apiDocsStage / "api" / "scala" / path
+      val mappings = apiDocs.allPaths.filter(!_.isDirectory).get.pair(relativeTo(apiDocs)).map { case (file, path) =>
+        file -> apiDocsStage / "api" / "scala" / path
       }
       Sync.sync(CacheStore(cacheFile))(mappings)
       PlayDocsDirectoryResource(apiDocsStage)

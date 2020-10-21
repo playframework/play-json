@@ -563,8 +563,7 @@ object Json extends JsonFacade {
    * type Opts = MacroOptions with DefaultValues
    * }}}
    */
-  trait DefaultValues { _: MacroOptions =>
-  }
+  trait DefaultValues { _: MacroOptions => }
 
   /**
    * Alias for `MacroOptions with DefaultValues`

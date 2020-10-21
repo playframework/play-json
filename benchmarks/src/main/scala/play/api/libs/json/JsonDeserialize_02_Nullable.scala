@@ -11,8 +11,8 @@ class JsonDeserialize_02_Nullable {
 
   case class NullableFields(field1: Option[String], field2: Option[String], field3: Option[String])
 
-  private val json = Json.obj("field1" -> "value1", "field2" -> "value2")
-  private var result: NullableFields = _
+  private val json                                           = Json.obj("field1" -> "value1", "field2" -> "value2")
+  private var result: NullableFields                         = _
   private implicit val nullableFields: Reads[NullableFields] = Json.reads
 
   @Benchmark

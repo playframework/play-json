@@ -31,8 +31,8 @@ class ScalaJsonAutomatedSpec extends Specification {
     }
   }
   object Contributor {
-    def apply(organization: String): Contributor            = new Contributor(organization)
-    def unapply(contributor: Contributor): Option[(String)] = Some(contributor.organization)
+    def apply(organization: String): Contributor          = new Contributor(organization)
+    def unapply(contributor: Contributor): Option[String] = Some(contributor.organization)
   }
   //#model3
 
@@ -275,12 +275,15 @@ class ScalaJsonAutomatedSpec extends Specification {
       import play.api.libs.json._
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
-        case JsObject(_) => JsSuccess(Admin)
-        case _           => JsError("Empty object expected")
-      }, OWrites[Admin.type] { _ =>
-        Json.obj()
-      })
+      implicit val adminFormat = OFormat[Admin.type](
+        Reads[Admin.type] {
+          case JsObject(_) => JsSuccess(Admin)
+          case _           => JsError("Empty object expected")
+        },
+        OWrites[Admin.type] { _ =>
+          Json.obj()
+        }
+      )
 
       implicit val contributorFormat = Json.format[Contributor]
 
@@ -330,12 +333,15 @@ class ScalaJsonAutomatedSpec extends Specification {
       )
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
-        case JsObject(_) => JsSuccess(Admin)
-        case _           => JsError("Empty object expected")
-      }, OWrites[Admin.type] { _ =>
-        Json.obj()
-      })
+      implicit val adminFormat = OFormat[Admin.type](
+        Reads[Admin.type] {
+          case JsObject(_) => JsSuccess(Admin)
+          case _           => JsError("Empty object expected")
+        },
+        OWrites[Admin.type] { _ =>
+          Json.obj()
+        }
+      )
 
       implicit val contributorFormat = Json.format[Contributor]
 

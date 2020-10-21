@@ -34,36 +34,34 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
   "JSON" should {
     "equals JsObject independently of field order" in json { js =>
       js.obj(
-          "field1" -> 123,
+        "field1" -> 123,
+        "field2" -> "beta",
+        "field3" -> js.obj(
+          "field31" -> true,
+          "field32" -> 123.45,
+          "field33" -> js.arr("blabla", 456L, JsNull)
+        )
+      ).mustEqual(
+        js.obj(
           "field2" -> "beta",
           "field3" -> js.obj(
             "field31" -> true,
-            "field32" -> 123.45,
-            "field33" -> js.arr("blabla", 456L, JsNull)
-          )
+            "field33" -> js.arr("blabla", 456L, JsNull),
+            "field32" -> 123.45
+          ),
+          "field1" -> 123
         )
-        .mustEqual(
-          js.obj(
-            "field2" -> "beta",
-            "field3" -> js.obj(
-              "field31" -> true,
-              "field33" -> js.arr("blabla", 456L, JsNull),
-              "field32" -> 123.45
-            ),
-            "field1" -> 123
-          )
-        )
+      )
 
       js.obj(
-          "field1" -> 123,
-          "field2" -> "beta",
-          "field3" -> js.obj(
-            "field31" -> true,
-            "field32" -> 123.45,
-            "field33" -> js.arr("blabla", JsNull)
-          )
+        "field1" -> 123,
+        "field2" -> "beta",
+        "field3" -> js.obj(
+          "field31" -> true,
+          "field32" -> 123.45,
+          "field33" -> js.arr("blabla", JsNull)
         )
-        .must(not)
+      ).must(not)
         .equal(
           js.obj(
             "field2" -> "beta",
@@ -77,15 +75,14 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
         )
 
       js.obj(
-          "field1" -> 123,
-          "field2" -> "beta",
-          "field3" -> js.obj(
-            "field31" -> true,
-            "field32" -> 123.45,
-            "field33" -> js.arr("blabla", 456L, JsNull)
-          )
+        "field1" -> 123,
+        "field2" -> "beta",
+        "field3" -> js.obj(
+          "field31" -> true,
+          "field32" -> 123.45,
+          "field33" -> js.arr("blabla", 456L, JsNull)
         )
-        .must(not)
+      ).must(not)
         .equal(
           js.obj(
             "field3" -> js.obj(
@@ -330,21 +327,20 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       ).tupled
 
       js.toJson(
-          (
-            List(1, 2, 3),
-            Set("alpha", "beta", "gamma"),
-            Seq("alpha", "beta", "gamma"),
-            Map("key1" -> "value1", "key2" -> "value2")
-          )
+        (
+          List(1, 2, 3),
+          Set("alpha", "beta", "gamma"),
+          Seq("alpha", "beta", "gamma"),
+          Map("key1" -> "value1", "key2" -> "value2")
         )
-        .mustEqual(
-          js.obj(
-            "key1" -> js.arr(1, 2, 3),
-            "key2" -> js.arr("alpha", "beta", "gamma"),
-            "key3" -> js.arr("alpha", "beta", "gamma"),
-            "key4" -> js.obj("key1" -> "value1", "key2" -> "value2")
-          )
+      ).mustEqual(
+        js.obj(
+          "key1" -> js.arr(1, 2, 3),
+          "key2" -> js.arr("alpha", "beta", "gamma"),
+          "key3" -> js.arr("alpha", "beta", "gamma"),
+          "key4" -> js.obj("key1" -> "value1", "key2" -> "value2")
         )
+      )
     }
 
     "write in 2nd level" in json { js =>

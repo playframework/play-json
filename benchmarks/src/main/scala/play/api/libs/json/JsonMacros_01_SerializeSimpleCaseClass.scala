@@ -9,7 +9,7 @@ import org.openjdk.jmh.annotations._
 @State(Scope.Benchmark)
 class JsonMacros_01_SerializeSimpleCaseClass {
 
-  var employee: Employee = _
+  var employee: Employee    = _
   var employeeJson: JsValue = _
 
   @Setup(Level.Iteration)
@@ -26,15 +26,14 @@ class JsonMacros_01_SerializeSimpleCaseClass {
 
   @TearDown(Level.Iteration)
   def tearDown(): Unit = {
-    assert(employeeJson == Json.parse(
-      """ {
-        |   "employeeNumber": 42,
-        |   "firstName": "Foo",
-        |   "lastName": "Bar",
-        |   "city": "New York",
-        |   "country": "United States",
-        |   "tags": ["engineering", "new", "bar"]
-        | }
+    assert(employeeJson == Json.parse(""" {
+                                        |   "employeeNumber": 42,
+                                        |   "firstName": "Foo",
+                                        |   "lastName": "Bar",
+                                        |   "city": "New York",
+                                        |   "country": "United States",
+                                        |   "tags": ["engineering", "new", "bar"]
+                                        | }
       """.stripMargin))
   }
 

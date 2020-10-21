@@ -27,8 +27,8 @@ object TestFormats {
   }
 
   implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)] =
-    OWrites {
-      case (a, b) => Json.obj("_1" -> a, "_2" -> b)
+    OWrites { case (a, b) =>
+      Json.obj("_1" -> a, "_2" -> b)
     }
 }
 
@@ -505,7 +505,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         id = "foo",
         ls = List(1.2d, 23.45d),
         set = Set(1, 3, 4, 7),
-        seq = Seq(2       -> "bar", 4   -> "lorem", 5 -> "ipsum"),
+        seq = Seq(2 -> "bar", 4 -> "lorem", 5 -> "ipsum"),
         scores = Map("A1" -> 0.1f, "EF" -> 12.3f)
       )
 
@@ -658,7 +658,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     implicit val familyWrites = Json.writes[Family] // Failing:
     /* java.lang.IllegalArgumentException:
      requirement failed: familyWrites  is not a valid identifier
-   */
+     */
   }
 
   object Foo {
@@ -722,6 +722,6 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     /* Should fail, as there is no implicit for Family2Member,
      for now due to the contravariance `w` being defined is self resolved
      as Writes instance this subtype Family2Member
-   */
+     */
   }
 }

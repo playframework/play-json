@@ -10,11 +10,11 @@ import org.openjdk.jmh.annotations._
 class JsonMacros_02_SerializeList {
 
   var employees: Seq[Employee] = _
-  var employeesJson: JsValue = _
+  var employeesJson: JsValue   = _
 
   @Setup(Level.Iteration)
   def setup(): Unit = {
-    employees = (1 to 100) map { id =>
+    employees = (1.to(100)).map { id =>
       Employee(
         id,
         s"Foo$id",
@@ -27,9 +27,7 @@ class JsonMacros_02_SerializeList {
   }
 
   @TearDown(Level.Iteration)
-  def tearDown(): Unit = {
-
-  }
+  def tearDown(): Unit = {}
 
   @Benchmark
   def toJson(): JsValue = {

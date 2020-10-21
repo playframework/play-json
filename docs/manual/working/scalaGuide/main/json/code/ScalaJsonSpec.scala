@@ -368,8 +368,8 @@ class ScalaJsonSpec extends Specification {
       )
       //#convert-to-type-validate
 
-      nameResult.must(beLike {
-        case JsSuccess("Watership Down", _) => ok
+      nameResult.must(beLike { case JsSuccess("Watership Down", _) =>
+        ok
       }) and {
         nameOrFallback.must_===("Watership Down")
       } and {
@@ -413,7 +413,7 @@ class ScalaJsonSpec extends Specification {
       // JsSuccess(Resident(Bigwig,6,Some(Owsla)),)
       //#convert-to-model
 
-      placeResult.must(beLike { case JsSuccess(Place(name, _, _), _)       => name === "Watership Down" })
+      placeResult.must(beLike { case JsSuccess(Place(name, _, _), _) => name === "Watership Down" })
       residentResult.must(beLike { case JsSuccess(Resident(name, _, _), _) => name === "Bigwig" })
     }
   }

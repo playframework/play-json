@@ -27,8 +27,8 @@ object `package` {
 
   implicit def toFunctorOps[M[_], A](ma: M[A])(implicit fu: Functor[M]): FunctorOps[M, A] = new FunctorOps(ma)
 
-  implicit def toContraFunctorOps[M[_], A](ma: M[A])(
-      implicit fu: ContravariantFunctor[M]
+  implicit def toContraFunctorOps[M[_], A](ma: M[A])(implicit
+      fu: ContravariantFunctor[M]
   ): ContravariantFunctorOps[M, A] = new ContravariantFunctorOps(ma)
 
   implicit def toInvariantFunctorOps[M[_], A](ma: M[A])(implicit fu: InvariantFunctor[M]): InvariantFunctorOps[M, A] =

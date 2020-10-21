@@ -10,11 +10,11 @@ import org.openjdk.jmh.annotations._
 class JsonDeserialize_01_List {
 
   var employees: Seq[Employee] = _
-  var employeesJson: JsValue = _
+  var employeesJson: JsValue   = _
 
   @Setup(Level.Iteration)
   def setup(): Unit = {
-    val employees: Seq[Employee] = (1 to 100) map { id =>
+    val employees: Seq[Employee] = (1.to(100)).map { id =>
       Employee(
         id,
         s"Foo$id",
@@ -28,9 +28,7 @@ class JsonDeserialize_01_List {
   }
 
   @TearDown(Level.Iteration)
-  def tearDown(): Unit = {
-
-  }
+  def tearDown(): Unit = {}
 
   @Benchmark
   def jsonAs(): JsValue = {
