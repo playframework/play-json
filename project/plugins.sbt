@@ -7,7 +7,7 @@ resolvers += Resolver.typesafeRepo("releases")
 
 addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.6")
 
-addSbtPlugin("com.typesafe.play" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "2.8.2"))
+addSbtPlugin("com.typesafe.play" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "2.8.3"))
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.0")
 
