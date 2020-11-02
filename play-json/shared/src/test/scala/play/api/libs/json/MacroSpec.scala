@@ -6,6 +6,7 @@ package play.api.libs.json
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
 object TestFormats {
   implicit def eitherReads[A: Reads, B: Reads] = Reads[Either[A, B]] { js =>
     implicitly[Reads[A]].reads(js) match {
