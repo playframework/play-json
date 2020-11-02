@@ -119,6 +119,23 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     }
   }
 
+  "Reads result" should {
+    "be flat-mapped" in {
+      val readsArrayAsOwner: Reads[Owner] =
+        Reads.seq[String].flatMapResult {
+          case login +: avatar +: url +: _ =>
+            JsSuccess(Owner(login, avatar, url))
+
+          case _ =>
+            JsError("error.expected.owner-as-jsarray")
+        }
+
+      readsArrayAsOwner.reads(JsArray(Seq(JsString("foo"), JsString("bar"), JsString("url://owner")))) mustEqual JsSuccess(
+        Owner("foo", "bar", "url://owner")
+      )
+    }
+  }
+
   "Functional Reads" should {
     import play.api.libs.functional.syntax._
 

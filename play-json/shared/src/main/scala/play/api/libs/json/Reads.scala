@@ -121,6 +121,31 @@ trait Reads[A] { self =>
       this.reads(json)
     }
 
+  /**
+   * Creates a new `Reads`, which transforms the successful result
+   * from the current instance using the given function.
+   *
+   * @param f the function applied on the successful `A` value
+   *
+   * {{{
+   * final class Foo private(val code: String) extends AnyVal
+   *
+   * val A = new Foo("A")
+   * val B = new Foo("B")
+   *
+   * import play.api.libs.json.Reads
+   *
+   * val r: Reads[Foo] = implicitly[Reads[String]].flatMapResult {
+   *   case "A" => JsSuccess(A)
+   *   case "B" => JsSuccess(B)
+   *   case _   => JsError("error.expected.foo")
+   * }
+   * }}}
+   */
+  def flatMapResult[B](f: A => JsResult[B]): Reads[B] = Reads[B] {
+    this.reads(_).flatMap(f)
+  }
+
   def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
     rb.composeWith(this.map(witness))
 
