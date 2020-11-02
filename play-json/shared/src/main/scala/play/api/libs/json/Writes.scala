@@ -142,6 +142,9 @@ object OWrites extends PathWrites with ConstraintWrites {
       wa.contramap[B](f)
   }
 
+  /**
+   * Returns an instance which uses `f` as [[OWrites.writes]] function.
+   */
   def apply[A](f: A => JsObject): OWrites[A] = new OWrites[A] {
     def writes(a: A): JsObject = f(a)
   }
@@ -172,6 +175,9 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
         wa.contramap[B](f)
     }
 
+  /**
+   * Returns an instance which uses `f` as [[Writes.writes]] function.
+   */
   def apply[A](f: A => JsValue): Writes[A] = new Writes[A] {
     def writes(a: A): JsValue = f(a)
   }

@@ -101,6 +101,21 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       )
     }
 
+    "validate JsObject to Map with custom key type" in {
+      implicit val keyReads = KeyReads[Int] { key =>
+        JsResult.fromTry(scala.util.Try(key.toInt))
+      }
+
+      Json
+        .obj("1" -> "value1", "2" -> "value2")
+        .validate[Map[Int, String]]
+        .mustEqual(JsSuccess(Map(1 -> "value1", 2 -> "value2")))
+
+      implicit val keyWrites = KeyWrites[Int](_.toString)
+
+      Json.toJson(Map(3 -> "foo", 4 -> "bar")) mustEqual Json.obj("3" -> "foo", "4" -> "bar")
+    }
+
     "validate JsArray to List" in {
       Json.arr("alpha", "beta", "delta").validate[List[String]] mustEqual JsSuccess(List("alpha", "beta", "delta"))
       Json.arr(123, 567, 890).validate[List[Int]] mustEqual JsSuccess(List(123, 567, 890))
