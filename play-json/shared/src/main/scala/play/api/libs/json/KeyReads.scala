@@ -13,4 +13,12 @@ trait KeyReads[T] {
   def readKey(key: String): JsResult[T]
 }
 
-object KeyReads extends EnvKeyReads
+object KeyReads extends EnvKeyReads {
+
+  /**
+   * Returns an instance which uses `f` as [[KeyReads.readKey]] function.
+   */
+  def apply[T](f: String => JsResult[T]): KeyReads[T] = new KeyReads[T] {
+    def readKey(key: String) = f(key)
+  }
+}
