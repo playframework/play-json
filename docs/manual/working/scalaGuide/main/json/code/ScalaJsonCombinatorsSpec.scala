@@ -76,7 +76,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       } and {
         firstResidentPath.toString === "/residents(0)"
       } and {
-        lat.must(contain(exactly[JsValue](JsNumber(51.235685d))))
+        lat.must(contain(exactly[JsValue](JsNumber(51.235685D))))
       }
     }
 
@@ -93,7 +93,11 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val nameReads: Reads[String] = (JsPath \ "name").read[String]
       //#reads-simple
 
-      json.validate(nameReads).must(beLike { case x: JsSuccess[String] => x.get === "Watership Down" })
+      json
+        .validate(nameReads)
+        .must(beLike {
+          case JsSuccess(v, _) => v must_=== "Watership Down"
+        })
     }
 
     "allow creating complex Reads" in {
@@ -397,7 +401,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       //#writes-combinators
 
       plus10Writes.writes(2) must_=== JsNumber(12) and {
-        doubleAsObj.writes(1.23d) must_=== Json.obj("_double" -> 1.23)
+        doubleAsObj.writes(1.23D) must_=== Json.obj("_double" -> 1.23)
       } and {
         someWrites.writes(Some("foo")) must_=== JsString("foo")
       }

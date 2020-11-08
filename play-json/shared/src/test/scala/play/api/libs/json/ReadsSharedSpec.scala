@@ -22,23 +22,27 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
 
       "in case of success" in {
         val flatMappedReads = readsA.flatMap(_ => readsA)
-        aJson.validate(flatMappedReads) mustEqual JsSuccess(value, aPath)
+        aJson.validate(flatMappedReads).mustEqual(JsSuccess(value, aPath))
       }
 
       "in case of failure" in {
         val readsAFail      = aPath.read[Int]
         val flatMappedReads = readsA.flatMap(_ => readsAFail)
 
-        aJson.validate(flatMappedReads) mustEqual JsError(
-          List(
-            (
-              aPath,
+        aJson
+          .validate(flatMappedReads)
+          .mustEqual(
+            JsError(
               List(
-                JsonValidationError("error.expected.jsnumber")
+                (
+                  aPath,
+                  List(
+                    JsonValidationError("error.expected.jsnumber")
+                  )
+                )
               )
             )
           )
-        )
       }
     }
 
@@ -55,7 +59,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     "be failed" in {
       val r: Reads[String] = Reads.failed[String]("Foo")
 
-      r.reads(Json.obj()) mustEqual JsError("Foo")
+      r.reads(Json.obj()).mustEqual(JsError("Foo"))
     }
   }
 
@@ -103,7 +107,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
           case _ => JsError("Object expected")
         })
 
-      Json.obj("login" -> "foo", "url" -> "url://id").validate[Owner] mustEqual JsSuccess(Owner("foo", "", "url://id"))
+      Json.obj("login" -> "foo", "url" -> "url://id").validate[Owner].mustEqual(JsSuccess(Owner("foo", "", "url://id")))
     }
 
     "preprocess a JSON object using a function" in {
@@ -115,7 +119,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
           }
       }
 
-      Json.obj("login" -> "foo", "url" -> "url://id").validate[Owner] mustEqual JsSuccess(Owner("foo", "", "url://id"))
+      Json.obj("login" -> "foo", "url" -> "url://id").validate[Owner].mustEqual(JsSuccess(Owner("foo", "", "url://id")))
     }
   }
 
@@ -130,9 +134,13 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
             JsError("error.expected.owner-as-jsarray")
         }
 
-      readsArrayAsOwner.reads(JsArray(Seq(JsString("foo"), JsString("bar"), JsString("url://owner")))) mustEqual JsSuccess(
-        Owner("foo", "bar", "url://owner")
-      )
+      readsArrayAsOwner
+        .reads(JsArray(Seq(JsString("foo"), JsString("bar"), JsString("url://owner"))))
+        .mustEqual(
+          JsSuccess(
+            Owner("foo", "bar", "url://owner")
+          )
+        )
     }
   }
 
@@ -152,9 +160,9 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
         "url"    -> "url://id"
       )
 
-      Json.parse(Json.stringify(jsObj)) mustEqual jsObj
+      Json.parse(Json.stringify(jsObj)).mustEqual(jsObj)
 
-      jsObj.validate[Owner] mustEqual JsSuccess(Owner(login = "foo", avatar = "url://avatar", url = "url://id"))
+      jsObj.validate[Owner].mustEqual(JsSuccess(Owner(login = "foo", avatar = "url://avatar", url = "url://id")))
     }
   }
 
@@ -162,8 +170,8 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     Seq("123", "23", "1.23", "1E+1").foreach { repr =>
       s"""be successful for JsString("$repr")""" in {
         val jsStr = JsString(repr)
-        jsStr.validate[BigDecimal] mustEqual JsSuccess(BigDecimal(repr))
-        jsStr.validate[java.math.BigDecimal] mustEqual JsSuccess(new java.math.BigDecimal(repr))
+        jsStr.validate[BigDecimal].mustEqual(JsSuccess(BigDecimal(repr)))
+        jsStr.validate[java.math.BigDecimal].mustEqual(JsSuccess(new java.math.BigDecimal(repr)))
       }
     }
 
@@ -171,8 +179,8 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
       s"fail for '$repr'" in {
         val jsStr   = JsString(repr)
         val jsError = JsError("error.expected.numberformatexception")
-        jsStr.validate[BigDecimal] mustEqual jsError
-        jsStr.validate[java.math.BigDecimal] mustEqual jsError
+        jsStr.validate[BigDecimal].mustEqual(jsError)
+        jsStr.validate[java.math.BigDecimal].mustEqual(jsError)
       }
     }
   }
@@ -185,21 +193,21 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
       s"""be successful for JsString("$repr")""" in {
         val jsStr = JsString(repr)
 
-        jsStr.validate[BigInteger] mustEqual JsSuccess(jb)
-        jsStr.validate[BigInt] mustEqual JsSuccess(sb)
+        jsStr.validate[BigInteger].mustEqual(JsSuccess(jb))
+        jsStr.validate[BigInt].mustEqual(JsSuccess(sb))
       }
 
       s"""be successful for JsNumber($sb)""" in {
         val jsNum = JsNumber(BigDecimal(sb))
 
-        jsNum.validate[BigInteger] mustEqual JsSuccess(jb)
-        jsNum.validate[BigInt] mustEqual JsSuccess(sb)
+        jsNum.validate[BigInteger].mustEqual(JsSuccess(jb))
+        jsNum.validate[BigInt].mustEqual(JsSuccess(sb))
       }
     }
 
     Seq("1.0", "A").foreach { repr =>
       s"fails for '$repr'" in {
-        JsString(repr).validate[BigInteger] mustEqual JsError("error.expected.numberformatexception")
+        JsString(repr).validate[BigInteger].mustEqual(JsError("error.expected.numberformatexception"))
       }
     }
   }
@@ -209,13 +217,13 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     import TestEnums.EnumWithDefaultNames._
 
     "deserialize correctly enum with custom names" in {
-      JsString("ENUM1").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum1)
-      JsString("ENUM2").validate[EnumWithCustomNames] mustEqual JsSuccess(customEnum2)
+      JsString("ENUM1").validate[EnumWithCustomNames].mustEqual(JsSuccess(customEnum1))
+      JsString("ENUM2").validate[EnumWithCustomNames].mustEqual(JsSuccess(customEnum2))
     }
 
     "deserialize correctly enum with default names" in {
-      JsString("defaultEnum1").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum1)
-      JsString("defaultEnum2").validate[EnumWithDefaultNames] mustEqual JsSuccess(defaultEnum2)
+      JsString("defaultEnum1").validate[EnumWithDefaultNames].mustEqual(JsSuccess(defaultEnum1))
+      JsString("defaultEnum2").validate[EnumWithDefaultNames].mustEqual(JsSuccess(defaultEnum2))
     }
   }
 
@@ -223,7 +231,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     "be read from JsString" in {
       val strRepr = "https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.libs.json.JsResult"
 
-      JsString(strRepr).validate[URI] mustEqual JsSuccess(new URI(strRepr))
+      JsString(strRepr).validate[URI].mustEqual(JsSuccess(new URI(strRepr)))
     }
 
     "not be read from invalid JsString" in {
@@ -238,7 +246,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
   "Identity reads" should {
     def success[T <: JsValue](fixture: T)(implicit r: Reads[T], ct: scala.reflect.ClassTag[T]) =
       s"be resolved for $fixture as ${ct.runtimeClass.getSimpleName}" in {
-        r.reads(fixture) mustEqual JsSuccess(fixture)
+        r.reads(fixture).mustEqual(JsSuccess(fixture))
       }
 
     success[JsArray](Json.arr("foo", 2))

@@ -15,8 +15,8 @@ final class FormatSharedSpec extends AnyWordSpec with Matchers {
       val intFormat: Format[Int] =
         strFormat.bimap(_.size, List.fill(_: Int)('X').mkString)
 
-      intFormat.reads(JsString("foo")) mustEqual JsSuccess(3)
-      intFormat.writes(5) mustEqual JsString("XXXXX")
+      intFormat.reads(JsString("foo")).mustEqual(JsSuccess(3))
+      intFormat.writes(5).mustEqual(JsString("XXXXX"))
     }
   }
 
@@ -27,8 +27,8 @@ final class FormatSharedSpec extends AnyWordSpec with Matchers {
 
       val expectedRepr = Json.obj("name" -> "bar")
 
-      strFormat.reads(expectedRepr) mustEqual JsSuccess("bar")
-      strFormat.writes("bar") mustEqual expectedRepr
+      strFormat.reads(expectedRepr).mustEqual(JsSuccess("bar"))
+      strFormat.writes("bar").mustEqual(expectedRepr)
     }
   }
 
