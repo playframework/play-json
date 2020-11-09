@@ -15,13 +15,13 @@ class JsPathSpec extends AnyWordSpec with Matchers {
     "retrieve simple path" in {
       val obj = Json.obj("key1" -> Json.obj("key11" -> "value11"), "key2" -> "value2")
 
-      (JsPath \ "key1" \ "key11")(obj) mustEqual Seq(JsString("value11"))
+      (JsPath \ "key1" \ "key11")(obj).mustEqual(Seq(JsString("value11")))
     }
 
     "retrieve path with array index" in {
       val obj = Json.obj("key1" -> Json.arr(Json.obj("key11" -> "value11")))
 
-      (JsPath \ "key1" \ 0 \ "key11")(obj) mustEqual Seq(JsString("value11"))
+      (JsPath \ "key1" \ 0 \ "key11")(obj).mustEqual(Seq(JsString("value11")))
     }
 
     "retrieve 1-level recursive path" in {
@@ -70,7 +70,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
         "level2" -> 5
       )
 
-      (JsPath \\ "tags" \ "sub")(obj) mustEqual Seq(JsString("alpha1"), JsString("beta2"))
+      (JsPath \\ "tags" \ "sub")(obj).mustEqual(Seq(JsString("alpha1"), JsString("beta2")))
     }
 
     "retrieve simple indexed path" in {
@@ -78,7 +78,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
         "level1" -> Json.arr(5, "alpha", true)
       )
 
-      (JsPath \ "level1")(2)(obj) mustEqual Seq(JsBoolean(true))
+      (JsPath \ "level1")(2)(obj).mustEqual(Seq(JsBoolean(true)))
     }
 
     "retrieve 2-level recursive indexed path #1" in {
@@ -94,7 +94,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
         "level2" -> 5
       )
 
-      (JsPath \ "level1" \\ "tags")(1)(obj) mustEqual Seq(JsString("beta1"), JsString("beta2"))
+      (JsPath \ "level1" \\ "tags")(1)(obj).mustEqual(Seq(JsString("beta1"), JsString("beta2")))
     }
 
     "retrieve 2-level recursive indexed path #2" in {
@@ -112,7 +112,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
         "level2" -> 5
       )
 
-      ((JsPath \ "level1" \ "key1")(1) \\ "tags")(obj) mustEqual Seq(Json.arr("alpha1", "beta1", "gamma1"))
+      ((JsPath \ "level1" \ "key1")(1) \\ "tags")(obj).mustEqual(Seq(Json.arr("alpha1", "beta1", "gamma1")))
     }
 
     "retrieve recursive in jsobject and jsarray #1" in {
@@ -141,7 +141,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
         "level2" -> 5
       )
 
-      (JsPath \ "level1" \\ "alpha")(obj) mustEqual Seq(JsString("value11111"), Json.arr("a", "b", "c"))
+      (JsPath \ "level1" \\ "alpha")(obj).mustEqual(Seq(JsString("value11111"), Json.arr("a", "b", "c")))
     }
 
     "retrieve recursive in jsobject and jsarray #2" in {
@@ -154,7 +154,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
         )
       )
 
-      (JsPath \ "array" \\ "beta")(obj) mustEqual Seq(JsString("v12"), JsString("v22"), JsString("v32"))
+      (JsPath \ "array" \\ "beta")(obj).mustEqual(Seq(JsString("v12"), JsString("v22"), JsString("v32")))
     }
 
     "retrieve with symbol keys" in {
@@ -225,7 +225,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
         "level2" -> 5
       )
 
-      (__ \ Symbol("level2")).prune(obj) mustEqual JsSuccess(res, __ \ Symbol("level2"))
+      (__ \ Symbol("level2")).prune(obj).mustEqual(JsSuccess(res, __ \ Symbol("level2")))
       (__ \ Symbol("level1") \ Symbol("key1")).prune(obj).get.mustEqual(res2)
       (__ \ Symbol("level1") \ Symbol("key2") \ Symbol("key21")).prune(obj).get.mustEqual(res3)
       (__ \\ Symbol("key21"))
@@ -276,17 +276,17 @@ class JsPathSpec extends AnyWordSpec with Matchers {
       val path  = __ \ "foo" \ "bar" \ "baz"
       val reads = path.readNullable[String]
 
-      reads.reads(Json.obj()) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj())) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj()))) mustEqual JsSuccess(None)
+      reads.reads(Json.obj()).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj())).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj()))).mustEqual(JsSuccess(None))
 
       reads
         .reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> "blah"))))
         .mustEqual(JsSuccess(Some("blah"), path))
 
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> JsNull)))) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> JsNull))) mustEqual JsSuccess(None)
-      reads.reads(Json.obj("foo" -> Json.obj("bar" -> "blah"))) mustEqual JsSuccess(None)
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> Json.obj("baz" -> JsNull)))).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> JsNull))).mustEqual(JsSuccess(None))
+      reads.reads(Json.obj("foo" -> Json.obj("bar" -> "blah"))).mustEqual(JsSuccess(None))
     }
 
     /*"set 1-level field in simple jsobject" in {

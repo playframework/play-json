@@ -330,8 +330,9 @@ class ScalaJsonSpec extends Specification {
       // None
       //#convert-to-type-as-opt
 
-      nameOption === Some("Watership Down")
-      bogusOption.must(beNone)
+      nameOption.must(beSome("Watership Down")) and {
+        bogusOption.must(beNone)
+      }
     }
 
     "allow converting JsValue using validate" in {
@@ -371,9 +372,9 @@ class ScalaJsonSpec extends Specification {
       nameResult.must(beLike {
         case JsSuccess("Watership Down", _) => ok
       }) and {
-        nameOrFallback.must_===("Watership Down")
+        nameOrFallback must_=== "Watership Down"
       } and {
-        nameUpperResult.mustEqual(JsSuccess("WATERSHIP DOWN"))
+        nameUpperResult must_=== JsSuccess("WATERSHIP DOWN")
       } and {
         nameOption.must(beSome("Watership Down"))
       }

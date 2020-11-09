@@ -220,11 +220,11 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
       "for Float" should {
         "success for valid positive number" in {
-          Json.parse(floatsJson(123.123.toString)).as[FloatNumbers].float.mustEqual(123.123f)
+          Json.parse(floatsJson(123.123.toString)).as[FloatNumbers].float.mustEqual(123.123F)
         }
 
         "success for valid negative number" in {
-          Json.parse(floatsJson(float = (-123.123).toString)).as[FloatNumbers].float.mustEqual(-123.123f)
+          Json.parse(floatsJson(float = (-123.123).toString)).as[FloatNumbers].float.mustEqual(-123.123F)
         }
 
         "success for max value" in {
@@ -240,11 +240,11 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
       "for Double" should {
         "success for valid positive number" in {
-          Json.parse(floatsJson(double = 123.123.toString)).as[FloatNumbers].double.mustEqual(123.123d)
+          Json.parse(floatsJson(double = 123.123.toString)).as[FloatNumbers].double.mustEqual(123.123D)
         }
 
         "success for valid negative number" in {
-          Json.parse(floatsJson(double = (-123.123).toString)).as[FloatNumbers].double.mustEqual(-123.123d)
+          Json.parse(floatsJson(double = (-123.123).toString)).as[FloatNumbers].double.mustEqual(-123.123D)
         }
 
         "success when parsing max value" in {
