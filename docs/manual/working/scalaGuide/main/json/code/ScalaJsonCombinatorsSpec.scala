@@ -76,7 +76,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       } and {
         firstResidentPath.toString === "/residents(0)"
       } and {
-        lat.must(contain(exactly[JsValue](JsNumber(51.235685d))))
+        lat.must(contain(exactly[JsValue](JsNumber(51.235685D))))
       }
     }
 
@@ -93,7 +93,11 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val nameReads: Reads[String] = (JsPath \ "name").read[String]
       //#reads-simple
 
-      json.validate(nameReads).must(beLike { case x: JsSuccess[String] => x.get === "Watership Down" })
+      json
+        .validate(nameReads)
+        .must(beLike {
+          case JsSuccess(v, _) => v must_=== "Watership Down"
+        })
     }
 
     "allow creating complex Reads" in {
@@ -140,6 +144,140 @@ class ScalaJsonCombinatorsSpec extends Specification {
       locationResult.must(beLike { case x: JsSuccess[Location] => x.get.lat === 51.235685 })
     }
 
+    "allow mapping Reads using usual combinators" in {
+      import play.api.libs.json._
+
+      //#reads-usual-combinators
+      val strReads: Reads[String] = JsPath.read[String]
+
+      // .map
+      val intReads: Reads[Int] = strReads.map { str =>
+        str.toInt
+      }
+      // e.g. reads JsString("123") as 123
+
+      // .flatMap
+      val objReads: Reads[JsObject] = strReads.flatMap { rawJson =>
+        // consider something like { "foo": "{ \"stringified\": \"json\" }" }
+        Reads { _ =>
+          Json.parse(rawJson).validate[JsObject]
+        }
+      }
+
+      // .collect
+      val boolReads1: Reads[Boolean] = strReads.collect(JsonValidationError("in.case.it.doesn-t.match")) {
+        case "no" | "false" | "n" => false
+        case _                    => true
+      }
+
+      // .orElse
+      val boolReads2: Reads[Boolean] = JsPath.read[Boolean].orElse(boolReads1)
+
+      // .andThen
+      val postprocessing: Reads[Boolean] = Reads[JsBoolean] {
+        case JsString("no" | "false" | "n") =>
+          JsSuccess(JsFalse)
+
+        case _ => JsSuccess(JsTrue)
+      }.andThen(JsPath.read[Boolean])
+      //#reads-usual-combinators
+
+      intReads.reads(JsString("123")) must_=== JsSuccess(123) and {
+        objReads.reads(JsString("{\"foo\":1}")) must_=== JsSuccess(
+          Json.obj(
+            "foo" -> 1
+          )
+        )
+      } and {
+        boolReads1.reads(JsString("no")) must_=== JsSuccess(false) and {
+          boolReads1.reads(JsString("yes")) must_=== JsSuccess(true)
+        }
+      } and {
+        boolReads2.reads(JsBoolean(true)) must_=== JsSuccess(true) and {
+          boolReads2.reads(JsString("n")) must_=== JsSuccess(false)
+        }
+      } and {
+        postprocessing.reads(JsString("false")) must_=== JsSuccess(false)
+      }
+    }
+
+    "allow filtering Reads results with combinators" in {
+      import play.api.libs.json._
+
+      //#reads-filter-combinators
+      val positiveIntReads = JsPath.read[Int].filter(_ > 0)
+      val smallIntReads    = positiveIntReads.filterNot(_ > 100)
+
+      val positiveIntReadsWithCustomErr = JsPath
+        .read[Int]
+        .filter(JsonValidationError("error.positive-int.expected"))(_ > 0)
+      //#reads-filter-combinators
+
+      positiveIntReads.reads(JsNumber(10)) must_=== JsSuccess(10) and {
+        positiveIntReads.reads(JsNumber(-20)).must(beAnInstanceOf[JsError])
+      } and {
+        smallIntReads.reads(JsNumber(20)) must_=== JsSuccess(20)
+      } and {
+        smallIntReads.reads(JsNumber(200)).must(beAnInstanceOf[JsError])
+      } and {
+        positiveIntReadsWithCustomErr.reads(JsNumber(-2)) must_=== JsError("error.positive-int.expected")
+      }
+    }
+
+    "allow pre-processing Reads with combinators" in {
+      import play.api.libs.json._
+
+      //#reads-preprocessing-combinators
+      // .composeWith
+      val preprocessing1: Reads[Boolean] =
+        JsPath
+          .read[Boolean]
+          .composeWith(Reads[JsBoolean] {
+            case JsString("no" | "false" | "n") =>
+              JsSuccess(JsFalse)
+
+            case _ => JsSuccess(JsTrue)
+          })
+
+      val preprocessing2: Reads[Boolean] = JsPath.read[Boolean].preprocess {
+        case JsString("no" | "false" | "n") =>
+          JsFalse
+
+        case _ => JsTrue
+      }
+      //#reads-preprocessing-combinators
+
+      preprocessing1.reads(JsString("false")) must_=== JsSuccess(false) and {
+        preprocessing2.reads(JsString("false")) must_=== JsSuccess(false)
+      }
+    }
+
+    "allow mapping Reads with convenience combinators" in {
+      import play.api.libs.json._
+
+      //#reads-preprocessing-combinators
+      val strReads: Reads[String] = JsPath.read[String]
+
+      // .flatMapResult (see .flatMap)
+      val objReads: Reads[JsObject] = strReads.flatMapResult { rawJson =>
+        // consider something like { "foo": "{ \"stringified\": \"json\" }" }
+        Json.parse(rawJson).validate[JsObject]
+      }
+
+      // .widen (as List <: Seq)
+      val seqReads: Reads[Seq[String]] =
+        JsPath.read[List[String]].widen[Seq[String]]
+      //#reads-preprocessing-combinators
+
+      objReads.reads(JsString("{\"foo\":1}")) must_=== JsSuccess(
+        Json.obj(
+          "foo" -> 1
+        )
+      ) and {
+        seqReads.reads(JsArray(Seq(JsString("foo"), JsString("bar")))) must_=== JsSuccess(Seq("foo", "bar"))
+      }
+    }
+
     "allow validation with Reads" in {
       import play.api.libs.json._
       import play.api.libs.json.Reads._
@@ -153,8 +291,8 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val nameResult: JsResult[String] = json.validate[String](nameReads)
 
       nameResult match {
-        case s: JsSuccess[String] => println("Name: " + s.get)
-        case e: JsError           => println("Errors: " + JsError.toJson(e).toString())
+        case JsSuccess(nme, _) => println(s"Name: $nme")
+        case e: JsError        => println(s"Errors: ${JsError.toJson(e)}")
       }
       //#reads-validation-simple
       nameResult.must(beLike { case x: JsSuccess[String] => x.get === "Watership Down" })
@@ -244,7 +382,29 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val json = Json.toJson(place)
       //#writes-model
 
-      (json \ "name").get.mustEqual(JsString("Watership Down"))
+      (json \ "name").get must_=== JsString("Watership Down")
+    }
+
+    "allow transforming values with Writes" in {
+      import play.api.libs.json._
+
+      //#writes-combinators
+      val plus10Writes: Writes[Int] = implicitly[Writes[Int]].contramap(_ + 10)
+
+      val doubleAsObj: Writes[Double] =
+        implicitly[Writes[Double]].transform { js =>
+          Json.obj("_double" -> js)
+        }
+
+      val someWrites: Writes[Some[String]] =
+        implicitly[Writes[Option[String]]].narrow[Some[String]]
+      //#writes-combinators
+
+      plus10Writes.writes(2) must_=== JsNumber(12) and {
+        doubleAsObj.writes(1.23D) must_=== Json.obj("_double" -> 1.23)
+      } and {
+        someWrites.writes(Some("foo")) must_=== JsString("foo")
+      }
     }
 
     "allow creating Reads/Writes for recursive types" in {
@@ -346,11 +506,25 @@ class ScalaJsonCombinatorsSpec extends Specification {
       }
       """)
       val location      = json.validate[Location].get
-      location === Location(51.235685, -1.309197)
+      location must_=== Location(51.235685, -1.309197)
 
       // Use Writes for model -> JSON
       val jsonFromLocation = Json.toJson(location)
-      (jsonFromLocation \ "lat").as[Double] === 51.235685
+      (jsonFromLocation \ "lat").asOpt[Double].must(beSome(51.235685))
+    }
+
+    "allow functional combinators on Format" in {
+      import play.api.libs.json._
+
+      //#format-functional-combinators
+      val strFormat = implicitly[Format[String]]
+      val intFormat: Format[Int] =
+        strFormat.bimap(_.size, List.fill(_: Int)('?').mkString)
+      //#format-functional-combinators
+
+      intFormat.reads(JsString("foo")) must_=== JsSuccess(3) and {
+        intFormat.writes(5) must_=== JsString("?????")
+      }
     }
   }
 }

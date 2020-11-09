@@ -14,17 +14,17 @@ import org.scalatest.wordspec.AnyWordSpec
 class JsonValidSharedSpec extends AnyWordSpec with Matchers {
   "JSON reads" should {
     "validate simple types" in {
-      JsString("string").validate[String] mustEqual JsSuccess("string")
-      JsNumber(5).validate[Int] mustEqual JsSuccess(5)
-      JsNumber(5L).validate[Long] mustEqual JsSuccess(5L)
-      JsNumber(5).validate[Short] mustEqual JsSuccess(5)
-      JsNumber(123.5).validate[Float] mustEqual JsSuccess(123.5)
-      JsNumber(123456789123456.56).validate[Double] mustEqual JsSuccess(123456789123456.56)
-      JsBoolean(true).validate[Boolean] mustEqual JsSuccess(true)
-      JsTrue.validate[Boolean] mustEqual JsSuccess(true)
-      JsFalse.validate[Boolean] mustEqual JsSuccess(false)
-      JsString("123456789123456.56").validate[BigDecimal] mustEqual JsSuccess(BigDecimal(123456789123456.56))
-      JsNumber(123456789123456.56).validate[BigDecimal] mustEqual JsSuccess(BigDecimal(123456789123456.567891234))
+      JsString("string").validate[String].mustEqual(JsSuccess("string"))
+      JsNumber(5).validate[Int].mustEqual(JsSuccess(5))
+      JsNumber(5L).validate[Long].mustEqual(JsSuccess(5L))
+      JsNumber(5).validate[Short].mustEqual(JsSuccess(5))
+      JsNumber(123.5).validate[Float].mustEqual(JsSuccess(123.5))
+      JsNumber(123456789123456.56).validate[Double].mustEqual(JsSuccess(123456789123456.56))
+      JsBoolean(true).validate[Boolean].mustEqual(JsSuccess(true))
+      JsTrue.validate[Boolean].mustEqual(JsSuccess(true))
+      JsFalse.validate[Boolean].mustEqual(JsSuccess(false))
+      JsString("123456789123456.56").validate[BigDecimal].mustEqual(JsSuccess(BigDecimal(123456789123456.56)))
+      JsNumber(123456789123456.56).validate[BigDecimal].mustEqual(JsSuccess(BigDecimal(123456789123456.567891234)))
       JsNumber(123456789.56)
         .validate[java.math.BigDecimal]
         .mustEqual(JsSuccess(new java.math.BigDecimal("123456789.56")))
@@ -51,16 +51,16 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     }
 
     "validate simple numbered type conversion" in {
-      JsNumber(5).validate[Double] mustEqual JsSuccess(5.0)
-      JsNumber(BigDecimal(5)).validate[Double] mustEqual JsSuccess(5.0)
-      JsNumber(5.123).validate[BigDecimal] mustEqual JsSuccess(BigDecimal(5.123))
+      JsNumber(5).validate[Double].mustEqual(JsSuccess(5.0))
+      JsNumber(BigDecimal(5)).validate[Double].mustEqual(JsSuccess(5.0))
+      JsNumber(5.123).validate[BigDecimal].mustEqual(JsSuccess(BigDecimal(5.123)))
     }
 
     "return JsResult with correct values for isSuccess and isError" in {
-      JsString("s").validate[String].isSuccess mustEqual true
-      JsString("s").validate[String].isError mustEqual false
-      JsString("s").validate[Long].isSuccess mustEqual false
-      JsString("s").validate[Long].isError mustEqual true
+      JsString("s").validate[String].isSuccess.mustEqual(true)
+      JsString("s").validate[String].isError.mustEqual(false)
+      JsString("s").validate[Long].isSuccess.mustEqual(false)
+      JsString("s").validate[Long].isError.mustEqual(true)
     }
 
     "validate JsObject to Map" in {
@@ -69,7 +69,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         .validate[Map[String, String]]
         .mustEqual(JsSuccess(Map("key1" -> "value1", "key2" -> "value2")))
 
-      Json.obj("key1" -> 5, "key2" -> 3).validate[Map[String, Int]] mustEqual JsSuccess(Map("key1" -> 5, "key2" -> 3))
+      Json.obj("key1" -> 5, "key2" -> 3).validate[Map[String, Int]].mustEqual(JsSuccess(Map("key1" -> 5, "key2" -> 3)))
 
       Json
         .obj("key1" -> 5.123, "key2" -> 3.543)
@@ -93,18 +93,36 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       Json
         .obj("key1" -> "value1", "key2" -> 5, "key3" -> true)
-        .validate[Map[String, Int]] mustEqual JsError(
-        Seq(
-          JsPath \ "key1" -> Seq(JsonValidationError("error.expected.jsnumber")),
-          JsPath \ "key3" -> Seq(JsonValidationError("error.expected.jsnumber"))
+        .validate[Map[String, Int]]
+        .mustEqual(
+          JsError(
+            Seq(
+              JsPath \ "key1" -> Seq(JsonValidationError("error.expected.jsnumber")),
+              JsPath \ "key3" -> Seq(JsonValidationError("error.expected.jsnumber"))
+            )
+          )
         )
-      )
+    }
+
+    "validate JsObject to Map with custom key type" in {
+      implicit val keyReads = KeyReads[Int] { key =>
+        JsResult.fromTry(scala.util.Try(key.toInt))
+      }
+
+      Json
+        .obj("1" -> "value1", "2" -> "value2")
+        .validate[Map[Int, String]]
+        .mustEqual(JsSuccess(Map(1 -> "value1", 2 -> "value2")))
+
+      implicit val keyWrites = KeyWrites[Int](_.toString)
+
+      Json.toJson(Map(3 -> "foo", 4 -> "bar")).mustEqual(Json.obj("3" -> "foo", "4" -> "bar"))
     }
 
     "validate JsArray to List" in {
-      Json.arr("alpha", "beta", "delta").validate[List[String]] mustEqual JsSuccess(List("alpha", "beta", "delta"))
-      Json.arr(123, 567, 890).validate[List[Int]] mustEqual JsSuccess(List(123, 567, 890))
-      Json.arr(123.456, 567.123, 890.654).validate[List[Double]] mustEqual JsSuccess(List(123.456, 567.123, 890.654))
+      Json.arr("alpha", "beta", "delta").validate[List[String]].mustEqual(JsSuccess(List("alpha", "beta", "delta")))
+      Json.arr(123, 567, 890).validate[List[Int]].mustEqual(JsSuccess(List(123, 567, 890)))
+      Json.arr(123.456, 567.123, 890.654).validate[List[Double]].mustEqual(JsSuccess(List(123.456, 567.123, 890.654)))
     }
 
     "invalidate JsArray to List with wrong type conversion" in {
@@ -187,7 +205,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           .validate[java.util.UUID]
           .recoverTotal { e =>
             "error"
-          } mustEqual "error"
+          }
+          .mustEqual("error")
       }
 
       "reject well-formed but incorrect UUIDS in strict mode" in {
@@ -195,7 +214,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           .validate[java.util.UUID](new Reads.UUIDReader(true))
           .recoverTotal { e =>
             "error"
-          } mustEqual "error"
+          }
+          .mustEqual("error")
       }
     }
 
@@ -205,25 +225,25 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       }
       val json = Json.obj("day1" -> Weekdays.Mon, "day2" -> "tue", "day3" -> 3)
 
-      json.validate((__ \ "day1").read(Reads.enumNameReads(Weekdays))).asOpt mustEqual Some(Weekdays.Mon)
-      json.validate((__ \ "day2").read(Reads.enumNameReads(Weekdays))).asOpt mustEqual None
-      json.validate((__ \ "day3").read(Reads.enumNameReads(Weekdays))).asOpt mustEqual None
+      json.validate((__ \ "day1").read(Reads.enumNameReads(Weekdays))).asOpt.mustEqual(Some(Weekdays.Mon))
+      json.validate((__ \ "day2").read(Reads.enumNameReads(Weekdays))).asOpt.mustEqual(None)
+      json.validate((__ \ "day3").read(Reads.enumNameReads(Weekdays))).asOpt.mustEqual(None)
     }
 
     "read fields with null values" in {
       val json = Json.obj("field" -> JsNull)
 
       val resultPost = json.validate((__ \ "field").read(Reads.optionWithNull[String]))
-      resultPost mustEqual JsSuccess(None, __ \ "field")
+      resultPost.mustEqual(JsSuccess(None, __ \ "field"))
     }
 
     "validate options using validateOpt" in {
       val json = Json.obj("foo" -> JsNull, "bar" -> "bar")
 
-      (json \ "foo").validateOpt[String] mustEqual JsSuccess(None)
-      (json \ "bar").validateOpt[Int] mustEqual JsError("error.expected.jsnumber")
-      (json \ "bar").validateOpt[String] mustEqual JsSuccess(Some("bar"))
-      (json \ "baz").validateOpt[String] mustEqual JsSuccess(None)
+      (json \ "foo").validateOpt[String].mustEqual(JsSuccess(None))
+      (json \ "bar").validateOpt[Int].mustEqual(JsError("error.expected.jsnumber"))
+      (json \ "bar").validateOpt[String].mustEqual(JsSuccess(Some("bar")))
+      (json \ "baz").validateOpt[String].mustEqual(JsSuccess(None))
     }
   }
 
@@ -231,8 +251,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recover from error" in {
       JsNumber(123)
         .validate[String]
-        .recover { case JsError(_) =>
-          "error"
+        .recover {
+          case JsError(_) => "error"
         } mustEqual JsSuccess("error")
 
       JsNumber(123)
@@ -249,7 +269,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     case class User(name: String, age: Int)
 
     "validate simple reads" in {
-      JsString("alphabeta").validate[String] mustEqual JsSuccess("alphabeta")
+      JsString("alphabeta").validate[String].mustEqual(JsSuccess("alphabeta"))
     }
 
     "validate reads on the root path" when {
@@ -278,7 +298,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             __.read[Address]
         ).tupled
 
-        bobby.validate[(User, Address)] mustEqual JsSuccess((User("bobby", 54), Address("13 Main St", "98765")))
+        bobby.validate[(User, Address)].mustEqual(JsSuccess((User("bobby", 54), Address("13 Main St", "98765"))))
       }
 
       "readNullables" in {
@@ -287,9 +307,13 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             __.readNullable[Address]
         ).tupled
 
-        bobby.validate[(User, Option[Address])] mustEqual JsSuccess(
-          (User("bobby", 54), Some(Address("13 Main St", "98765")))
-        )
+        bobby
+          .validate[(User, Option[Address])]
+          .mustEqual(
+            JsSuccess(
+              (User("bobby", 54), Some(Address("13 Main St", "98765")))
+            )
+          )
       }
 
       "readNullables for missing root path fragment" in {
@@ -323,10 +347,14 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           "street" -> "13 Main St"
         )
 
-        missingZipBobby.validate(userAddressReads) mustEqual JsError(
-          __ \ "zip",
-          JsonValidationError("error.path.missing")
-        )
+        missingZipBobby
+          .validate(userAddressReads)
+          .mustEqual(
+            JsError(
+              __ \ "zip",
+              JsonValidationError("error.path.missing")
+            )
+          )
       }
 
       "readNullables for null root path" in {
@@ -335,12 +363,12 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             __.readNullable[Address]
         ).tupled
 
-        JsNull.validate(userAddressReads) mustEqual JsSuccess(None -> None)
+        JsNull.validate(userAddressReads).mustEqual(JsSuccess(None -> None))
       }
     }
 
     "validate simple constraints" in {
-      JsString("alphabeta").validate[String](Reads.minLength(5)) mustEqual JsSuccess("alphabeta")
+      JsString("alphabeta").validate[String](Reads.minLength(5)).mustEqual(JsSuccess("alphabeta"))
     }
 
     "test JsPath.create" in {
@@ -374,7 +402,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       val js = Json.toJson(bobby)
 
-      js.validate[User] mustEqual JsSuccess(bobby)
+      js.validate[User].mustEqual(JsSuccess(bobby))
     }
 
     "validate simple case class format with custom apply/unapply" in {
@@ -389,7 +417,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         )(User, unlift(User.unapply))
       }
 
-      Json.toJson(bobby).validate[User] mustEqual JsSuccess(bobby)
+      Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
     }
 
     "validate simple case class format" in {
@@ -404,7 +432,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         ).apply(User, unlift(User.unapply))
       }
 
-      Json.toJson(bobby).validate[User] mustEqual JsSuccess(bobby)
+      Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
     }
 
     "JsObject tupled reads" in {
@@ -421,7 +449,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "nb"   -> 654
       )
 
-      js.validate[(String, Int)] mustEqual JsSuccess("550e8400-e29b-41d4-a716-446655440000" -> 654)
+      js.validate[(String, Int)].mustEqual(JsSuccess("550e8400-e29b-41d4-a716-446655440000" -> 654))
     }
 
     "JsObject tupled reads new syntax" in {
@@ -435,7 +463,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "nb"   -> 654
       )
 
-      js.validate[(String, Int)] mustEqual JsSuccess("550e8400-e29b-41d4-a716-446655440000" -> 654)
+      js.validate[(String, Int)].mustEqual(JsSuccess("550e8400-e29b-41d4-a716-446655440000" -> 654))
     }
 
     "JsObject tupled writes" in {
@@ -449,7 +477,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "nb"   -> 654
       )
 
-      Json.toJson("550e8400-e29b-41d4-a716-446655440000" -> 654) mustEqual js
+      Json.toJson("550e8400-e29b-41d4-a716-446655440000" -> 654).mustEqual(js)
     }
 
     "JsObject tupled format" in {
@@ -478,7 +506,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         )(User, unlift(User.unapply))
       }
 
-      Json.toJson(bobby).validate[User] mustEqual JsSuccess(bobby)
+      Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
     }
 
     "Format simpler syntax with constraints" in {
@@ -490,7 +518,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             (__ \ Symbol("age")).format(Reads.min(40))
       )(User, unlift(User.unapply))
 
-      Json.toJson(bobby).validate[User] mustEqual JsSuccess(bobby)
+      Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
     }
 
     "Compose reads" in {
@@ -502,17 +530,17 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       val reads1 = (__ \ Symbol("field3")).json.pick
       val reads2 = ((__ \ Symbol("field32")).read[Int] and (__ \ Symbol("field31")).read[String]).tupled
 
-      js.validate(reads1 andThen reads2) mustEqual JsSuccess(345 -> "beta", __ \ "field3")
+      js.validate(reads1 andThen reads2).mustEqual(JsSuccess(345 -> "beta", __ \ "field3"))
     }
 
     "Apply min/max correctly on ordered types" in {
       val format = Reads.min(1) andKeep Reads.max(3)
 
-      JsNumber(0).validate(format) mustEqual JsError(__, JsonValidationError("error.min", 1))
-      JsNumber(1).validate(format) mustEqual JsSuccess(1, __)
-      JsNumber(2).validate(format) mustEqual JsSuccess(2, __)
-      JsNumber(3).validate(format) mustEqual JsSuccess(3, __)
-      JsNumber(4).validate(format) mustEqual JsError(__, JsonValidationError("error.max", 3))
+      JsNumber(0).validate(format).mustEqual(JsError(__, JsonValidationError("error.min", 1)))
+      JsNumber(1).validate(format).mustEqual(JsSuccess(1, __))
+      JsNumber(2).validate(format).mustEqual(JsSuccess(2, __))
+      JsNumber(3).validate(format).mustEqual(JsSuccess(3, __))
+      JsNumber(4).validate(format).mustEqual(JsError(__, JsonValidationError("error.max", 3)))
     }
   }
 
@@ -581,7 +609,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           JsError((__ \ Symbol("key2") \ Symbol("key22")), "error.path.missing")
         )
 
-      js.validate(jsonTransformer) mustEqual JsSuccess(res)
+      js.validate(jsonTransformer).mustEqual(JsSuccess(res))
     }
   }
 
@@ -603,7 +631,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             "phone" -> "0123456789"
           )
         )
-        .validate[User] mustEqual JsSuccess(User("john", "john@xxx.yyy", Some("0123456789")))
+        .validate[User]
+        .mustEqual(JsSuccess(User("john", "john@xxx.yyy", Some("0123456789"))))
 
       Json
         .obj(
@@ -613,7 +642,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             "phone2" -> "0123456789"
           )
         )
-        .validate[User] mustEqual JsSuccess(User("john", "john@xxx.yyy", None))
+        .validate[User]
+        .mustEqual(JsSuccess(User("john", "john@xxx.yyy", None)))
 
       Json
         .obj(
@@ -622,7 +652,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             "email" -> "john@xxx.yyy"
           )
         )
-        .validate[User] mustEqual JsSuccess(User("john", "john@xxx.yyy", None))
+        .validate[User]
+        .mustEqual(JsSuccess(User("john", "john@xxx.yyy", None)))
 
       Json
         .obj(
@@ -632,7 +663,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             "phone" -> JsNull
           )
         )
-        .validate[User] mustEqual JsSuccess(User("john", "john@xxx.yyy", None))
+        .validate[User]
+        .mustEqual(JsSuccess(User("john", "john@xxx.yyy", None)))
 
       Json
         .obj(
@@ -642,12 +674,15 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             "phone" -> "0123456789"
           )
         )
-        .validate[User] mustEqual JsError(
-        Seq(
-          __ \ Symbol("coords") \ Symbol("phone") -> Seq(JsonValidationError("error.path.missing")),
-          __ \ Symbol("coords") \ Symbol("email") -> Seq(JsonValidationError("error.path.missing"))
+        .validate[User]
+        .mustEqual(
+          JsError(
+            Seq(
+              __ \ Symbol("coords") \ Symbol("phone") -> Seq(JsonValidationError("error.path.missing")),
+              __ \ Symbol("coords") \ Symbol("email") -> Seq(JsonValidationError("error.path.missing"))
+            )
+          )
         )
-      )
     }
 
     "report correct path for validation errors" in {
@@ -713,7 +748,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "friend" -> Json.obj("id" -> 124L, "name" -> "john", "friend" -> JsNull)
       )
 
-      js.validate[User] mustEqual JsSuccess(User(123L, "bob", Some(User(124L, "john", None))))
+      js.validate[User].mustEqual(JsSuccess(User(123L, "bob", Some(User(124L, "john", None)))))
 
       val js2 = Json.obj(
         "id"     -> 123L,
@@ -721,7 +756,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "friend" -> Json.obj("id" -> 124L, "name" -> "john")
       )
 
-      js2.validate[User] mustEqual JsSuccess(User(123L, "bob", Some(User(124L, "john", None))))
+      js2.validate[User].mustEqual(JsSuccess(User(123L, "bob", Some(User(124L, "john", None)))))
     }
 
     "recursive writes" in {
@@ -739,7 +774,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "friend" -> Json.obj("id" -> 124L, "name" -> "john")
       )
 
-      Json.toJson(User(123L, "bob", Some(User(124L, "john", None)))) mustEqual js
+      Json.toJson(User(123L, "bob", Some(User(124L, "john", None)))).mustEqual(js)
     }
 
     "recursive formats" in {
@@ -757,8 +792,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "friend" -> Json.obj("id" -> 124L, "name" -> "john")
       )
 
-      js.validate[User] mustEqual JsSuccess(User(123L, "bob", Some(User(124L, "john", None))))
-      Json.toJson(User(123L, "bob", Some(User(124L, "john", None)))) mustEqual js
+      js.validate[User].mustEqual(JsSuccess(User(123L, "bob", Some(User(124L, "john", None)))))
+      Json.toJson(User(123L, "bob", Some(User(124L, "john", None)))).mustEqual(js)
     }
 
     "lots of fields to read" in {
@@ -781,7 +816,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         .obj(
           "field1"  -> "val1",
           "field2"  -> 123L,
-          "field3"  -> 123.456f,
+          "field3"  -> 123.456F,
           "field4"  -> true,
           "field5"  -> Json.arr("alpha", "beta"),
           "field6"  -> "val6",
@@ -792,31 +827,34 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           "field11" -> "val11",
           "field12" -> "val12"
         )
-        .validate(myReads) mustEqual JsSuccess(
-        (
-          "val1",
-          123L,
-          123.456f,
-          true,
-          List("alpha", "beta"),
-          "val6",
-          "val7",
-          "val8",
-          "val9",
-          "val10",
-          "val11",
-          "val12"
+        .validate(myReads)
+        .mustEqual(
+          JsSuccess(
+            (
+              "val1",
+              123L,
+              123.456F,
+              true,
+              List("alpha", "beta"),
+              "val6",
+              "val7",
+              "val8",
+              "val9",
+              "val10",
+              "val11",
+              "val12"
+            )
+          )
         )
-      )
     }
 
     "single field case class" in {
       case class Test(field: String)
       val myFormat = (__ \ Symbol("field")).format[String].inmap(Test, unlift(Test.unapply))
 
-      myFormat.reads(Json.obj("field" -> "blabla")) mustEqual JsSuccess(Test("blabla"), __ \ Symbol("field"))
-      myFormat.reads(Json.obj()) mustEqual JsError(__ \ Symbol("field"), "error.path.missing")
-      myFormat.writes(Test("blabla")) mustEqual Json.obj("field" -> "blabla")
+      myFormat.reads(Json.obj("field" -> "blabla")).mustEqual(JsSuccess(Test("blabla"), __ \ Symbol("field")))
+      myFormat.reads(Json.obj()).mustEqual(JsError(__ \ Symbol("field"), "error.path.missing"))
+      myFormat.writes(Test("blabla")).mustEqual(Json.obj("field" -> "blabla"))
     }
 
     "reduce Reads[JsObject]" in {
@@ -882,7 +920,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       val jserr = JsError(
         Seq(
           (__ \ Symbol("field1") \ Symbol("field11")) -> Seq(
-            JsonValidationError(Seq("msg1.msg11", "msg1.msg12"), "arg11", 123L, 123.456f),
+            JsonValidationError(Seq("msg1.msg11", "msg1.msg12"), "arg11", 123L, 123.456F),
             JsonValidationError("msg2.msg21.msg22", 456, 123.456, true, 123)
           ),
           (__ \ Symbol("field2") \ Symbol("field21")) -> Seq(
@@ -896,7 +934,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         "obj.field1.field11" -> Json.arr(
           Json.obj(
             "msg"  -> Json.arr("msg1.msg11", "msg1.msg12"),
-            "args" -> Json.arr("arg11", 123, 123.456f)
+            "args" -> Json.arr("arg11", 123, 123.456F)
           ),
           Json.obj(
             "msg"  -> Json.arr("msg2.msg21.msg22"),
@@ -915,7 +953,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         )
       )
 
-      JsError.toJson(jserr) mustEqual json
+      JsError.toJson(jserr).mustEqual(json)
     }
 
     "prune json" in {
@@ -941,7 +979,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("field3")).json.pickBranch
       ).reduce
 
-      js.validate(myReads) mustEqual JsSuccess(res)
+      js.validate(myReads).mustEqual(JsSuccess(res))
     }
   }
 
@@ -956,7 +994,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("phone")).writeNullable[String]
       )(unlift(User.unapply))
 
-      Json.toJson(User("john.doe@blibli.com", None)) mustEqual Json.obj("email" -> "john.doe@blibli.com")
+      Json.toJson(User("john.doe@blibli.com", None)).mustEqual(Json.obj("email" -> "john.doe@blibli.com"))
       Json
         .toJson(User("john.doe@blibli.com", Some("12345678")))
         .mustEqual(Json.obj("email" -> "john.doe@blibli.com", "phone" -> "12345678"))
@@ -968,7 +1006,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("beta")).write[JsValue]
       ).join
 
-      joinWrites.writes(JsString("toto")) mustEqual Json.obj("alpha" -> "toto", "beta" -> "toto")
+      joinWrites.writes(JsString("toto")).mustEqual(Json.obj("alpha" -> "toto", "beta" -> "toto"))
 
       val joinWrites2 = (
         (__ \ Symbol("alpha")).write[JsString] and
@@ -977,12 +1015,16 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("delta")).write[JsValue]
       ).join
 
-      joinWrites2.writes(JsString("toto")) mustEqual Json.obj(
-        "alpha" -> "toto",
-        "beta"  -> "toto",
-        "gamma" -> "toto",
-        "delta" -> "toto"
-      )
+      joinWrites2
+        .writes(JsString("toto"))
+        .mustEqual(
+          Json.obj(
+            "alpha" -> "toto",
+            "beta"  -> "toto",
+            "gamma" -> "toto",
+            "delta" -> "toto"
+          )
+        )
     }
   }
 
@@ -998,7 +1040,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("phone")).formatNullable(Format(minLength[String](8), Writes.of[String]))
       )(User, unlift(User.unapply))
 
-      Json.obj("email" -> "john").validate[User] mustEqual JsError(__ \ "email", JsonValidationError("error.email"))
+      Json.obj("email" -> "john").validate[User].mustEqual(JsError(__ \ "email", JsonValidationError("error.email")))
       Json
         .obj("email" -> "john.doe@blibli.com", "phone" -> "4")
         .validate[User]
@@ -1025,19 +1067,19 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           if s.size < 5
         } yield 42
 
-      x mustEqual JsSuccess(42)
+      x.mustEqual(JsSuccess(42))
     }
 
     "be a functor" when {
       "JsSuccess" in {
         val res1: JsResult[String] = JsSuccess("foo", JsPath(List(KeyPathNode("bar"))))
-        res1.map(identity) mustEqual res1
+        res1.map(identity).mustEqual(res1)
       }
 
       "JsError" in {
         val res2: JsResult[String] =
           JsError(Seq(JsPath(List(KeyPathNode("bar"))) -> Seq(JsonValidationError("baz.bah"))))
-        res2.map(identity) mustEqual res2
+        res2.map(identity).mustEqual(res2)
       }
     }
 
@@ -1045,10 +1087,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       val res: JsResult[String] = JsSuccess("foo")
       val error                 = JsError(__ \ "bar", "There is a problem")
 
-      res.filter(error)(_ != "foo") mustEqual error
-      res.filter(error)(_ == "foo") mustEqual res
-      res.filterNot(error)(_ == "foo") mustEqual error
-      res.filterNot(error)(_ != "foo") mustEqual res
+      res.filter(error)(_ != "foo").mustEqual(error)
+      res.filter(error)(_ == "foo").mustEqual(res)
+      res.filterNot(error)(_ == "foo").mustEqual(error)
+      res.filterNot(error)(_ != "foo").mustEqual(res)
     }
   }
 }

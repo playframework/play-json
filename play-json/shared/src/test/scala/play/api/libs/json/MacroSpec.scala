@@ -6,6 +6,7 @@ package play.api.libs.json
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
 object TestFormats {
   implicit def eitherReads[A: Reads, B: Reads] = Reads[Either[A, B]] { js =>
     implicitly[Reads[A]].reads(js) match {
@@ -49,25 +50,25 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
           Json.configured.reads[Simple],
           Json.using[Json.MacroOptions].reads[Simple]
         )
-      ) { _.reads(json) mustEqual JsSuccess(expected) }
+      ) { _.reads(json).mustEqual(JsSuccess(expected)) }
     }
 
     "as Format for a simple generic case class" in {
       val fmt: OFormat[Lorem[Double]] = Json.format
 
-      fmt.reads(Json.obj("ipsum" -> 0.123d, "age" -> 1)) mustEqual JsSuccess(Lorem(0.123d, 1))
+      fmt.reads(Json.obj("ipsum" -> 0.123D, "age" -> 1)).mustEqual(JsSuccess(Lorem(0.123D, 1)))
     }
 
     "refuse value other than JsObject when properties are optional" in {
       forAll(Gen.oneOf(Json.reads[Optional], Json.format[Optional])) { r =>
-        r.reads(Json.obj()) mustEqual JsSuccess(Optional(None))
+        r.reads(Json.obj()).mustEqual(JsSuccess(Optional(None)))
 
         (r.reads(JsString("foo")).asEither match {
           case Left((_, Seq(err)) :: Nil) =>
             err.message == "error.expected.jsobject"
 
           case _ => false
-        }) mustEqual true
+        }).mustEqual(true)
       }
     }
 
@@ -97,8 +98,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
 
       forAll(Gen.oneOf(a, b, c, d)) { r =>
-        r.reads(Json.obj("v" -> 1)) mustEqual JsSuccess(UsingAlias(Some(1)))
-        r.reads(Json.obj()) mustEqual JsSuccess(UsingAlias(None))
+        r.reads(Json.obj("v" -> 1)).mustEqual(JsSuccess(UsingAlias(Some(1))))
+        r.reads(Json.obj()).mustEqual(JsSuccess(UsingAlias(None)))
       }
     }
 
@@ -140,8 +141,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
           "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
         )
 
-        jsSimple.validate[Family] mustEqual JsSuccess(simple)
-        jsOptional.validate[Family] mustEqual JsSuccess(optional)
+        jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+        jsOptional.validate[Family].mustEqual(JsSuccess(optional))
       }
     }
 
@@ -149,7 +150,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val expected                  = new TextId("foo")
       implicit val r: Reads[TextId] = Json.valueReads
 
-      JsString("foo").validate[TextId] mustEqual JsSuccess(expected)
+      JsString("foo").validate[TextId].mustEqual(JsSuccess(expected))
     }
   }
 
@@ -161,10 +162,14 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     "as Format for a generic case class" in {
       val fmt: Format[Lorem[Float]] = Json.format
 
-      fmt.writes(Lorem(2.34f, 2)) mustEqual Json.obj(
-        "ipsum" -> 2.34f,
-        "age"   -> 2
-      )
+      fmt
+        .writes(Lorem(2.34F, 2))
+        .mustEqual(
+          Json.obj(
+            "ipsum" -> 2.34F,
+            "age"   -> 2
+          )
+        )
     }
 
     "ignore Option alias" in {
@@ -193,8 +198,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
 
       forAll(Gen.oneOf(a, b, c, d)) { r =>
-        r.writes(UsingAlias(Some(1))) mustEqual Json.obj("v" -> 1)
-        r.writes(UsingAlias(None)) mustEqual Json.obj()
+        r.writes(UsingAlias(Some(1))).mustEqual(Json.obj("v" -> 1))
+        r.writes(UsingAlias(None)).mustEqual(Json.obj())
       }
     }
 
@@ -224,10 +229,10 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       lazy val wsimple = Json.toJson[Family](simple)
       lazy val wopt    = Json.toJson[Family](optional)
 
-      wsimple mustEqual jsSimple
-      wsimple.validate(Json.reads[Simple]) mustEqual JsSuccess(simple)
-      wopt mustEqual jsOptional
-      wopt.validate(Json.reads[Optional]) mustEqual JsSuccess(optional)
+      wsimple.mustEqual(jsSimple)
+      wsimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+      wopt.mustEqual(jsOptional)
+      wopt.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
 
       // was StackOverFlow exception
       Json
@@ -243,7 +248,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     "be generated for a ValueClass" in {
       val js = Json.valueWrites[TextId].writes(new TextId("bar"))
 
-      js mustEqual JsString("bar")
+      js.mustEqual(JsString("bar"))
     }
   }
 
@@ -259,17 +264,17 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val fooFooValue = Foo(Foo.id("C"), Some(Right(fooStrValue)))
 
       def readSpec(r: Reads[Foo]) = {
-        r.reads(jsonNoValue) mustEqual JsSuccess(Foo(Foo.id("A"), None))
-        r.reads(jsonStrValue) mustEqual JsSuccess(fooStrValue)
-        r.reads(jsonFooValue) mustEqual JsSuccess(fooFooValue)
+        r.reads(jsonNoValue).mustEqual(JsSuccess(Foo(Foo.id("A"), None)))
+        r.reads(jsonStrValue).mustEqual(JsSuccess(fooStrValue))
+        r.reads(jsonFooValue).mustEqual(JsSuccess(fooFooValue))
         r.reads(Json.obj("id" -> "D", "value" -> jsonFooValue))
           .mustEqual(JsSuccess(Foo(Foo.id("D"), Some(Right(fooFooValue)))))
       }
 
       def writeSpec(w: Writes[Foo]) = {
-        w.writes(Foo(Foo.id("A"), None)) mustEqual jsonNoValue
-        w.writes(fooStrValue) mustEqual jsonStrValue
-        w.writes(fooFooValue) mustEqual jsonFooValue
+        w.writes(Foo(Foo.id("A"), None)).mustEqual(jsonNoValue)
+        w.writes(fooStrValue).mustEqual(jsonStrValue)
+        w.writes(fooFooValue).mustEqual(jsonFooValue)
         w.writes(Foo(Foo.id("D"), Some(Right(fooFooValue)))).mustEqual(Json.obj("id" -> "D", "value" -> jsonFooValue))
       }
 
@@ -293,13 +298,13 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val other   = Interval(2, Some(3))
 
       def readSpec(r: Reads[Interval[Int]]) = {
-        r.reads(jsonNoOther) mustEqual JsSuccess(noOther)
-        r.reads(jsonOther) mustEqual JsSuccess(other)
+        r.reads(jsonNoOther).mustEqual(JsSuccess(noOther))
+        r.reads(jsonOther).mustEqual(JsSuccess(other))
       }
 
       def writeSpec(r: Writes[Interval[Int]]) = {
-        r.writes(noOther) mustEqual jsonNoOther
-        r.writes(other) mustEqual jsonOther
+        r.writes(noOther).mustEqual(jsonNoOther)
+        r.writes(other).mustEqual(jsonOther)
       }
 
       "to generate Reads" in readSpec(Json.reads[Interval[Int]])
@@ -332,13 +337,13 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val fixture4 = WithDefault(18)
 
       def readSpec(r: Reads[WithDefault]) = {
-        r.reads(json01) mustEqual JsSuccess(fixture0)
-        r.reads(json02) mustEqual JsSuccess(fixture0)
-        r.reads(json03) mustEqual JsSuccess(fixture0)
-        r.reads(json1) mustEqual JsSuccess(fixture1)
-        r.reads(json2) mustEqual JsSuccess(fixture2)
-        r.reads(json3) mustEqual JsSuccess(fixture3)
-        r.reads(json4) mustEqual JsSuccess(fixture4)
+        r.reads(json01).mustEqual(JsSuccess(fixture0))
+        r.reads(json02).mustEqual(JsSuccess(fixture0))
+        r.reads(json03).mustEqual(JsSuccess(fixture0))
+        r.reads(json1).mustEqual(JsSuccess(fixture1))
+        r.reads(json2).mustEqual(JsSuccess(fixture2))
+        r.reads(json3).mustEqual(JsSuccess(fixture3))
+        r.reads(json4).mustEqual(JsSuccess(fixture4))
       }
 
       val jsWithDefaults = Json.using[Json.WithDefaultValues]
@@ -355,7 +360,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     "handle case class with default values, format defined in companion object" in {
       val json     = Json.obj("id" -> 15)
       val expected = WithDefaultInCompanion(15, "a")
-      Json.fromJson[WithDefaultInCompanion](json) mustEqual JsSuccess(expected)
+      Json.fromJson[WithDefaultInCompanion](json).mustEqual(JsSuccess(expected))
     }
 
     "handle case class with default values inner optional case class containing default values" when {
@@ -382,10 +387,10 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val fixture1 = ComplexWithDefault(15, None)
 
       def readSpec(r: Reads[ComplexWithDefault]) = {
-        r.reads(json01) mustEqual JsSuccess(fixture0)
-        r.reads(json02) mustEqual JsSuccess(fixture0)
-        r.reads(json03) mustEqual JsSuccess(fixture0)
-        r.reads(json11) mustEqual JsSuccess(fixture1)
+        r.reads(json01).mustEqual(JsSuccess(fixture0))
+        r.reads(json02).mustEqual(JsSuccess(fixture0))
+        r.reads(json03).mustEqual(JsSuccess(fixture0))
+        r.reads(json11).mustEqual(JsSuccess(fixture1))
       }
 
       val jsWithDefaults = Json.using[Json.WithDefaultValues]
@@ -401,15 +406,15 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
     "handle case class with implicits" when {
       val json1    = Json.obj("pos" -> 2, "text" -> "str")
-      val json2    = Json.obj("ident" -> "id", "value" -> 23.456d)
+      val json2    = Json.obj("ident" -> "id", "value" -> 23.456D)
       val fixture1 = WithImplicit1(2, "str")
-      val fixture2 = WithImplicit2("id", 23.456d)
+      val fixture2 = WithImplicit2("id", 23.456D)
 
       def readSpec1(r: Reads[WithImplicit1]) =
-        r.reads(json1) mustEqual JsSuccess(fixture1)
+        r.reads(json1).mustEqual(JsSuccess(fixture1))
 
       def writeSpec2(w: OWrites[WithImplicit2[Double]]) =
-        w.writes(fixture2) mustEqual json2
+        w.writes(fixture2).mustEqual(json2)
 
       "to generate Reads" in readSpec1(Json.reads[WithImplicit1])
 
@@ -422,20 +427,20 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         val f2 = Json.format[WithImplicit2[Double]]
 
         readSpec1(f1)
-        f1.writes(fixture1) mustEqual json1
+        f1.writes(fixture1).mustEqual(json1)
         writeSpec2(f2)
-        f2.reads(json2) mustEqual JsSuccess(fixture2)
+        f2.reads(json2).mustEqual(JsSuccess(fixture2))
       }
     }
 
     "handle generic case class with multiple generic parameters and self references" when {
       import TestFormats._
 
-      val nestedLeft = Json.obj("id" -> 2, "a" -> 0.2f, "b" -> 0.3f, "c" -> 3)
+      val nestedLeft = Json.obj("id" -> 2, "a" -> 0.2F, "b" -> 0.3F, "c" -> 3)
 
       val nestedRight = Json.obj(
         "id" -> 1,
-        "a"  -> 0.1f,
+        "a"  -> 0.1F,
         "b"  -> "right1",
         "c"  -> 2
       )
@@ -444,28 +449,28 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         "id" -> 3,
         "a"  -> nestedRight,
         "b"  -> "right2",
-        "c"  -> 0.4d
+        "c"  -> 0.4D
       )
 
       val jsonLeft = Json.obj(
         "id" -> 4,
         "a"  -> nestedLeft,
         "b"  -> nestedRight,
-        "c"  -> 0.5d
+        "c"  -> 0.5D
       )
 
-      val complexRight = Complex(3, Complex(1, 0.1f, Right("right1"), 2), Right("right2"), 0.4d)
+      val complexRight = Complex(3, Complex(1, 0.1F, Right("right1"), 2), Right("right2"), 0.4D)
 
-      val complexLeft = Complex(4, Complex(2, 0.2f, Left(0.3f), 3), Left(Complex(1, 0.1f, Right("right1"), 2)), 0.5d)
+      val complexLeft = Complex(4, Complex(2, 0.2F, Left(0.3F), 3), Left(Complex(1, 0.1F, Right("right1"), 2)), 0.5D)
 
       def readSpec(r: Reads[Complex[Complex[Float, Int], Double]]) = {
-        r.reads(jsonRight) mustEqual JsSuccess(complexRight)
-        r.reads(jsonLeft) mustEqual JsSuccess(complexLeft)
+        r.reads(jsonRight).mustEqual(JsSuccess(complexRight))
+        r.reads(jsonLeft).mustEqual(JsSuccess(complexLeft))
       }
 
       def writeSpec(r: Writes[Complex[Complex[Float, Int], Double]]) = {
-        r.writes(complexRight) mustEqual jsonRight
-        r.writes(complexLeft) mustEqual jsonLeft
+        r.writes(complexRight).mustEqual(jsonRight)
+        r.writes(complexLeft).mustEqual(jsonLeft)
       }
 
       "to generate Reads" in readSpec {
@@ -492,28 +497,28 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       val json = Json.obj(
         "id"  -> "foo",
-        "ls"  -> List(1.2d, 23.45d),
+        "ls"  -> List(1.2D, 23.45D),
         "set" -> List(1, 3, 4, 7),
         "seq" -> List(
           Json.obj("_1" -> 2, "_2"       -> "bar"),
           Json.obj("_1" -> 4, "_2"       -> "lorem"),
           Json.obj("_2" -> "ipsum", "_1" -> 5)
         ),
-        "scores" -> Json.obj("A1" -> 0.1f, "EF" -> 12.3f)
+        "scores" -> Json.obj("A1" -> 0.1F, "EF" -> 12.3F)
       )
       val withColl = WithColl(
         id = "foo",
-        ls = List(1.2d, 23.45d),
+        ls = List(1.2D, 23.45D),
         set = Set(1, 3, 4, 7),
         seq = Seq(2 -> "bar", 4 -> "lorem", 5 -> "ipsum"),
-        scores = Map("A1" -> 0.1f, "EF" -> 12.3f)
+        scores = Map("A1" -> 0.1F, "EF" -> 12.3F)
       )
 
       def readSpec(r: Reads[WithColl[Double, (Int, String)]]) =
-        r.reads(json) mustEqual JsSuccess(withColl)
+        r.reads(json).mustEqual(JsSuccess(withColl))
 
       def writeSpec(w: Writes[WithColl[Double, (Int, String)]]) =
-        w.writes(withColl) mustEqual json
+        w.writes(withColl).mustEqual(json)
 
       "to generated Reads" in readSpec {
         Json.reads[WithColl[Double, (Int, String)]]
@@ -550,12 +555,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
 
-      Json.toJson[Family](simple) mustEqual jsSimple
-      Json.toJson[Family](optional) mustEqual jsOptional
-      jsSimple.validate[Family] mustEqual JsSuccess(simple)
-      jsOptional.validate[Family] mustEqual JsSuccess(optional)
-      jsSimple.validate(Json.reads[Simple]) mustEqual JsSuccess(simple)
-      jsOptional.validate(Json.reads[Optional]) mustEqual JsSuccess(optional)
+      Json.toJson[Family](simple).mustEqual(jsSimple)
+      Json.toJson[Family](optional).mustEqual(jsOptional)
+      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
     }
 
     "handle sealed family with custom discriminator name" in {
@@ -579,12 +584,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
 
-      Json.toJson[Family](simple) mustEqual jsSimple
-      Json.toJson[Family](optional) mustEqual jsOptional
-      jsSimple.validate[Family] mustEqual JsSuccess(simple)
-      jsOptional.validate[Family] mustEqual JsSuccess(optional)
-      jsSimple.validate(Json.reads[Simple]) mustEqual JsSuccess(simple)
-      jsOptional.validate(Json.reads[Optional]) mustEqual JsSuccess(optional)
+      Json.toJson[Family](simple).mustEqual(jsSimple)
+      Json.toJson[Family](optional).mustEqual(jsOptional)
+      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
     }
 
     "handle sealed family with typeNaming" in {
@@ -611,12 +616,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         "_type" -> JsString("optional")
       )
 
-      Json.toJson[Family](simple) mustEqual jsSimple
-      Json.toJson[Family](optional) mustEqual jsOptional
-      jsSimple.validate[Family] mustEqual JsSuccess(simple)
-      jsOptional.validate[Family] mustEqual JsSuccess(optional)
-      jsSimple.validate(Json.reads[Simple]) mustEqual JsSuccess(simple)
-      jsOptional.validate(Json.reads[Optional]) mustEqual JsSuccess(optional)
+      Json.toJson[Family](simple).mustEqual(jsSimple)
+      Json.toJson[Family](optional).mustEqual(jsOptional)
+      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
     }
 
     "handle case objects as empty JsObject" in {
@@ -626,10 +631,10 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val formatter = Json.format[Obj.type]
 
       val jsObj = Json.obj()
-      writer.writes(Obj) mustEqual jsObj
-      reader.reads(jsObj) mustEqual JsSuccess(Obj)
-      formatter.writes(Obj) mustEqual jsObj
-      formatter.reads(jsObj) mustEqual JsSuccess(Obj)
+      writer.writes(Obj).mustEqual(jsObj)
+      reader.reads(jsObj).mustEqual(JsSuccess(Obj))
+      formatter.writes(Obj).mustEqual(jsObj)
+      formatter.reads(jsObj).mustEqual(JsSuccess(Obj))
     }
 
     "handle ValueClass" in {
@@ -637,8 +642,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val js                           = JsString("foo")
       implicit val fmt: Format[TextId] = Json.valueFormat[TextId]
 
-      js.validate[TextId] mustEqual JsSuccess(id)
-      fmt.writes(id) mustEqual js
+      js.validate[TextId].mustEqual(JsSuccess(id))
+      fmt.writes(id).mustEqual(js)
     }
   }
 

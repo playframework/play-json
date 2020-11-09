@@ -64,7 +64,7 @@ class JsonValidSpec extends Specification {
       Json
         .obj("key1" -> 5.123, "key2" -> 3.543)
         .validate[Map[String, Float]]
-        .mustEqual(JsSuccess(Map("key1" -> 5.123f, "key2" -> 3.543f)))
+        .mustEqual(JsSuccess(Map("key1" -> 5.123F, "key2" -> 3.543F)))
     }
   }
 }

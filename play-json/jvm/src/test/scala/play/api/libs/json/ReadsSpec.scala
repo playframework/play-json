@@ -617,7 +617,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         JsString("1 seconds")        -> JsError("error.invalid.duration"),
         JsString("foo")              -> JsError("error.invalid.duration"),
         JsNumber(BigDecimal(1000L))  -> JsSuccess(oneSec),
-        JsNumber(BigDecimal(1.234d)) -> JsError("error.expected.long")
+        JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.long")
       )
     ) { case (input, result) =>
       s"be parsed from ${Json.stringify(input)} as $result" in {
@@ -641,7 +641,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         JsNumber(BigDecimal(19L))    -> JsSuccess(period1),
         JsString("P2M19D")           -> JsSuccess(period2),
         JsString("foo")              -> JsError("error.invalid.stringPeriod"),
-        JsNumber(BigDecimal(1.234d)) -> JsError("error.expected.int")
+        JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.int")
       )
     ) { case (input, result) =>
       s"be parsed from ${Json.stringify(input)} as $result" in {

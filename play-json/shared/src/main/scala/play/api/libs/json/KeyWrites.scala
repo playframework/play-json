@@ -13,4 +13,12 @@ trait KeyWrites[T] {
   def writeKey(key: T): String
 }
 
-object KeyWrites extends EnvKeyWrites
+object KeyWrites extends EnvKeyWrites {
+
+  /**
+   * Returns an instance which uses `f` as [[KeyWrites.writeKey]] function.
+   */
+  def apply[T](f: T => String): KeyWrites[T] = new KeyWrites[T] {
+    def writeKey(key: T) = f(key)
+  }
+}
