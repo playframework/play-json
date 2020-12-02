@@ -149,8 +149,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         val expected   = Leaf2(1)
         val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroSpec.Leaf2", "value" -> 1)
 
-        Json.toJson[TreeValue](expected) mustEqual expectedJs
-        expectedJs.validate[TreeValue] mustEqual JsSuccess(expected)
+        Json.toJson[TreeValue](expected).mustEqual(expectedJs)
+        expectedJs.validate[TreeValue].mustEqual(JsSuccess(expected))
       }
     }
 
