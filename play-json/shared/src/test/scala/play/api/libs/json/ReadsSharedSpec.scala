@@ -8,7 +8,7 @@ import java.math.BigInteger
 
 import java.net.URI
 
-import org.scalatest._
+import org.scalatest.Inside
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

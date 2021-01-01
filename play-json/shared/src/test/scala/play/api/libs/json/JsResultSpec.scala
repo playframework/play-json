@@ -11,7 +11,6 @@ import play.api.libs.functional.Functor
 
 import JsResult.functorJsResult
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

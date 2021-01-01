@@ -35,7 +35,6 @@ object TestFormats {
 
 final class TextId(val value: String) extends AnyVal
 
-import org.scalatest._
 import org.scalacheck.Gen
 
 class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {

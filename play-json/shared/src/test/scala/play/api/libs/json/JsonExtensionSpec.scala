@@ -9,7 +9,6 @@ import play.api.libs.json.JsonNaming.SnakeCase
 
 import play.api.libs.json.Json._
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

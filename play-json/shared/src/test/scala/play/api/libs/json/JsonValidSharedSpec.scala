@@ -7,7 +7,6 @@ package play.api.libs.json
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

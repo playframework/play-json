@@ -8,7 +8,6 @@ import play.api.libs.functional.syntax._
 
 import scala.collection.immutable.ListMap
 
-import org.scalatest._
 import org.scalacheck.Gen
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
