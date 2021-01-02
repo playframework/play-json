@@ -104,7 +104,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     }
 
     "validate JsObject to Map with custom key type" in {
-      implicit val keyReads = KeyReads[Int] { key =>
+      implicit val keyReads: KeyReads[Int] = KeyReads[Int] { key =>
         JsResult.fromTry(scala.util.Try(key.toInt))
       }
 
@@ -113,7 +113,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         .validate[Map[Int, String]]
         .mustEqual(JsSuccess(Map(1 -> "value1", 2 -> "value2")))
 
-      implicit val keyWrites = KeyWrites[Int](_.toString)
+      implicit val keyWrites: KeyWrites[Int] = KeyWrites[Int](_.toString)
 
       Json.toJson(Map(3 -> "foo", 4 -> "bar")).mustEqual(Json.obj("3" -> "foo", "4" -> "bar"))
     }
@@ -276,15 +276,15 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "validate reads on the root path" when {
       case class Address(street: String, zip: String)
 
-      implicit val userReads = (
+      implicit val userReads: Reads[User] = (
         (__ \ "name").read[String] and
           (__ \ "age").read[Int]
-      )(User)
+      )(User.apply)
 
-      implicit val addressReads = (
+      implicit val addressReads: Reads[Address] = (
         (__ \ "street").read[String] and
           (__ \ "zip").read[String]
-      )(Address)
+      )(Address.apply)
 
       val bobby = Json.obj(
         "name"   -> "bobby",
@@ -318,7 +318,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       }
 
       "readNullables for missing root path fragment" in {
-        implicit val userAddressReads = (
+        implicit val userAddressReads: Reads[(User, Option[Address])] = (
           __.read[User] and
             __.readNullable[Address]
         ).tupled
@@ -359,7 +359,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       }
 
       "readNullables for null root path" in {
-        implicit val userAddressReads = (
+        implicit val userAddressReads: Reads[(Option[User], Option[Address])] = (
           __.readNullable[User] and
             __.readNullable[Address]
         ).tupled
@@ -383,22 +383,22 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "validate simple case class reads/writes" in {
       val bobby = User("bobby", 54)
 
-      implicit val userReads = {
+      implicit val userReads: Reads[User] = {
         import Reads.path._
         (
           at(JsPath \ "name")(Reads.minLength[String](5))
             and
               at(JsPath \ "age")(Reads.min(40))
-        )(User)
+        )(User.apply)
       }
 
-      implicit val userWrites = {
+      implicit val userWrites: Writes[User] = {
         import Writes.path._
         (
           at[String](JsPath \ "name")
             and
               at[Int](JsPath \ "age")
-        )(unlift(User.unapply))
+        )(unlift(???))
       }
 
       val js = Json.toJson(bobby)
@@ -409,13 +409,13 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "validate simple case class format with custom apply/unapply" in {
       val bobby = User("bobby", 54)
 
-      implicit val userFormats = {
+      implicit val userFormats: Format[User] = {
         import Format.path._; import Format.constraints.{ of => o }
         (
           at(JsPath \ "name")(Format(Reads.minLength[String](5), o[String]))
             and
               at(JsPath \ "age")(Format(Reads.min(40), o[Int]))
-        )(User, unlift(User.unapply))
+        )(User.apply, unlift(???))
       }
 
       Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
@@ -424,13 +424,13 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "validate simple case class format" in {
       val bobby = User("bobby", 54)
 
-      implicit val userFormats = {
+      implicit val userFormats: OFormat[User] = {
         import Format.constraints.{ of => o }
         (
           (__ \ "name").rw(Reads.minLength[String](5), o[String])
             and
               (__ \ "age").rw(Reads.min(40), o[Int])
-        ).apply(User, unlift(User.unapply))
+        ).apply(User.apply, unlift(???))
       }
 
       Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
@@ -499,12 +499,12 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "Format simpler syntax without constraints" in {
       val bobby = User("bobby", 54)
 
-      implicit val userFormats = {
+      implicit val userFormats: OFormat[User] = {
         (
           (__ \ Symbol("name")).format[String]
             and
               (__ \ Symbol("age")).format[Int]
-        )(User, unlift(User.unapply))
+        )(User.apply, unlift(???))
       }
 
       Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
@@ -513,11 +513,11 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "Format simpler syntax with constraints" in {
       val bobby = User("bobby", 54)
 
-      implicit val userFormat = (
+      implicit val userFormat: OFormat[User] = (
         (__ \ Symbol("name")).format(Reads.minLength[String](5))
           and
             (__ \ Symbol("age")).format(Reads.min(40))
-      )(User, unlift(User.unapply))
+      )(User.apply, unlift(???))
 
       Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
     }
@@ -578,7 +578,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
             (
               (__ \ "key22").json.update((__ \ "key222").json.pick) and
                 (__ \ "key233").json.copyFrom((__ \ "key23").json.pick)
-            ).reduce
+            ).reduce[JsObject, JsObject] //FIXME
           ) and
           (__ \ "key3").json.pickBranch[JsArray](pure(f = Json.arr("delta"))) and
           (__ \ "key4").json.put(
@@ -588,7 +588,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
               "key43" -> func
             )
           )
-      ).reduce
+      ).reduce[JsObject, JsObject] //FIXME
 
       val res = Json.obj(
         "key1" -> "value1",
@@ -618,11 +618,11 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "manage nullable/option".taggedAs(UnstableInScala213) in {
       case class User(name: String, email: String, phone: Option[String])
 
-      implicit val UserReads = (
+      implicit val UserReads: Reads[User] = (
         (__ \ Symbol("name")).read[String] and
           (__ \ Symbol("coords") \ Symbol("email")).read(Reads.email) and
           (__ \ Symbol("coords") \ Symbol("phone")).readNullable(Reads.minLength[String](8))
-      )(User)
+      )(User.apply)
 
       Json
         .obj(
@@ -689,10 +689,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "report correct path for validation errors" in {
       case class User(email: String, phone: Option[String])
 
-      implicit val UserReads = (
+      implicit val UserReads: Reads[User] = (
         (__ \ Symbol("email")).read(Reads.email) and
           (__ \ Symbol("phone")).readNullable(Reads.minLength[String](8))
-      )(User)
+      )(User.apply)
 
       Json.obj("email" -> "john").validate[User].mustEqual(JsError(__ \ "email", JsonValidationError("error.email")))
       Json
@@ -704,11 +704,11 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "mix reads constraints" in {
       case class User(id: Long, email: String, age: Int)
 
-      implicit val UserReads = (
+      implicit val UserReads: Reads[User] = (
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("email")).read(Reads.email andKeep Reads.minLength[String](5)) and
           (__ \ Symbol("age")).read(Reads.max(55).or(Reads.min(65)))
-      )(User)
+      )(User.apply)
 
       Json
         .obj("id" -> 123L, "email" -> "john.doe@blibli.com", "age" -> 50)
@@ -741,7 +741,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("name")).read[String] and
           (__ \ Symbol("friend")).lazyReadNullable(UserReads)
-      )(User)
+      )(User.apply)
 
       val js = Json.obj(
         "id"     -> 123L,
@@ -767,7 +767,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         (__ \ Symbol("id")).write[Long] and
           (__ \ Symbol("name")).write[String] and
           (__ \ Symbol("friend")).lazyWriteNullable(UserWrites)
-      )(unlift(User.unapply))
+      )(unlift(???))
 
       val js = Json.obj(
         "id"     -> 123L,
@@ -785,7 +785,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         (__ \ Symbol("id")).format[Long] and
           (__ \ Symbol("name")).format[String] and
           (__ \ Symbol("friend")).lazyFormatNullable(UserFormats)
-      )(User, unlift(User.unapply))
+      )(User.apply, unlift(???))
 
       val js = Json.obj(
         "id"     -> 123L,
@@ -851,7 +851,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
     "single field case class" in {
       case class Test(field: String)
-      val myFormat = (__ \ Symbol("field")).format[String].inmap(Test, unlift(Test.unapply))
+      val myFormat = (__ \ Symbol("field")).format[String].inmap(Test, unlift(???))
 
       myFormat.reads(Json.obj("field" -> "blabla")).mustEqual(JsSuccess(Test("blabla"), __ \ Symbol("field")))
       myFormat.reads(Json.obj()).mustEqual(JsError(__ \ Symbol("field"), "error.path.missing"))
@@ -990,10 +990,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit val UserWrites = (
+      implicit val UserWrites: OWrites[User] = (
         (__ \ Symbol("email")).write[String] and
           (__ \ Symbol("phone")).writeNullable[String]
-      )(unlift(User.unapply))
+      )(unlift(???))
 
       Json.toJson(User("john.doe@blibli.com", None)).mustEqual(Json.obj("email" -> "john.doe@blibli.com"))
       Json
@@ -1036,10 +1036,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit val UserFormat = (
+      implicit val UserFormat: OFormat[User] = (
         (__ \ Symbol("email")).format(email) and
           (__ \ Symbol("phone")).formatNullable(Format(minLength[String](8), Writes.of[String]))
-      )(User, unlift(User.unapply))
+      )(User.apply, unlift(???))
 
       Json.obj("email" -> "john").validate[User].mustEqual(JsError(__ \ "email", JsonValidationError("error.email")))
       Json

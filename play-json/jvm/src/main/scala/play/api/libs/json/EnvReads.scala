@@ -107,7 +107,7 @@ trait EnvReads {
   /**
    * the default implicit java.util.Date reads
    */
-  implicit val DefaultDateReads = dateReads("yyyy-MM-dd")
+  implicit val DefaultDateReads: Reads[java.util.Date] = dateReads("yyyy-MM-dd")
 
   /**
    * ISO 8601 Reads
@@ -162,7 +162,7 @@ trait EnvReads {
   /**
    * the default implicit SqlDate reads
    */
-  implicit val DefaultSqlDateReads = sqlDateReads("yyyy-MM-dd")
+  implicit val DefaultSqlDateReads: Reads[java.sql.Date] = sqlDateReads("yyyy-MM-dd")
 
   /** Typeclass to implement way of parsing string as Java8 temporal types. */
   trait TemporalParser[T <: JTemporal] {
@@ -325,7 +325,7 @@ trait EnvReads {
   def localDateTimeReads[T](parsing: T, corrector: String => String = identity)(
       implicit p: T => TemporalParser[LocalDateTime]
   ): Reads[LocalDateTime] =
-    new TemporalReads[T, LocalDateTime](parsing, corrector, p, { millis: Long =>
+    new TemporalReads[T, LocalDateTime](parsing, corrector, p, { (millis: Long) =>
       LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
     })
 
@@ -333,7 +333,7 @@ trait EnvReads {
    * The default typeclass to reads `java.time.LocalDateTime` from JSON.
    * Accepts date/time formats as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'.
    */
-  implicit val DefaultLocalDateTimeReads =
+  implicit val DefaultLocalDateTimeReads: Reads[LocalDateTime] =
     localDateTimeReads(DateTimeFormatter.ISO_DATE_TIME)
 
   /**
@@ -388,7 +388,7 @@ trait EnvReads {
    * The default typeclass to reads `java.time.OffsetDateTime` from JSON.
    * Accepts date/time formats as '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'.
    */
-  implicit val DefaultOffsetDateTimeReads =
+  implicit val DefaultOffsetDateTimeReads: Reads[OffsetDateTime] =
     offsetDateTimeReads(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
   /**
@@ -414,7 +414,7 @@ trait EnvReads {
   def zonedDateTimeReads[T](parsing: T, corrector: String => String = identity)(
       implicit p: T => TemporalParser[ZonedDateTime]
   ): Reads[ZonedDateTime] =
-    new TemporalReads[T, ZonedDateTime](parsing, corrector, p, { millis: Long =>
+    new TemporalReads[T, ZonedDateTime](parsing, corrector, p, { (millis: Long) =>
       ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
     })
 
@@ -422,7 +422,7 @@ trait EnvReads {
    * The default typeclass to reads `java.time.ZonedDateTime` from JSON.
    * Accepts date/time formats as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'.
    */
-  implicit val DefaultZonedDateTimeReads =
+  implicit val DefaultZonedDateTimeReads: Reads[ZonedDateTime] =
     zonedDateTimeReads(DateTimeFormatter.ISO_DATE_TIME)
 
   /**
@@ -479,7 +479,7 @@ trait EnvReads {
    * The default typeclass to reads `java.time.LocalDate` from JSON.
    * Accepts date formats as '2011-12-03'.
    */
-  implicit val DefaultLocalDateReads =
+  implicit val DefaultLocalDateReads: Reads[LocalDate] =
     localDateReads(DateTimeFormatter.ISO_DATE)
 
   /**
@@ -509,7 +509,7 @@ trait EnvReads {
    * The default typeclass to reads `java.time.Instant` from JSON.
    * Accepts instant formats as '2011-12-03T10:15:30Z', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'.
    */
-  implicit val DefaultInstantReads =
+  implicit val DefaultInstantReads: Reads[Instant] =
     instantReads(DateTimeFormatter.ISO_DATE_TIME)
 
   // ---
@@ -566,7 +566,7 @@ trait EnvReads {
    * The default typeclass to reads `java.time.LocalTime` from JSON.
    * Accepts date formats as '10:15:30' (or '10:15').
    */
-  implicit val DefaultLocalTimeReads =
+  implicit val DefaultLocalTimeReads: Reads[LocalTime] =
     localTimeReads(DateTimeFormatter.ISO_TIME)
 
   // ---
@@ -730,7 +730,7 @@ trait EnvReads {
   }
 }
 
-trait EnvKeyReads { _: KeyReads.type =>
+trait EnvKeyReads { self: KeyReads.type =>
 
   /**
    * Reads an object key as a locale, considering the key

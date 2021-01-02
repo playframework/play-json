@@ -184,7 +184,8 @@ class JsonTransSpec extends AnyWordSpec with Matchers {
 
     "deepMerge when reducing JsObjects" in {
       val json = Json.obj("somekey1" -> 11, "somekey2" -> 22)
-      val jsonTransform = (
+      //FIXME
+      val jsonTransform: Reads[JsObject] = (
         (__ \ "key1" \ "sk1").json.copyFrom((__ \ "somekey1").json.pick)
           and
             (__ \ "key1" \ "sk2").json.copyFrom((__ \ "somekey2").json.pick)

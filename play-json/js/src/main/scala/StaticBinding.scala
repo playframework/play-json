@@ -114,7 +114,7 @@ object StaticBinding {
     case null           => JsNull
     case s: String      => JsString(s)
     case d: Double      => JsNumber(d)
-    case f: Float       => JsNumber(f)
+    case f: Float       => JsNumber(BigDecimal(f))
     case i: Int         => JsNumber(i)
     case l: Long        => JsNumber(l)
     case true           => JsTrue

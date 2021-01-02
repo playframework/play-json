@@ -151,7 +151,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
       (__ \ "login").read[String] and
         (__ \ "avatar").read[String] and
         (__ \ "url").read[String]
-    )(Owner)
+    )(Owner.apply)
 
     "be successful for simple case class Owner" in {
       val jsObj = Json.obj(

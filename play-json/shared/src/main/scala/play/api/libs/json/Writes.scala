@@ -213,14 +213,14 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for Short types.
    */
   implicit object ShortWrites extends Writes[Short] {
-    def writes(o: Short) = JsNumber(o)
+    def writes(o: Short) = JsNumber(BigDecimal(o))
   }
 
   /**
    * Serializer for Byte types.
    */
   implicit object ByteWrites extends Writes[Byte] {
-    def writes(o: Byte) = JsNumber(o)
+    def writes(o: Byte) = JsNumber(BigDecimal(o))
   }
 
   /**
@@ -234,7 +234,7 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for Float types.
    */
   implicit object FloatWrites extends Writes[Float] {
-    def writes(o: Float) = JsNumber(o)
+    def writes(o: Float) = JsNumber(BigDecimal(o))
   }
 
   /**

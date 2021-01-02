@@ -8,7 +8,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 final class FormatSharedSpec extends AnyWordSpec with Matchers {
-  "Format" should {
+  convertToStringShouldWrapperForVerb("Format").should {
     "be bimap'ed" in {
       val strFormat = implicitly[Format[String]]
       val intFormat: Format[Int] =
@@ -19,7 +19,7 @@ final class FormatSharedSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "OFormat" should {
+  convertToStringShouldWrapperForVerb("OFormat").should {
     "be bimap'ed" in {
       val fooFormat                  = Json.format[Foo]
       val strFormat: OFormat[String] = fooFormat.bimap(_.name, Foo(_))

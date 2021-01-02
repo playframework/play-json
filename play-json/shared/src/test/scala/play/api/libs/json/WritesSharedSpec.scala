@@ -9,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 final class WritesSharedSpec extends AnyWordSpec with Matchers {
   "Functional Writes" should {
-    implicit val locationWrites = Writes[Location] { location =>
+    implicit val locationWrites: Writes[Location] = Writes[Location] { location =>
       Json.obj(
         "lat"  -> location.lat,
         "long" -> location.long

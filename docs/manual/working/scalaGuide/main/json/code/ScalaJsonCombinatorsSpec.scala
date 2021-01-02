@@ -117,7 +117,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       //#reads-complex-builder
 
       //#reads-complex-buildertoreads
-      implicit val locationReads = locationReadsBuilder.apply(Location.apply _)
+      implicit val locationReads: Reads[SampleModel.Location] = locationReadsBuilder.apply(Location.apply _)
       //#reads-complex-buildertoreads
 
       val locationResult = (json \ "location").validate[Location]
@@ -423,7 +423,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       implicit lazy val userWrites: Writes[User] = (
         (__ \ "name").write[String] and
           (__ \ "friends").lazyWrite(Writes.seq[User](userWrites))
-      )(unlift(User.unapply))
+      ).apply(unlift(User.unapply))
       //#reads-writes-recursive
 
       // Use Reads for JSON -> model

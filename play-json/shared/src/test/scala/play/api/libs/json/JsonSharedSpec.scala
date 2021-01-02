@@ -19,14 +19,14 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     (__ \ Symbol("id")).format[Long] and
       (__ \ Symbol("name")).format[String] and
       (__ \ Symbol("friends")).lazyFormat(Reads.list(UserFormat), Writes.list(UserFormat))
-  )(User, unlift(User.unapply))
+  )(User.apply, unlift(???))
 
   case class Car(id: Long, models: Map[String, String])
 
-  implicit val CarFormat = (
+  implicit val CarFormat: Format[Car] = (
     (__ \ Symbol("id")).format[Long] and
       (__ \ Symbol("models")).format[Map[String, String]]
-  )(Car, unlift(Car.unapply))
+  )(Car.apply, unlift(???))
 
   def json[T](f: JsonFacade => T) = forAll(Gen.oneOf(Json, Json.configured, Json.using[Json.MacroOptions]))(f)
 
@@ -134,8 +134,8 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
 
       js.toJsObject(peach)(owrites) mustBe an[JsObject]
       js.toJsObject(peach)(owrites).mustEqual(js.toJson(peach)(writes))
-      shapeless.test.illTyped("js.toJsObject(1)")
-      shapeless.test.illTyped("js.toJsObject(peach)(writes)")
+      "js.toJsObject(1)" mustNot typeCheck
+      "js.toJsObject(peach)(writes)" mustNot typeCheck
     }
 
     "convert to a byte array containing the UTF-8 representation" in json { js =>
@@ -317,14 +317,15 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
 
   "JSON Writes" should {
     "write list/seq/set/map" in json { js =>
+      import Json._
       import Writes._
 
-      js.toJson(List(1, 2, 3)).mustEqual(js.arr(1, 2, 3))
+      js.toJson(List(1, 2, 3)).mustEqual(js.arr(Json.toJsFieldJsValueWrapper(1), Json.toJsFieldJsValueWrapper(2), Json.toJsFieldJsValueWrapper(3)))
       js.toJson(Set("alpha", "beta", "gamma")).mustEqual(js.arr("alpha", "beta", "gamma"))
       js.toJson(Seq("alpha", "beta", "gamma")).mustEqual(js.arr("alpha", "beta", "gamma"))
       js.toJson(Map("key1" -> "value1", "key2" -> "value2")).mustEqual(js.obj("key1" -> "value1", "key2" -> "value2"))
 
-      implicit val myWrites = (
+      implicit val myWrites: OWrites[(List[Int], Set[String], Seq[String], Map[String, String])] = (
         (__ \ Symbol("key1")).write(constraints.list[Int]) and
           (__ \ Symbol("key2")).write(constraints.set[String]) and
           (__ \ Symbol("key3")).write(constraints.seq[String]) and
@@ -364,7 +365,7 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
         (__ \ "id").write[String] and
           (__ \ "data" \ "attr1").write[String] and
           (__ \ "data" \ "attr2").write[String]
-      )(unlift(TestCase.unapply))
+      )(unlift(???))
 
       js.toJson(TestCase("my-id", "foo", "bar")).mustEqual(jo)
     }

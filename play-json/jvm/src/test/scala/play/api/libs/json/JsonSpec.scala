@@ -55,7 +55,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
           )
         )
         .inmap(optopt => optopt.flatten, (opt: Option[Date]) => Some(opt))
-  )(Post, unlift(Post.unapply))
+  )(Post.apply, unlift(???))
 
   val LenientPostFormat: Format[Post] = (
     (__ \ Symbol("body")).format[String] and
@@ -65,7 +65,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
           Writes.dateWrites(dateFormat)
         )
       )
-  )(Post, unlift(Post.unapply))
+  ).apply(Post.apply, unlift(???))
 
   val mapper = new ObjectMapper()
 

@@ -232,7 +232,7 @@ trait ConstraintWrites {
       wrs.writes(fixed)
     }
 
-  @com.github.ghik.silencer.silent
+  //@com.github.ghik.silencer.silent
   @deprecated("Use `pruned` without `Writes[A]`", "2.8.0")
   def pruned[A](implicit w: Writes[A]): Writes[A] = new Writes[A] {
     def writes(a: A): JsValue = JsNull

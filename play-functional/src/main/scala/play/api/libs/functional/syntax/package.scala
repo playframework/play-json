@@ -20,7 +20,7 @@ object `package` {
   implicit def toApplicativeOps[M[_], A](a: M[A])(implicit app: Applicative[M]): ApplicativeOps[M, A] =
     new ApplicativeOps(a)
 
-  implicit def toFunctionalBuilderOps[M[_], A](a: M[A])(implicit fcb: FunctionalCanBuild[M]) =
+  implicit def toFunctionalBuilderOps[M[_], A](a: M[A])(implicit fcb: FunctionalCanBuild[M]): FunctionalBuilderOps[M, A] =
     new FunctionalBuilderOps[M, A](a)(fcb)
 
   implicit def toMonoidOps[A](a: A)(implicit m: Monoid[A]): MonoidOps[A] = new MonoidOps(a)
@@ -34,7 +34,7 @@ object `package` {
   implicit def toInvariantFunctorOps[M[_], A](ma: M[A])(implicit fu: InvariantFunctor[M]): InvariantFunctorOps[M, A] =
     new InvariantFunctorOps(ma)
 
-  def unapply[B, A](f: B => Option[A]): B => A = { b: B =>
+  def unapply[B, A](f: B => Option[A]): B => A = { (b: B) =>
     f(b).get
   }
 

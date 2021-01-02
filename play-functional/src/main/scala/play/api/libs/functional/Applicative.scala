@@ -12,7 +12,7 @@ trait Applicative[M[_]] extends DeprecatedApplicative[M] {
   def apply[A, B](mf: M[A => B], ma: M[A]): M[B]
 }
 
-sealed trait DeprecatedApplicative[M[_]] { _: Applicative[M] =>
+sealed trait DeprecatedApplicative[M[_]] { self: Applicative[M] =>
   @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
   def pure[A](value: A): M[A] = pure(f = value)
 }
@@ -29,13 +29,13 @@ object Applicative {
 
 class ApplicativeOps[M[_], A](ma: M[A])(implicit a: Applicative[M]) {
   def ~>[B](mb: M[B]): M[B] =
-    a(a(a.pure(f = { _: A => (b: B) =>
+    a(a(a.pure(f = { (_: A) => (b: B) =>
       b
     }), ma), mb)
   def andKeep[B](mb: M[B]): M[B] = ~>(mb)
 
   def <~[B](mb: M[B]): M[A] =
-    a(a(a.pure(f = { a: A => (_: B) =>
+    a(a(a.pure(f = { (a: A) => (_: B) =>
       a
     }), ma), mb)
   def keepAnd[B](mb: M[B]): M[A] = <~(mb)

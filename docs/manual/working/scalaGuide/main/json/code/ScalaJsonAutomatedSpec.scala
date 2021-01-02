@@ -12,7 +12,7 @@ import play.api.libs.json.JsonNaming.SnakeCase
 final class IdText(val value: String) extends AnyVal
 //#valueClass
 
-class ScalaJsonAutomatedSpec extends Specification {
+object ScalaJsonAutomatedSpec {
   //#model
   case class Resident(name: String, age: Int, role: Option[String])
   //#model
@@ -24,18 +24,12 @@ class ScalaJsonAutomatedSpec extends Specification {
   //#model3
   sealed trait Role
   case object Admin extends Role
-  class Contributor(val organization: String) extends Role {
-    override def equals(obj: Any): Boolean = obj match {
-      case other: Contributor if obj != null => this.organization == other.organization
-      case _                                 => false
-    }
-  }
-  object Contributor {
-    def apply(organization: String): Contributor            = new Contributor(organization)
-    def unapply(contributor: Contributor): Option[(String)] = Some(contributor.organization)
-  }
+  case class Contributor(organization: String) extends Role
   //#model3
+}
 
+class ScalaJsonAutomatedSpec extends Specification {
+  import ScalaJsonAutomatedSpec._
   val sampleJson = Json.parse(
     """{
       "name" : "Fiver",
@@ -74,7 +68,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-reads
         import play.api.libs.json._
 
-        implicit val residentReads = Json.reads[Resident]
+        implicit val residentReads: Reads[Resident] = Json.reads[Resident]
         //#auto-reads
 
         sampleJson.as[Resident].must_===(sampleData)
@@ -85,11 +79,11 @@ class ScalaJsonAutomatedSpec extends Specification {
         import play.api.libs.json._
         import play.api.libs.functional.syntax._
 
-        implicit val residentReads = (
+        implicit val residentReads: Reads[Resident] = (
           (__ \ "name").read[String] and
             (__ \ "age").read[Int] and
             (__ \ "role").readNullable[String]
-        )(Resident)
+        ).apply(Resident.apply _)
         //#manual-reads
 
         sampleJson.as[Resident].must_===(sampleData)
@@ -99,7 +93,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-writes
         import play.api.libs.json._
 
-        implicit val residentWrites = Json.writes[Resident]
+        implicit val residentWrites: OWrites[Resident] = Json.writes[Resident]
         //#auto-writes
 
         Json.toJson(sampleData).must_===(sampleJson)
@@ -109,7 +103,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-format
         import play.api.libs.json._
 
-        implicit val residentFormat = Json.format[Resident]
+        implicit val residentFormat: OFormat[Resident] = Json.format[Resident]
         //#auto-format
 
         sampleJson.as[Resident].must_===(sampleData) and {
@@ -121,7 +115,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-naming-writes
         import play.api.libs.json._
 
-        implicit val config = JsonConfiguration(SnakeCase)
+        implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
 
         implicit val userWrites: OWrites[PlayUser] = Json.writes[PlayUser]
         //#auto-naming-writes
@@ -133,7 +127,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-naming-format
         import play.api.libs.json._
 
-        implicit val config = JsonConfiguration(SnakeCase)
+        implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
 
         implicit val userFormat: OFormat[PlayUser] = Json.format[PlayUser]
         //#auto-naming-format
@@ -147,7 +141,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-naming-reads
         import play.api.libs.json._
 
-        implicit val config = JsonConfiguration(SnakeCase)
+        implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
 
         implicit val userReads: Reads[PlayUser] = Json.reads[PlayUser]
         //#auto-naming-reads
@@ -163,7 +157,7 @@ class ScalaJsonAutomatedSpec extends Specification {
           override def apply(property: String): String = s"lightbend_$property"
         }
 
-        implicit val config = JsonConfiguration(Lightbend)
+        implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(Lightbend)
 
         implicit val customWrites: OFormat[PlayUser] = Json.format[PlayUser]
         //#auto-custom-naming-format
@@ -177,7 +171,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-case-class-to-JSON
         import play.api.libs.json._
 
-        implicit val residentWrites = Json.writes[Resident]
+        implicit val residentWrites: OWrites[Resident] = Json.writes[Resident]
 
         val resident = Resident(name = "Fiver", age = 4, role = None)
 
@@ -191,7 +185,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-JSON-to-case-class
         import play.api.libs.json._
 
-        implicit val residentReads = Json.reads[Resident]
+        implicit val residentReads: Reads[Resident] = Json.reads[Resident]
 
         // In a request, a JsValue is likely to come from `request.body.asJson`
         // or just `request.body` if using the `Action(parse.json)` body parser
@@ -223,7 +217,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#value-reads
         import play.api.libs.json._
 
-        implicit val idTextReads = Json.valueReads[IdText]
+        implicit val idTextReads: Reads[IdText] = Json.valueReads[IdText]
         //#value-reads
 
         JsString("foo").as[IdText].must_===(new IdText("foo"))
@@ -233,7 +227,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#value-writes
         import play.api.libs.json._
 
-        implicit val idTextWrites = Json.valueWrites[IdText]
+        implicit val idTextWrites: Writes[IdText] = Json.valueWrites[IdText]
         //#value-writes
 
         Json.toJson(new IdText("bar")).must_===(JsString("bar"))
@@ -243,7 +237,7 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#value-format
         import play.api.libs.json._
 
-        implicit val idTextFormat = Json.valueFormat[IdText]
+        implicit val idTextFormat: Format[IdText] = Json.valueFormat[IdText]
         //#value-format
 
         val id = new IdText("lorem")
@@ -275,14 +269,14 @@ class ScalaJsonAutomatedSpec extends Specification {
       import play.api.libs.json._
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
+      implicit val adminFormat: OFormat[Admin.type] = OFormat[Admin.type](Reads[Admin.type] {
         case JsObject(_) => JsSuccess(Admin)
         case _           => JsError("Empty object expected")
       }, OWrites[Admin.type] { _ =>
         Json.obj()
       })
 
-      implicit val contributorFormat = Json.format[Contributor]
+      implicit val contributorFormat: OFormat[Contributor] = Json.format[Contributor]
 
       // Finally able to generate format for the sealed family 'Role'
       implicit val roleFormat: OFormat[Role] = Json.format[Role]
@@ -320,7 +314,7 @@ class ScalaJsonAutomatedSpec extends Specification {
       //#auto-JSON-custom-trait
       import play.api.libs.json._
 
-      implicit val cfg = JsonConfiguration(
+      implicit val cfg: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(
         // Each JSON objects is marked with the admTpe, ...
         discriminator = "admTpe",
         // ... indicating the lower-cased name of sub-type
@@ -330,14 +324,14 @@ class ScalaJsonAutomatedSpec extends Specification {
       )
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
+      implicit val adminFormat: OFormat[Admin.type] = OFormat[Admin.type](Reads[Admin.type] {
         case JsObject(_) => JsSuccess(Admin)
         case _           => JsError("Empty object expected")
       }, OWrites[Admin.type] { _ =>
         Json.obj()
       })
 
-      implicit val contributorFormat = Json.format[Contributor]
+      implicit val contributorFormat: OFormat[Contributor] = Json.format[Contributor]
 
       // Finally able to generate format for the sealed family 'Role'
       implicit val roleFormat: OFormat[Role] = Json.format[Role]
@@ -362,8 +356,8 @@ class ScalaJsonAutomatedSpec extends Specification {
       //#auto-writes-null
       import play.api.libs.json._
 
-      implicit val config         = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
-      implicit val residentWrites = Json.writes[Resident]
+      implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      implicit val residentWrites: OWrites[Resident] = Json.writes[Resident]
       //#auto-writes-null
 
       val resident = Resident(name = "Fiver", age = 4, role = None)

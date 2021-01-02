@@ -245,7 +245,7 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
   def apply[A](f: JsValue => JsResult[A]): Reads[A] =
     new Reads[A] { def reads(json: JsValue) = f(json) }
 
-  implicit def functorReads(implicit a: Applicative[Reads]) = new Functor[Reads] {
+  implicit def functorReads(implicit a: Applicative[Reads]): Functor[Reads] = new Functor[Reads] {
     def fmap[A, B](reads: Reads[A], f: A => B): Reads[B] = a.map(reads, f)
   }
 
@@ -254,14 +254,14 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
     def identity                           = JsObject(Seq.empty)
   }
 
-  implicit val JsObjectReducer = Reducer[JsObject, JsObject](o => o)
+  implicit val JsObjectReducer: Reducer[JsObject, JsObject] = Reducer[JsObject, JsObject](o => o)
 
   implicit object JsArrayMonoid extends Monoid[JsArray] {
     def append(a1: JsArray, a2: JsArray) = a1 ++ a2
     def identity                         = JsArray()
   }
 
-  implicit val JsArrayReducer = Reducer[JsValue, JsArray](js => JsArray(Array(js)))
+  implicit val JsArrayReducer: Reducer[JsValue, JsArray] = Reducer[JsValue, JsArray](js => JsArray(Array(js)))
 }
 
 /**
@@ -279,7 +279,7 @@ trait LowPriorityDefaultReads extends EnvReads {
   /**
    * Generic deserializer for collections types.
    */
-  implicit def traversableReads[F[_], A](implicit bf: Factory[A, F[A]], ra: Reads[A]) = new Reads[F[A]] {
+  implicit def traversableReads[F[_], A](implicit bf: Factory[A, F[A]], ra: Reads[A]): Reads[F[A]] = new Reads[F[A]] {
     def reads(json: JsValue) = json match {
       case JsArray(ts) =>
         ts.iterator.zipWithIndex
@@ -393,7 +393,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for BigDecimal
    */
-  implicit val javaBigDecReads = Reads[java.math.BigDecimal](js =>
+  implicit val javaBigDecReads: Reads[java.math.BigDecimal] = Reads[java.math.BigDecimal](js =>
     js match {
       case JsString(s) => parseBigDecimal(s)
       case JsNumber(d) => JsSuccess(d.underlying)
