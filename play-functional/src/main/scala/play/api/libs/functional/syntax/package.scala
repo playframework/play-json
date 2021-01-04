@@ -20,8 +20,9 @@ object `package` {
   implicit def toApplicativeOps[M[_], A](a: M[A])(implicit app: Applicative[M]): ApplicativeOps[M, A] =
     new ApplicativeOps(a)
 
-  implicit def toFunctionalBuilderOps[M[_], A](a: M[A])(implicit fcb: FunctionalCanBuild[M]): FunctionalBuilderOps[M, A] =
-    new FunctionalBuilderOps[M, A](a)(fcb)
+  implicit def toFunctionalBuilderOps[M[_], A](a: M[A])(
+      implicit fcb: FunctionalCanBuild[M]
+  ): FunctionalBuilderOps[M, A] = new FunctionalBuilderOps[M, A](a)(fcb)
 
   implicit def toMonoidOps[A](a: A)(implicit m: Monoid[A]): MonoidOps[A] = new MonoidOps(a)
 

@@ -13,8 +13,8 @@ import sbtcrossproject.CrossType
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 def specs2(scalaVersion: String) = Seq(
-  "org.specs2" %% "specs2-core"  % "4.10.5" % Test withDottyCompat(scalaVersion),
-  "org.specs2" %% "specs2-junit" % "4.10.5" % Test withDottyCompat(scalaVersion),
+  ("org.specs2" %% "specs2-core"  % "4.10.5" % Test).withDottyCompat(scalaVersion),
+  ("org.specs2" %% "specs2-junit" % "4.10.5" % Test).withDottyCompat(scalaVersion),
 )
 
 val jacksonDatabindVersion = "2.10.5.1"
@@ -34,9 +34,12 @@ val joda = Seq(
   "joda-time" % "joda-time" % "2.10.8"
 )
 
-def jsonDependencies(isDotty: Boolean, scalaVersion: String) = if(isDotty) Seq.empty else Seq(
-  "org.scala-lang" % "scala-reflect" % scalaVersion
-)
+def jsonDependencies(isDotty: Boolean, scalaVersion: String) =
+  if (isDotty) Seq.empty
+  else
+    Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion
+    )
 
 // Common settings
 
@@ -63,16 +66,16 @@ val javacSettings = Seq(
   "-Xlint:unchecked",
 )
 
-def scalacOpts(isDotty: Boolean) = Seq(
-  "-target:jvm-1.8",
-  "-Ywarn-unused:imports",
-  "-Xlint:nullary-unit",
-  "-Xlint",
-  "-Ywarn-dead-code",
-  "-Ywarn-macros:after",
-  "-language:postfixOps"
-) ++ (if(isDotty) Seq("-source:3.0-migration") else Seq.empty)
-
+def scalacOpts(isDotty: Boolean) =
+  Seq(
+    "-target:jvm-1.8",
+    "-Ywarn-unused:imports",
+    "-Xlint:nullary-unit",
+    "-Xlint",
+    "-Ywarn-dead-code",
+    "-Ywarn-macros:after",
+    "-language:postfixOps"
+  ) ++ (if (isDotty) Seq("-source:3.0-migration") else Seq.empty)
 
 // Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
 dynverVTagPrefix in ThisBuild := false
@@ -108,14 +111,19 @@ lazy val commonSettings = Def.settings(
   scalacOptions in (Compile, doc) ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
-  ),
-  {
+  ), {
     val silencerVersion = "1.7.1"
 
-    libraryDependencies ++= (if (isDotty.value) { Seq.empty } else Seq(
-      compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
-      ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided).cross(CrossVersion.full)
-    ))
+    libraryDependencies ++= (if (isDotty.value) {
+                               Seq.empty
+                             } else
+                               Seq(
+                                 compilerPlugin(
+                                   ("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)
+                                 ),
+                                 ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided)
+                                   .cross(CrossVersion.full)
+                               ))
   }
 )
 
@@ -141,25 +149,25 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= jsonDependencies(isDotty.value, scalaVersion.value) ++ Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.3"            % Test,
-        "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.3.0"          % Test,
-        "org.scalacheck"    %%% "scalacheck"      % "1.15.2"           % Test,
-        "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test withDottyCompat(scalaVersion.value),
+        "org.scalatest"     %%% "scalatest"       % "3.2.3"   % Test,
+        "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.3.0" % Test,
+        "org.scalacheck"    %%% "scalacheck"      % "1.15.2"  % Test,
+        ("com.chuusai" %% "shapeless" % "2.3.3" % Test).withDottyCompat(scalaVersion.value),
         //"org.scala-lang"    % "scala-compiler"    % scalaVersion.value % "provided"
       ),
       libraryDependencies ++=
         (CrossVersion.partialVersion(scalaVersion.value) match {
           case Some((2, 13)) | Some((3, _)) => Seq()
-          case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
+          case _                            => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
         }),
       unmanagedSourceDirectories in Compile ++= {
         //val sourceDir = (sourceDirectory in Compile).value
         // ^ gives jvm/src/main, for some reason
         val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
         CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((3, n))            => Seq(sourceDir / "scala-2.13+",sourceDir / "scala-3")
-          case Some((2, n)) if n >= 13 => Seq(sourceDir / "scala-2.13+",sourceDir / "scala-2")
-          case _                       => Seq(sourceDir / "scala-2.13-",sourceDir / "scala-2")
+          case Some((3, n))            => Seq(sourceDir / "scala-2.13+", sourceDir / "scala-3")
+          case Some((2, n)) if n >= 13 => Seq(sourceDir / "scala-2.13+", sourceDir / "scala-2")
+          case _                       => Seq(sourceDir / "scala-2.13-", sourceDir / "scala-2")
         }
       },
       sourceGenerators in Compile += Def.task {
@@ -227,11 +235,10 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
     jacksons ++ specs2(scalaVersion.value) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
-  unmanagedSourceDirectories in Test ++= (if(isDotty.value)
-    (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "codeDotty").get
-  else
-   (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get
-  )
+  unmanagedSourceDirectories in Test ++= (if (isDotty.value)
+                                            (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "codeDotty").get
+                                          else
+                                            (baseDirectory.value.getParentFile.getParentFile / "docs/manual/working/scalaGuide" ** "code").get)
 )
 
 lazy val `play-json-joda` = project
@@ -290,6 +297,6 @@ lazy val docs = project
     scalaVersion := Dependencies.Scala213,
     crossScalaVersions -= Dependencies.Scala3
   )
-  //.dependsOn(`play-jsonJVM`)
+//.dependsOn(`play-jsonJVM`)
 
 addCommandAlias("validateCode", ";headerCheck;test:headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")

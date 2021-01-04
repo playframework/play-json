@@ -104,63 +104,63 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
     }
 
-  //   "be generated for a sealed family" when {
-  //     implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-  //       (js \ "bar").validate[String].map(Simple(_))
-  //     }
-  //     implicit val optionalReads: Reads[Optional] = Json.reads
-  //     implicit val familyReads: Reads[Family]     = Json.reads
+    //   "be generated for a sealed family" when {
+    //     implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
+    //       (js \ "bar").validate[String].map(Simple(_))
+    //     }
+    //     implicit val optionalReads: Reads[Optional] = Json.reads
+    //     implicit val familyReads: Reads[Family]     = Json.reads
 
-  //     val simple   = Simple("foo")
-  //     val optional = Optional(None)
+    //     val simple   = Simple("foo")
+    //     val optional = Optional(None)
 
-  //     "Json.reads[EmptyFamily]" mustNot typeCheck
-  //     "Json.writes[EmptyFamily]" mustNot typeCheck
-  //     "Json.format[EmptyFamily]" mustNot typeCheck
+    //     "Json.reads[EmptyFamily]" mustNot typeCheck
+    //     "Json.writes[EmptyFamily]" mustNot typeCheck
+    //     "Json.format[EmptyFamily]" mustNot typeCheck
 
-  //     "using the _value syntax" in {
-  //       val jsSimple = Json.obj(
-  //         "_type"  -> "play.api.libs.json.MacroSpec.Simple",
-  //         "_value" -> Json.writes[Simple].writes(simple)
-  //       )
+    //     "using the _value syntax" in {
+    //       val jsSimple = Json.obj(
+    //         "_type"  -> "play.api.libs.json.MacroSpec.Simple",
+    //         "_value" -> Json.writes[Simple].writes(simple)
+    //       )
 
-  //       val jsOptional = Json.obj(
-  //         "_type"  -> "play.api.libs.json.MacroSpec.Optional",
-  //         "_value" -> Json.writes[Optional].writes(optional)
-  //       )
+    //       val jsOptional = Json.obj(
+    //         "_type"  -> "play.api.libs.json.MacroSpec.Optional",
+    //         "_value" -> Json.writes[Optional].writes(optional)
+    //       )
 
-  //       jsSimple.validate[Family].get.mustEqual(simple)
-  //       jsOptional.validate[Family].get.mustEqual(optional)
-  //     }
+    //       jsSimple.validate[Family].get.mustEqual(simple)
+    //       jsOptional.validate[Family].get.mustEqual(optional)
+    //     }
 
-  //     "using the compact syntax" in {
-  //       val jsSimple = Json.writes[Simple].writes(simple) + (
-  //         "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
-  //       )
+    //     "using the compact syntax" in {
+    //       val jsSimple = Json.writes[Simple].writes(simple) + (
+    //         "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
+    //       )
 
-  //       val jsOptional = Json.writes[Optional].writes(optional) + (
-  //         "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
-  //       )
+    //       val jsOptional = Json.writes[Optional].writes(optional) + (
+    //         "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
+    //       )
 
-  //       jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-  //       jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-  //     }
+    //       jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+    //       jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+    //     }
 
-  //     // "subtype is a sealed trait itself" in {
-  //     //   val expected   = Leaf2(1)
-  //     //   val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroSpec.Leaf2", "value" -> 1)
+    //     // "subtype is a sealed trait itself" in {
+    //     //   val expected   = Leaf2(1)
+    //     //   val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroSpec.Leaf2", "value" -> 1)
 
-  //     //   Json.toJson[TreeValue](expected).mustEqual(expectedJs)
-  //     //   expectedJs.validate[TreeValue].mustEqual(JsSuccess(expected))
-  //     // }
-  //   }
+    //     //   Json.toJson[TreeValue](expected).mustEqual(expectedJs)
+    //     //   expectedJs.validate[TreeValue].mustEqual(JsSuccess(expected))
+    //     // }
+    //   }
 
-  //   "be generated for a ValueClass" in {
-  //     val expected                  = new TextId("foo")
-  //     implicit val r: Reads[TextId] = Json.valueReads
+    //   "be generated for a ValueClass" in {
+    //     val expected                  = new TextId("foo")
+    //     implicit val r: Reads[TextId] = Json.valueReads
 
-  //     JsString("foo").validate[TextId].mustEqual(JsSuccess(expected))
-  //   }
+    //     JsString("foo").validate[TextId].mustEqual(JsSuccess(expected))
+    //   }
   }
 
   "Writes" should {
@@ -373,7 +373,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "handle case class with default values inner optional case class containing default values" when {
-      implicit val withDefaultFormat: OFormat[WithDefault] = Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
+      implicit val withDefaultFormat: OFormat[WithDefault] =
+        Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
 
       val json01 = Json.obj("id" -> 3)
       val json02 = Json.obj(
@@ -494,7 +495,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       "to generate Format" in {
         implicit val nested: OFormat[Complex[Float, Int]] = Json.format[Complex[Float, Int]]
-        val f               = Json.format[Complex[Complex[Float, Int], Double]]
+        val f                                             = Json.format[Complex[Complex[Float, Int], Double]]
 
         readSpec(f)
         writeSpec(f)
@@ -656,7 +657,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     // }
   }
 }
-  // ---
+// ---
 object MacroSpec {
 
   sealed trait Family
@@ -667,7 +668,7 @@ object MacroSpec {
   sealed trait EmptyFamily
 
   object FamilyCodec {
-    implicit val simpleWrites: OWrites[Simple] = Json.writes[Simple]
+    implicit val simpleWrites: OWrites[Simple]     = Json.writes[Simple]
     implicit val optionalWrites: OWrites[Optional] = Json.writes[Optional]
 
     //implicit val familyWrites: OWrites[Family] = Json.writes[Family] // Failing:
@@ -713,7 +714,7 @@ object MacroSpec {
   //case class WithImplicit1(pos: Int, text: String)(implicit x: Numeric[Int])
   //case class WithImplicit2[N: Numeric](ident: String, value: N)
 
-  case class WithColl[A/*: Numeric*/, B](
+  case class WithColl[A /*: Numeric*/, B](
       id: String,
       ls: List[A],
       set: Set[Int],
@@ -750,7 +751,7 @@ object MacroSpec {
   object Family2 {
     implicit def w: OWrites[Family2] = {
       import org.scalatest.matchers.must.Matchers._
-      "Json.writes[Family2]" mustNot typeCheck
+      "Json.writes[Family2]".mustNot(typeCheck)
       ???
     }
     /* Should fail, as there is no implicit for Family2Member,

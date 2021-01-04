@@ -270,7 +270,9 @@ object Json extends JsonFacade with JsonMacros {
    * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
    * @define macroTypeParam @tparam A the type for which the handler must be materialized
    */
-  final class WithOptions[Opts <: MacroOptions](val config: JsonConfiguration.Aux[Opts]) extends JsonFacade with JsonMacrosWithOptions[Opts] {
+  final class WithOptions[Opts <: MacroOptions](val config: JsonConfiguration.Aux[Opts])
+      extends JsonFacade
+      with JsonMacrosWithOptions[Opts] {
     def this() = this(JsonConfiguration.default)
 
     @inline def parse(input: String): JsValue       = Json.parse(input)

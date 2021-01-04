@@ -134,8 +134,8 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
 
       js.toJsObject(peach)(owrites) mustBe an[JsObject]
       js.toJsObject(peach)(owrites).mustEqual(js.toJson(peach)(writes))
-      "js.toJsObject(1)" mustNot typeCheck
-      "js.toJsObject(peach)(writes)" mustNot typeCheck
+      "js.toJsObject(1)".mustNot(typeCheck)
+      "js.toJsObject(peach)(writes)".mustNot(typeCheck)
     }
 
     "convert to a byte array containing the UTF-8 representation" in json { js =>
@@ -320,7 +320,10 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       import Json._
       import Writes._
 
-      js.toJson(List(1, 2, 3)).mustEqual(js.arr(Json.toJsFieldJsValueWrapper(1), Json.toJsFieldJsValueWrapper(2), Json.toJsFieldJsValueWrapper(3)))
+      js.toJson(List(1, 2, 3))
+        .mustEqual(
+          js.arr(Json.toJsFieldJsValueWrapper(1), Json.toJsFieldJsValueWrapper(2), Json.toJsFieldJsValueWrapper(3))
+        )
       js.toJson(Set("alpha", "beta", "gamma")).mustEqual(js.arr("alpha", "beta", "gamma"))
       js.toJson(Seq("alpha", "beta", "gamma")).mustEqual(js.arr("alpha", "beta", "gamma"))
       js.toJson(Map("key1" -> "value1", "key2" -> "value2")).mustEqual(js.obj("key1" -> "value1", "key2" -> "value2"))

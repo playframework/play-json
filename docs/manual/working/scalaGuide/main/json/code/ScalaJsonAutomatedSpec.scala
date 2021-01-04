@@ -23,7 +23,7 @@ object ScalaJsonAutomatedSpec {
 
   //#model3
   sealed trait Role
-  case object Admin extends Role
+  case object Admin                            extends Role
   case class Contributor(organization: String) extends Role
   //#model3
 }
@@ -356,7 +356,8 @@ class ScalaJsonAutomatedSpec extends Specification {
       //#auto-writes-null
       import play.api.libs.json._
 
-      implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      implicit val config: JsonConfiguration.Aux[Json.MacroOptions] =
+        JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
       implicit val residentWrites: OWrites[Resident] = Json.writes[Resident]
       //#auto-writes-null
 
