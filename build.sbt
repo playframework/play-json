@@ -74,13 +74,6 @@ def scalacOpts(isDotty: Boolean) = Seq(
 ) ++ (if(isDotty) Seq("-source:3.0-migration") else Seq.empty)
 
 
-val silencerVersion = "1.7.1"
-
-libraryDependencies in ThisBuild ++= (if (isDotty.value) { Seq.empty } else Seq(
-  compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
-  ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided).cross(CrossVersion.full)
-))
-
 // Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
 dynverVTagPrefix in ThisBuild := false
 
@@ -106,7 +99,7 @@ lazy val commonSettings = Def.settings(
     Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
   ),
   headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>")),
-  scalaVersion := Dependencies.Scala212,
+  scalaVersion := Dependencies.Scala3,
   crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213, Dependencies.Scala3),
   javacOptions in Compile ++= javacSettings,
   javacOptions in Test ++= javacSettings,
@@ -115,7 +108,15 @@ lazy val commonSettings = Def.settings(
   scalacOptions in (Compile, doc) ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
-  )
+  ),
+  {
+    val silencerVersion = "1.7.1"
+
+    libraryDependencies ++= (if (isDotty.value) { Seq.empty } else Seq(
+      compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
+      ("com.github.ghik" % "silencer-lib" % silencerVersion % Provided).cross(CrossVersion.full)
+    ))
+  }
 )
 
 lazy val root = project
@@ -216,7 +217,10 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   )
   .dependsOn(`play-functional`)
 
-lazy val `play-jsonJS` = `play-json`.js
+lazy val `play-jsonJS` = `play-json`.js.settings(
+  scalaVersion := Dependencies.Scala213,
+  crossScalaVersions -= Dependencies.Scala3
+)
 
 lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   libraryDependencies ++=
@@ -282,6 +286,10 @@ lazy val docs = project
     SettingKey[Seq[File]]("migrationManualSources") := Nil
   )
   .settings(commonSettings)
-  .dependsOn(`play-jsonJVM`)
+  .settings(
+    scalaVersion := Dependencies.Scala213,
+    crossScalaVersions -= Dependencies.Scala3
+  )
+  //.dependsOn(`play-jsonJVM`)
 
 addCommandAlias("validateCode", ";headerCheck;test:headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")

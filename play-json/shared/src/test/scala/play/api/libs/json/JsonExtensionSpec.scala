@@ -208,180 +208,180 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
         )
     }
 
-    "create a reads[RecUser]" in {
-      import play.api.libs.json.Json
+    // "create a reads[RecUser]" in {
+    //   import play.api.libs.json.Json
 
-      implicit val catReads: Reads[Cat] = Json.reads[Cat]
-      implicit val recUserReads: Reads[RecUser] = Json.reads[RecUser]
+    //   implicit val catReads: Reads[Cat] = Json.reads[Cat]
+    //   implicit val recUserReads: Reads[RecUser] = Json.reads[RecUser]
 
-      Json
-        .fromJson[RecUser](
-          Json.obj(
-            "name"    -> "bob",
-            "cat"     -> Json.obj("name" -> "minou"),
-            "hobbies" -> Json.arr("bobsleig", "manhunting"),
-            "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
-          )
-        )
-        .mustEqual(
-          JsSuccess(
-            RecUser(
-              "bob",
-              Some(Cat("minou")),
-              List("bobsleig", "manhunting"),
-              List(RecUser("tom"))
-            )
-          )
-        )
-    }
+    //   Json
+    //     .fromJson[RecUser](
+    //       Json.obj(
+    //         "name"    -> "bob",
+    //         "cat"     -> Json.obj("name" -> "minou"),
+    //         "hobbies" -> Json.arr("bobsleig", "manhunting"),
+    //         "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
+    //       )
+    //     )
+    //     .mustEqual(
+    //       JsSuccess(
+    //         RecUser(
+    //           "bob",
+    //           Some(Cat("minou")),
+    //           List("bobsleig", "manhunting"),
+    //           List(RecUser("tom"))
+    //         )
+    //       )
+    //     )
+    // }
 
-    "create a writes[RecUser]" in {
-      import play.api.libs.json.Json
+    // "create a writes[RecUser]" in {
+    //   import play.api.libs.json.Json
 
-      implicit val catWrites: OWrites[Cat] = Json.writes[Cat]
-      implicit val recUserWrites: OWrites[RecUser] = Json.writes[RecUser]
+    //   implicit val catWrites: OWrites[Cat] = Json.writes[Cat]
+    //   implicit val recUserWrites: OWrites[RecUser] = Json.writes[RecUser]
 
-      Json
-        .toJson(
-          RecUser(
-            "bob",
-            Some(Cat("minou")),
-            List("bobsleig", "manhunting"),
-            List(RecUser("tom"))
-          )
-        )
-        .mustEqual(
-          Json.obj(
-            "name"    -> "bob",
-            "cat"     -> Json.obj("name" -> "minou"),
-            "hobbies" -> Json.arr("bobsleig", "manhunting"),
-            "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
-          )
-        )
-    }
+    //   Json
+    //     .toJson(
+    //       RecUser(
+    //         "bob",
+    //         Some(Cat("minou")),
+    //         List("bobsleig", "manhunting"),
+    //         List(RecUser("tom"))
+    //       )
+    //     )
+    //     .mustEqual(
+    //       Json.obj(
+    //         "name"    -> "bob",
+    //         "cat"     -> Json.obj("name" -> "minou"),
+    //         "hobbies" -> Json.arr("bobsleig", "manhunting"),
+    //         "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
+    //       )
+    //     )
+    // }
 
-    "create a format[RecUser]" in {
-      import play.api.libs.json.Json
+    // "create a format[RecUser]" in {
+    //   import play.api.libs.json.Json
 
-      implicit val catFormat: OFormat[Cat] = Json.format[Cat]
-      implicit val recUserFormat: OFormat[RecUser] = Json.format[RecUser]
+    //   implicit val catFormat: OFormat[Cat] = Json.format[Cat]
+    //   implicit val recUserFormat: OFormat[RecUser] = Json.format[RecUser]
 
-      Json
-        .fromJson[RecUser](
-          Json.obj(
-            "name"    -> "bob",
-            "cat"     -> Json.obj("name" -> "minou"),
-            "hobbies" -> Json.arr("bobsleig", "manhunting"),
-            "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
-          )
-        )
-        .mustEqual(
-          JsSuccess(
-            RecUser(
-              "bob",
-              Some(Cat("minou")),
-              List("bobsleig", "manhunting"),
-              List(RecUser("tom"))
-            )
-          )
-        )
+    //   Json
+    //     .fromJson[RecUser](
+    //       Json.obj(
+    //         "name"    -> "bob",
+    //         "cat"     -> Json.obj("name" -> "minou"),
+    //         "hobbies" -> Json.arr("bobsleig", "manhunting"),
+    //         "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
+    //       )
+    //     )
+    //     .mustEqual(
+    //       JsSuccess(
+    //         RecUser(
+    //           "bob",
+    //           Some(Cat("minou")),
+    //           List("bobsleig", "manhunting"),
+    //           List(RecUser("tom"))
+    //         )
+    //       )
+    //     )
 
-      Json
-        .toJson(
-          RecUser(
-            "bob",
-            Some(Cat("minou")),
-            List("bobsleig", "manhunting"),
-            List(RecUser("tom"))
-          )
-        )
-        .mustEqual(
-          Json.obj(
-            "name"    -> "bob",
-            "cat"     -> Json.obj("name" -> "minou"),
-            "hobbies" -> Json.arr("bobsleig", "manhunting"),
-            "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
-          )
-        )
-    }
+    //   Json
+    //     .toJson(
+    //       RecUser(
+    //         "bob",
+    //         Some(Cat("minou")),
+    //         List("bobsleig", "manhunting"),
+    //         List(RecUser("tom"))
+    //       )
+    //     )
+    //     .mustEqual(
+    //       Json.obj(
+    //         "name"    -> "bob",
+    //         "cat"     -> Json.obj("name" -> "minou"),
+    //         "hobbies" -> Json.arr("bobsleig", "manhunting"),
+    //         "friends" -> Json.arr(Json.obj("name" -> "tom", "hobbies" -> Json.arr(), "friends" -> Json.arr()))
+    //       )
+    //     )
+    // }
 
-    "create a reads[User1]" in {
-      import play.api.libs.json.Json
+    // "create a reads[User1]" in {
+    //   import play.api.libs.json.Json
 
-      implicit val userReads: Reads[User1] = Json.reads[User1]
+    //   implicit val userReads: Reads[User1] = Json.reads[User1]
 
-      Json
-        .fromJson[User1](
-          Json.obj(
-            "name"   -> "bob",
-            "friend" -> Json.obj("name" -> "tom")
-          )
-        )
-        .mustEqual(
-          JsSuccess(
-            User1(
-              "bob",
-              Some(User1("tom"))
-            )
-          )
-        )
-    }
+    //   Json
+    //     .fromJson[User1](
+    //       Json.obj(
+    //         "name"   -> "bob",
+    //         "friend" -> Json.obj("name" -> "tom")
+    //       )
+    //     )
+    //     .mustEqual(
+    //       JsSuccess(
+    //         User1(
+    //           "bob",
+    //           Some(User1("tom"))
+    //         )
+    //       )
+    //     )
+    // }
 
-    "create a writes[User1]" in {
-      import play.api.libs.json.Json
+    // "create a writes[User1]" in {
+    //   import play.api.libs.json.Json
 
-      implicit val userWrites: OWrites[User1] = Json.writes[User1]
+    //   implicit val userWrites: OWrites[User1] = Json.writes[User1]
 
-      Json
-        .toJson(
-          User1(
-            "bob",
-            Some(User1("tom"))
-          )
-        )
-        .mustEqual(
-          Json.obj(
-            "name"   -> "bob",
-            "friend" -> Json.obj("name" -> "tom")
-          )
-        )
-    }
+    //   Json
+    //     .toJson(
+    //       User1(
+    //         "bob",
+    //         Some(User1("tom"))
+    //       )
+    //     )
+    //     .mustEqual(
+    //       Json.obj(
+    //         "name"   -> "bob",
+    //         "friend" -> Json.obj("name" -> "tom")
+    //       )
+    //     )
+    // }
 
-    "create a format[User1]" in {
-      import play.api.libs.json.Json
+    // "create a format[User1]" in {
+    //   import play.api.libs.json.Json
 
-      implicit val userFormat: OFormat[User1] = Json.format[User1]
+    //   implicit val userFormat: OFormat[User1] = Json.format[User1]
 
-      Json
-        .fromJson[User1](
-          Json.obj(
-            "name"   -> "bob",
-            "friend" -> Json.obj("name" -> "tom")
-          )
-        )
-        .mustEqual(
-          JsSuccess(
-            User1(
-              "bob",
-              Some(User1("tom"))
-            )
-          )
-        )
+    //   Json
+    //     .fromJson[User1](
+    //       Json.obj(
+    //         "name"   -> "bob",
+    //         "friend" -> Json.obj("name" -> "tom")
+    //       )
+    //     )
+    //     .mustEqual(
+    //       JsSuccess(
+    //         User1(
+    //           "bob",
+    //           Some(User1("tom"))
+    //         )
+    //       )
+    //     )
 
-      Json
-        .toJson(
-          User1(
-            "bob",
-            Some(User1("tom"))
-          )
-        )
-        .mustEqual(
-          Json.obj(
-            "name"   -> "bob",
-            "friend" -> Json.obj("name" -> "tom")
-          )
-        )
-    }
+    //   Json
+    //     .toJson(
+    //       User1(
+    //         "bob",
+    //         Some(User1("tom"))
+    //       )
+    //     )
+    //     .mustEqual(
+    //       Json.obj(
+    //         "name"   -> "bob",
+    //         "friend" -> Json.obj("name" -> "tom")
+    //       )
+    //     )
+    // }
 
     "create a format[WrappedGenericInt]" in {
       import play.api.libs.json.Json._
@@ -476,20 +476,20 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       }
     }
 
-    "manage Map[String, User]" in {
-      import play.api.libs.json.Json
+    // "manage Map[String, User]" in {
+    //   import play.api.libs.json.Json
 
-      implicit val userReads: Reads[UserMap] = Json.reads[UserMap]
+    //   implicit val userReads: Reads[UserMap] = Json.reads[UserMap]
 
-      Json
-        .fromJson[UserMap](
-          Json
-            .obj("name" -> "toto", "friends" -> Json.obj("tutu" -> Json.obj("name" -> "tutu", "friends" -> Json.obj())))
-        )
-        .mustEqual(
-          JsSuccess(UserMap("toto", Map("tutu" -> UserMap("tutu"))))
-        )
-    }
+    //   Json
+    //     .fromJson[UserMap](
+    //       Json
+    //         .obj("name" -> "toto", "friends" -> Json.obj("tutu" -> Json.obj("name" -> "tutu", "friends" -> Json.obj())))
+    //     )
+    //     .mustEqual(
+    //       JsSuccess(UserMap("toto", Map("tutu" -> UserMap("tutu"))))
+    //     )
+    // }
 
     "manage Boxed class" in {
       import play.api.libs.functional.syntax._

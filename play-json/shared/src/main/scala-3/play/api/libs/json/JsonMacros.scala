@@ -2,8 +2,34 @@ package play.api.libs.json
 
 import scala.language.experimental.macros
 import scala.deriving.{ArrayProduct, Mirror}
+import scala.compiletime.{erasedValue, summonInline, summonFrom, constValue}
+
+import _root_.play.api.libs.functional.syntax._
 
 trait JsonMacros {
+
+inline final def summonDecoder[A]: Reads[A] = {
+  inline erasedValue[A] match {
+    case _: Option[a] => Reads.optionNoError[a](summonDecoder[a]).asInstanceOf[Reads[A]]
+    case _: Either[l,r] => Reads.apply(_ => JsError())
+    case _: A => summonInline[Reads[A]]
+  } 
+}
+
+  inline def summonAll[T <: Tuple]: List[Reads[_]] = {
+    inline erasedValue[T] match {
+      case _: EmptyTuple => Nil
+      case _: (t *: ts) => summonDecoder[t] :: summonAll[ts]
+    }
+  }
+
+  inline def summonLabels[T <: Tuple]: List[String] = {
+    inline erasedValue[T] match {
+      case _: EmptyTuple => Nil
+      case _: (t *: ts) => constValue[t].asInstanceOf[String] :: summonLabels[ts]
+    }
+  }
+
 
   /**
    * Creates a `Reads[A]` by resolving, at compile-time,
@@ -28,7 +54,27 @@ trait JsonMacros {
    * )(User)
    * }}}
    */
-  def reads[A](using m: Mirror.Of[A]): Reads[A] = Reads.apply(_ => JsError())
+  inline def reads[A](using m: Mirror.Of[A]): Reads[A] = {
+    val x = summonAll[m.MirroredElemTypes]
+    val labels = summonLabels[m.MirroredElemLabels]
+    inline m match {
+      case s: Mirror.SumOf[A]     => readsSum(s)
+      case p: Mirror.ProductOf[A] => readsProduct(p, x, labels)
+    }
+  }
+  
+  private def readsSum[A](s: Mirror.SumOf[A]): Reads[A] = {
+    Reads.apply(_ => JsError())
+  }
+  private def readsProduct[A](p: Mirror.ProductOf[A], x: List[Reads[_]], labels: List[String]): Reads[A] = {
+    val z = labels.zip(x).map{ case (label, reads) => (__ \ implicitly[JsonConfiguration].naming(label)).read(reads) } //TODO lazyread?
+    
+    val xpto: Reads[Tuple] = z.foldRight(Reads.pure(EmptyTuple)){ case (e, r) =>
+      e.flatMap(e => r.map(e *: _))
+    }
+
+    xpto.map(p.fromProduct)
+  }
 
   /**
    * Creates a `Reads[A]`, if `A` is a ValueClass,
@@ -157,7 +203,10 @@ trait JsonMacrosWithOptions[Opts <: Json.MacroOptions] { self: Json.WithOptions[
    *   Json.using[Json.MacroOptions with Json.DefaultValues].reads[User]
    * }}}
    */
-  inline def reads[A](using m: Mirror.Of[A]): Reads[A] = Reads.apply(_ => JsError()) //macro JsMacroImpl.withOptionsReadsImpl[A]
+  inline def reads[A](using m: Mirror.Of[A]): Reads[A] = {
+    implicit val conf: JsonConfiguration = self.config
+    Json.reads(using m) //macro JsMacroImpl.withOptionsReadsImpl[A]
+  }
 
   /**
    * Creates a `OWrites[T]` by resolving, at compile-time,

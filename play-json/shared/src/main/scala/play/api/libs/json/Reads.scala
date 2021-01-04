@@ -203,11 +203,11 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
     JsError(msg)
   }
 
-  @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
-  private[json] def pure[A](value: A): Reads[A] =
-    Reads[A] { _ =>
-      JsSuccess(value)
-    }
+  // @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
+  // private[json] def pure[A](value: A): Reads[A] =
+  //   Reads[A] { _ =>
+  //     JsSuccess(value)
+  //   }
 
   import play.api.libs.functional._
 
@@ -238,6 +238,8 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
     def empty: Reads[Nothing] =
       new Reads[Nothing] { def reads(js: JsValue) = JsError(Seq()) }
   }
+
+  def apply[T](implicit r: => Reads[T]): Reads[T] = r
 
   /**
    * Returns an instance which uses `f` as [[Reads.reads]] function.

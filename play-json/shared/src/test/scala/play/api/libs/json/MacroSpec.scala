@@ -104,63 +104,63 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
     }
 
-    "be generated for a sealed family" when {
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
-      implicit val optionalReads: Reads[Optional] = Json.reads
-      implicit val familyReads: Reads[Family]     = Json.reads
+  //   "be generated for a sealed family" when {
+  //     implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
+  //       (js \ "bar").validate[String].map(Simple(_))
+  //     }
+  //     implicit val optionalReads: Reads[Optional] = Json.reads
+  //     implicit val familyReads: Reads[Family]     = Json.reads
 
-      val simple   = Simple("foo")
-      val optional = Optional(None)
+  //     val simple   = Simple("foo")
+  //     val optional = Optional(None)
 
-      "Json.reads[EmptyFamily]" mustNot typeCheck
-      "Json.writes[EmptyFamily]" mustNot typeCheck
-      "Json.format[EmptyFamily]" mustNot typeCheck
+  //     "Json.reads[EmptyFamily]" mustNot typeCheck
+  //     "Json.writes[EmptyFamily]" mustNot typeCheck
+  //     "Json.format[EmptyFamily]" mustNot typeCheck
 
-      "using the _value syntax" in {
-        val jsSimple = Json.obj(
-          "_type"  -> "play.api.libs.json.MacroSpec.Simple",
-          "_value" -> Json.writes[Simple].writes(simple)
-        )
+  //     "using the _value syntax" in {
+  //       val jsSimple = Json.obj(
+  //         "_type"  -> "play.api.libs.json.MacroSpec.Simple",
+  //         "_value" -> Json.writes[Simple].writes(simple)
+  //       )
 
-        val jsOptional = Json.obj(
-          "_type"  -> "play.api.libs.json.MacroSpec.Optional",
-          "_value" -> Json.writes[Optional].writes(optional)
-        )
+  //       val jsOptional = Json.obj(
+  //         "_type"  -> "play.api.libs.json.MacroSpec.Optional",
+  //         "_value" -> Json.writes[Optional].writes(optional)
+  //       )
 
-        jsSimple.validate[Family].get.mustEqual(simple)
-        jsOptional.validate[Family].get.mustEqual(optional)
-      }
+  //       jsSimple.validate[Family].get.mustEqual(simple)
+  //       jsOptional.validate[Family].get.mustEqual(optional)
+  //     }
 
-      "using the compact syntax" in {
-        val jsSimple = Json.writes[Simple].writes(simple) + (
-          "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
-        )
+  //     "using the compact syntax" in {
+  //       val jsSimple = Json.writes[Simple].writes(simple) + (
+  //         "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
+  //       )
 
-        val jsOptional = Json.writes[Optional].writes(optional) + (
-          "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
-        )
+  //       val jsOptional = Json.writes[Optional].writes(optional) + (
+  //         "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
+  //       )
 
-        jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-        jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-      }
+  //       jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+  //       jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+  //     }
 
-      // "subtype is a sealed trait itself" in {
-      //   val expected   = Leaf2(1)
-      //   val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroSpec.Leaf2", "value" -> 1)
+  //     // "subtype is a sealed trait itself" in {
+  //     //   val expected   = Leaf2(1)
+  //     //   val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroSpec.Leaf2", "value" -> 1)
 
-      //   Json.toJson[TreeValue](expected).mustEqual(expectedJs)
-      //   expectedJs.validate[TreeValue].mustEqual(JsSuccess(expected))
-      // }
-    }
+  //     //   Json.toJson[TreeValue](expected).mustEqual(expectedJs)
+  //     //   expectedJs.validate[TreeValue].mustEqual(JsSuccess(expected))
+  //     // }
+  //   }
 
-    "be generated for a ValueClass" in {
-      val expected                  = new TextId("foo")
-      implicit val r: Reads[TextId] = Json.valueReads
+  //   "be generated for a ValueClass" in {
+  //     val expected                  = new TextId("foo")
+  //     implicit val r: Reads[TextId] = Json.valueReads
 
-      JsString("foo").validate[TextId].mustEqual(JsSuccess(expected))
-    }
+  //     JsString("foo").validate[TextId].mustEqual(JsSuccess(expected))
+  //   }
   }
 
   "Writes" should {
@@ -544,94 +544,94 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
     }
 
-    "handle sealed family" in {
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
-        Json.obj("bar" -> simple.bar)
-      }
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
-      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
-      implicit val familyFormat: OFormat[Family]     = Json.format[Family]
+    // "handle sealed family" in {
+    //   implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
+    //     Json.obj("bar" -> simple.bar)
+    //   }
+    //   implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
+    //     (js \ "bar").validate[String].map(Simple(_))
+    //   }
+    //   implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+    //   implicit val familyFormat: OFormat[Family]     = Json.format[Family]
 
-      val simple = Simple("foo")
-      val jsSimple = simpleWrites.writes(simple) + (
-        "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
-      )
+    //   val simple = Simple("foo")
+    //   val jsSimple = simpleWrites.writes(simple) + (
+    //     "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
+    //   )
 
-      val optional = Optional(None)
-      val jsOptional = optionalFormat.writes(optional) + (
-        "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
-      )
+    //   val optional = Optional(None)
+    //   val jsOptional = optionalFormat.writes(optional) + (
+    //     "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
+    //   )
 
-      Json.toJson[Family](simple).mustEqual(jsSimple)
-      Json.toJson[Family](optional).mustEqual(jsOptional)
-      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
-      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
-    }
+    //   Json.toJson[Family](simple).mustEqual(jsSimple)
+    //   Json.toJson[Family](optional).mustEqual(jsOptional)
+    //   jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+    //   jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+    //   jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+    //   jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
+    // }
 
-    "handle sealed family with custom discriminator name" in {
-      implicit val cfg: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(discriminator = "_discriminator")
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
-        Json.obj("bar" -> simple.bar)
-      }
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
-      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
-      implicit val familyFormat: OFormat[Family]     = Json.format[Family]
+    // "handle sealed family with custom discriminator name" in {
+    //   implicit val cfg: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(discriminator = "_discriminator")
+    //   implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
+    //     Json.obj("bar" -> simple.bar)
+    //   }
+    //   implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
+    //     (js \ "bar").validate[String].map(Simple(_))
+    //   }
+    //   implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+    //   implicit val familyFormat: OFormat[Family]     = Json.format[Family]
 
-      val simple = Simple("foo")
-      val jsSimple = simpleWrites.writes(simple) + (
-        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Simple")
-      )
+    //   val simple = Simple("foo")
+    //   val jsSimple = simpleWrites.writes(simple) + (
+    //     "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Simple")
+    //   )
 
-      val optional = Optional(None)
-      val jsOptional = optionalFormat.writes(optional) + (
-        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
-      )
+    //   val optional = Optional(None)
+    //   val jsOptional = optionalFormat.writes(optional) + (
+    //     "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
+    //   )
 
-      Json.toJson[Family](simple).mustEqual(jsSimple)
-      Json.toJson[Family](optional).mustEqual(jsOptional)
-      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
-      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
-    }
+    //   Json.toJson[Family](simple).mustEqual(jsSimple)
+    //   Json.toJson[Family](optional).mustEqual(jsOptional)
+    //   jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+    //   jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+    //   jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+    //   jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
+    // }
 
-    "handle sealed family with typeNaming" in {
-      implicit val cfg: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(typeNaming = JsonNaming {
-        case "play.api.libs.json.MacroSpec.Simple"   => "simple"
-        case "play.api.libs.json.MacroSpec.Optional" => "optional"
-      })
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
-        Json.obj("bar" -> simple.bar)
-      }
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
-      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
-      implicit val familyFormat: OFormat[Family]     = Json.format[Family]
+    // "handle sealed family with typeNaming" in {
+    //   implicit val cfg: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(typeNaming = JsonNaming {
+    //     case "play.api.libs.json.MacroSpec.Simple"   => "simple"
+    //     case "play.api.libs.json.MacroSpec.Optional" => "optional"
+    //   })
+    //   implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
+    //     Json.obj("bar" -> simple.bar)
+    //   }
+    //   implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
+    //     (js \ "bar").validate[String].map(Simple(_))
+    //   }
+    //   implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+    //   implicit val familyFormat: OFormat[Family]     = Json.format[Family]
 
-      val simple = Simple("foo")
-      val jsSimple = simpleWrites.writes(simple) + (
-        "_type" -> JsString("simple")
-      )
+    //   val simple = Simple("foo")
+    //   val jsSimple = simpleWrites.writes(simple) + (
+    //     "_type" -> JsString("simple")
+    //   )
 
-      val optional = Optional(None)
-      val jsOptional = optionalFormat.writes(optional) + (
-        "_type" -> JsString("optional")
-      )
+    //   val optional = Optional(None)
+    //   val jsOptional = optionalFormat.writes(optional) + (
+    //     "_type" -> JsString("optional")
+    //   )
 
-      Json.toJson[Family](simple).mustEqual(jsSimple)
-      Json.toJson[Family](optional).mustEqual(jsOptional)
-      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
-      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
-    }
+    //   Json.toJson[Family](simple).mustEqual(jsSimple)
+    //   Json.toJson[Family](optional).mustEqual(jsOptional)
+    //   jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+    //   jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+    //   jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+    //   jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
+    // }
 
     "handle case objects as empty JsObject" in {
       case object Obj
