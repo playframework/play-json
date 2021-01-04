@@ -13,8 +13,8 @@ import sbtcrossproject.CrossType
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 val specs2 = Seq(
-  "org.specs2" %% "specs2-core"  % "4.10.2" % Test,
-  "org.specs2" %% "specs2-junit" % "4.10.2" % Test,
+  "org.specs2" %% "specs2-core"  % "4.10.5" % Test,
+  "org.specs2" %% "specs2-junit" % "4.10.5" % Test,
 )
 
 val jacksonDatabindVersion = "2.10.5"
@@ -31,7 +31,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.6"
+  "joda-time" % "joda-time" % "2.10.8"
 )
 
 def jsonDependencies(scalaVersion: String) = Seq(
@@ -138,8 +138,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= jsonDependencies(scalaVersion.value) ++ Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.1.2"            % Test,
-        "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.4.0"          % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.1.2"            % Test, // 3.1.2 is the last version that uses Scala.js 1.0.x
+        "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.2.0"          % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.14.3"           % Test,
         "com.chuusai"       %% "shapeless"        % "2.3.3"            % Test,
         "org.scala-lang"    % "scala-compiler"    % scalaVersion.value % "provided"

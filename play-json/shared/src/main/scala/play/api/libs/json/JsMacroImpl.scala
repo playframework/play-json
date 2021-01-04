@@ -676,7 +676,7 @@ class JsMacroImpl(val c: blackbox.Context) {
               case jsv => $json.JsObject(Seq("_value" -> jsv))
             }
 
-            jso + ($config.discriminator -> $json.JsString($config.typeNaming(${t.typeSymbol.fullName})))
+            $json.JsObject(Map($config.discriminator -> $json.JsString($config.typeNaming(${t.typeSymbol.fullName})))) ++ jso
           }"""
           }
         )

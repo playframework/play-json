@@ -42,7 +42,7 @@ Defining an individual path `Reads` looks like this:
 
 ### Complex Reads
 
-You can combine individual path `Reads` to form more complex `Reads` which can be used to convert to complex models.
+You can combine individual path `Reads`, using `play.api.libs.functional.syntax`, to form more complex `Reads` which can be used to convert to complex models.
 
 For easier understanding, we'll break down the combine functionality into two statements. First combine `Reads` objects using the `and` combinator:
 
@@ -57,6 +57,26 @@ Second call the `apply` method of `CanBuildX` with a function to translate indiv
 Here's the same code in a single statement:
 
 @[reads-complex-statement](code/ScalaJsonCombinatorsSpec.scala)
+
+### Functional combinators with Reads
+
+Usual functional combinators are available, to transform and transform `Reads` instances or their results.
+
+- `map` - Map successful value.
+- `flatMap` - Transform previous result into another successful or erroneous result.
+- `collect` - Filter (using pattern matching) and map successful value.
+- `orElse` - Specify an alternative `Reads` for heterogenous JSON value.
+- `andThen` - Specify another `Reads` that post-process the result of a first one.
+
+@[reads-usual-combinators](code/ScalaJsonCombinatorsSpec.scala)
+
+The filter combinators can also be applied on `Reads` (see the [next section](#validation-with-reads) for more validation).
+
+@[reads-filter-combinators](code/ScalaJsonCombinatorsSpec.scala)
+
+Some specific combinators are available to process JSON before reading (contrary to `.andThen` combinator).
+
+@[reads-preprocessing-combinators](code/ScalaJsonCombinatorsSpec.scala)
 
 ### Validation with Reads
 
@@ -100,6 +120,16 @@ There are a few differences between complex `Writes` and `Reads`:
 - There is no validation on conversion to `JsValue` which makes the structure simpler and you won't need any validation helpers.
 - The intermediary `FunctionalBuilder#CanBuildX` (created by `and` combinators) takes a function that translates a complex type `T` to a tuple matching the individual path `Writes`. Although this is symmetrical to the `Reads` case, the `unapply` method of a case class returns an `Option` of a tuple of properties and must be used with `unlift` to extract the tuple.
 
+### Functional combinators with Writes
+
+As for `Reads`, some functional combinators can be used on `Writes` instances, to adapt how to write values as JSON.
+
+- `contramap` - Apply a transformation on input values before it's passed to a `Writes`.
+- `transform` - Apply a transformation on JSON written by a first `Writes`.
+- `narrow` - Restrict the type of values that can be written as JSON.
+
+@[writes-combinators](code/ScalaJsonCombinatorsSpec.scala)
+
 ## Recursive Types
 
 One special case that our example model doesn't demonstrate is how to handle `Reads` and `Writes` for recursive types. `JsPath` provides `lazyRead` and `lazyWrite` methods that take call-by-name parameters to handle this:
@@ -121,3 +151,7 @@ You can define a `Format` by constructing it from `Reads` and `Writes` of the sa
 In the case where your `Reads` and `Writes` are symmetrical (which may not be the case in real applications), you can define a `Format` directly from combinators:
 
 @[format-combinators](code/ScalaJsonCombinatorsSpec.scala)
+
+Like `Reads` and `Writes` functional combinators are provided on `Format`.
+
+@[format-functional-combinators](code/ScalaJsonCombinatorsSpec.scala)

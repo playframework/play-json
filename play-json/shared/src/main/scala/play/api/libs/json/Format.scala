@@ -10,8 +10,24 @@ import play.api.libs.functional._
  * Json formatter: write an implicit to define both a serializer and a deserializer for any type.
  */
 @implicitNotFound("No Json formatter found for type ${A}. Try to implement an implicit Format for this type.")
-trait Format[A]  extends Writes[A] with Reads[A]
-trait OFormat[A] extends OWrites[A] with Reads[A] with Format[A]
+trait Format[A] extends Writes[A] with Reads[A] {
+
+  /**
+   * Maps reads and writes operations between the types `A` and `B`,
+   * using the given functions.
+   *
+   * @param readsMap the function applied to the read `A` value
+   * @param writesContraMap the function to produce a `A` from `B`before writing
+   */
+  def bimap[B](readsMap: A => B, writesContramap: B => A): Format[B] =
+    Format[B](map(readsMap), contramap(writesContramap).writes(_))
+}
+
+trait OFormat[A] extends OWrites[A] with Reads[A] with Format[A] {
+  final override def bimap[B](readsMap: A => B, writesContramap: B => A): OFormat[B] =
+    OFormat.invariantFunctorOFormat.inmap(this, readsMap, writesContramap)
+
+}
 
 object OFormat {
   implicit def functionalCanBuildFormats(

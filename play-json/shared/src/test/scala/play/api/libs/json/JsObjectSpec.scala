@@ -23,7 +23,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
         "field3" -> JsNull
       )
 
-      populatedObj.deepMerge(Json.obj()) mustEqual populatedObj
+      populatedObj.deepMerge(Json.obj()).mustEqual(populatedObj)
     }
 
     "merge correctly when the incoming object is empty" in {
@@ -33,7 +33,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
         "field3" -> JsNull
       )
 
-      Json.obj().deepMerge(populatedObj) mustEqual populatedObj
+      Json.obj().deepMerge(populatedObj).mustEqual(populatedObj)
     }
   }
 
@@ -203,7 +203,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
         "field5" -> "def",
         "field6" -> JsNull
       )
-      Json.stringify(obj1 ++ obj2) mustEqual Json.stringify(expected)
+      Json.stringify(obj1 ++ obj2).mustEqual(Json.stringify(expected))
     }
   }
 
@@ -227,7 +227,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
         "field6" -> JsNull
       )
 
-      Json.stringify(obj1 + field4 + field5 + field6) mustEqual Json.stringify(expected)
+      Json.stringify(obj1 + field4 + field5 + field6).mustEqual(Json.stringify(expected))
     }
   }
 
@@ -247,7 +247,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
         "field6" -> JsNull
       )
 
-      Json.stringify(originalObj - "field1" - "field2" - "field3") mustEqual Json.stringify(expected)
+      Json.stringify(originalObj - "field1" - "field2" - "field3").mustEqual(Json.stringify(expected))
     }
   }
 
@@ -261,7 +261,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
       )
       val expected = """{"field1":null,"field2":null,"field3":null}"""
 
-      Json.stringify(originalObj) mustEqual expected
+      Json.stringify(originalObj).mustEqual(expected)
     }
 
     "accept null fields when calling Json.arr" in {
@@ -274,7 +274,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
       )
       val expected = """{"arrayWithNulls":[null,null,null]}"""
 
-      Json.stringify(originalObj) mustEqual expected
+      Json.stringify(originalObj).mustEqual(expected)
     }
   }
 }

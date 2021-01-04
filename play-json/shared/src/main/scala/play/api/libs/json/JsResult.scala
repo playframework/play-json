@@ -159,6 +159,44 @@ object JsError {
     case js: JsValue => js
     case x           => JsString(x.toString)
   }
+
+  /**
+   * Extracts the first error message.
+   *
+   * {{{
+   * import play.api.libs.json.JsError
+   *
+   * def msg(err: JsError): Option[String] = err match {
+   *   case JsError.Message(msg) => Some(msg)
+   *   case _ => None
+   * }
+   * }}}
+   */
+  object Message {
+    def unapply(error: JsError): Option[String] =
+      error.errors.headOption.collect {
+        case (_, JsonValidationError.Message(msg) +: _) => msg
+      }
+  }
+
+  /**
+   * Extracts the first error details (message and its first argument).
+   *
+   * {{{
+   * import play.api.libs.json.JsError
+   *
+   * def cause(err: JsError): Option[(String, Exception)] = err match {
+   *   case JsError.Detailed(msg, ex: Exception) => Some(msg -> ex)
+   *   case _ => None
+   * }
+   * }}}
+   */
+  object Detailed {
+    def unapply(error: JsError): Option[(String, Any)] =
+      error.errors.headOption.collect {
+        case (_, JsonValidationError.Detailed(msg, arg) +: _) => msg -> arg
+      }
+  }
 }
 
 sealed trait JsResult[+A] { self =>
