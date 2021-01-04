@@ -11,8 +11,8 @@ import org.scalatest.wordspec.AnyWordSpec
 final class TupleSpec extends AnyWordSpec with Matchers {
   "Reading/Write tuples" should {
     def check[T: Reads: Writes](value: T, expected: String) = {
-      Json.stringify(Json.toJson(value)) mustEqual expected
-      Json.fromJson(Json.parse(expected)) mustEqual JsSuccess(value)
+      Json.stringify(Json.toJson(value)).mustEqual(expected)
+      Json.fromJson(Json.parse(expected)).mustEqual(JsSuccess(value))
     }
 
     "work for small tuples" in {
