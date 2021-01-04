@@ -7,7 +7,6 @@ package play.api.libs.json
 import java.util.Date
 
 import scala.annotation.implicitNotFound
-import scala.language.higherKinds
 
 import scala.collection._
 import scala.reflect.ClassTag
@@ -312,7 +311,7 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] =
     OWrites[M[String, V]] { ts =>
-      JsObject(ts.mapValues(w.writes(_)).toSeq)
+      JsObject(ts.iterator.map { case (k, v) => k -> w.writes(v) }.toSeq)
     }
 
   @deprecated("Use `jsValueWrites`", "2.8.0")

@@ -4,12 +4,10 @@
 
 package play.api.libs.json
 
-import play.api.libs.json.Json._
 import play.api.libs.json.JsonNaming.SnakeCase
 
 import play.api.libs.json.Json._
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -525,57 +523,57 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
      * }
      */
     "test 21 fields" in {
-      implicit val XReads  = Json.reads[X]
-      implicit val XWrites = Json.writes[X]
-      implicit val XFormat = Json.format[X]
+      Json.reads[X]
+      Json.writes[X]
+      Json.format[X]
       ()
     }
 
     "test inception with overridden object" in {
-      implicit val programFormat = Json.reads[Program]
+      Json.reads[Program]
       ()
     }
 
     "test case class 1 field" in {
-      implicit val totoReads  = Json.reads[Toto]
-      implicit val totoWrites = Json.writes[Toto]
-      implicit val totoFormat = Json.format[Toto]
+      Json.reads[Toto]
+      Json.writes[Toto]
+      Json.format[Toto]
       ()
     }
 
     "test case class 1 field option" in {
-      implicit val toto2Reads  = Json.reads[Toto2]
-      implicit val toto2Writes = Json.writes[Toto2]
-      implicit val toto2Format = Json.format[Toto2]
+      Json.reads[Toto2]
+      Json.writes[Toto2]
+      Json.format[Toto2]
       ()
     }
 
     "test case class 1 field list" in {
-      implicit val toto3Reads  = Json.reads[Toto3]
-      implicit val toto3Writes = Json.writes[Toto3]
-      implicit val toto3Format = Json.format[Toto3]
+      Json.reads[Toto3]
+      Json.writes[Toto3]
+      Json.format[Toto3]
       ()
     }
 
     "test case class 1 field set" in {
-      implicit val toto4Reads  = Json.reads[Toto4]
-      implicit val toto4Writes = Json.writes[Toto4]
-      implicit val toto4Format = Json.format[Toto4]
+      Json.reads[Toto4]
+      Json.writes[Toto4]
+      Json.format[Toto4]
       ()
     }
 
     "test case class 1 field map" in {
-      implicit val toto5Reads  = Json.reads[Toto5]
-      implicit val toto5Writes = Json.writes[Toto5]
-      implicit val toto5Format = Json.format[Toto5]
+      Json.reads[Toto5]
+      Json.writes[Toto5]
+      Json.format[Toto5]
       ()
     }
 
     "test case class 1 field seq[Dog]" in {
-      implicit val userFormat  = Json.format[User]
-      implicit val dogFormat   = Json.format[Dog]
-      implicit val toto6Reads  = Json.reads[Toto6]
-      implicit val toto6Writes = Json.writes[Toto6]
+      implicit val userFormat = Json.format[User]
+      implicit val dogFormat  = Json.format[Dog]
+      Json.reads[Toto6]
+      Json.writes[Toto6]
       implicit val toto6Format = Json.format[Toto6]
 
       val js = Json.obj(
@@ -621,15 +619,13 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       type Any    = Nothing; val Any = ""
       type Int    = String; val Int  = ""
 
-      implicit val toto2Reads  = Json.reads[Toto2]
-      implicit val toto2Writes = Json.writes[Toto2]
-      implicit val toto2Format = Json.format[Toto2]
+      Json.reads[Toto2]
+      Json.writes[Toto2]
+      Json.format[Toto2]
       ()
     }
 
     "create a format[CustomApply]" in {
-      import play.api.libs.json.Json
-
       implicit val fmt = Json.format[CustomApply]
 
       Json.fromJson[CustomApply](Json.obj("a" -> 5, "b" -> "foo")).mustEqual(JsSuccess(CustomApply(5, "foo")))

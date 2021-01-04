@@ -4,7 +4,6 @@
 
 package play.api.libs.functional.syntax
 
-import scala.language.higherKinds
 import scala.language.implicitConversions
 
 import play.api.libs.functional._

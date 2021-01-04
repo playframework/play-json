@@ -5,9 +5,6 @@
 package scalaguide.json
 
 import org.specs2.mutable.Specification
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsString
-import play.api.libs.json.Json
 
 class ScalaJsonSpec extends Specification {
   val sampleJson = {
@@ -282,7 +279,7 @@ class ScalaJsonSpec extends Specification {
         json("bogus")
         assert(false)
       } catch {
-        case e: NoSuchElementException =>
+        case _: NoSuchElementException =>
       }
 
       (bigwig \ "name").get === JsString("Bigwig")

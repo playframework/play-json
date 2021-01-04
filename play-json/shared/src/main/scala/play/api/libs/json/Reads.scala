@@ -6,8 +6,6 @@ package play.api.libs.json
 
 import java.net.URI
 
-import scala.language.higherKinds
-
 import scala.annotation.implicitNotFound
 
 import scala.util.Try

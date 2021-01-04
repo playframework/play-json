@@ -11,7 +11,6 @@ import play.api.libs.functional.Functor
 
 import JsResult.functorJsResult
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -91,7 +90,7 @@ class JsResultSpec extends AnyWordSpec with Matchers {
     }
 
     "return false for JsError(_).exists(_)" in {
-      assert(!JsError().exists(_ == 1))
+      assert(!JsError().exists((x: Nothing) => x: Boolean))
     }
   }
 
@@ -107,7 +106,7 @@ class JsResultSpec extends AnyWordSpec with Matchers {
 
   "JsError#forall" should {
     "return true" in {
-      assert(JsError("").forall(_ => false))
+      assert(JsError("").forall((x: Nothing) => x: Boolean))
     }
   }
 }

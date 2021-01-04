@@ -8,7 +8,6 @@ import play.api.libs.functional.syntax._
 
 import scala.collection.immutable.ListMap
 
-import org.scalatest._
 import org.scalacheck.Gen
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -279,7 +278,7 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
         "key3" -> js.arr(1, "tutu")
       )
 
-      js.prettyPrint(jo).replaceAllLiterally("\r\n", "\n").mustEqual("""{
+      js.prettyPrint(jo).replace("\r\n", "\n").mustEqual("""{
   "key1" : "toto",
   "key2" : {
     "key21" : "tata",

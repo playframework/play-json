@@ -4,8 +4,6 @@
 
 package play.api.libs.functional
 
-import scala.language.higherKinds
-
 trait Applicative[M[_]] extends DeprecatedApplicative[M] {
   def pure[A](f: => A): M[A]
   def map[A, B](m: M[A], f: A => B): M[B]

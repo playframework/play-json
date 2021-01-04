@@ -35,7 +35,6 @@ object TestFormats {
 
 final class TextId(val value: String) extends AnyVal
 
-import org.scalatest._
 import org.scalacheck.Gen
 
 class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
@@ -73,26 +72,26 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "ignore Option alias" in {
-      def a = {
-        implicit lazy val _: Reads[OptionalInt] = ???
+      def a: Reads[UsingAlias] = {
+        implicit lazy val x: Reads[OptionalInt] = ???
 
         Json.reads[UsingAlias]
       }
 
-      def b = {
-        implicit lazy val _: Format[OptionalInt] = ???
+      def b: Reads[UsingAlias] = {
+        implicit lazy val x: Format[OptionalInt] = ???
 
         Json.reads[UsingAlias]
       }
 
-      def c = {
-        implicit lazy val _: Reads[OptionalInt] = ???
+      def c: OFormat[UsingAlias] = {
+        implicit lazy val x: Reads[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
 
-      def d = {
-        implicit lazy val _: Format[OptionalInt] = ???
+      def d: OFormat[UsingAlias] = {
+        implicit lazy val x: Format[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
@@ -181,26 +180,26 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "ignore Option alias" in {
-      def a = {
-        implicit lazy val _: Writes[OptionalInt] = ???
+      def a: OWrites[UsingAlias] = {
+        implicit lazy val x: Writes[OptionalInt] = ???
 
         Json.writes[UsingAlias]
       }
 
-      def b = {
-        implicit lazy val _: Format[OptionalInt] = ???
+      def b: OWrites[UsingAlias] = {
+        implicit lazy val x: Format[OptionalInt] = ???
 
         Json.writes[UsingAlias]
       }
 
-      def c = {
-        implicit lazy val _: Writes[OptionalInt] = ???
+      def c: OFormat[UsingAlias] = {
+        implicit lazy val x: Writes[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
 
-      def d = {
-        implicit lazy val _: Format[OptionalInt] = ???
+      def d: OFormat[UsingAlias] = {
+        implicit lazy val x: Format[OptionalInt] = ???
 
         Json.format[UsingAlias]
       }
@@ -217,7 +216,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
 
       implicit val optionalWrites = Json.writes[Optional]
-      // Following won't work due to inferrence issue (see #117)
+      // Following won't work due to inference issue (see #117)
       // with inheritance/contravariance/implicit resolution
       //val _: OWrites[Optional] = Json.writes
 
@@ -705,7 +704,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
   case class WithDefault(id: Int, a: String = "a", b: Option[String] = Some("b"))
   case class ComplexWithDefault(id: Int, ref: Option[WithDefault] = Some(WithDefault(1)))
 
-  case class WithImplicit1(pos: Int, text: String)(implicit x: Numeric[Int])
+  case class WithImplicit1(pos: Int, text: String)(implicit x: Numeric[Int]) { def x1 = x.one }
   case class WithImplicit2[N: Numeric](ident: String, value: N)
 
   case class WithColl[A: Numeric, B](

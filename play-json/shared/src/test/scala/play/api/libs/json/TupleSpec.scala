@@ -4,7 +4,6 @@
 
 package play.api.libs.json
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
