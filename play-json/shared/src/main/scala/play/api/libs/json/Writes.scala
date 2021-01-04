@@ -104,7 +104,7 @@ object OWrites extends PathWrites with ConstraintWrites {
         }
       }
 
-    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: Writes[A], a: A): Unit = wa match {
+    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: OWrites[A], a: A): Unit = wa match {
       case wff: OWritesFromFields[A] =>
         wff.writeFields(fieldsMap, a)
       case w: OWrites[A] =>

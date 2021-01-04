@@ -62,7 +62,7 @@ trait PathReads {
       path.asSingleJson(json) match {
         case JsDefined(JsNull) => JsSuccess(None)
         case JsDefined(value)  => reads.reads(value).repath(path).map(Some(_))
-        case JsUndefined()     => JsSuccess(defaultValue)
+        case _: JsUndefined    => JsSuccess(defaultValue)
       }
     }
 

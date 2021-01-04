@@ -156,19 +156,18 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       case JsSuccess(bigDecimal, _) =>
         (Some(JsNumber(bigDecimal)), parserContext)
 
-      case JsError((_, error +: _) +: _) =>
-        error match {
-          case JsonValidationError("error.expected.numberdigitlimit" +: _) =>
-            throw new IllegalArgumentException(s"Number is larger than supported for field '${jp.currentName()}'")
+      case JsError((_, JsonValidationError("error.expected.numberdigitlimit" +: _) +: _) +: _) =>
+        throw new IllegalArgumentException(s"Number is larger than supported for field '${jp.currentName}'")
 
-          case JsonValidationError("error.expected.numberscalelimit" +: _, scale) =>
-            throw new IllegalArgumentException(
-              s"Number scale ($scale) is out of limits for field '${jp.currentName()}'"
-            )
+      case JsError((_, JsonValidationError("error.expected.numberscalelimit" +: _, args @ _*) +: _) +: _) =>
+        val scale = args.headOption.fold("")(scale => s" ($scale)")
+        throw new IllegalArgumentException(s"Number scale$scale is out of limits for field '${jp.currentName}'")
 
-          case JsonValidationError("error.expected.numberformatexception" +: _) =>
-            throw new NumberFormatException
-        }
+      case JsError((_, JsonValidationError("error.expected.numberformatexception" +: _) +: _) +: _) =>
+        throw new NumberFormatException
+
+      case JsError(errors) =>
+        throw JsResultException(errors)
     }
   }
 
@@ -179,10 +178,10 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       parserContext: List[DeserializerContext]
   ): JsValue = {
     if (jp.getCurrentToken == null) {
-      jp.nextToken()
+      jp.nextToken() // happens when using treeToValue (we're not parsing tokens)
     }
 
-    val (maybeValue, nextContext) = (jp.getCurrentToken.id(): @switch) match {
+    val valueAndCtx = (jp.getCurrentToken.id(): @switch) match {
       case JsonTokenId.ID_NUMBER_INT | JsonTokenId.ID_NUMBER_FLOAT => parseBigDecimal(jp, parserContext)
 
       case JsonTokenId.ID_STRING => (Some(JsString(jp.getText)), parserContext)
@@ -225,21 +224,10 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
     // Read ahead
     jp.nextToken()
 
-    maybeValue match {
-      case Some(v) if nextContext.isEmpty =>
-        // done, no more tokens and got a value!
-        // note: jp.getCurrentToken == null happens when using treeToValue (we're not parsing tokens)
-        v
-
-      case maybeValue =>
-        val toPass = maybeValue
-          .map { v =>
-            val previous :: stack = nextContext
-            (previous.addValue(v)) +: stack
-          }
-          .getOrElse(nextContext)
-
-        deserialize(jp, ctxt, toPass)
+    valueAndCtx match {
+      case (Some(v), Nil)               => v // done, no more tokens and got a value!
+      case (Some(v), previous :: stack) => deserialize(jp, ctxt, previous.addValue(v) :: stack)
+      case (None, nextContext)          => deserialize(jp, ctxt, nextContext)
     }
   }
 

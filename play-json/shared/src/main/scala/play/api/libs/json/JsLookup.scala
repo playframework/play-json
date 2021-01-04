@@ -149,10 +149,12 @@ sealed trait JsLookupResult extends Any with JsReadable {
   def get: JsValue = toOption.get
 
   def getOrElse(v: => JsValue): JsValue = toOption.getOrElse(v)
+
   def isEmpty: Boolean = this match {
-    case JsUndefined() => true
-    case JsDefined(_)  => false
+    case _: JsUndefined => true
+    case JsDefined(_)   => false
   }
+
   def isDefined: Boolean = !isEmpty
 
   /**
