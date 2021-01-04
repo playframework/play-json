@@ -9,6 +9,8 @@ import play.api.libs.json.Json._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import ScalaTestPosition._
+
 class JsObjectSpec extends AnyWordSpec with Matchers {
   "JsObject.deepMerge" should {
     "not fail when the objects are empty" in {

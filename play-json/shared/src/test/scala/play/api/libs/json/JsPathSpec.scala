@@ -9,6 +9,8 @@ import play.api.libs.json.Json._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import ScalaTestPosition._
+
 class JsPathSpec extends AnyWordSpec with Matchers {
   "JsPath" should {
     "retrieve simple path" in {

@@ -199,7 +199,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
 /**
  * Default Serializers.
  */
-trait DefaultWrites extends LowPriorityWrites {
+trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
 
   /**
    * Serializer for Int types.
@@ -212,14 +212,14 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for Short types.
    */
   implicit object ShortWrites extends Writes[Short] {
-    def writes(o: Short) = JsNumber(o)
+    def writes(o: Short) = JsNumber(BigDecimal(o))
   }
 
   /**
    * Serializer for Byte types.
    */
   implicit object ByteWrites extends Writes[Byte] {
-    def writes(o: Byte) = JsNumber(o)
+    def writes(o: Byte) = JsNumber(BigDecimal(o))
   }
 
   /**
@@ -233,7 +233,7 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for Float types.
    */
   implicit object FloatWrites extends Writes[Float] {
-    def writes(o: Float) = JsNumber(o)
+    def writes(o: Float) = JsNumber(BigDecimal.decimal(o))
   }
 
   /**
@@ -405,14 +405,6 @@ trait DefaultWrites extends LowPriorityWrites {
   }
 
   /**
-   * Serializer for scala.Enumeration by name.
-   */
-  implicit def enumNameWrites[E <: Enumeration]: Writes[E#Value] =
-    Writes[E#Value] { value: E#Value =>
-      JsString(value.toString)
-    }
-
-  /**
    * Serializer for [[scala.collection.immutable.Range]]
    * (aka specialized `Seq` of `Int`).
    */
@@ -465,7 +457,7 @@ sealed trait LowPriorityWrites extends EnvWrites {
     Writes[I] { as =>
       val builder = mutable.ArrayBuilder.make[JsValue]
 
-      as.foreach { a: A =>
+      as.foreach { (a: A) =>
         builder += w.writes(a)
       }
 

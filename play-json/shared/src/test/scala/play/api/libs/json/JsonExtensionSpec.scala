@@ -10,6 +10,7 @@ import play.api.libs.json.Json._
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import ScalaTestPosition._
 
 case class User(age: Int, name: String)
 case class Dog(name: String, master: User)
@@ -113,13 +114,7 @@ object CustomApply {
   def apply(): CustomApply = apply(10, "foo")
 }
 
-case class WithDefault1(a: String = "a", b: Option[String] = Some("b"))
-case class WithDefault2(a: String = "a", bar: Option[WithDefault1] = Some(WithDefault1()))
-
-case class WithDefaultSnake(firstProp: String, defaultProp: String = "the default")
-
 case class Optional(props: Option[String])
-case class OptionalWithDefault(props: Option[String] = None)
 
 class JsonExtensionSpec extends AnyWordSpec with Matchers {
   "JsonExtension" should {
@@ -127,7 +122,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       import play.api.libs.json.Json
 
       //object User {def apply(age:Int):User = User(age,"")}
-      implicit val userReads = Json.reads[User]
+      implicit val userReads: Reads[User] = Json.reads[User]
 
       Json.fromJson[User](Json.obj("name" -> "toto", "age" -> 45)).mustEqual(JsSuccess(User(45, "toto")))
     }
@@ -135,7 +130,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a writes[User]" in {
       import play.api.libs.json.Json
 
-      implicit val userWrites = Json.writes[User]
+      implicit val userWrites: OWrites[User] = Json.writes[User]
 
       Json.toJson(User(45, "toto")).mustEqual(Json.obj("name" -> "toto", "age" -> 45))
     }
@@ -143,7 +138,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a format[User]" in {
       import play.api.libs.json.Json
 
-      implicit val userFormat = Json.format[User]
+      implicit val userFormat: OFormat[User] = Json.format[User]
 
       Json.fromJson[User](Json.obj("name" -> "toto", "age" -> 45)).mustEqual(JsSuccess(User(45, "toto")))
 
@@ -153,8 +148,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a reads[Dog]" in {
       import play.api.libs.json.Json
 
-      implicit val userReads = Json.reads[User]
-      implicit val dogReads  = Json.reads[Dog]
+      implicit val userReads: Reads[User] = Json.reads[User]
+      implicit val dogReads: Reads[Dog]   = Json.reads[Dog]
 
       Json
         .fromJson[Dog](
@@ -169,8 +164,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a writes[Dog]" in {
       import play.api.libs.json.Json
 
-      implicit val userWrites = Json.writes[User]
-      implicit val dogWrites  = Json.writes[Dog]
+      implicit val userWrites: OWrites[User] = Json.writes[User]
+      implicit val dogWrites: OWrites[Dog]   = Json.writes[Dog]
 
       Json
         .toJson(Dog("medor", User(45, "toto")))
@@ -185,8 +180,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a format[Dog]" in {
       import play.api.libs.json.Json
 
-      implicit val userFormat = Json.format[User]
-      implicit val dogFormat  = Json.format[Dog]
+      implicit val userFormat: OFormat[User] = Json.format[User]
+      implicit val dogFormat: OFormat[Dog]   = Json.format[Dog]
 
       Json
         .fromJson[Dog](
@@ -210,8 +205,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a reads[RecUser]" in {
       import play.api.libs.json.Json
 
-      implicit val catReads     = Json.reads[Cat]
-      implicit val recUserReads = Json.reads[RecUser]
+      implicit val catReads: Reads[Cat]         = Json.reads[Cat]
+      implicit val recUserReads: Reads[RecUser] = Json.reads[RecUser]
 
       Json
         .fromJson[RecUser](
@@ -237,8 +232,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a writes[RecUser]" in {
       import play.api.libs.json.Json
 
-      implicit val catWrites     = Json.writes[Cat]
-      implicit val recUserWrites = Json.writes[RecUser]
+      implicit val catWrites: OWrites[Cat]         = Json.writes[Cat]
+      implicit val recUserWrites: OWrites[RecUser] = Json.writes[RecUser]
 
       Json
         .toJson(
@@ -262,8 +257,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a format[RecUser]" in {
       import play.api.libs.json.Json
 
-      implicit val catFormat     = Json.format[Cat]
-      implicit val recUserFormat = Json.format[RecUser]
+      implicit val catFormat: OFormat[Cat]         = Json.format[Cat]
+      implicit val recUserFormat: OFormat[RecUser] = Json.format[RecUser]
 
       Json
         .fromJson[RecUser](
@@ -307,7 +302,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a reads[User1]" in {
       import play.api.libs.json.Json
 
-      implicit val userReads = Json.reads[User1]
+      implicit val userReads: Reads[User1] = Json.reads[User1]
 
       Json
         .fromJson[User1](
@@ -329,7 +324,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a writes[User1]" in {
       import play.api.libs.json.Json
 
-      implicit val userWrites = Json.writes[User1]
+      implicit val userWrites: OWrites[User1] = Json.writes[User1]
 
       Json
         .toJson(
@@ -349,7 +344,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a format[User1]" in {
       import play.api.libs.json.Json
 
-      implicit val userFormat = Json.format[User1]
+      implicit val userFormat: OFormat[User1] = Json.format[User1]
 
       Json
         .fromJson[User1](
@@ -391,9 +386,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
           (
             (__ \ "obj").format[A]
           ).inmap
-        )(GenericCaseClass[A] _, unlift(GenericCaseClass.unapply[A]))
+        )(GenericCaseClass[A] _, x => (x.obj))
 
-      implicit val wrappedGenericIntFormat = Json.format[WrappedGenericInt]
+      implicit val wrappedGenericIntFormat: OFormat[WrappedGenericInt] = Json.format[WrappedGenericInt]
 
       val genericInt = GenericCaseClass(obj = 1)
       val wrapped    = WrappedGenericInt(int = genericInt)
@@ -416,9 +411,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
             (__ \ "obj1").format[A] and
               (__ \ "obj2").format[B]
           )
-        )(GenericCaseClass2[A, B] _, unlift(GenericCaseClass2.unapply[A, B]))
+        )(GenericCaseClass2[A, B] _, x => (x.obj1, x.obj2))
 
-      implicit val genericHolderFormat = Json.format[WrappedGenericIntString]
+      implicit val genericHolderFormat: OFormat[WrappedGenericIntString] = Json.format[WrappedGenericIntString]
 
       val genericIntString = GenericCaseClass2(obj1 = 1, obj2 = "hello")
       val genericHolder    = WrappedGenericIntString(intString = genericIntString)
@@ -430,9 +425,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     }
 
     "VarArgsOnly reads, writes, format" should {
-      val reads  = Json.reads[VarArgsOnly]
-      val writes = Json.writes[VarArgsOnly]
-      val format = Json.format[VarArgsOnly]
+      val reads: Reads[VarArgsOnly]    = Json.reads[VarArgsOnly]
+      val writes: OWrites[VarArgsOnly] = Json.writes[VarArgsOnly]
+      val format: OFormat[VarArgsOnly] = Json.format[VarArgsOnly]
 
       val obj   = VarArgsOnly(1, 2, 3)
       val jsObj = Json.obj("ints" -> Seq(1, 2, 3))
@@ -453,9 +448,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     }
 
     "LastVarArg reads, writes, format" should {
-      val reads  = Json.reads[LastVarArg]
-      val writes = Json.writes[LastVarArg]
-      val format = Json.format[LastVarArg]
+      val reads: Reads[LastVarArg]    = Json.reads[LastVarArg]
+      val writes: OWrites[LastVarArg] = Json.writes[LastVarArg]
+      val format: OFormat[LastVarArg] = Json.format[LastVarArg]
 
       val obj   = LastVarArg("hello", 1, 2, 3)
       val jsObj = Json.obj("name" -> "hello", "ints" -> Seq(1, 2, 3))
@@ -478,7 +473,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "manage Map[String, User]" in {
       import play.api.libs.json.Json
 
-      implicit val userReads = Json.reads[UserMap]
+      implicit val userReads: Reads[UserMap] = Json.reads[UserMap]
 
       Json
         .fromJson[UserMap](
@@ -500,7 +495,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       //val c2Reads1 = Json.reads[C2]
 
-      implicit def c1Reads[A](implicit rds: Reads[Id[A]]) = {
+      implicit def c1Reads[A](implicit rds: Reads[Id[A]]): Reads[C1[A]] = {
         (
           (__ \ Symbol("id")).read(rds) and
             (__ \ Symbol("name")).read[String]
@@ -570,11 +565,11 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     }
 
     "test case class 1 field seq[Dog]" in {
-      implicit val userFormat = Json.format[User]
-      implicit val dogFormat  = Json.format[Dog]
+      implicit val userFormat: OFormat[User] = Json.format[User]
+      implicit val dogFormat: OFormat[Dog]   = Json.format[Dog]
       Json.reads[Toto6]
       Json.writes[Toto6]
-      implicit val toto6Format = Json.format[Toto6]
+      implicit val toto6Format: OFormat[Toto6] = Json.format[Toto6]
 
       val js = Json.obj(
         "name" -> Json.arr(
@@ -626,7 +621,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     }
 
     "create a format[CustomApply]" in {
-      implicit val fmt = Json.format[CustomApply]
+      implicit val fmt: OFormat[CustomApply] = Json.format[CustomApply]
 
       Json.fromJson[CustomApply](Json.obj("a" -> 5, "b" -> "foo")).mustEqual(JsSuccess(CustomApply(5, "foo")))
       Json.toJson(CustomApply(5, "foo")).mustEqual(Json.obj("a" -> 5, "b"  -> "foo"))
@@ -636,8 +631,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a writes[UserProfile] with SnakeCase" in {
       import play.api.libs.json.Json
 
-      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
-      implicit val writes            = Json.writes[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
+      implicit val writes: OWrites[UserProfile]         = Json.writes[UserProfile]
 
       Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json1)
     }
@@ -645,8 +640,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a reads[UserProfile] with SnakeCase" in {
       import play.api.libs.json.Json
 
-      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
-      implicit val reads             = Json.reads[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
+      implicit val reads: Reads[UserProfile]            = Json.reads[UserProfile]
 
       Json.fromJson(UserProfile.json1).mustEqual(JsSuccess(UserProfile.obj1))
     }
@@ -654,8 +649,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a format[UserProfile] with SnakeCase" in {
       import play.api.libs.json.Json
 
-      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
-      implicit val format            = Json.format[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(naming = JsonNaming.SnakeCase)
+      implicit val format: OFormat[UserProfile]         = Json.format[UserProfile]
 
       Json.fromJson(UserProfile.json1).mustEqual(JsSuccess(UserProfile.obj1))
       Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json1)
@@ -664,8 +659,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a writes[UserProfile] with PascalCase" in {
       import play.api.libs.json.Json
 
-      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
-      implicit val writes            = Json.writes[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
+      implicit val writes: OWrites[UserProfile]         = Json.writes[UserProfile]
 
       Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json3)
     }
@@ -673,8 +668,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a reads[UserProfile] with PascalCase" in {
       import play.api.libs.json.Json
 
-      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
-      implicit val reads             = Json.reads[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
+      implicit val reads: Reads[UserProfile]            = Json.reads[UserProfile]
 
       Json.fromJson(UserProfile.json3).mustEqual(JsSuccess(UserProfile.obj1))
     }
@@ -682,8 +677,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a format[UserProfile] with PascalCase" in {
       import play.api.libs.json.Json
 
-      implicit val jsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
-      implicit val format            = Json.format[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(naming = JsonNaming.PascalCase)
+      implicit val format: OFormat[UserProfile]         = Json.format[UserProfile]
 
       Json.fromJson(UserProfile.json3).mustEqual(JsSuccess(UserProfile.obj1))
       Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json3)
@@ -696,8 +691,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
         override def apply(property: String): String = s"lightbend_$property"
       }
 
-      implicit val jsonConfiguration = JsonConfiguration(LightbendJsonNaming)
-      implicit val writes            = Json.writes[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(LightbendJsonNaming)
+      implicit val writes: OWrites[UserProfile]         = Json.writes[UserProfile]
 
       Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json2)
     }
@@ -709,8 +704,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
         override def apply(property: String): String = s"lightbend_$property"
       }
 
-      implicit val jsonConfiguration = JsonConfiguration(LightbendJsonNaming)
-      implicit val reads             = Json.reads[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(LightbendJsonNaming)
+      implicit val reads: Reads[UserProfile]            = Json.reads[UserProfile]
 
       Json.fromJson(UserProfile.json2).mustEqual(JsSuccess(UserProfile.obj1))
     }
@@ -722,8 +717,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
         override def apply(property: String): String = s"lightbend_$property"
       }
 
-      implicit val jsonConfiguration = JsonConfiguration(LightbendJsonNaming)
-      implicit val format            = Json.format[UserProfile]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(LightbendJsonNaming)
+      implicit val format: OFormat[UserProfile]         = Json.format[UserProfile]
 
       Json.fromJson(UserProfile.json2).mustEqual(JsSuccess(UserProfile.obj1))
       Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json2)
@@ -732,9 +727,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a stacked format[UserProfile] with SnakeCase" in {
       import play.api.libs.json.Json
 
-      implicit val jsonConfiguration = JsonConfiguration(SnakeCase)
-      implicit val format1           = Json.format[UserProfile]
-      implicit val format2           = Json.format[UserProfileHolder]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(SnakeCase)
+      implicit val format1: OFormat[UserProfile]        = Json.format[UserProfile]
+      implicit val format2: OFormat[UserProfileHolder]  = Json.format[UserProfileHolder]
 
       Json
         .fromJson[UserProfileHolder](Json.obj("holder" -> "Christian", "profile" -> UserProfile.json1))
@@ -744,134 +739,20 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
         .mustEqual(Json.obj("holder" -> "Christian", "profile" -> UserProfile.json1))
     }
 
-    "manage default values" should {
-      import play.api.libs.json.Json
-      import play.api.libs.functional.syntax._
-
-      def functionalReads: Reads[WithDefault2] = {
-        implicit val barReads = {
-          (
-            (__ \ "a").readWithDefault("a") and
-              (__ \ "b").readNullableWithDefault(Some("b"))
-          )(WithDefault1)
-        }
-
-        (
-          (__ \ "a").readWithDefault("a") and
-            (__ \ "bar").readNullableWithDefault(Some(WithDefault1()))
-        )(WithDefault2)
-      }
-
-      def functionalFormat: Format[WithDefault2] = {
-        implicit val barReads: Format[WithDefault1] = {
-          (
-            (__ \ "a").formatWithDefault("a") and
-              (__ \ "b").formatNullableWithDefault(Some("b"))
-          )(WithDefault1.apply, unlift(WithDefault1.unapply))
-        }
-
-        (
-          (__ \ "a").formatWithDefault("a") and
-            (__ \ "bar").formatNullableWithDefault(Some(WithDefault1()))
-        )(WithDefault2.apply, unlift(WithDefault2.unapply))
-      }
-
-      def macroReads: Reads[WithDefault2] = {
-        implicit val br = Json.using[Json.WithDefaultValues].reads[WithDefault1]
-        Json.using[Json.MacroOptions with Json.DefaultValues].reads[WithDefault2]
-      }
-
-      def macroFormat: Format[WithDefault2] = {
-        val jsWithDefaults = Json.using[Json.WithDefaultValues]
-        implicit val bf    = jsWithDefaults.format[WithDefault1]
-
-        jsWithDefaults.format[WithDefault2]
-      }
-
-      def validateReads(fooReads: Reads[WithDefault2]) = {
-        fooReads.reads(Json.obj()).mustEqual(JsSuccess(WithDefault2()))
-        fooReads.reads(Json.obj("a"   -> JsNull)).mustEqual(JsSuccess(WithDefault2()))
-        fooReads.reads(Json.obj("bar" -> JsNull)).mustEqual(JsSuccess(WithDefault2(bar = None)))
-        fooReads.reads(Json.obj("a"   -> "z")).mustEqual(JsSuccess(WithDefault2(a = "z")))
-        fooReads
-          .reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z")))
-          .mustEqual(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
-        fooReads
-          .reads(Json.obj("a" -> 1))
-          .mustEqual(JsError(List((JsPath \ "a") -> List(JsonValidationError("error.expected.jsstring")))))
-      }
-
-      "by functional reads" in validateReads(functionalReads)
-      "by functional formats" in validateReads(functionalFormat)
-      "by reads macro" in validateReads(macroReads)
-      "by format macro" in validateReads(macroFormat)
-    }
-
-    "configuration methods" should {
-      val json = Json.obj("first_prop" -> "the first")
-      val data = WithDefaultSnake("the first")
-
-      "allow supplying configuration via implicit config" in {
-        implicit val config = JsonConfiguration[Json.WithDefaultValues](naming = SnakeCase)
-        json.as(Json.reads[WithDefaultSnake]).mustEqual(data)
-      }
-
-      "allow supplying configuration via WithOptions" in {
-        val config = JsonConfiguration[Json.WithDefaultValues](naming = SnakeCase)
-        json.as(Json.configured(config).reads[WithDefaultSnake]).mustEqual(data)
-      }
-    }
-
     "create a Writes[Optional] with optionHandlers=WritesNull" in {
-      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
-      val writer                     = Json.writes[Optional]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      val writer                                        = Json.writes[Optional]
       writer.writes(Optional(None)).mustEqual(Json.obj("props" -> JsNull))
     }
 
     "create a Format[Optional] with optionHandlers=WritesNull" in {
-      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
-      val formatter                  = Json.format[Optional]
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+      val formatter                                     = Json.format[Optional]
       formatter.writes(Optional(None)).mustEqual(Json.obj("props" -> JsNull))
 
       formatter.reads(Json.obj()).mustEqual(JsSuccess(Optional(None)))
       formatter.reads(Json.obj("props" -> JsNull)).mustEqual(JsSuccess(Optional(None)))
       formatter.reads(Json.obj("props" -> Some("foo"))).mustEqual(JsSuccess(Optional(Some("foo"))))
-    }
-
-    "create a Writes[OptionalWithDefault] with optionHandlers=WritesNull" in {
-      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
-      val writer                     = Json.writes[OptionalWithDefault]
-      writer.writes(OptionalWithDefault()).mustEqual(Json.obj("props" -> JsNull))
-    }
-
-    "create a Format[OptionalWithDefault] with optionHandlers=WritesNull" in {
-      implicit val jsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
-      val formatter                  = Json.format[OptionalWithDefault]
-      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props"            -> JsNull))
-      formatter.writes(OptionalWithDefault(Some("foo"))).mustEqual(Json.obj("props" -> "foo"))
-
-      formatter.reads(Json.obj()).mustEqual(JsSuccess(OptionalWithDefault()))
-      formatter.reads(Json.obj("props" -> JsNull)).mustEqual(JsSuccess(OptionalWithDefault()))
-      formatter.reads(Json.obj("props" -> Some("foo"))).mustEqual(JsSuccess(OptionalWithDefault(Some("foo"))))
-    }
-
-    "create a Writes[OptionalWithDefault] with DefaultValues and optionHandlers=WritesNull" in {
-      implicit val jsonConfiguration =
-        JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
-      val writer = Json.writes[OptionalWithDefault]
-      writer.writes(OptionalWithDefault()).mustEqual(Json.obj("props" -> JsNull))
-    }
-
-    "create a Format[OptionalWithDefault] with DefaultValues and optionHandlers=WritesNull" in {
-      implicit val jsonConfiguration =
-        JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
-      val formatter = Json.format[OptionalWithDefault]
-      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props"            -> JsNull))
-      formatter.writes(OptionalWithDefault(Some("foo"))).mustEqual(Json.obj("props" -> "foo"))
-
-      formatter.reads(Json.obj()).mustEqual(JsSuccess(OptionalWithDefault()))
-      formatter.reads(Json.obj("props" -> JsNull)).mustEqual(JsSuccess(OptionalWithDefault(None)))
-      formatter.reads(Json.obj("props" -> Some("foo"))).mustEqual(JsSuccess(OptionalWithDefault(Some("foo"))))
     }
   }
 }

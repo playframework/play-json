@@ -19,6 +19,6 @@ private[json] object ScalaCollectionCompat {
   type Factory[-A, +C] = CanBuildFrom[Nothing, A, C]
 
   final implicit class FactoryOps[-A, +C](private val factory: Factory[A, C]) {
-    def newBuilder: mutable.Builder[A, C] = factory()
+    def newBuilder: mutable.Builder[A, C] = factory.apply()
   }
 }

@@ -30,16 +30,16 @@ And a complete example of automatically parsing JSON to a case class is:
 
 The [value classes](https://docs.scala-lang.org/overviews/core/value-classes.html) are also supported. Given the following value class, based on a `String` value:
 
-@[valueClass](code/ScalaJsonAutomatedSpec.scala)
+@[valueClass](code-2/Scala2JsonAutomatedSpec.scala)
 
 Then it's also possible to generate a `Reads[IdText]` using the following macro (as `String` is already supported):
 
-@[value-reads](code/ScalaJsonAutomatedSpec.scala)
+@[value-reads](code-2/Scala2JsonAutomatedSpec.scala)
 
 As for case classes, similar macros exists for a `Writes[T]` or a `Format[T]`:
 
-@[value-writes](code/ScalaJsonAutomatedSpec.scala)
-@[value-format](code/ScalaJsonAutomatedSpec.scala)
+@[value-writes](code-2/Scala2JsonAutomatedSpec.scala)
+@[value-format](code-2/Scala2JsonAutomatedSpec.scala)
 
 > Note: To be able to access JSON from `request.body.asJson`, the request must have a `Content-Type` header of `application/json`. You can relax this constraint by using the [[`tolerantJson` body parser|ScalaBodyParsers#Choosing-an-explicit-body-parser]].
 
@@ -57,15 +57,15 @@ Case classes automatically meet these requirements. For custom classes or traits
 
 A trait can also supported, if and only if it's a sealed one and if the sub-types comply with the previous requirements:
 
-@[model3](code/ScalaJsonAutomatedSpec.scala)
+@[model3](code-2/Scala2JsonAutomatedSpec.scala)
 
 The JSON representation for instances of a sealed family includes a discriminator field, which specify the effective sub-type (a text field, with default name `_type`).
 
-@[trait-representation](code/ScalaJsonAutomatedSpec.scala)
+@[trait-representation](code-2/Scala2JsonAutomatedSpec.scala)
 
 Then the macros are able generate `Reads[T]`, `OWrites[T]` or `OFormat[T]`.
 
-@[auto-JSON-sealed-trait](code/ScalaJsonAutomatedSpec.scala)
+@[auto-JSON-sealed-trait](code-2/Scala2JsonAutomatedSpec.scala)
 
 ## Custom Naming Strategies
 

@@ -7,6 +7,8 @@ package play.api.libs.json
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import ScalaTestPosition._
+
 final class TupleSpec extends AnyWordSpec with Matchers {
   "Reading/Write tuples" should {
     def check[T: Reads: Writes](value: T, expected: String) = {

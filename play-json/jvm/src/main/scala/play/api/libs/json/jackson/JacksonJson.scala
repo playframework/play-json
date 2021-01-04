@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonTokenId
 import com.fasterxml.jackson.core.Version
+import com.fasterxml.jackson.core.json.JsonWriteFeature
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 
 import com.fasterxml.jackson.databind.Module.SetupContext
@@ -293,7 +294,7 @@ private[json] object JacksonJson {
       val gen = stringJsonGenerator(sw)
 
       if (escapeNonASCII) {
-        gen.enable(JsonGenerator.Feature.ESCAPE_NON_ASCII)
+        gen.enable(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature)
       }
 
       mapper.writeValue(gen, jsValue)

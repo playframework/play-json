@@ -136,14 +136,14 @@ class ScalaJsonSpec extends Specification {
       //#convert-from-model
       import play.api.libs.json._
 
-      implicit val locationWrites = new Writes[Location] {
+      implicit val locationWrites: Writes[Location] = new Writes[Location] {
         def writes(location: Location) = Json.obj(
           "lat"  -> location.lat,
           "long" -> location.long
         )
       }
 
-      implicit val residentWrites = new Writes[Resident] {
+      implicit val residentWrites: Writes[Resident] = new Writes[Resident] {
         def writes(resident: Resident) = Json.obj(
           "name" -> resident.name,
           "age"  -> resident.age,
@@ -151,7 +151,7 @@ class ScalaJsonSpec extends Specification {
         )
       }
 
-      implicit val placeWrites = new Writes[Place] {
+      implicit val placeWrites: Writes[Place] = new Writes[Place] {
         def writes(place: Place) = Json.obj(
           "name"      -> place.name,
           "location"  -> place.location,
@@ -184,19 +184,19 @@ class ScalaJsonSpec extends Specification {
       implicit val locationWrites: Writes[Location] = (
         (JsPath \ "lat").write[Double] and
           (JsPath \ "long").write[Double]
-      )(unlift(Location.unapply))
+      )(l => (l.lat, l.long))
 
       implicit val residentWrites: Writes[Resident] = (
         (JsPath \ "name").write[String] and
           (JsPath \ "age").write[Int] and
           (JsPath \ "role").writeNullable[String]
-      )(unlift(Resident.unapply))
+      )(r => (r.name, r.age, r.role))
 
       implicit val placeWrites: Writes[Place] = (
         (JsPath \ "name").write[String] and
           (JsPath \ "location").write[Location] and
           (JsPath \ "residents").write[Seq[Resident]]
-      )(unlift(Place.unapply))
+      )(p => (p.name, p.location, p.residents))
       //#convert-from-model-prefwrites
 
       val place = Place(
