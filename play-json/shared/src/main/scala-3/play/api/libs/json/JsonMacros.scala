@@ -2,33 +2,69 @@ package play.api.libs.json
 
 import scala.language.experimental.macros
 import scala.deriving.{ArrayProduct, Mirror}
-import scala.compiletime.{erasedValue, summonInline, summonFrom, constValue}
+import scala.compiletime.{erasedValue, summonInline, summonFrom, constValue, error,codeOf}
+
 
 import _root_.play.api.libs.functional.syntax._
 
 trait JsonMacros {
-
-inline final def summonDecoder[A]: Reads[A] = {
-  inline erasedValue[A] match {
-    case _: Option[a] => Reads.optionNoError[a](summonDecoder[a]).asInstanceOf[Reads[A]]
-    case _: Either[l,r] => Reads.apply(_ => JsError())
-    case _: A => summonInline[Reads[A]]
-  } 
-}
-
-  inline def summonAll[T <: Tuple]: List[Reads[_]] = {
-    inline erasedValue[T] match {
-      case _: EmptyTuple => Nil
-      case _: (t *: ts) => summonDecoder[t] :: summonAll[ts]
-    }
-  }
-
+  
   inline def summonLabels[T <: Tuple]: List[String] = {
     inline erasedValue[T] match {
       case _: EmptyTuple => Nil
       case _: (t *: ts) => constValue[t].asInstanceOf[String] :: summonLabels[ts]
     }
   }
+
+  inline final def summonLabelAndReads[L, R]: Reads[R] = {
+    def path = (__ \ implicitly[JsonConfiguration].naming(constValue[L].asInstanceOf[String]))
+    inline erasedValue[R] match {
+      case _: Option[a] => path.readNullable(summonReads[a]).asInstanceOf[Reads[R]]
+      case _: R => path.read(summonReads[R])
+    }
+  }
+
+  inline final def summonReads[A]: Reads[A] = {
+    inline erasedValue[A] match {
+      //case _: Option[a] => Reads.optionNoError[a](summonReads[a]).asInstanceOf[Reads[A]]
+      //case _: Either[l,r] => Reads.apply(_ => JsError("fixme either"))
+      case _: A => summonInline[Reads[A]]
+    } 
+  }
+
+  inline def summonAllReads[T <: Tuple]: List[Reads[_]] = {
+    inline erasedValue[T] match {
+      case _: EmptyTuple => Nil
+      case _: ((l,t) *: ts) => summonLabelAndReads[l,t] :: summonAllReads[ts]
+      case _: Tuple => Nil
+    }
+  }
+
+  inline final def summonLabelAndWrites[L, R]: OWrites[R] = {
+    def path = (__ \ implicitly[JsonConfiguration].naming(constValue[L].asInstanceOf[String]))
+    inline erasedValue[R] match {
+      case _: Option[a] => path.writeNullable(summonWrites[a]).asInstanceOf[OWrites[R]]
+      case _: R => path.write(summonWrites[R])
+    }
+  }
+
+  inline final def summonWrites[A]: Writes[A] = {
+    // inline erasedValue[A] match {
+    //   //case _: Either[l,r] => Writes.apply(_ => ???)
+    //   case _: A => summonInline[Writes[A]]
+    // } 
+    summonInline[Writes[A]]
+  }
+
+  inline def summonAllWrites[T <: Tuple]: List[OWrites[_]] = {
+    inline erasedValue[T] match {
+      case _: EmptyTuple => Nil
+      case _: ((l,t) *: ts) => summonLabelAndWrites[l,t] :: summonAllWrites[ts]
+      case _: Tuple => Nil
+    }
+  }
+
+
 
 
   /**
@@ -55,25 +91,22 @@ inline final def summonDecoder[A]: Reads[A] = {
    * }}}
    */
   inline def reads[A](using m: Mirror.Of[A]): Reads[A] = {
-    val x = summonAll[m.MirroredElemTypes]
-    val labels = summonLabels[m.MirroredElemLabels]
+    val x = summonAllReads[Tuple.Zip[m.MirroredElemLabels, m.MirroredElemTypes]]
     inline m match {
       case s: Mirror.SumOf[A]     => readsSum(s)
-      case p: Mirror.ProductOf[A] => readsProduct(p, x, labels)
+      case p: Mirror.ProductOf[A] => readsProduct(p, x)
     }
   }
   
   private def readsSum[A](s: Mirror.SumOf[A]): Reads[A] = {
     Reads.apply(_ => JsError())
   }
-  private def readsProduct[A](p: Mirror.ProductOf[A], x: List[Reads[_]], labels: List[String]): Reads[A] = {
-    val z = labels.zip(x).map{ case (label, reads) => (__ \ implicitly[JsonConfiguration].naming(label)).read(reads) } //TODO lazyread?
-    
-    val xpto: Reads[Tuple] = z.foldRight(Reads.pure(EmptyTuple)){ case (e, r) =>
+  private def readsProduct[A](p: Mirror.ProductOf[A], reads: List[Reads[_]]): Reads[A] = {    
+    val xpto: Reads[Tuple] = reads.foldRight(Reads.JsObjectReads.map(_ => EmptyTuple)){ case (e, r) =>
       e.flatMap(e => r.map(e *: _))
     }
 
-    xpto.map(p.fromProduct)
+    xpto.map{t => p.fromProduct(t)}
   }
 
   /**
@@ -93,7 +126,7 @@ inline final def summonDecoder[A]: Reads[A] = {
    * val r: Reads[IdText] = Json.valueReads
    * }}}
    */
-  inline def valueReads[A]: Reads[A] = Reads.apply(_ => JsError()) //macro JsMacroImpl.implicitConfigValueReads[A]
+  inline def valueReads[A <: AnyVal]: Reads[A] = Reads.apply(_ => JsError()) //macro JsMacroImpl.implicitConfigValueReads[A]
 
   /**
    * Creates a `OWrites[T]` by resolving, at compile-time,
@@ -118,7 +151,23 @@ inline final def summonDecoder[A]: Reads[A] = {
    * )(unlift(User.unapply))
    * }}}
    */
-  inline def writes[A](using m: Mirror.Of[A]): OWrites[A] = OWrites.apply(_ => JsObject.empty) //macro JsMacroImpl.implicitConfigWritesImpl[A]
+  inline def writes[A](using m: Mirror.Of[A]): OWrites[A] = {
+    val x = summonAllWrites[Tuple.Zip[m.MirroredElemLabels, m.MirroredElemTypes]]
+    inline m match {
+      case s: Mirror.SumOf[A]     => writesSum(s)
+      case p: Mirror.ProductOf[A] => writesProduct(p, x)
+    }
+  }
+
+  private def writesSum[A](s: Mirror.SumOf[A]): OWrites[A] = {
+    OWrites.apply(_ => ???)
+  }
+  private def writesProduct[A](p: Mirror.ProductOf[A], writes: List[OWrites[_]]): OWrites[A] = {    
+    OWrites[A].apply{ a =>
+      a.asInstanceOf[Product].productIterator.zip(writes).foldRight(JsObject.empty){case ((a,w),b) => b ++ w.asInstanceOf[OWrites[Any]].writes(a) }
+    }
+
+  }
 
   /**
    * Creates a `OWrites[T]`, if `T` is a ValueClass,
@@ -137,7 +186,7 @@ inline final def summonDecoder[A]: Reads[A] = {
    * val w: Writes[TextId] = Json.valueWrites[TextId]
    * }}}
    */
-  inline def valueWrites[A]: Writes[A] = Writes.apply(_ => JsNull) //macro JsMacroImpl.implicitConfigValueWrites[A]
+  inline def valueWrites[A <: AnyVal]: Writes[A] = Writes.apply(a => JsNull) //macro JsMacroImpl.implicitConfigValueWrites[A]
 
   /**
    * Creates a `OFormat[T]` by resolving, at compile-time,
@@ -180,7 +229,7 @@ inline final def summonDecoder[A]: Reads[A] = {
    * implicit val userFormat: Format[User] = Json.valueFormat[User]
    * }}}
    */
-  inline def valueFormat[A]: Format[A] = Format.apply(valueReads, valueWrites) //macro JsMacroImpl.implicitConfigValueFormat[A]
+  inline def valueFormat[A <: AnyVal]: Format[A] = Format.apply(valueReads, valueWrites) //macro JsMacroImpl.implicitConfigValueFormat[A]
 
 }
 
