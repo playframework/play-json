@@ -167,7 +167,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           .map {
             i =>
               def commaSeparated(s: Int => String)   = 1.to(i).map(s).mkString(", ")
-              def newlineSeparated(s: Int => String) = 1.to(i).map(s).mkString("\n")
+              def newlineSeparated(s: Int => String) = 1.to(i).map(s).mkString("\n        ")
               val writerTypes                        = commaSeparated(j => s"T$j: Writes")
               val readerTypes                        = commaSeparated(j => s"T$j: Reads")
               val typeTuple                          = commaSeparated(j => s"T$j")
@@ -175,37 +175,38 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
               val readValues                         = commaSeparated(j => s"t$j")
               val readGenerators                     = newlineSeparated(j => s"t$j <- implicitly[Reads[T$j]].reads(arr(${j - 1}))")
 
-              (s"""
-          implicit def Tuple${i}W[$writerTypes]: Writes[Tuple${i}[$typeTuple]] = Writes[Tuple${i}[$typeTuple]](
-            x => JsArray(Array($written))
-          )
-          """, s"""
-          implicit def Tuple${i}R[$readerTypes]: Reads[Tuple${i}[$typeTuple]] = Reads[Tuple${i}[$typeTuple]]{
-            case JsArray(arr) if arr.size == $i =>
-              for{
-                $readGenerators
-              } yield Tuple$i($readValues)
+              val writes =
+                s"""  implicit def Tuple${i}W[$writerTypes]: Writes[Tuple$i[$typeTuple]] = Writes[Tuple${i}[$typeTuple]](
+                   |    x => JsArray(Array($written))
+                   |  )""".stripMargin
 
-            case _ =>
-              JsError(Seq(JsPath() -> Seq(JsonValidationError("Expected array of $i elements"))))
-          }
-        """)
+              val reads =
+                s"""  implicit def Tuple${i}R[$readerTypes]: Reads[Tuple$i[$typeTuple]] = Reads[Tuple${i}[$typeTuple]] {
+                   |    case JsArray(arr) if arr.size == $i =>
+                   |      for {
+                   |        $readGenerators
+                   |      } yield Tuple$i($readValues)
+                   |
+                   |    case _ =>
+                   |      JsError(Seq(JsPath() -> Seq(JsonValidationError("Expected array of $i elements"))))
+                   |  }""".stripMargin
+
+              (writes, reads)
           }
           .unzip
 
         IO.write(
           file,
-          s"""
-          package play.api.libs.json
-
-          trait GeneratedReads {
-            ${reads.mkString("\n")}
-          }
-
-          trait GeneratedWrites{
-            ${writes.mkString("\n")}
-          }
-        """
+          s"""package play.api.libs.json
+             |
+             |trait GeneratedReads {
+             |${reads.mkString("\n")}
+             |}
+             |
+             |trait GeneratedWrites{
+             |${writes.mkString("\n")}
+             |}
+             |""".stripMargin
         )
         Seq(file)
       }.taskValue
