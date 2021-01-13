@@ -4,6 +4,7 @@
 
 package play.api.libs.json
 
+import scala.collection.Map
 import scala.compiletime._
 import scala.deriving._
 
@@ -38,7 +39,7 @@ object JsMacroImpl {
   }
 
   inline def writeElems[A: OWrites](x: A)(using m: Mirror.ProductOf[A]): JsObject =
-    writeElemsL[A, m.MirroredElemLabels, m.MirroredElemTypes](x)(0, JsObject.empty)
+    writeElemsL[A, m.MirroredElemLabels, m.MirroredElemTypes](x)(0, Map.empty)
 
   inline def readCases[A: Reads](obj: JsObject)(using m: Mirror.SumOf[A]): JsResult[A] = {
     obj.value.get(config.discriminator) match {
@@ -68,10 +69,10 @@ object JsMacroImpl {
       }
     }
 
-  inline def writeElemsL[A: OWrites, L <: Tuple, T <: Tuple](x: A)(n: Int, obj: JsObject): JsObject =
+  inline def writeElemsL[A: OWrites, L <: Tuple, T <: Tuple](x: A)(n: Int, kvs: Map[String, JsValue]): JsObject =
     inline (erasedValue[L], erasedValue[T]) match {
-      case _: (EmptyTuple, EmptyTuple) => obj
-      case _: (l *: ls, t *: ts)       => writeElemsL[A, ls, ts](x)(n + 1, obj ++ writeElems1[A, l, t](x, n))
+      case _: (EmptyTuple, EmptyTuple) => JsObject(kvs)
+      case _: (l *: ls, t *: ts)       => writeElemsL[A, ls, ts](x)(n + 1, kvs ++ writeElems1[A, l, t](x, n))
     }
 
   inline def readCasesL[A: Reads, L <: Tuple, T <: Tuple](js: JsValue, name: String): JsResult[A] =
@@ -104,12 +105,15 @@ object JsMacroImpl {
     reader.reads(obj)
   }
 
-  inline def writeElems1[A: OWrites, L, T](x: A, n: Int): JsObject = {
-    val writer = inline erasedValue[T] match {
-      case _: Option[a] => config.optionHandlers.writeHandler(path[L])(summonWrites[a]).asInstanceOf[OWrites[T]]
-      case _            => path[L].write(summonWrites[T])
+  inline def writeElems1[A: OWrites, L, T](x: A, n: Int): Map[String, JsValue] = {
+    val value = x.asInstanceOf[Product].productElement(n).asInstanceOf[T]
+    inline erasedValue[T] match {
+      case _: Option[a] =>
+        val writer = config.optionHandlers.writeHandler(path[L])(summonWrites[a]).asInstanceOf[OWrites[T]]
+        writer.writes(value).underlying
+      case _            =>
+        Map((config.naming(summonLabel[L]), summonWrites[T].writes(value)))
     }
-    writer.writes(x.asInstanceOf[Product].productElement(n).asInstanceOf[T])
   }
 
   inline def path[L]: JsPath            = JsPath \ config.naming(summonLabel[L])
