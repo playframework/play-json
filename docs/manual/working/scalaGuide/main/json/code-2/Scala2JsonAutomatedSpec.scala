@@ -35,12 +35,12 @@ class Scala2JsonAutomatedSpec extends Specification {
     "automatically convert JSON for a sealed family" in {
       //#trait-representation
       val adminJson = Json.parse(s"""
-        { "_type": "scalaguide.json.ScalaJsonAutomatedSpec.Admin" }
+        { "_type": "scalaguide.json.Scala2JsonAutomatedSpec.Admin" }
       """)
 
       val contributorJson = Json.parse(s"""
         {
-          "_type":"scalaguide.json.ScalaJsonAutomatedSpec.Contributor",
+          "_type":"scalaguide.json.Scala2JsonAutomatedSpec.Contributor",
           "organization":"Foo"
         }
       """)
