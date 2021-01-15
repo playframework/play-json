@@ -6,7 +6,7 @@ package play.api.libs.json
 
 import scala.deriving._
 
-trait JsMacros {
+private[json] trait JsMacros {
 
   /**
    * Creates a `Reads[T]` by resolving, at compile-time,
@@ -79,7 +79,7 @@ trait JsMacros {
 
 }
 
-trait JsValueMacros {
+private[json] trait JsValueMacros {
 
   /**
    * Creates a `Reads[A]`, if `A` is a ValueClass,
