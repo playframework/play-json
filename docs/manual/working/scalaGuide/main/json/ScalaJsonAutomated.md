@@ -57,7 +57,7 @@ Case classes automatically meet these requirements. For custom classes or traits
 
 A trait can also supported, if and only if it's a sealed one and if the sub-types comply with the previous requirements:
 
-@[model3](code-2/Scala2JsonAutomatedSpec.scala)
+@[model1](code-2/Scala2JsonAutomatedSpec.scala)
 
 The JSON representation for instances of a sealed family includes a discriminator field, which specify the effective sub-type (a text field, with default name `_type`).
 

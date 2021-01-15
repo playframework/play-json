@@ -12,7 +12,7 @@ final class IdText(val value: String) extends AnyVal
 //#valueClass
 
 object Scala2JsonAutomatedSpec {
-  //#model3
+  //#model1
   sealed trait Role
   case object Admin extends Role
   class Contributor(val organization: String) extends Role {
@@ -25,7 +25,7 @@ object Scala2JsonAutomatedSpec {
     def apply(organization: String): Contributor            = new Contributor(organization)
     def unapply(contributor: Contributor): Option[(String)] = Some(contributor.organization)
   }
-  //#model3
+  //#model1
 }
 
 class Scala2JsonAutomatedSpec extends Specification {
