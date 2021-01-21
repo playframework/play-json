@@ -23,6 +23,6 @@ trait EnvReads {
   }
 }
 
-trait EnvKeyReads { _: KeyReads.type =>
+trait EnvKeyReads { self: KeyReads.type =>
   // No specific reader
 }

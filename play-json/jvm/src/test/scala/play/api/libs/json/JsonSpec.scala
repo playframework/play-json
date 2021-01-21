@@ -14,7 +14,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
 
 class JsonSpec extends org.specs2.mutable.Specification {
-  "JSON" title
+  "JSON".title
 
   import java.text.SimpleDateFormat
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ssX" // Iso8601 format (forgot timezone stuff)
@@ -55,7 +55,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
           )
         )
         .inmap(optopt => optopt.flatten, (opt: Option[Date]) => Some(opt))
-  )(Post, unlift(Post.unapply))
+  )(Post.apply, p => (p.body, p.created_at))
 
   val LenientPostFormat: Format[Post] = (
     (__ \ Symbol("body")).format[String] and
@@ -65,7 +65,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
           Writes.dateWrites(dateFormat)
         )
       )
-  )(Post, unlift(Post.unapply))
+  )(Post.apply, p => (p.body, p.created_at))
 
   val mapper = new ObjectMapper()
 

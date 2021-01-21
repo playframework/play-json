@@ -11,9 +11,12 @@ import play.api.libs.functional.Functor
 
 import JsResult.functorJsResult
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
+import ScalaTestPosition._
+
+import Predef.{ assert => _assert, _ }
 
 class JsResultSpec extends AnyWordSpec with Matchers {
   "JSON Result" should {
@@ -71,43 +74,43 @@ class JsResultSpec extends AnyWordSpec with Matchers {
 
   "JsResult" should {
     "return true for JsSuccess(x)#contains(x)" in {
-      assert(JsSuccess(1).contains(1))
+      _assert(JsSuccess(1).contains(1))
     }
 
     "return false for JsSuccess(x)#contains(y)" in {
-      assert(!JsSuccess(1).contains(2))
+      _assert(!JsSuccess(1).contains(2))
     }
 
     "return false for JsError(_)#contains(_)" in {
-      assert(!JsError().contains(1))
+      _assert(!JsError().contains(1))
     }
 
     "return true for JsSuccess(x)#exists(p) if p(x) == true" in {
-      assert(JsSuccess(1).exists(_ == 1))
+      _assert(JsSuccess(1).exists(_ == 1))
     }
 
     "return false for JsSuccess(x)#exists(p) if p(x) == false" in {
-      assert(!JsSuccess(1).exists(_ == 2))
+      _assert(!JsSuccess(1).exists(_ == 2))
     }
 
     "return false for JsError(_).exists(_)" in {
-      assert(!JsError().exists(_ == 1))
+      _assert(!JsError().exists((x: Nothing) => x: Boolean))
     }
   }
 
   "JsSuccess#forall" should {
     "return true for JsSuccess(x * 2).forall(_ % 2 == 0)" in {
-      assert(JsSuccess(2).forall(_ % 2 == 0))
+      _assert(JsSuccess(2).forall(_ % 2 == 0))
     }
 
     "return false for JsSuccess(x, {x < 0}).forall(_ >)" in {
-      assert(!JsSuccess(-1).forall(_ > 0))
+      _assert(!JsSuccess(-1).forall(_ > 0))
     }
   }
 
   "JsError#forall" should {
     "return true" in {
-      assert(JsError("").forall(_ => false))
+      _assert(JsError("").forall((x: Nothing) => x: Boolean))
     }
   }
 }

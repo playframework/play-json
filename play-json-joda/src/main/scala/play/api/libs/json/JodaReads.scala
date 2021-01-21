@@ -43,7 +43,7 @@ trait JodaReads {
   /**
    * The default implicit JodaDate reads, using ISO-8601 format
    */
-  implicit val DefaultJodaDateTimeReads = jodaDateReads("")
+  implicit val DefaultJodaDateTimeReads: Reads[DateTime] = jodaDateReads("")
 
   /**
    * Reads for the `org.joda.time.LocalDate` type.
@@ -71,7 +71,7 @@ trait JodaReads {
   /**
    * The default implicit joda.time.LocalDate reads, using ISO-8601 format.
    */
-  implicit val DefaultJodaLocalDateReads = jodaLocalDateReads("")
+  implicit val DefaultJodaLocalDateReads: Reads[LocalDate] = jodaLocalDateReads("")
 
   /**
    * Reads for the `org.joda.time.LocalTime` type.
@@ -100,5 +100,5 @@ trait JodaReads {
   /**
    * the default implicit joda.time.LocalTime reads
    */
-  implicit val DefaultJodaLocalTimeReads = jodaLocalTimeReads("")
+  implicit val DefaultJodaLocalTimeReads: Reads[LocalTime] = jodaLocalTimeReads("")
 }

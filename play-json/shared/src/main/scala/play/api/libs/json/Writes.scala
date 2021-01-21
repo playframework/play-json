@@ -7,7 +7,6 @@ package play.api.libs.json
 import java.util.Date
 
 import scala.annotation.implicitNotFound
-import scala.language.higherKinds
 
 import scala.collection._
 import scala.reflect.ClassTag
@@ -104,7 +103,7 @@ object OWrites extends PathWrites with ConstraintWrites {
         }
       }
 
-    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: Writes[A], a: A): Unit = wa match {
+    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: OWrites[A], a: A): Unit = wa match {
       case wff: OWritesFromFields[A] =>
         wff.writeFields(fieldsMap, a)
       case w: OWrites[A] =>
@@ -200,7 +199,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
 /**
  * Default Serializers.
  */
-trait DefaultWrites extends LowPriorityWrites {
+trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
 
   /**
    * Serializer for Int types.
@@ -213,14 +212,14 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for Short types.
    */
   implicit object ShortWrites extends Writes[Short] {
-    def writes(o: Short) = JsNumber(o)
+    def writes(o: Short) = JsNumber(BigDecimal(o))
   }
 
   /**
    * Serializer for Byte types.
    */
   implicit object ByteWrites extends Writes[Byte] {
-    def writes(o: Byte) = JsNumber(o)
+    def writes(o: Byte) = JsNumber(BigDecimal(o))
   }
 
   /**
@@ -234,7 +233,7 @@ trait DefaultWrites extends LowPriorityWrites {
    * Serializer for Float types.
    */
   implicit object FloatWrites extends Writes[Float] {
-    def writes(o: Float) = JsNumber(o)
+    def writes(o: Float) = JsNumber(BigDecimal.decimal(o))
   }
 
   /**
@@ -312,7 +311,7 @@ trait DefaultWrites extends LowPriorityWrites {
    */
   implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] =
     OWrites[M[String, V]] { ts =>
-      JsObject(ts.mapValues(w.writes(_)).toSeq)
+      JsObject(ts.iterator.map { case (k, v) => k -> w.writes(v) }.toSeq)
     }
 
   @deprecated("Use `jsValueWrites`", "2.8.0")
@@ -406,14 +405,6 @@ trait DefaultWrites extends LowPriorityWrites {
   }
 
   /**
-   * Serializer for scala.Enumeration by name.
-   */
-  implicit def enumNameWrites[E <: Enumeration]: Writes[E#Value] =
-    Writes[E#Value] { value: E#Value =>
-      JsString(value.toString)
-    }
-
-  /**
    * Serializer for [[scala.collection.immutable.Range]]
    * (aka specialized `Seq` of `Int`).
    */
@@ -466,7 +457,7 @@ sealed trait LowPriorityWrites extends EnvWrites {
     Writes[I] { as =>
       val builder = mutable.ArrayBuilder.make[JsValue]
 
-      as.foreach { a: A =>
+      as.foreach { (a: A) =>
         builder += w.writes(a)
       }
 

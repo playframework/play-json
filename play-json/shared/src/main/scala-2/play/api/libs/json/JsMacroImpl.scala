@@ -4,7 +4,7 @@
 
 package play.api.libs.json
 
-import scala.language.higherKinds
+import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
 /**
@@ -191,7 +191,7 @@ class JsMacroImpl(val c: blackbox.Context) {
       /* Refactor the input types, by replacing any type matching the `filter`,
        * by the given `replacement`.
        */
-      @annotation.tailrec
+      @tailrec
       private def refactor(
           in: List[Type],
           base: TypeSymbol,
@@ -354,7 +354,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         }
 
       /* Deep check for type compatibility */
-      @annotation.tailrec
+      @tailrec
       private def conforms(types: Seq[(Type, Type)]): Boolean =
         types.headOption match {
           case Some((TypeRef(NoPrefix, a, _), TypeRef(NoPrefix, b, _))) => { // for generic parameter
@@ -555,39 +555,22 @@ class JsMacroImpl(val c: blackbox.Context) {
       // Workaround for SI-7046: https://issues.scala-lang.org/browse/SI-7046
       val tpeSym = atag.tpe.typeSymbol.asClass
 
-      @annotation.tailrec
-      def allSubclasses(path: Traversable[Symbol], subclasses: Set[Type]): Set[Type] = path.headOption match {
-        case Some(cls: ClassSymbol)
-            if (
-              tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym)
-            ) => {
-          val newSub: Set[Type] = if (!cls.typeParams.isEmpty) {
+      @tailrec
+      def allSubclasses(path: List[Symbol], subclasses: Set[Type]): Set[Type] = path match {
+        case (cls: ClassSymbol) :: tail if tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym) => {
+          if (cls.typeParams.nonEmpty)
             c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: type parameter not supported")
-            Set.empty
-          } else Set(cls.selfType)
-
-          allSubclasses(path.tail, subclasses ++ newSub)
+          val newSub = if (cls.typeParams.isEmpty) Set(cls.selfType) else Set.empty
+          allSubclasses(tail, subclasses ++ newSub)
         }
 
-        case Some(o: ModuleSymbol)
-            if (
-              o.companion == NoSymbol && // not a companion object
-                tpeSym != c && o.typeSignature.baseClasses.contains(tpeSym)
-            ) => {
-          val newSub: Set[Type] = Set(o.typeSignature)
+        case (o: ModuleSymbol) :: tail
+            if (o.companion == NoSymbol // not a companion object
+              && o.typeSignature.baseClasses.contains(tpeSym)) =>
+          allSubclasses(tail, subclasses ++ Set(o.typeSignature))
 
-          allSubclasses(path.tail, subclasses ++ newSub)
-        }
-
-        case Some(o: ModuleSymbol)
-            if (
-              o.companion == NoSymbol // not a companion object
-            ) =>
-          allSubclasses(path.tail, subclasses)
-
-        case Some(_) => allSubclasses(path.tail, subclasses)
-
-        case _ => subclasses
+        case _ :: tail => allSubclasses(tail, subclasses)
+        case _         => subclasses
       }
 
       if (tpeSym.isSealed && tpeSym.isAbstract) {

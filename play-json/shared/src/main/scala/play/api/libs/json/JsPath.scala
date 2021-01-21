@@ -313,8 +313,8 @@ case class JsPath(path: List[PathNode] = List()) {
     js match {
       case o: JsObject =>
         step(o, this) match {
-          case s: JsSuccess[JsObject] => s.copy(path = this)
-          case e                      => e
+          case s @ JsSuccess(_: JsObject, _) => s.copy(path = this)
+          case e                             => e
         }
       case _ =>
         JsError(this, JsonValidationError("error.expected.jsobject"))
