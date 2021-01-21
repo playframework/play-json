@@ -4,8 +4,6 @@
 
 package play.api.libs.functional
 
-import scala.language.higherKinds
-
 sealed trait Variant[M[_]]
 
 trait Functor[M[_]] extends Variant[M] {

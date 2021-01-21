@@ -48,9 +48,8 @@ sealed abstract class JsBoolean(val value: Boolean) extends JsValue with Product
   val productArity = 1
 
   @deprecated("No longer a case class", "2.6.0")
-  def productElement(n: Int): Any = (n: @annotation.switch) match {
-    case 0 => value
-  }
+  def productElement(n: Int): Any =
+    if (n == 0) value else throw new IndexOutOfBoundsException(s"Index out of range: $n")
 
   @deprecated("No longer a case class", "2.6.0")
   def copy(value: Boolean = this.value): JsBoolean =
@@ -75,7 +74,7 @@ case object JsFalse extends JsBoolean(false)
 object JsBoolean extends (Boolean => JsBoolean) {
   def apply(value: Boolean): JsBoolean = if (value) JsTrue else JsFalse
 
-  def unapply(b: JsBoolean): Option[Boolean] = Some(b.value)
+  def unapply(b: JsBoolean): Some[Boolean] = Some(b.value)
 }
 
 /**

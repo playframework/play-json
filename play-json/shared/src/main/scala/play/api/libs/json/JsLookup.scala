@@ -53,7 +53,7 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
             case None    => throw new IndexOutOfBoundsException(String.valueOf(index))
           }
         case _ =>
-          throw new Exception(x + " is not a JsArray")
+          throw new Exception(s"$x is not a JsArray")
       }
     case x: JsUndefined =>
       throw new Exception(String.valueOf(x.error))
@@ -68,12 +68,12 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
     case JsDefined(x) =>
       x match {
         case arr: JsObject =>
-          arr.value.lift(fieldName) match {
+          arr.value.get(fieldName) match {
             case Some(x) => x
             case None    => throw new NoSuchElementException(String.valueOf(fieldName))
           }
         case _ =>
-          throw new Exception(x + " is not a JsObject")
+          throw new Exception(s"$x is not a JsObject")
       }
     case x: JsUndefined =>
       throw new Exception(String.valueOf(x.error))
@@ -149,10 +149,12 @@ sealed trait JsLookupResult extends Any with JsReadable {
   def get: JsValue = toOption.get
 
   def getOrElse(v: => JsValue): JsValue = toOption.getOrElse(v)
+
   def isEmpty: Boolean = this match {
-    case JsUndefined() => true
-    case JsDefined(_)  => false
+    case _: JsUndefined => true
+    case JsDefined(_)   => false
   }
+
   def isDefined: Boolean = !isEmpty
 
   /**

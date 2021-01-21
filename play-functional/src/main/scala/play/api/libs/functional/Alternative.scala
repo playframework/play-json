@@ -4,8 +4,6 @@
 
 package play.api.libs.functional
 
-import scala.language.higherKinds
-
 trait Alternative[M[_]] {
   def app: Applicative[M]
   def |[A, B >: A](alt1: M[A], alt2: M[B]): M[B]

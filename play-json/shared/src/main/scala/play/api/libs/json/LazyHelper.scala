@@ -4,8 +4,6 @@
 
 package play.api.libs.json.util
 
-import scala.language.higherKinds
-
 // Deprecated?
 trait LazyHelper[M[_], T] {
   def lazyStuff: M[T]

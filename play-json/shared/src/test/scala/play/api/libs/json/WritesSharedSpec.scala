@@ -4,13 +4,14 @@
 
 package play.api.libs.json
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import ScalaTestPosition._
+
 final class WritesSharedSpec extends AnyWordSpec with Matchers {
   "Functional Writes" should {
-    implicit val locationWrites = Writes[Location] { location =>
+    implicit val locationWrites: Writes[Location] = Writes[Location] { location =>
       Json.obj(
         "lat"  -> location.lat,
         "long" -> location.long
@@ -104,16 +105,10 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
 
   "EnumFormat" should {
     import TestEnums.EnumWithCustomNames._
-    import TestEnums.EnumWithDefaultNames._
 
     "serialize correctly enum with custom names" in {
       Json.toJson(customEnum1).mustEqual(JsString("ENUM1"))
       Json.toJson(customEnum2).mustEqual(JsString("ENUM2"))
-    }
-
-    "serialize correctly enum with default names" in {
-      Json.toJson(defaultEnum1).mustEqual(JsString("defaultEnum1"))
-      Json.toJson(defaultEnum2).mustEqual(JsString("defaultEnum2"))
     }
   }
 
@@ -129,7 +124,7 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     import scala.reflect.ClassTag
     import scala.language.higherKinds
 
-    def success[T <: JsValue, W[A] <: Writes[A]](fixture: T)(implicit w: W[T], ct: ClassTag[T], wt: ClassTag[W[_]]) =
+    def success[T <: JsValue, W[A] <: Writes[A]](fixture: T)(implicit w: W[T], ct: ClassTag[T], wt: ClassTag[W[T]]) =
       s"be resolved as ${wt.runtimeClass.getSimpleName}[${ct.runtimeClass.getSimpleName}] for $fixture" in {
         w.writes(fixture).mustEqual(fixture)
       }
