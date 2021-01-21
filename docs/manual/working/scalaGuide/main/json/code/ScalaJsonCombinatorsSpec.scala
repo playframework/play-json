@@ -117,11 +117,11 @@ class ScalaJsonCombinatorsSpec extends Specification {
       //#reads-complex-builder
 
       //#reads-complex-buildertoreads
-      implicit val locationReads = locationReadsBuilder.apply(Location.apply _)
+      implicit val locationReads: Reads[Location] = locationReadsBuilder.apply(Location.apply _)
       //#reads-complex-buildertoreads
 
       val locationResult = (json \ "location").validate[Location]
-      locationResult.must(beLike { case x: JsSuccess[Location] => x.get.lat === 51.235685 })
+      locationResult.must(beLike { case JsSuccess(l: Location, _) => l.lat === 51.235685 })
     }
 
     "allow creating complex Reads in a single statement" in {
@@ -141,7 +141,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       //#reads-complex-statement
 
       val locationResult = (json \ "location").validate[Location]
-      locationResult.must(beLike { case x: JsSuccess[Location] => x.get.lat === 51.235685 })
+      locationResult.must(beLike { case JsSuccess(l: Location, _) => l.lat === 51.235685 })
     }
 
     "allow mapping Reads using usual combinators" in {
@@ -343,7 +343,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       }
       //#reads-model
 
-      json.validate[Place].must(beLike { case x: JsSuccess[Place] => x.get.name === "Watership Down" })
+      json.validate[Place].must(beLike { case JsSuccess(p: Place, _) => p.name === "Watership Down" })
     }
 
     "allow creating Writes for model" in {
@@ -356,19 +356,19 @@ class ScalaJsonCombinatorsSpec extends Specification {
       implicit val locationWrites: Writes[Location] = (
         (JsPath \ "lat").write[Double] and
           (JsPath \ "long").write[Double]
-      )(unlift(Location.unapply))
+      )(l => (l.lat, l.long))
 
       implicit val residentWrites: Writes[Resident] = (
         (JsPath \ "name").write[String] and
           (JsPath \ "age").write[Int] and
           (JsPath \ "role").writeNullable[String]
-      )(unlift(Resident.unapply))
+      )(r => (r.name, r.age, r.role))
 
       implicit val placeWrites: Writes[Place] = (
         (JsPath \ "name").write[String] and
           (JsPath \ "location").write[Location] and
           (JsPath \ "residents").write[Seq[Resident]]
-      )(unlift(Place.unapply))
+      )(p => (p.name, p.location, p.residents))
 
       val place = Place(
         "Watership Down",
@@ -418,12 +418,12 @@ class ScalaJsonCombinatorsSpec extends Specification {
       implicit lazy val userReads: Reads[User] = (
         (__ \ "name").read[String] and
           (__ \ "friends").lazyRead(Reads.seq[User](userReads))
-      )(User)
+      )(User.apply _)
 
       implicit lazy val userWrites: Writes[User] = (
         (__ \ "name").write[String] and
           (__ \ "friends").lazyWrite(Writes.seq[User](userWrites))
-      )(unlift(User.unapply))
+      )(u => (u.name, u.friends))
       //#reads-writes-recursive
 
       // Use Reads for JSON -> model
@@ -440,7 +440,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       }
       """)
       val userResult    = json.validate[User]
-      userResult.must(beLike { case x: JsSuccess[User] => x.get.name === "Fiver" })
+      userResult.must(beLike { case JsSuccess(u: User, _) => u.name === "Fiver" })
 
       // Use Writes for model -> JSON
       val jsonFromUser = Json.toJson(userResult.get)
@@ -463,7 +463,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val locationWrites: Writes[Location] = (
         (JsPath \ "lat").write[Double] and
           (JsPath \ "long").write[Double]
-      )(unlift(Location.unapply))
+      )(l => (l.lat, l.long))
 
       implicit val locationFormat: Format[Location] =
         Format(locationReads, locationWrites)
@@ -495,7 +495,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       implicit val locationFormat: Format[Location] = (
         (JsPath \ "lat").format[Double](min(-90.0).keepAnd(max(90.0))) and
           (JsPath \ "long").format[Double](min(-180.0).keepAnd(max(180.0)))
-      )(Location.apply, unlift(Location.unapply))
+      )(Location.apply, l => (l.lat, l.long))
       //#format-combinators
 
       // Use Reads for JSON -> model

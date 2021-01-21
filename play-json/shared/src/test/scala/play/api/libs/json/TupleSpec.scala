@@ -4,9 +4,10 @@
 
 package play.api.libs.json
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
+import ScalaTestPosition._
 
 final class TupleSpec extends AnyWordSpec with Matchers {
   "Reading/Write tuples" should {

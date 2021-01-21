@@ -12,6 +12,8 @@ import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import ScalaTestPosition._
+
 final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
   "Reads" should {
     "not repath the second result on flatMap" when {
@@ -151,7 +153,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
       (__ \ "login").read[String] and
         (__ \ "avatar").read[String] and
         (__ \ "url").read[String]
-    )(Owner)
+    )(Owner.apply _)
 
     "be successful for simple case class Owner" in {
       val jsObj = Json.obj(
@@ -214,16 +216,10 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
 
   "EnumFormat" should {
     import TestEnums.EnumWithCustomNames._
-    import TestEnums.EnumWithDefaultNames._
 
     "deserialize correctly enum with custom names" in {
       JsString("ENUM1").validate[EnumWithCustomNames].mustEqual(JsSuccess(customEnum1))
       JsString("ENUM2").validate[EnumWithCustomNames].mustEqual(JsSuccess(customEnum2))
-    }
-
-    "deserialize correctly enum with default names" in {
-      JsString("defaultEnum1").validate[EnumWithDefaultNames].mustEqual(JsSuccess(defaultEnum1))
-      JsString("defaultEnum2").validate[EnumWithDefaultNames].mustEqual(JsSuccess(defaultEnum2))
     }
   }
 

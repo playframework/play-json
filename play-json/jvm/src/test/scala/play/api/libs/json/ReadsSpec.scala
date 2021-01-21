@@ -24,7 +24,7 @@ import org.specs2.specification.core.Fragment
 class ReadsSpec extends org.specs2.mutable.Specification {
   val veryLargeNumber = BigDecimal("9" * 1000000)
 
-  "JSON Reads" title
+  "JSON Reads".title
 
   "Local date/time" should {
     val DefaultReads = implicitly[Reads[LocalDateTime]]

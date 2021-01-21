@@ -4,8 +4,6 @@
 
 package play.api.libs.functional
 
-import scala.language.higherKinds
-
 case class ~[A, B](_1: A, _2: B)
 
 trait FunctionalCanBuild[M[_]] {

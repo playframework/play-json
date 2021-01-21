@@ -62,7 +62,7 @@ trait PathReads {
       path.asSingleJson(json) match {
         case JsDefined(JsNull) => JsSuccess(None)
         case JsDefined(value)  => reads.reads(value).repath(path).map(Some(_))
-        case JsUndefined()     => JsSuccess(defaultValue)
+        case _: JsUndefined    => JsSuccess(defaultValue)
       }
     }
 
@@ -139,10 +139,10 @@ trait ConstraintReads {
     Reads[A](js => reads.reads(js).filter(JsError(otherwise))(p))
 
   def minLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
-    filterNot[M](JsonValidationError("error.minLength", m))(_.size < m)
+    filterNot[M](JsonValidationError("error.minLength", m))(p(_).size < m)
 
   def maxLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
-    filterNot[M](JsonValidationError("error.maxLength", m))(_.size > m)
+    filterNot[M](JsonValidationError("error.maxLength", m))(p(_).size > m)
 
   /**
    * Defines a regular expression constraint for `String` values, i.e. the string must match the regular expression pattern
@@ -232,7 +232,6 @@ trait ConstraintWrites {
       wrs.writes(fixed)
     }
 
-  @com.github.ghik.silencer.silent
   @deprecated("Use `pruned` without `Writes[A]`", "2.8.0")
   def pruned[A](implicit w: Writes[A]): Writes[A] = new Writes[A] {
     def writes(a: A): JsValue = JsNull
@@ -242,11 +241,11 @@ trait ConstraintWrites {
     def writes(a: A): JsValue = JsNull
   }
 
-  def list[A](implicit writes: Writes[A]): Writes[List[A]] = Writes.iterableWrites[A, List]
+  def list[A](implicit writes: Writes[A]): Writes[List[A]] = Writes.iterableWrites2[A, List[A]]
 
-  def set[A](implicit writes: Writes[A]): Writes[Set[A]] = Writes.iterableWrites[A, Set]
+  def set[A](implicit writes: Writes[A]): Writes[Set[A]] = Writes.iterableWrites2[A, Set[A]]
 
-  def seq[A](implicit writes: Writes[A]): Writes[Seq[A]] = Writes.iterableWrites[A, Seq]
+  def seq[A](implicit writes: Writes[A]): Writes[Seq[A]] = Writes.iterableWrites2[A, Seq[A]]
 
   def map[A](implicit writes: Writes[A]): OWrites[Map[String, A]] = Writes.genericMapWrites[A, Map]
 

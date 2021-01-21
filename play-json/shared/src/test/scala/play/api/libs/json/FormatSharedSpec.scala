@@ -4,9 +4,10 @@
 
 package play.api.libs.json
 
-import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
+import ScalaTestPosition._
 
 final class FormatSharedSpec extends AnyWordSpec with Matchers {
   "Format" should {
