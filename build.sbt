@@ -32,7 +32,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.8"
+  "joda-time" % "joda-time" % "2.10.9"
 )
 
 def scalaReflect(scalaVersion: String) = Seq(
