@@ -14,8 +14,8 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 def specs2(scalaVersion: String) =
   Seq(
-    "org.specs2" %% "specs2-core"  % "4.10.5" % Test,
-    "org.specs2" %% "specs2-junit" % "4.10.5" % Test,
+    "org.specs2" %% "specs2-core"  % "4.10.6" % Test,
+    "org.specs2" %% "specs2-junit" % "4.10.6" % Test,
   ).map(_.withDottyCompat(scalaVersion))
 
 val jacksonDatabindVersion = "2.10.5.1"
