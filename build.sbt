@@ -121,7 +121,7 @@ lazy val commonSettings = Def.settings(
     // Filtering tests that are not stable in Scala 2.13 yet.
     Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
   ),
-  headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>")),
+  headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Dependencies.Scala212,
   crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213, Dependencies.Scala3),
   javacOptions in Compile ++= javacSettings,
