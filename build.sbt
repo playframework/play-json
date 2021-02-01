@@ -86,7 +86,7 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.7.1"
+val silencerVersion = "1.7.2"
 
 libraryDependencies in ThisBuild ++= {
   if (isDotty.value) Nil
