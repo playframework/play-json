@@ -47,16 +47,14 @@ object JsMacroImpl {
       case Some(tjs) => {
         val vjs = obj.value.get("_value").getOrElse(obj)
         tjs.validate[String].flatMap { dis =>
-          // lampepfl/dotty#11048 discriminator may be "play.api.libs.json.MacroSpec.Simple" but in MirroredElemLabels is "Simple"
-          val disName = dis.drop(dis.lastIndexOf('.') + 1)
-          readCasesL[A, m.MirroredElemLabels, m.MirroredElemTypes](vjs, disName)
+          readCasesL[A, m.MirroredElemTypes](vjs, dis)
         }
       }
     }
   }
 
   inline def writeCases[A: OWrites](x: A)(using m: Mirror.SumOf[A]): JsObject =
-    writeCasesL[A, m.MirroredElemLabels, m.MirroredElemTypes](x, m.ordinal(x))(0)
+    writeCasesL[A, m.MirroredElemTypes](x, m.ordinal(x))(0)
 
   inline def readElemsL[A: Reads, L <: Tuple, T <: Tuple](obj: JsObject, elems: Array[Any])(n: Int)(using m: Mirror.ProductOf[A]): JsResult[A] =
     inline (erasedValue[L], erasedValue[T]) match {
@@ -75,26 +73,26 @@ object JsMacroImpl {
       case _: (l *: ls, t *: ts)       => writeElemsL[A, ls, ts](x)(n + 1, kvs ++ writeElems1[A, l, t](x, n))
     }
 
-  inline def readCasesL[A: Reads, L <: Tuple, T <: Tuple](js: JsValue, name: String): JsResult[A] =
-    inline (erasedValue[L], erasedValue[T]) match {
-      case _: (l *: ls, t *: ts)       =>
-        if (name == typeName[l]) summonReads[t & A].reads(js)
-        else readCasesL[A, ls, ts](js, name)
-      case _: (EmptyTuple, EmptyTuple) => JsError("error.invalid")
+  inline def readCasesL[A: Reads, T <: Tuple](js: JsValue, name: String): JsResult[A] =
+    inline erasedValue[T] match {
+      case _: (t *: ts)  =>
+        if (name == typeName[t]) summonReads[t & A].reads(js)
+        else readCasesL[A, ts](js, name)
+      case _: EmptyTuple => JsError("error.invalid")
     }
 
-  inline def writeCasesL[A: OWrites, L <: Tuple, T <: Tuple](x: A, ord: Int)(n: Int): JsObject =
-    inline (erasedValue[L], erasedValue[T]) match {
-      case _: (l *: ls, t *: ts)       =>
+  inline def writeCasesL[A: OWrites, T <: Tuple](x: A, ord: Int)(n: Int): JsObject =
+    inline erasedValue[T] match {
+      case _: (t *: ts)  =>
         if (ord == n) {
           val xjs = summonWrites[t].writes(x.asInstanceOf[t])
           def jso = xjs match {
             case xo @ JsObject(_) => xo
             case jsv              => JsObject(Seq("_value" -> jsv))
           }
-          JsObject(Map(config.discriminator -> JsString(typeName[l]))) ++ jso
-        } else writeCasesL[A, ls, ts](x, ord)(n + 1)
-      case _: (EmptyTuple, EmptyTuple) => throw new MatchError(x)
+          JsObject(Map(config.discriminator -> JsString(typeName[t]))) ++ jso
+        } else writeCasesL[A, ts](x, ord)(n + 1)
+      case _: EmptyTuple => throw new MatchError(x)
     }
 
   inline def readElems1[A: Reads, L, T](obj: JsObject): JsResult[T] = {
@@ -112,19 +110,19 @@ object JsMacroImpl {
         val writer = config.optionHandlers.writeHandler(path[L])(summonWrites[a]).asInstanceOf[OWrites[T]]
         writer.writes(value).underlying
       case _            =>
-        Map((config.naming(summonLabel[L]), summonWrites[T].writes(value)))
+        Map((fieldName[L], summonWrites[T].writes(value)))
     }
   }
 
-  inline def path[L]: JsPath            = JsPath \ config.naming(summonLabel[L])
-  inline def typeName[L]: String        = config.typeNaming(summonLabel[L])
+  inline def path[L]: JsPath            = JsPath \ fieldName[L]
+  inline def fieldName[L]: String       = config.naming(summonLabel[L].asInstanceOf[String])
+  inline def typeName[A]: String        = config.typeNaming(summonClassName[A])
   inline def config: JsonConfiguration  = summonInline[JsonConfiguration]
   inline def summonReads[A]: Reads[A]   = summonInline[Reads[A]]
   inline def summonWrites[A]: Writes[A] = summonInline[Writes[A]]
+  inline def summonLabel[L]: L          = inline erasedValue[L] match { case _: String => constValue[L] }
 
-  inline def summonLabel[L]: String = inline erasedValue[L] match {
-    case _: String =>  constValue[L].asInstanceOf[String]
-  }
+  inline def summonClassName[A]: String = ${summonClassNameImpl[A]}
 
   final class ArrayProduct[A](elems: Array[A]) extends Product {
     def canEqual(that: Any): Boolean  = true
@@ -146,5 +144,13 @@ object JsMacroImpl {
     inline val msg = "No support in Scala 3's type class derivation (Mirrors) for " + name
     inline val url = "https://github.com/lampepfl/dotty/issues/" + issueNumber
     error(msg + ", see " + url)
+  }
+
+  import scala.quoted._
+  private def summonClassNameImpl[A: Type](using Quotes): Expr[String] = {
+    import quotes.reflect._
+    val sym  = TypeRepr.of[A].typeSymbol
+    val fqcn = sym.owner.fullName.stripSuffix("$") + "." + sym.name.stripSuffix("$")
+    Expr(fqcn)
   }
 }

@@ -17,9 +17,11 @@ object ScalaJsonAutomatedSpec {
   case class PlayUser(name: String, firstName: String, userAge: Int)
   //#model2
 
+  //#model3
   sealed trait Role
   case object Admin                            extends Role
   case class Contributor(organization: String) extends Role
+  //#model3
 
   val sampleJson = Json.parse(
     """{
@@ -177,6 +179,8 @@ class ScalaJsonAutomatedSpec extends Specification {
       }
 
       "automatically convert JSON to a case class" in {
+        def println(str: String) = str // avoid the println below side-effecting during the test
+
         //#auto-JSON-to-case-class
         import play.api.libs.json._
 
@@ -207,6 +211,55 @@ class ScalaJsonAutomatedSpec extends Specification {
       }
     }
 
+    "automatically convert JSON for a sealed family" in {
+      //#trait-representation
+      val adminJson = Json.parse("""
+        { "_type": "scalaguide.json.ScalaJsonAutomatedSpec.Admin" }
+      """)
+
+      val contributorJson = Json.parse("""
+        {
+          "_type":"scalaguide.json.ScalaJsonAutomatedSpec.Contributor",
+          "organization":"Foo"
+        }
+      """)
+
+      // Each JSON objects is marked with the _type,
+      // indicating the fully-qualified name of sub-type
+      //#trait-representation
+
+      //#auto-JSON-sealed-trait
+      import play.api.libs.json._
+
+      // First provide instance for each sub-types 'Admin' and 'Contributor':
+      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
+        case JsObject(_) => JsSuccess(Admin)
+        case _           => JsError("Empty object expected")
+      }, OWrites[Admin.type] { _ =>
+        Json.obj()
+      })
+
+      implicit val contributorFormat: OFormat[Contributor] = Json.format[Contributor]
+
+      // Finally able to generate format for the sealed family 'Role'
+      implicit val roleFormat: OFormat[Role] = Json.format[Role]
+      //#auto-JSON-sealed-trait
+
+      def writeAnyRole(role: Role) = Json.toJson(role)
+
+      def readAnyRole(input: JsValue): JsResult[Role] = input.validate[Role]
+
+      val sampleContributor = Contributor("Foo")
+
+      writeAnyRole(Admin).must_===(adminJson) and {
+        writeAnyRole(sampleContributor).must_===(contributorJson)
+      } and {
+        readAnyRole(adminJson).must_===(JsSuccess(Admin))
+      } and {
+        readAnyRole(contributorJson).must_===(JsSuccess(sampleContributor))
+      }
+    }
+
     "automatically convert custom JSON for a sealed family" in {
       //#trait-custom-representation
       val adminJson = Json.parse("""
@@ -228,11 +281,8 @@ class ScalaJsonAutomatedSpec extends Specification {
         // Each JSON objects is marked with the admTpe, ...
         discriminator = "admTpe",
         // ... indicating the lower-cased name of sub-type
-        typeNaming = JsonNaming {
-          case "scalaguide.json.ScalaJsonAutomatedSpec.Contributor" => "contributor"
-          case "scalaguide.json.ScalaJsonAutomatedSpec.Admin"       => "admin"
-          case "Admin"                                              => "admin"
-          case "Contributor"                                        => "contributor"
+        typeNaming = JsonNaming { fullName =>
+          fullName.drop(39 /* remove pkg */ ).toLowerCase
         }
       )
 

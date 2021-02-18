@@ -115,12 +115,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       "using the _value syntax" in {
         val jsSimple = Json.obj(
-          "_type"  -> DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Simple"),
+          "_type"  -> "play.api.libs.json.MacroSpec.Simple",
           "_value" -> Json.writes[Simple].writes(simple)
         )
 
         val jsOptional = Json.obj(
-          "_type"  -> DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Optional"),
+          "_type"  -> "play.api.libs.json.MacroSpec.Optional",
           "_value" -> Json.writes[Optional].writes(optional)
         )
 
@@ -130,11 +130,11 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       "using the compact syntax" in {
         val jsSimple = Json.writes[Simple].writes(simple) + (
-          "_type" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Simple"))
+          "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
         )
 
         val jsOptional = Json.writes[Optional].writes(optional) + (
-          "_type" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Optional"))
+          "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
         )
 
         jsSimple.validate[Family].mustEqual(JsSuccess(simple))
@@ -209,11 +209,11 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val optional = Optional(None)
 
       val jsSimple = simpleWrites.writes(simple) + (
-        "_type" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Simple"))
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
       )
 
       val jsOptional = optionalWrites.writes(optional) + (
-        "_type" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Optional"))
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
 
       lazy val wsimple = Json.toJson[Family](simple)
@@ -229,7 +229,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         .toJson[Family1](Family1Member("bar"))
         .mustEqual(
           Json.obj(
-            "_type" -> DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Family1Member"),
+            "_type" -> "play.api.libs.json.MacroSpec.Family1Member",
             "foo"   -> "bar"
           )
         )
@@ -384,12 +384,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       val simple = Simple("foo")
       val jsSimple = simpleWrites.writes(simple) + (
-        "_type" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Simple"))
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
       )
 
       val optional = Optional(None)
       val jsOptional = optionalFormat.writes(optional) + (
-        "_type" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Optional"))
+        "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
 
       Json.toJson[Family](simple).mustEqual(jsSimple)
@@ -416,12 +416,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       val simple = Simple("foo")
       val jsSimple = simpleWrites.writes(simple) + (
-        "_discriminator" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Simple"))
+        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Simple")
       )
 
       val optional = Optional(None)
       val jsOptional = optionalFormat.writes(optional) + (
-        "_discriminator" -> JsString(DiscriminatorTestUtils.convert("play.api.libs.json.MacroSpec.Optional"))
+        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
 
       Json.toJson[Family](simple).mustEqual(jsSimple)
