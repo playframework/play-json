@@ -123,7 +123,7 @@ lazy val commonSettings = Def.settings(
   ),
   headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Dependencies.Scala212,
-  crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213, Dependencies.Scala3),
+  crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213) ++ Dependencies.Scala3,
   javacOptions in Compile ++= javacSettings,
   javacOptions in Test ++= javacSettings,
   javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
