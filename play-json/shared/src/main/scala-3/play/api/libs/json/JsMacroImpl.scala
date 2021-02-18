@@ -18,8 +18,8 @@ object JsMacroImpl {
     given subject: Reads[A] = this
     def reads(js: JsValue)  = js match {
       case obj @ JsObject(_) => inline m match {
-        case m: Mirror.ProductOf[A] => readElems[A](obj)(using self, m)
-        case m: Mirror.SumOf[A]     => readCases[A](obj)(using self, m)
+        case m: Mirror.ProductOf[A] => readElems[A](obj)(using m)
+        case m: Mirror.SumOf[A]     => readCases[A](obj)(using m)
       }
       case _                 => JsError("error.expected.jsobject")
     }
@@ -28,20 +28,20 @@ object JsMacroImpl {
   inline def writes[A](using m: Mirror.Of[A]): OWrites[A] = new OWrites[A] { self =>
     given subject: OWrites[A] = this
     def writes(x: A)          = inline m match {
-      case m: Mirror.ProductOf[A] => writeElems[A](x)(using self, m)
-      case m: Mirror.SumOf[A]     => writeCases[A](x)(using self, m)
+      case m: Mirror.ProductOf[A] => writeElems[A](x)(using m)
+      case m: Mirror.SumOf[A]     => writeCases[A](x)(using m)
     }
   }
 
-  inline def readElems[A: Reads](obj: JsObject)(using m: Mirror.ProductOf[A]): JsResult[A] = {
+  inline def readElems[A](obj: JsObject)(using m: Mirror.ProductOf[A]): JsResult[A] = {
     inline val size = constValue[Tuple.Size[m.MirroredElemTypes]]
     readElemsL[A, m.MirroredElemLabels, m.MirroredElemTypes](obj, new Array[Any](size))(0)
   }
 
-  inline def writeElems[A: OWrites](x: A)(using m: Mirror.ProductOf[A]): JsObject =
+  inline def writeElems[A](x: A)(using m: Mirror.ProductOf[A]): JsObject =
     writeElemsL[A, m.MirroredElemLabels, m.MirroredElemTypes](x)(0, Map.empty)
 
-  inline def readCases[A: Reads](obj: JsObject)(using m: Mirror.SumOf[A]): JsResult[A] = {
+  inline def readCases[A](obj: JsObject)(using m: Mirror.SumOf[A]): JsResult[A] = {
     obj.value.get(config.discriminator) match {
       case None      => JsError(JsPath \ config.discriminator, "error.missing.path")
       case Some(tjs) => {
@@ -55,10 +55,10 @@ object JsMacroImpl {
     }
   }
 
-  inline def writeCases[A: OWrites](x: A)(using m: Mirror.SumOf[A]): JsObject =
+  inline def writeCases[A](x: A)(using m: Mirror.SumOf[A]): JsObject =
     writeCasesL[A, m.MirroredElemLabels, m.MirroredElemTypes](x, m.ordinal(x))(0)
 
-  inline def readElemsL[A: Reads, L <: Tuple, T <: Tuple](obj: JsObject, elems: Array[Any])(n: Int)(using m: Mirror.ProductOf[A]): JsResult[A] =
+  inline def readElemsL[A, L <: Tuple, T <: Tuple](obj: JsObject, elems: Array[Any])(n: Int)(using m: Mirror.ProductOf[A]): JsResult[A] =
     inline (erasedValue[L], erasedValue[T]) match {
       case _: (EmptyTuple, EmptyTuple) => JsSuccess(m.fromProduct(new ArrayProduct(elems)))
       case _: (l *: ls, t *: ts)       => readElems1[A, l, t](obj) match {
@@ -69,13 +69,13 @@ object JsMacroImpl {
       }
     }
 
-  inline def writeElemsL[A: OWrites, L <: Tuple, T <: Tuple](x: A)(n: Int, kvs: Map[String, JsValue]): JsObject =
+  inline def writeElemsL[A, L <: Tuple, T <: Tuple](x: A)(n: Int, kvs: Map[String, JsValue]): JsObject =
     inline (erasedValue[L], erasedValue[T]) match {
       case _: (EmptyTuple, EmptyTuple) => JsObject(kvs)
       case _: (l *: ls, t *: ts)       => writeElemsL[A, ls, ts](x)(n + 1, kvs ++ writeElems1[A, l, t](x, n))
     }
 
-  inline def readCasesL[A: Reads, L <: Tuple, T <: Tuple](js: JsValue, name: String): JsResult[A] =
+  inline def readCasesL[A, L <: Tuple, T <: Tuple](js: JsValue, name: String): JsResult[A] =
     inline (erasedValue[L], erasedValue[T]) match {
       case _: (l *: ls, t *: ts)       =>
         if (name == typeName[l]) summonReads[t & A].reads(js)
@@ -83,7 +83,7 @@ object JsMacroImpl {
       case _: (EmptyTuple, EmptyTuple) => JsError("error.invalid")
     }
 
-  inline def writeCasesL[A: OWrites, L <: Tuple, T <: Tuple](x: A, ord: Int)(n: Int): JsObject =
+  inline def writeCasesL[A, L <: Tuple, T <: Tuple](x: A, ord: Int)(n: Int): JsObject =
     inline (erasedValue[L], erasedValue[T]) match {
       case _: (l *: ls, t *: ts)       =>
         if (ord == n) {
@@ -97,7 +97,7 @@ object JsMacroImpl {
       case _: (EmptyTuple, EmptyTuple) => throw new MatchError(x)
     }
 
-  inline def readElems1[A: Reads, L, T](obj: JsObject): JsResult[T] = {
+  inline def readElems1[A, L, T](obj: JsObject): JsResult[T] = {
     val reader = inline erasedValue[T] match {
       case _: Option[a] => config.optionHandlers.readHandler(path[L])(summonReads[a]).asInstanceOf[Reads[T]]
       case _            => path[L].read(summonReads[T])
@@ -105,7 +105,7 @@ object JsMacroImpl {
     reader.reads(obj)
   }
 
-  inline def writeElems1[A: OWrites, L, T](x: A, n: Int): Map[String, JsValue] = {
+  inline def writeElems1[A, L, T](x: A, n: Int): Map[String, JsValue] = {
     val value = x.asInstanceOf[Product].productElement(n).asInstanceOf[T]
     inline erasedValue[T] match {
       case _: Option[a] =>
