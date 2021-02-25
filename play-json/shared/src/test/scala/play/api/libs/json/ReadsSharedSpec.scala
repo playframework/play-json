@@ -95,17 +95,22 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
 
     "be read with boolean keys".which {
       "are booleans" in {
-        Json.fromJson[Map[Boolean, String]](Json.obj(
-          "true" -> "foo", "false" -> "bar")) mustEqual JsSuccess(
-          Map[Boolean, String](true -> "foo", false -> "bar"))
+        Json
+          .fromJson[Map[Boolean, String]](Json.obj("true" -> "foo", "false" -> "bar"))
+          .mustEqual(JsSuccess(Map[Boolean, String](true -> "foo", false -> "bar")))
       }
 
       "are not booleans" in {
-        Json.fromJson[Map[Boolean, String]](Json.obj("foo" -> "", "bar" -> "")).
-          mustEqual(JsError(
+        Json
+          .fromJson[Map[Boolean, String]](Json.obj("foo" -> "", "bar" -> ""))
+          .mustEqual(
+            JsError(
               List(
                 (JsPath \ "foo", List(JsonValidationError("error.expected.boolean"))),
-                (JsPath \ "bar", List(JsonValidationError("error.expected.boolean"))))))
+                (JsPath \ "bar", List(JsonValidationError("error.expected.boolean")))
+              )
+            )
+          )
       }
     }
 
@@ -135,17 +140,13 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
 
     "be read with float keys" in {
       Json
-        .fromJson[Map[Float, String]](Json.obj(
-          "1.23" -> "foo",
-          "23.4" -> "bar"))
+        .fromJson[Map[Float, String]](Json.obj("1.23" -> "foo", "23.4" -> "bar"))
         .mustEqual(JsSuccess(Map(1.23F -> "foo", 23.4F -> "bar")))
     }
 
     "be read with double keys" in {
       Json
-        .fromJson[Map[Double, String]](Json.obj(
-          "1.23" -> "foo",
-          "23.4" -> "bar"))
+        .fromJson[Map[Double, String]](Json.obj("1.23" -> "foo", "23.4" -> "bar"))
         .mustEqual(JsSuccess(Map(1.23D -> "foo", 23.4D -> "bar")))
     }
 
@@ -154,8 +155,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
 
       implicitly[KeyReads[URI]]
 
-      Json.fromJson[Map[URI, String]](Json.obj(key -> "foo")).
-        mustEqual(JsSuccess(Map((new URI(key)) -> "foo")))
+      Json.fromJson[Map[URI, String]](Json.obj(key -> "foo")).mustEqual(JsSuccess(Map((new URI(key)) -> "foo")))
     }
   }
 
@@ -292,7 +292,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     "be read from JsString" in {
       val strRepr = "https://www.playframework.com/documentation/2.8.x/api/scala/index.html#play.api.libs.json.JsResult"
 
-      JsString(strRepr).validate[URI] mustEqual JsSuccess(new URI(strRepr))
+      JsString(strRepr).validate[URI].mustEqual(JsSuccess(new URI(strRepr)))
     }
 
     "not be read from invalid JsString" in {

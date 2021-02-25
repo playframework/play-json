@@ -31,14 +31,14 @@ object KeyReads extends EnvKeyReads with LowPriorityKeyReads {
   implicit val charKeyReads: KeyReads[Char] = KeyReads[Char] {
     _.headOption match {
       case Some(ch) => JsSuccess(ch)
-      case _ => JsError("error.expected.character")
+      case _        => JsError("error.expected.character")
     }
   }
 
   implicit val booleanKeyReads: KeyReads[Boolean] = KeyReads[Boolean] {
-    case "true" => JsSuccess(true)
+    case "true"  => JsSuccess(true)
     case "false" => JsSuccess(false)
-    case _ => JsError("error.expected.boolean")
+    case _       => JsError("error.expected.boolean")
   }
 
   implicit val byteKeyReads: KeyReads[Byte] = charKeyReads.map(_.toByte)
@@ -58,7 +58,7 @@ object KeyReads extends EnvKeyReads with LowPriorityKeyReads {
   implicit val doubleKeyReads: KeyReads[Double] =
     unsafe[Double]("error.expected.double")(_.toDouble)
 
-  private def unsafe[T](err: String)(f: String => T): KeyReads[T] = 
+  private def unsafe[T](err: String)(f: String => T): KeyReads[T] =
     KeyReads[T] { key =>
       try {
         JsSuccess(f(key))
