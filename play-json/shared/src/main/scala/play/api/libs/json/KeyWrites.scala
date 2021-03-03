@@ -21,4 +21,7 @@ object KeyWrites extends EnvKeyWrites {
   def apply[T](f: T => String): KeyWrites[T] = new KeyWrites[T] {
     def writeKey(key: T) = f(key)
   }
+
+  implicit def anyValKeyWrites[T <: AnyVal]: KeyWrites[T] =
+    KeyWrites[T](_.toString)
 }

@@ -90,7 +90,7 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
 
   "Iterable writes" should {
     "write maps" in {
-      Json.toJson(Map(1 -> "one")).mustEqual(Json.arr(Json.arr(1, "one")))
+      Json.toJson(Map(1 -> "one")).mustEqual(Json.obj("1" -> "one"))
     }
   }
 
