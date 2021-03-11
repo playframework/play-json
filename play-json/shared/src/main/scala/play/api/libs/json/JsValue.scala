@@ -134,7 +134,16 @@ case class JsObject(
   /**
    * The value of this JsObject as an immutable map.
    */
+  @deprecated("Use `valueMap` instead", "2.9.3")
   lazy val value: Map[String, JsValue] = underlying match {
+    case m: immutable.Map[String, JsValue] => m
+    case m                                 => m.toMap
+  }
+
+  /**
+   * The value of this JsObject as an immutable map.
+   */
+  lazy val valueMap: immutable.Map[String, JsValue] = underlying match {
     case m: immutable.Map[String, JsValue] => m
     case m                                 => m.toMap
   }
@@ -142,7 +151,7 @@ case class JsObject(
   /**
    * Return all fields as a set
    */
-  def fieldSet: Set[(String, JsValue)] = fields.toSet
+  def fieldSet: immutable.Set[(String, JsValue)] = fields.toSet
 
   /**
    * Return all keys
