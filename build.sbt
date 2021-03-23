@@ -18,9 +18,8 @@ def specs2(scalaVersion: String) =
     "org.specs2" %% "specs2-junit" % "4.10.6" % Test,
   ).map(_.withDottyCompat(scalaVersion))
 
-val jacksonVersion = "2.11.4"
+val jacksonVersion         = "2.11.4"
 val jacksonDatabindVersion = jacksonVersion
-
 
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
