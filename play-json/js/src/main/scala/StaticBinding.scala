@@ -108,7 +108,7 @@ object StaticBinding {
   }
 
   @inline private def fromString(s: String, escapeNonASCII: Boolean): String =
-    if (!escapeNonASCII) JSON.stringify(s) else escapeStr(JSON.stringify(s))
+    if (!escapeNonASCII) JSON.stringify(s, null) else escapeStr(JSON.stringify(s, null))
 
   private def anyToJsValue(raw: Any): JsValue = raw match {
     case null           => JsNull
