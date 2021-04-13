@@ -160,7 +160,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         "org.scalatest"     %%% "scalatest"       % "3.2.7"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.7.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.15.3"  % Test,
-        "com.chuusai"       %% "shapeless"        % "2.3.3"   % Test,
+        "com.chuusai"       %% "shapeless"        % "2.3.4"   % Test,
       ).map(_.withDottyCompat(scalaVersion.value)),
       libraryDependencies += {
         if (isDotty.value)
