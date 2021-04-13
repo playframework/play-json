@@ -12,11 +12,15 @@ import sbtcrossproject.CrossType
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
+val isScala3 = Def.setting {
+  CrossVersion.partialVersion(scalaVersion.value).exists(_._1 != 2)
+}
+
 def specs2(scalaVersion: String) =
   Seq(
     "org.specs2" %% "specs2-core"  % "4.10.6" % Test,
     "org.specs2" %% "specs2-junit" % "4.10.6" % Test,
-  ).map(_.withDottyCompat(scalaVersion))
+  ).map(_.cross(CrossVersion.for3Use2_13))
 
 val jacksonVersion         = "2.11.4"
 val jacksonDatabindVersion = jacksonVersion
@@ -44,7 +48,7 @@ def scalaReflect(scalaVersion: String) = Seq(
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
-    case _ if isDotty.value                => Set.empty // no releases for Scala 3 yet
+    case _ if isScala3.value                => Set.empty // no releases for Scala 3 yet
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
     case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
     case _                                 => throw new Error("Unable to determine previous version")
@@ -89,7 +93,7 @@ val scalacOpts = Seq(
 val silencerVersion = "1.7.3"
 
 libraryDependencies in ThisBuild ++= {
-  if (isDotty.value) Nil
+  if (isScala3.value) Nil
   else
     Seq(
       compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
@@ -127,7 +131,7 @@ lazy val commonSettings = Def.settings(
   javacOptions in Compile ++= javacSettings,
   javacOptions in Test ++= javacSettings,
   javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
-  scalacOptions ++= (if (isDotty.value) Nil else scalacOpts),
+  scalacOptions ++= (if (isScala3.value) Nil else scalacOpts),
   scalacOptions in (Compile, doc) ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
@@ -155,15 +159,15 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
-      libraryDependencies ++= (if (isDotty.value) Nil else scalaReflect(scalaVersion.value)),
+      libraryDependencies ++= (if (isScala3.value) Nil else scalaReflect(scalaVersion.value)),
       libraryDependencies ++= Seq(
         "org.scalatest"     %%% "scalatest"       % "3.2.7"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.6.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.15.3"  % Test,
         "com.chuusai"       %% "shapeless"        % "2.3.3"   % Test,
-      ).map(_.withDottyCompat(scalaVersion.value)),
+      ).map(_.cross(CrossVersion.for3Use2_13)),
       libraryDependencies += {
-        if (isDotty.value)
+        if (isScala3.value)
           "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
         else
           "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided
@@ -298,11 +302,11 @@ lazy val docs = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= specs2(scalaVersion.value),
-    PlayDocsKeys.validateDocs := (if (isDotty.value) () else PlayDocsKeys.validateDocs.value),
+    PlayDocsKeys.validateDocs := (if (isScala3.value) () else PlayDocsKeys.validateDocs.value),
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
       val code = (base ** "code").get
-      if (isDotty.value) code
+      if (isScala3.value) code
       else code ++ (base ** "code-2").get
     },
     PlayDocsKeys.resources += {
