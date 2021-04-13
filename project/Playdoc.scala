@@ -17,16 +17,16 @@ object Playdoc extends AutoPlugin {
   override def trigger = noTrigger
 
   override def projectSettings =
-    Defaults.packageTaskSettings(playdocPackage, (playdocPackage / mappings)) ++
+    Defaults.packageTaskSettings(playdocPackage, playdocPackage / mappings) ++
       Seq(
         playdocDirectory := (ThisBuild / baseDirectory).value / "docs" / "manual",
-        (playdocPackage / mappings) := {
+        playdocPackage / mappings := {
           val base: File = playdocDirectory.value
           base.allPaths.pair(IO.relativize(base.getParentFile(), _))
         },
-        (playdocPackage / artifactClassifier) := Some("playdoc"),
-        (playdocPackage / artifact) ~= { _.withConfigurations(Vector(Docs)) }
+        playdocPackage / artifactClassifier := Some("playdoc"),
+        playdocPackage / artifact ~= { _.withConfigurations(Vector(Docs)) }
       ) ++
-      addArtifact((playdocPackage / artifact), playdocPackage)
+      addArtifact(playdocPackage / artifact, playdocPackage)
 
 }
