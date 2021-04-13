@@ -68,7 +68,7 @@ def playJsonMimaSettings = Seq(
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
 // Use "sbt -DscalaJSStage=full" in .travis.yml
-scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
+(ThisBuild / scalaJSStage) := (sys.props.get("scalaJSStage") match {
   case Some("full") => FullOptStage
   case _            => FastOptStage
 })
@@ -92,7 +92,7 @@ val scalacOpts = Seq(
 
 val silencerVersion = "1.7.3"
 
-libraryDependencies in ThisBuild ++= {
+(ThisBuild / libraryDependencies) ++= {
   if (isScala3.value) Nil
   else
     Seq(
@@ -102,7 +102,7 @@ libraryDependencies in ThisBuild ++= {
 }
 
 // Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
-dynverVTagPrefix in ThisBuild := false
+(ThisBuild / dynverVTagPrefix) := false
 
 // Sanity-check: assert that version comes from a tag (e.g. not a too-shallow clone)
 // https://github.com/dwijnand/sbt-dynver/#sanity-checking-the-version
@@ -117,8 +117,8 @@ Global / onLoad := (Global / onLoad).value.andThen { s =>
 
 lazy val commonSettings = Def.settings(
   // Do not buffer test output
-  logBuffered in Test := false,
-  testOptions in Test ++= Seq(
+  (Test / logBuffered) := false,
+  (Test / testOptions) ++= Seq(
     // Show the duration of tests
     Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
@@ -128,11 +128,11 @@ lazy val commonSettings = Def.settings(
   headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Dependencies.Scala212,
   crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213) ++ Dependencies.Scala3,
-  javacOptions in Compile ++= javacSettings,
-  javacOptions in Test ++= javacSettings,
-  javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
+  (Compile / javacOptions) ++= javacSettings,
+  (Test / javacOptions) ++= javacSettings,
+  (Compile / compile / javacOptions) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
   scalacOptions ++= (if (isScala3.value) Nil else scalacOpts),
-  scalacOptions in (Compile, doc) ++= Seq(
+  (Compile / doc / scalacOptions) ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
   )
@@ -178,7 +178,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           case Some((3, _))  => Nil
           case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
         }),
-      unmanagedSourceDirectories in Compile += {
+      (Compile / unmanagedSourceDirectories) += {
         //val sourceDir = (sourceDirectory in Compile).value
         // ^ gives jvm/src/main, for some reason
         val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
@@ -198,8 +198,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
             }
           },
       },
-      sourceGenerators in Compile += Def.task {
-        val dir = (sourceManaged in Compile).value
+      (Compile / sourceGenerators) += Def.task {
+        val dir = (Compile / sourceManaged).value
 
         val file = dir / "Generated.scala"
         val (writes, reads) = 1
@@ -261,7 +261,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
     jacksons ++ specs2(scalaVersion.value) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
-  unmanagedSourceDirectories in Test ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
+  (Test / unmanagedSourceDirectories) ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
 )
 
 lazy val `play-json-joda` = project
@@ -310,7 +310,7 @@ lazy val docs = project
       else code ++ (base ** "code-2").get
     },
     PlayDocsKeys.resources += {
-      val apiDocs = (doc in (`play-jsonJVM`, Compile)).value
+      val apiDocs = (`play-jsonJVM` / Compile / doc).value
       // Copy the docs to a place so they have the correct api/scala prefix
       val apiDocsStage = target.value / "api-docs-stage"
       val cacheFile    = streams.value.cacheDirectory / "api-docs-stage"
