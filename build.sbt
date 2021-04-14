@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 import sbt._
 import sbt.util._
@@ -53,7 +53,7 @@ val joda = Seq(
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
-    case _ if isScala3.value                => Set.empty // no releases for Scala 3 yet
+    case _ if isScala3.value               => Set.empty // no releases for Scala 3 yet
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
     case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
     case _                                 => throw new Error("Unable to determine previous version")
@@ -166,10 +166,11 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
       libraryDependencies ++= (
         if (isScala3.value) Nil
-        else Seq(
-          "org.scala-lang" %  "scala-reflect" % scalaVersion.value,
-          "com.chuusai"    %% "shapeless"     % "2.3.4" % Test,
-        )
+        else
+          Seq(
+            "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+            "com.chuusai"    %% "shapeless"    % "2.3.4" % Test,
+          )
       ),
       libraryDependencies ++= Seq(
         "org.scalatest"     %%% "scalatest"       % "3.2.7"   % Test,
