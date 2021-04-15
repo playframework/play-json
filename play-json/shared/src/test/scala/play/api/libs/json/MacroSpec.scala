@@ -513,9 +513,8 @@ object MacroSpec {
   }
 
   object Foo {
-    import shapeless.tag.@@
-
-    // lampepfl/dotty#11054 Type aliasing breaks constValue
+    // https://github.com/lampepfl/dotty/issues/11054 Type aliasing breaks constValue
+    // import shapeless.tag.@@
     type Id = String // @@ Foo
     def id(value: String): Id = value.asInstanceOf[Id]
 

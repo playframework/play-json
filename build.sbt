@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 import sbt._
 import sbt.util._
@@ -12,11 +12,24 @@ import sbtcrossproject.CrossType
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
+val isScala3 = Def.setting {
+  CrossVersion.partialVersion(scalaVersion.value).exists(_._1 != 2)
+}
+
+// specs2 hasn't been doing Scala 3 releases, so we use for3Use2_13.
+// this then forces us to do the same for ScalaTest, in order to
+// avoid conflicting scala-xml cross versions.  (At least, I didn't
+// attempt to work around that.)
+//
+// Since these are just test dependencies, it isn't really a problem.
+// But if too much more time passes and specs2 still hasn't released
+// for Scala 3, we should consider ripping it out.
+
 def specs2(scalaVersion: String) =
   Seq(
     "org.specs2" %% "specs2-core"  % "4.10.6" % Test,
     "org.specs2" %% "specs2-junit" % "4.10.6" % Test,
-  ).map(_.withDottyCompat(scalaVersion))
+  ).map(_.cross(CrossVersion.for3Use2_13))
 
 val jacksonVersion         = "2.11.4"
 val jacksonDatabindVersion = jacksonVersion
@@ -35,16 +48,12 @@ val joda = Seq(
   "joda-time" % "joda-time" % "2.10.10"
 )
 
-def scalaReflect(scalaVersion: String) = Seq(
-  "org.scala-lang" % "scala-reflect" % scalaVersion
-)
-
 // Common settings
 
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
-    case _ if isDotty.value                => Set.empty // no releases for Scala 3 yet
+    case _ if isScala3.value               => Set.empty // no releases for Scala 3 yet
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
     case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
     case _                                 => throw new Error("Unable to determine previous version")
@@ -64,7 +73,7 @@ def playJsonMimaSettings = Seq(
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
 // Use "sbt -DscalaJSStage=full" in .travis.yml
-scalaJSStage in ThisBuild := (sys.props.get("scalaJSStage") match {
+ThisBuild / scalaJSStage := (sys.props.get("scalaJSStage") match {
   case Some("full") => FullOptStage
   case _            => FastOptStage
 })
@@ -88,8 +97,8 @@ val scalacOpts = Seq(
 
 val silencerVersion = "1.7.3"
 
-libraryDependencies in ThisBuild ++= {
-  if (isDotty.value) Nil
+ThisBuild / libraryDependencies ++= {
+  if (isScala3.value) Nil
   else
     Seq(
       compilerPlugin(("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)),
@@ -98,7 +107,7 @@ libraryDependencies in ThisBuild ++= {
 }
 
 // Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
-dynverVTagPrefix in ThisBuild := false
+ThisBuild / dynverVTagPrefix := false
 
 // Sanity-check: assert that version comes from a tag (e.g. not a too-shallow clone)
 // https://github.com/dwijnand/sbt-dynver/#sanity-checking-the-version
@@ -113,8 +122,8 @@ Global / onLoad := (Global / onLoad).value.andThen { s =>
 
 lazy val commonSettings = Def.settings(
   // Do not buffer test output
-  logBuffered in Test := false,
-  testOptions in Test ++= Seq(
+  Test / logBuffered := false,
+  Test / testOptions ++= Seq(
     // Show the duration of tests
     Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
@@ -124,11 +133,11 @@ lazy val commonSettings = Def.settings(
   headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Dependencies.Scala212,
   crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213) ++ Dependencies.Scala3,
-  javacOptions in Compile ++= javacSettings,
-  javacOptions in Test ++= javacSettings,
-  javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
-  scalacOptions ++= (if (isDotty.value) Nil else scalacOpts),
-  scalacOptions in (Compile, doc) ++= Seq(
+  Compile / javacOptions ++= javacSettings,
+  Test / javacOptions ++= javacSettings,
+  Compile / compile / javacOptions ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
+  scalacOptions ++= (if (isScala3.value) Nil else scalacOpts),
+  Compile / doc / scalacOptions ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
   )
@@ -155,15 +164,21 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
-      libraryDependencies ++= (if (isDotty.value) Nil else scalaReflect(scalaVersion.value)),
+      libraryDependencies ++= (
+        if (isScala3.value) Nil
+        else
+          Seq(
+            "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+            "com.chuusai"    %% "shapeless"    % "2.3.4" % Test,
+          )
+      ),
       libraryDependencies ++= Seq(
         "org.scalatest"     %%% "scalatest"       % "3.2.7"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.7.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.15.3"  % Test,
-        "com.chuusai"       %% "shapeless"        % "2.3.3"   % Test,
-      ).map(_.withDottyCompat(scalaVersion.value)),
+      ).map(_.cross(CrossVersion.for3Use2_13)),
       libraryDependencies += {
-        if (isDotty.value)
+        if (isScala3.value)
           "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
         else
           "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided
@@ -174,7 +189,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           case Some((3, _))  => Nil
           case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
         }),
-      unmanagedSourceDirectories in Compile += {
+      Compile / unmanagedSourceDirectories += {
         //val sourceDir = (sourceDirectory in Compile).value
         // ^ gives jvm/src/main, for some reason
         val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
@@ -194,8 +209,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
             }
           },
       },
-      sourceGenerators in Compile += Def.task {
-        val dir = (sourceManaged in Compile).value
+      Compile / sourceGenerators += Def.task {
+        val dir = (Compile / sourceManaged).value
 
         val file = dir / "Generated.scala"
         val (writes, reads) = 1
@@ -257,7 +272,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
     jacksons ++ specs2(scalaVersion.value) :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
-  unmanagedSourceDirectories in Test ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
+  Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
 )
 
 lazy val `play-json-joda` = project
@@ -298,15 +313,15 @@ lazy val docs = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= specs2(scalaVersion.value),
-    PlayDocsKeys.validateDocs := (if (isDotty.value) () else PlayDocsKeys.validateDocs.value),
+    PlayDocsKeys.validateDocs := (if (isScala3.value) () else PlayDocsKeys.validateDocs.value),
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
       val code = (base ** "code").get
-      if (isDotty.value) code
+      if (isScala3.value) code
       else code ++ (base ** "code-2").get
     },
     PlayDocsKeys.resources += {
-      val apiDocs = (doc in (`play-jsonJVM`, Compile)).value
+      val apiDocs = (`play-jsonJVM` / Compile / doc).value
       // Copy the docs to a place so they have the correct api/scala prefix
       val apiDocsStage = target.value / "api-docs-stage"
       val cacheFile    = streams.value.cacheDirectory / "api-docs-stage"
