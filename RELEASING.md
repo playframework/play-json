@@ -9,13 +9,12 @@ This is released from the `main` branch from `2.9.0` forward. Unless an older ve
 - Check the [draft release notes](https://github.com/playframework/play-json/releases) to see if everything is there
 - Wait until [main build finished](https://travis-ci.com/github/playframework/play-json/builds) after merging the last PR
 - Update the [draft release](https://github.com/playframework/play-json/releases) with the next tag version (eg. `2.9.0`), title and release description
-- Check that Travis CI release build has executed successfully (Travis will start a [CI build](https://travis-ci.com/github/playframework/play-json/builds) for the new tag and publish artifacts to Bintray)
+- Check that Travis CI release build has executed successfully (Travis will start a [CI build](https://travis-ci.com/github/playframework/play-json/builds) for the new tag and publish artifacts to Sonatype)
 
-### Requires Bintray access
+### Requires Sonatype access
 
-- Go to [Bintray](https://bintray.com/playframework/maven/play-json) and select the just released version
-- Go to the Maven Central tab and sync with Sonatype (using your Sonatype TOKEN key and password) (you may watch progress in the [Staging repository](https://oss.sonatype.org/#stagingRepositories))
+- Release the staging repos at https://oss.sonatype.org/#stagingRepositories
 
 ### Check Maven Central
 
-- The artifacts will become visible at https://repo1.maven.org/maven2/com/typesafe/play/ 
+- The artifacts will become visible at https://repo1.maven.org/maven2/com/typesafe/play/
