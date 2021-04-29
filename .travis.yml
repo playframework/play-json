@@ -71,7 +71,7 @@ stages:
   - name: check
   - name: test
   - name: release
-    if: ((branch = main AND type = push) OR (tag IS present)) AND NOT fork
+    if: tag IS present
 
 cache:
   directories:
