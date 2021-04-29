@@ -6,7 +6,7 @@ git:
   depth: false # Avoid sbt-dynver not seeing the tag
 
 before_install:
-  - curl -Ls https://raw.githubusercontent.com/shyiko/jabba/0.11.2/install.sh | bash && . ~/.jabba/jabba.sh
+  - curl -Ls https://raw.githubusercontent.com/shyiko/jabba/0.11.2/install.sh | JABBA_VERSION=0.11.2 bash && . ~/.jabba/jabba.sh
   # Travis-CI has (as of March 2021, anyway) an outdated sbt-extras version,
   # so overwrite it with a March 2021 version that works with sbt 1.4.8+
   - |
@@ -55,6 +55,12 @@ jobs:
         - SCALA_VERSION=3.0.0-RC2
         - TRAVIS_JDK=8
 
+    - name: "Run tests with Scala 3 and AdoptOpenJDK 8"
+      script: scripts/test-code.sh
+      env:
+        - SCALA_VERSION=3.0.0-RC3
+        - TRAVIS_JDK=8
+
     - stage: publish
       name: "Publish artifacts to Bintray"
       script: sbt +publish
@@ -65,7 +71,7 @@ stages:
   - name: check
   - name: test
   - name: publish
-    if: ((branch = master AND type = push) OR (tag IS present)) AND NOT fork
+    if: ((branch = main AND type = push) OR (tag IS present)) AND NOT fork
 
 cache:
   directories:
