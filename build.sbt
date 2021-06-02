@@ -95,7 +95,7 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.7.3"
+val silencerVersion = "1.7.5"
 
 ThisBuild / libraryDependencies ++= {
   if (isScala3.value) Nil
