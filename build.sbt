@@ -52,11 +52,9 @@ val joda = Seq(
 
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
-  mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
-    case _ if isScala3.value               => Set.empty // no releases for Scala 3 yet
-    case (Some(JSPlatform), Some("2.8.1")) => Set.empty
-    case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
-    case _                                 => throw new Error("Unable to determine previous version")
+  mimaPreviousArtifacts := (crossProjectPlatform.?.value match {
+    case Some(JVMPlatform) => previousStableVersion.value.toSet.map(organization.value %%% moduleName.value % _)
+    case _                 => Set()
   }),
   mimaBinaryIssueFilters ++= Seq(
     // MergedOWrites is private
