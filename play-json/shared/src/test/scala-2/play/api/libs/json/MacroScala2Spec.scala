@@ -27,7 +27,7 @@ class MacroScala2Spec extends AnyWordSpec with Matchers with org.scalatestplus.s
     }
 
     "be generated for a sealed family" when {
-      // lampepfl/dotty#11050 No Mirror for sealed hierarchies that contain sealed trait children
+      // lampepfl/dotty-feature-requests#161 No Mirror for sealed hierarchies that contain sealed trait children
       "subtype is a sealed trait itself" in {
         val expected   = Leaf2(1)
         val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroScala2Spec.Leaf2", "value" -> 1)
@@ -94,7 +94,7 @@ class MacroScala2Spec extends AnyWordSpec with Matchers with org.scalatestplus.s
       }
     }
 
-    // lampepfl/dotty#11049 No support in Mirror for default arguments
+    // lampepfl/dotty-feature-requests#162 No support in Mirror for default arguments
     "handle case class with default values" when {
       val json01   = Json.obj("id" -> 15)
       val json02   = Json.obj("id" -> 15, "a" -> "a")
@@ -134,14 +134,14 @@ class MacroScala2Spec extends AnyWordSpec with Matchers with org.scalatestplus.s
       )
     }
 
-    // lampepfl/dotty#11049 No support in Mirror for default arguments
+    // lampepfl/dotty-feature-requests#162 No support in Mirror for default arguments
     "handle case class with default values, format defined in companion object" in {
       val json     = Json.obj("id" -> 15)
       val expected = WithDefaultInCompanion(15, "a")
       Json.fromJson[WithDefaultInCompanion](json).mustEqual(JsSuccess(expected))
     }
 
-    // lampepfl/dotty#11049 No support in Mirror for default arguments
+    // lampepfl/dotty-feature-requests#162 No support in Mirror for default arguments
     "handle case class with default values inner optional case class containing default values" when {
       implicit val withDefaultFormat: OFormat[WithDefault] =
         Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
@@ -184,7 +184,7 @@ class MacroScala2Spec extends AnyWordSpec with Matchers with org.scalatestplus.s
       )
     }
 
-    // lampepfl/dotty#11047 No Mirrors for case classes with implicits
+    // lampepfl/dotty-feature-requests#163 No Mirrors for case classes with implicits
     "handle case class with implicits" when {
       val json1    = Json.obj("pos" -> 2, "text" -> "str")
       val json2    = Json.obj("ident" -> "id", "value" -> 23.456D)
@@ -214,7 +214,7 @@ class MacroScala2Spec extends AnyWordSpec with Matchers with org.scalatestplus.s
       }
     }
 
-    // lampepfl/dotty#11047 No Mirrors for case classes with implicits
+    // lampepfl/dotty-feature-requests#163 No Mirrors for case classes with implicits
     "handle case class with collection types" when {
       import TestFormats._
 
