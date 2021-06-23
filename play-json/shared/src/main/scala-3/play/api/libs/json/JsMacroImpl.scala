@@ -131,18 +131,17 @@ object JsMacroImpl {
   }
 
   // lampepfl/dotty#7000 No Mirrors for value classes
-  inline def valueReads [A]: Reads [A] = boom("7000", "value classes")
-  inline def valueWrites[A]: Writes[A] = boom("7000", "value classes")
-  inline def valueFormat[A]: Format[A] = boom("7000", "value classes")
+  inline def valueReads [A]: Reads [A] = boom("https://github.com/lampepfl/dotty/issues/7000", "value classes")
+  inline def valueWrites[A]: Writes[A] = boom("https://github.com/lampepfl/dotty/issues/7000", "value classes")
+  inline def valueFormat[A]: Format[A] = boom("https://github.com/lampepfl/dotty/issues/7000", "value classes")
 
-  // lampepfl/dotty#11049 No support in Mirror for default arguments
-  inline def withOptionsReads [A: Mirror.Of]: Reads[A]   = boom("11049", "default arguments")
-  inline def withOptionsWrites[A: Mirror.Of]: OWrites[A] = boom("11049", "default arguments")
-  inline def withOptionsFormat[A: Mirror.Of]: OFormat[A] = boom("11049", "default arguments")
+  // lampepfl/dotty-feature-requests#162 No support in Mirror for default arguments
+  inline def withOptionsReads [A: Mirror.Of]: Reads[A]   = boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
+  inline def withOptionsWrites[A: Mirror.Of]: OWrites[A] = boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
+  inline def withOptionsFormat[A: Mirror.Of]: OFormat[A] = boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
 
-  inline def boom(issueNumber: String, name: String) = {
+  inline def boom(url: String, name: String) = {
     inline val msg = "No support in Scala 3's type class derivation (Mirrors) for " + name
-    inline val url = "https://github.com/lampepfl/dotty/issues/" + issueNumber
     error(msg + ", see " + url)
   }
 
