@@ -24,8 +24,8 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq(
-    "org.specs2" %% "specs2-core"  % "4.10.6" % Test,
-    "org.specs2" %% "specs2-junit" % "4.10.6" % Test,
+    "org.specs2" %% "specs2-core"  % "4.11.0" % Test,
+    "org.specs2" %% "specs2-junit" % "4.11.0" % Test,
   ).map(_.cross(CrossVersion.for3Use2_13))
 
 val jacksonVersion         = "2.11.4"
@@ -157,7 +157,7 @@ lazy val root = project
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("play-json"))
-  .enablePlugins(Omnidoc, Publish, Playdoc)
+  .enablePlugins(Omnidoc, Playdoc)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
@@ -170,9 +170,9 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           )
       ),
       libraryDependencies ++= Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.8"   % Test,
-        "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.8.0" % Test,
-        "org.scalacheck"    %%% "scalacheck"      % "1.15.3"  % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.2.9"   % Test,
+        "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.9.0" % Test,
+        "org.scalacheck"    %%% "scalacheck"      % "1.15.4"  % Test,
       ),
       libraryDependencies += {
         if (isScala3.value)
@@ -279,7 +279,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
 
 lazy val `play-json-joda` = project
   .in(file("play-json-joda"))
-  .enablePlugins(Omnidoc, Publish)
+  .enablePlugins(Omnidoc)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= joda ++ specs2(scalaVersion.value),
@@ -293,7 +293,7 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings
   )
-  .enablePlugins(Omnidoc, Publish)
+  .enablePlugins(Omnidoc)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm
 lazy val `play-functionalJS`  = `play-functional`.js
