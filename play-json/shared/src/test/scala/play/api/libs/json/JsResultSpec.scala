@@ -14,8 +14,6 @@ import JsResult.functorJsResult
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 import Predef.{ assert => _assert, _ }
 
 class JsResultSpec extends AnyWordSpec with Matchers {

@@ -12,8 +12,6 @@ import org.scalacheck.Gen
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
   case class User(id: Long, name: String, friends: List[User])
 
@@ -136,8 +134,8 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
 
       Predef.assert(js.toJsObject(peach)(owrites).isInstanceOf[JsObject])
       js.toJsObject(peach)(owrites).mustEqual(js.toJson(peach)(writes))
-      illTyped("js.toJsObject(1)")
-      illTyped("js.toJsObject(peach)(writes)")
+      "js.toJsObject(1)".mustNot(typeCheck)
+      "js.toJsObject(peach)(writes)".mustNot(typeCheck)
     }
 
     "convert to a byte array containing the UTF-8 representation" in json { js =>

@@ -12,8 +12,6 @@ import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
   "Reads" should {
     "not repath the second result on flatMap" when {
