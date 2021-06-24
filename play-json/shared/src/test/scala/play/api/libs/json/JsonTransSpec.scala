@@ -12,8 +12,6 @@ import play.api.libs.functional.syntax._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 class JsonTransSpec extends AnyWordSpec with Matchers {
   "JSON transformers " should {
     val js = Json.obj(

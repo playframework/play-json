@@ -10,8 +10,6 @@ import play.api.libs.functional.syntax._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 class JsonValidSharedSpec extends AnyWordSpec with Matchers {
   // lampepfl/dotty#11052 doesn't work as a locally-defined Enumeration
   //     - should validate Enums *** FAILED *** (1 millisecond)

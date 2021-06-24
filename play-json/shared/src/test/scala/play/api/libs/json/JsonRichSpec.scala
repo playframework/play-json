@@ -9,8 +9,6 @@ import play.api.libs.json.Json._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 class JsonRichSpec extends AnyWordSpec with Matchers {
   "JSON" should {
     "create json with rich syntax" in {

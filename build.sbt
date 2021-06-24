@@ -17,9 +17,6 @@ val isScala3 = Def.setting {
 }
 
 // specs2 hasn't been doing Scala 3 releases, so we use for3Use2_13.
-// this then forces us to do the same for ScalaTest, in order to
-// avoid conflicting scala-xml cross versions.  (At least, I didn't
-// attempt to work around that.)
 //
 // Since these are just test dependencies, it isn't really a problem.
 // But if too much more time passes and specs2 still hasn't released
@@ -132,7 +129,7 @@ lazy val commonSettings = Def.settings(
   ),
   headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Dependencies.Scala212,
-  crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213) ++ Dependencies.Scala3,
+  crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213, Dependencies.Scala3),
   Compile / javacOptions ++= javacSettings,
   Test / javacOptions ++= javacSettings,
   Compile / compile / javacOptions ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
@@ -173,10 +170,10 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           )
       ),
       libraryDependencies ++= Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.8"   % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.2.9"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.9.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.15.4"  % Test,
-      ).map(_.cross(CrossVersion.for3Use2_13)),
+      ),
       libraryDependencies += {
         if (isScala3.value)
           "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
@@ -269,7 +266,12 @@ lazy val `play-jsonJS` = `play-json`.js
 
 lazy val `play-jsonJVM` = `play-json`.jvm.settings(
   libraryDependencies ++=
-    jacksons ++ specs2(scalaVersion.value) :+ (
+    jacksons ++ {
+      if (isScala3.value)
+        specs2(scalaVersion.value).map(_.exclude("org.scala-lang.modules", "scala-xml_2.13"))
+      else
+        specs2(scalaVersion.value)
+    } :+ (
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
     ),
   Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,

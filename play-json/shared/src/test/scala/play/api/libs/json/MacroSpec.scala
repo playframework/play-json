@@ -5,8 +5,8 @@
 package play.api.libs.json
 
 import org.scalatest.matchers.must.Matchers
+import Matchers._
 import org.scalatest.wordspec.AnyWordSpec
-import ScalaTestPosition._
 
 object TestFormats {
   implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]] = Reads[Either[A, B]] { js =>
@@ -109,9 +109,9 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val simple   = Simple("foo")
       val optional = Optional(None)
 
-      illTyped("Json.reads[EmptyFamily]")
-      illTyped("Json.writes[EmptyFamily]")
-      illTyped("Json.format[EmptyFamily]")
+      "Json.reads[EmptyFamily]".mustNot(typeCheck)
+      "Json.writes[EmptyFamily]".mustNot(typeCheck)
+      "Json.format[EmptyFamily]".mustNot(typeCheck)
 
       "using the _value syntax" in {
         val jsSimple = Json.obj(
@@ -547,7 +547,7 @@ object MacroSpec {
   case class Family2Member(p: Int) extends Family2
   object Family2 {
     implicit def w: OWrites[Family2] = {
-      illTyped("Json.writes[Family2]")
+      "Json.writes[Family2]".mustNot(typeCheck)
       ???
     }
     /* Should fail, as there is no implicit for Family2Member,
