@@ -10,7 +10,6 @@ import play.api.libs.json.Json._
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import ScalaTestPosition._
 
 case class User(age: Int, name: String)
 case class Dog(name: String, master: User)

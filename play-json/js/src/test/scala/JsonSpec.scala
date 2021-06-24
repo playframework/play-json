@@ -10,8 +10,6 @@ import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 class JsonSpec extends AnyWordSpec with Matchers {
   "Complete JSON should create full object" when {
     "lose precision when parsing BigDecimals" in {

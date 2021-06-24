@@ -10,7 +10,6 @@ import play.api.libs.json.Json._
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import ScalaTestPosition._
 
 case class WithDefault1(a: String = "a", b: Option[String] = Some("b"))
 case class WithDefault2(a: String = "a", bar: Option[WithDefault1] = Some(WithDefault1()))

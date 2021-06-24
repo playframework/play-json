@@ -7,8 +7,6 @@ package play.api.libs.json
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import ScalaTestPosition._
-
 final class WritesSharedSpec extends AnyWordSpec with Matchers {
   "Functional Writes" should {
     implicit val locationWrites: Writes[Location] = Writes[Location] { location =>
