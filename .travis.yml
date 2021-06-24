@@ -10,7 +10,7 @@ before_install:
   # Travis-CI has (as of March 2021, anyway) an outdated sbt-extras version,
   # so overwrite it with a March 2021 version that works with sbt 1.4.8+
   - |
-    curl -sL https://raw.githubusercontent.com/paulp/sbt-extras/dc4f350f112580fcdf5f6fa7e8d5d2116475f84a/sbt  > /tmp/sbt-launch-script || travis_terminate 1
+    curl -sL https://raw.githubusercontent.com/paulp/sbt-extras/aaca56c9aa9797647247ee5ee62f214d555cdf4f/sbt  > /tmp/sbt-launch-script || travis_terminate 1
     chmod +x /tmp/sbt-launch-script || travis_terminate 1
     sudo mv /tmp/sbt-launch-script /usr/local/bin/sbt || travis_terminate 1
 
