@@ -97,7 +97,7 @@ val bigwig = (json \ "residents" \ 1).get
 // returns {"name":"Bigwig","age":6,"role":"Owsla"}
 ```
 
-### Recursive path \\
+### Recursive path `\\`
 Applying the `\\` operator will do a lookup for the field in the current object and all descendants.
 
 ```scala
