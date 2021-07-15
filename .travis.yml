@@ -55,8 +55,8 @@ jobs:
         - SCALA_VERSION=3.0.0
         - TRAVIS_JDK=8
 
-    - stage: publish
-      name: "Publish artifacts to Sonatype"
+    - stage: release
+      name: "Release artifacts to Sonatype"
       script: sbt ci-release
       env:
         - TRAVIS_JDK=11
