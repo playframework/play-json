@@ -28,7 +28,7 @@ def specs2(scalaVersion: String) =
     "org.specs2" %% "specs2-junit" % "4.12.3" % Test,
   ).map(_.cross(CrossVersion.for3Use2_13))
 
-val jacksonVersion         = "2.11.4"
+val jacksonVersion         = "2.12.3"
 val jacksonDatabindVersion = jacksonVersion
 
 val jacksonDatabind = Seq(
