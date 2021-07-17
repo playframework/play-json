@@ -21,7 +21,7 @@ object StaticBinding {
 
     try {
       in = new java.io.InputStreamReader(stream, "UTF-8")
-      val acc = StringBuilder.newBuilder
+      val acc = new StringBuilder()
       val buf = Array.ofDim[Char](1024)
 
       @annotation.tailrec
