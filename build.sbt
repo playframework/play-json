@@ -196,17 +196,6 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           case _                      => sourceDir / "scala-2.13+"
         }
       },
-      Seq((Compile, "main"), (Test, "test")).map {
-        case (conf, dir) =>
-          conf / unmanagedSourceDirectories ++= {
-            val sourceDir = baseDirectory.value.getParentFile / s"shared/src/$dir"
-            CrossVersion.partialVersion(scalaVersion.value) match {
-              case Some((2, _)) => List(sourceDir / "scala-2")
-              case Some((3, _)) => List(sourceDir / "scala-3")
-              case _            => Nil
-            }
-          },
-      },
       Compile / sourceGenerators += Def.task {
         val dir = (Compile / sourceManaged).value
 
