@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import scala.util.control.NonFatal
+
 import org.scalatest.matchers.must.Matchers
 import Matchers._
 import org.scalatest.wordspec.AnyWordSpec
@@ -139,6 +141,32 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
         jsSimple.validate[Family].mustEqual(JsSuccess(simple))
         jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+      }
+    }
+
+    "fails due to forward reference to Reads" in {
+      implicit def reads: Reads[Lorem[Simple]] =
+        InvalidForwardResolution.simpleLoremReads
+
+      val jsLorem = Json.obj("age" -> 11, "ipsum" -> Json.obj("bar" -> "foo"))
+
+      try {
+        try {
+          jsLorem.validate[Lorem[Simple]]
+        } catch {
+          case e: Throwable if e.getCause != null =>
+            // scalatest ExceptionInInitializerError
+            throw e.getCause
+        }
+      } catch {
+        case NonFatal(npe: NullPointerException) => {
+          val expected = "Implicit value for 'ipsum'"
+          npe.getMessage.take(expected.size).mustEqual(expected)
+        }
+
+        case cause: Throwable =>
+          cause.printStackTrace()
+          throw cause
       }
     }
   }
@@ -510,6 +538,16 @@ object MacroSpec {
     /* java.lang.IllegalArgumentException:
      requirement failed: familyWrites  is not a valid identifier
    */
+  }
+
+  object InvalidForwardResolution {
+    // Invalids as forward references to `simpleX`
+    val simpleLoremReads  = Json.reads[Lorem[Simple]]
+    val simpleLoremWrites = Json.writes[Lorem[Simple]]
+    val simpleLoremFormat = Json.format[Lorem[Simple]]
+
+    implicit val simpleReads: Reads[Simple]    = Json.reads
+    implicit val simpleWrites: OWrites[Simple] = Json.writes[Simple]
   }
 
   object Foo {
