@@ -24,8 +24,8 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq(
-    "org.specs2" %% "specs2-core"  % "4.12.6" % Test,
-    "org.specs2" %% "specs2-junit" % "4.12.6" % Test,
+    "org.specs2" %% "specs2-core"  % "4.12.12" % Test,
+    "org.specs2" %% "specs2-junit" % "4.12.12" % Test,
   ).map(_.cross(CrossVersion.for3Use2_13))
 
 val jacksonVersion         = "2.11.4"
@@ -92,7 +92,7 @@ val scalacOpts = Seq(
   "-Ywarn-macros:after"
 )
 
-val silencerVersion = "1.7.5"
+val silencerVersion = "1.7.6"
 
 ThisBuild / libraryDependencies ++= {
   if (isScala3.value) Nil
