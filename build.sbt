@@ -24,8 +24,8 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq(
-    "org.specs2" %% "specs2-core"  % "4.12.12" % Test,
-    "org.specs2" %% "specs2-junit" % "4.12.12" % Test,
+    "org.specs2" %% "specs2-core"  % "4.13.0" % Test,
+    "org.specs2" %% "specs2-junit" % "4.13.0" % Test,
   ).map(_.cross(CrossVersion.for3Use2_13))
 
 val jacksonVersion         = "2.11.4"
@@ -42,7 +42,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.12"
+  "joda-time" % "joda-time" % "2.10.13"
 )
 
 // Common settings
