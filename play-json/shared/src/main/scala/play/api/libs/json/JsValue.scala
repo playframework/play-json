@@ -132,12 +132,9 @@ case class JsObject(
   lazy val fields: collection.Seq[(String, JsValue)] = underlying.toSeq
 
   /**
-   * The value of this JsObject as an immutable map.
+   * The value of this JsObject as a map.
    */
-  lazy val value: Map[String, JsValue] = underlying match {
-    case m: immutable.Map[String, JsValue] => m
-    case m                                 => m.toMap
-  }
+  def value: Map[String, JsValue] = underlying
 
   /**
    * Return all fields as a set
