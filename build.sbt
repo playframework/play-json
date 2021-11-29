@@ -18,6 +18,7 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 playBuildRepoName in ThisBuild := "play-json"
 publishTo in ThisBuild := sonatypePublishToBundle.value
 
+
 val specs2 = Seq(
   "org.specs2" %% "specs2-core"  % "4.8.1" % Test,
   "org.specs2" %% "specs2-junit" % "4.8.1" % Test,
@@ -124,7 +125,8 @@ lazy val commonSettings = Def.settings(
   scalacOptions in (Compile, doc) ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
-  )
+  ), 
+  sonatypeProfileName := "com.typesafe.play"
 )
 
 lazy val root = project
