@@ -137,8 +137,7 @@ lazy val commonSettings = Def.settings(
   Compile / doc / scalacOptions ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
-  ),
-  sonatypeProfileName := "com.typesafe"
+  )
 )
 
 lazy val root = project
