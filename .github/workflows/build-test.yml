@@ -1,0 +1,104 @@
+name: Pull Requests
+
+on:
+  pull_request:
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-code-style:
+    name: Check / Code Style
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: adopt@1.11
+
+      - name: Cache Coursier cache
+        uses: coursier/cache-action@v6.2
+
+      - name: Code validations
+        run: sbt validateCode
+
+  check-binary-compatibility:
+    name: Check / Binary Compatibility
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: adopt@1.11
+
+      - name: Cache Coursier cache
+        uses: coursier/cache-action@v6.2
+
+      - name: MiMa validations
+        run: sbt mimaReportBinaryIssues
+
+  check-docs:
+    name: Check / Docs
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: adopt@1.11
+
+      - name: Cache Coursier cache
+        uses: coursier/cache-action@v6.2
+
+      - name: Docs validations
+        run: sbt docs/validateDocs
+
+  tests:
+    runs-on: ubuntu-20.04
+    needs: # Waiting more lightweight checks
+      - "check-code-style"
+      - "check-binary-compatibility"
+      - "check-docs"
+    strategy:
+      matrix:
+        jdk: [ 11, 8 ]
+        scala: [ 2.12.15, 2.13.6, 3.0.0 ]
+    name: Check / Tests (Scala ${{ matrix.scala }} & JDK ${{ matrix.jdk }})
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ matrix.jdk }}
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: adopt@1.${{ matrix.jdk }}
+
+      - name: Cache Coursier cache
+        uses: coursier/cache-action@v6.2
+
+      - name: Tests
+        run: scripts/test-code.sh
+        env:
+          SCALA_VERSION: ${{ matrix.scala }}
