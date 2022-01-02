@@ -327,4 +327,4 @@ lazy val docs = project
   .settings(commonSettings)
   .dependsOn(`play-jsonJVM`)
 
-addCommandAlias("validateCode", ";headerCheck;test:headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")
+addCommandAlias("validateCode", ";headerCheck;Test/headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")
