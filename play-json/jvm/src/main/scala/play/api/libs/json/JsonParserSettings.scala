@@ -45,10 +45,10 @@ object JsonParserSettings {
   val defaultDigitsLimit: Int = 310
 
   // Maximum magnitude of BigDecimal to write out as a plain string
-  val MaxPlain: BigDecimal = 1E20
+  val MaxPlain: BigDecimal = 1e20
 
   // Minimum magnitude of BigDecimal to write out as a plain string
-  val MinPlain: BigDecimal = 1E-10
+  val MinPlain: BigDecimal = 1e-10
 
   def apply(): JsonParserSettings = JsonParserSettings(
     BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit),

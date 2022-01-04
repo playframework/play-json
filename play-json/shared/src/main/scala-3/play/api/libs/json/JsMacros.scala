@@ -25,7 +25,7 @@ private[json] trait JsMacros {
    *   Json.using[Json.MacroOptions with Json.DefaultValues].reads[User]
    * }}}
    */
-  inline def reads[A](using m: Mirror.Of[A]): Reads[A] = JsMacroImpl.reads[A]
+  inline def reads[A]: Reads[A] = ${ JsMacroImpl.implicitConfigReads[A] }
 
   /**
    * Creates a `OWrites[T]` by resolving, at compile-time,
@@ -50,7 +50,7 @@ private[json] trait JsMacros {
    * )(unlift(User.unapply))
    * }}}
    */
-  inline def writes[A](using m: Mirror.Of[A]): OWrites[A] = JsMacroImpl.writes[A]
+  inline def writes[A]: OWrites[A] = ${ JsMacroImpl.implicitConfigWrites[A] }
 
   /**
    * Creates a `OFormat[T]` by resolving, at compile-time,
@@ -75,8 +75,7 @@ private[json] trait JsMacros {
    * )(User.apply, unlift(User.unapply))
    * }}}
    */
-  inline def format[A](using m: Mirror.Of[A]): OFormat[A] = JsMacroImpl.format[A]
-
+  inline def format[A]: OFormat[A] = ${ JsMacroImpl.implicitConfigFormat[A] }
 }
 
 private[json] trait JsValueMacros {
@@ -98,7 +97,8 @@ private[json] trait JsValueMacros {
    * val r: Reads[IdText] = Json.valueReads
    * }}}
    */
-  inline def valueReads[A]: Reads[A] = JsMacroImpl.valueReads[A]
+  inline def valueReads[A]: Reads[A] =
+    ${ JsMacroImpl.implicitConfigValueReads[A] }
 
   /**
    * Creates a `OWrites[T]`, if `T` is a ValueClass,
@@ -117,7 +117,8 @@ private[json] trait JsValueMacros {
    * val w: Writes[TextId] = Json.valueWrites[TextId]
    * }}}
    */
-  inline def valueWrites[A]: Writes[A] = JsMacroImpl.valueWrites[A]
+  inline def valueWrites[A]: Writes[A] =
+    ${ JsMacroImpl.implicitConfigValueWrites[A] }
 
   /**
    * Creates a `OFormat[T]` by resolving, if `T` is a ValueClass
@@ -135,12 +136,17 @@ private[json] trait JsValueMacros {
    * implicit val userFormat: Format[User] = Json.valueFormat[User]
    * }}}
    */
-  inline def valueFormat[A]: Format[A] = JsMacroImpl.valueFormat[A]
-
+  inline def valueFormat[A]: Format[A] =
+    ${ JsMacroImpl.implicitConfigValueFormat[A] }
 }
 
-trait JsMacrosWithOptions {
-  inline def reads[A: Mirror.Of]: Reads[A]    = JsMacroImpl.withOptionsReads[A]
-  inline def writes[A: Mirror.Of]: OWrites[A] = JsMacroImpl.withOptionsWrites[A]
-  inline def format[A: Mirror.Of]: OFormat[A] = JsMacroImpl.withOptionsFormat[A]
+trait JsMacrosWithOptions { withOpts: Json.WithOptions[_] =>
+  inline def reads[A]: Reads[A] =
+    ${ JsMacroImpl.withOptionsReads[A]('config) }
+
+  inline def writes[A]: OWrites[A] =
+    ${ JsMacroImpl.withOptionsWrites[A]('config) }
+
+  inline def format[A]: OFormat[A] =
+    ${ JsMacroImpl.withOptionsFormat[A]('config) }
 }
