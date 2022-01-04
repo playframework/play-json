@@ -176,11 +176,12 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     }
 
     "preprocess a JSON object using a function" in {
-      implicit val reads: Reads[Owner] = generated.preprocess { case obj @ JsObject(_) =>
-        (obj \ "avatar").asOpt[String] match {
-          case Some(_) => obj
-          case _       => obj + ("avatar" -> JsString(""))
-        }
+      implicit val reads: Reads[Owner] = generated.preprocess {
+        case obj @ JsObject(_) =>
+          (obj \ "avatar").asOpt[String] match {
+            case Some(_) => obj
+            case _       => obj + ("avatar" -> JsString(""))
+          }
       }
 
       Json.obj("login" -> "foo", "url" -> "url://id").validate[Owner].mustEqual(JsSuccess(Owner("foo", "", "url://id")))
@@ -295,8 +296,9 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     "not be read from invalid JsString" in {
       val strRepr = " invalid"
 
-      inside(JsString(strRepr).validate[URI]) { case JsError.Message(msg) =>
-        msg.must(include("invalid"))
+      inside(JsString(strRepr).validate[URI]) {
+        case JsError.Message(msg) =>
+          msg.must(include("invalid"))
       }
     }
   }

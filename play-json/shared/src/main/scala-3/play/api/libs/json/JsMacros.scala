@@ -25,7 +25,7 @@ private[json] trait JsMacros {
    *   Json.using[Json.MacroOptions with Json.DefaultValues].reads[User]
    * }}}
    */
-  inline def reads[A]: Reads[A] = ${ JsMacroImpl.implicitConfigReads[A] }
+  inline def reads[A]: Reads[A] = ${ JsMacroImpl.reads[A] }
 
   /**
    * Creates a `OWrites[T]` by resolving, at compile-time,
@@ -50,7 +50,7 @@ private[json] trait JsMacros {
    * )(unlift(User.unapply))
    * }}}
    */
-  inline def writes[A]: OWrites[A] = ${ JsMacroImpl.implicitConfigWrites[A] }
+  inline def writes[A]: OWrites[A] = ${ JsMacroImpl.writes[A] }
 
   /**
    * Creates a `OFormat[T]` by resolving, at compile-time,
@@ -75,7 +75,7 @@ private[json] trait JsMacros {
    * )(User.apply, unlift(User.unapply))
    * }}}
    */
-  inline def format[A]: OFormat[A] = ${ JsMacroImpl.implicitConfigFormat[A] }
+  inline def format[A]: OFormat[A] = ${ JsMacroImpl.format[A] }
 }
 
 private[json] trait JsValueMacros {
@@ -138,15 +138,34 @@ private[json] trait JsValueMacros {
    */
   inline def valueFormat[A <: AnyVal]: Format[A] =
     ${ JsMacroImpl.anyValFormat[A] }
+
+  // ---
+
+  /** Only for internal purposes */
+  final class Placeholder {} // TODO: Common with Scala-2
+
+  /** Only for internal purposes */
+  object Placeholder {
+    implicit object Format extends OFormat[Placeholder] {
+      val success =
+        JsSuccess(new Placeholder())
+
+      def reads(json: JsValue): JsResult[Placeholder] = success
+
+      def writes(pl: Placeholder) = Json.obj()
+    }
+  }
 }
 
-trait JsMacrosWithOptions { withOpts: Json.WithOptions[_] =>
+trait JsMacrosWithOptions[Opts <: Json.MacroOptions] {
+  withOpts: Json.WithOptions[Opts] =>
+
   inline def reads[A]: Reads[A] =
-    ${ JsMacroImpl.withOptionsReads[A]('config) }
+    ${ JsMacroImpl.withOptionsReads[A, Opts]('config) }
 
   inline def writes[A]: OWrites[A] =
-    ${ JsMacroImpl.withOptionsWrites[A]('config) }
+    ${ JsMacroImpl.withOptionsWrites[A, Opts]('config) }
 
   inline def format[A]: OFormat[A] =
-    ${ JsMacroImpl.withOptionsFormat[A]('config) }
+    ${ JsMacroImpl.withOptionsFormat[A, Opts]('config) }
 }

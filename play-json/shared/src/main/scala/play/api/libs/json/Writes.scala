@@ -302,8 +302,9 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
     val vw = implicitly[Writes[V]]
 
     OWrites[M[K, V]] { ts =>
-      JsObject(ts.toSeq.map { case (k, v) =>
-        kw.writeKey(k) -> vw.writes(v)
+      JsObject(ts.toSeq.map {
+        case (k, v) =>
+          kw.writeKey(k) -> vw.writes(v)
       })
     }
   }

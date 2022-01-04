@@ -503,13 +503,15 @@ class JsMacroImpl(val c: blackbox.Context) {
       def implicits(resolver: ImplicitResolver): List[(Name, Implicit)] = {
         val createImplicit = resolver.createImplicit(atpe, natag.tpe) _
 
-        val effectiveImplicits = params.map { case (n, t) =>
-          n -> createImplicit(t)
+        val effectiveImplicits = params.map {
+          case (n, t) =>
+            n -> createImplicit(t)
         }
 
         // if any implicit is missing, abort
-        val missingImplicits = effectiveImplicits.collect { case (_, Implicit(t, EmptyTree /* ~= not found */, _, _)) =>
-          t
+        val missingImplicits = effectiveImplicits.collect {
+          case (_, Implicit(t, EmptyTree /* ~= not found */, _, _)) =>
+            t
         }
 
         if (missingImplicits.nonEmpty) {
@@ -523,13 +525,15 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       lazy val boundTypes: Map[String, Type] =
-        applyFunction.fold(Map.empty[String, Type]) { case (_, tparams, _, _) =>
-          tparams
-            .zip(tpeArgs)
-            .map { case (sym, ty) =>
-              sym.fullName -> ty
-            }
-            .toMap
+        applyFunction.fold(Map.empty[String, Type]) {
+          case (_, tparams, _, _) =>
+            tparams
+              .zip(tpeArgs)
+              .map {
+                case (sym, ty) =>
+                  sym.fullName -> ty
+              }
+              .toMap
         }
 
       // To print the implicit types in the compiler messages
@@ -704,8 +708,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       val defaultValueMap: Map[Name, Tree] =
         if (!hasOption[Json.DefaultValues]) Map.empty
         else {
-          (params, defaultValues).zipped.collect { case (p, Some(dv)) =>
-            p.name.encodedName -> dv
+          (params, defaultValues).zipped.collect {
+            case (p, Some(dv)) =>
+              p.name.encodedName -> dv
           }.toMap
         }
 

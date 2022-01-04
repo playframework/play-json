@@ -366,8 +366,9 @@ class ScalaJsonSpec extends Specification {
       )
       // #convert-to-type-validate
 
-      nameResult.must(beLike { case JsSuccess("Watership Down", _) =>
-        ok
+      nameResult.must(beLike {
+        case JsSuccess("Watership Down", _) =>
+          ok
       }) and {
         nameOrFallback must_=== "Watership Down"
       } and {

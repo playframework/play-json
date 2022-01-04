@@ -25,8 +25,9 @@ object TestFormats {
     } yield a -> b
   }
 
-  implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)] = OWrites { case (a, b) =>
-    Json.obj("_1" -> a, "_2" -> b)
+  implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)] = OWrites {
+    case (a, b) =>
+      Json.obj("_1" -> a, "_2" -> b)
   }
 }
 

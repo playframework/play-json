@@ -139,7 +139,7 @@ private[json] trait JsValueMacros {
 
 }
 
-trait JsMacrosWithOptions extends JsMacros {
+trait JsMacrosWithOptions[Opts <: MacroOptions] extends JsMacros {
   override def reads[A]: Reads[A] = macro JsMacroImpl.withOptionsReadsImpl[A]
   override def writes[A]: OWrites[A] = macro JsMacroImpl.withOptionsWritesImpl[A]
   override def format[A]: OFormat[A] = macro JsMacroImpl.withOptionsFormatImpl[A]

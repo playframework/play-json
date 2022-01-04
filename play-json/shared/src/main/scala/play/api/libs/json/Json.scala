@@ -272,7 +272,8 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
    */
   final class WithOptions[Opts <: MacroOptions](val config: JsonConfiguration.Aux[Opts])
       extends JsonFacade
-      with JsMacrosWithOptions {
+      with JsMacrosWithOptions[Opts] {
+
     def this() = this(JsonConfiguration.default)
 
     @inline def parse(input: String): JsValue       = Json.parse(input)

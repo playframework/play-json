@@ -95,8 +95,9 @@ class ScalaJsonCombinatorsSpec extends Specification {
 
       json
         .validate(nameReads)
-        .must(beLike { case JsSuccess(v, _) =>
-          v must_=== "Watership Down"
+        .must(beLike {
+          case JsSuccess(v, _) =>
+            v must_=== "Watership Down"
         })
     }
 

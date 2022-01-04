@@ -275,8 +275,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recover from error" in {
       JsNumber(123)
         .validate[String]
-        .recover { case JsError(_) =>
-          "error"
+        .recover {
+          case JsError(_) =>
+            "error"
         }
         .mustEqual(JsSuccess("error"))
 

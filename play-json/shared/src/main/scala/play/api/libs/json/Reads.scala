@@ -285,13 +285,14 @@ trait LowPriorityDefaultReads extends EnvReads {
             val b = bf.newBuilder
             b.sizeHint(ts)
             b
-          }: JsResult[Builder[A, F[A]]]) { case (acc, (elem, idx)) =>
-            (acc, ra.reads(elem)) match {
-              case (JsSuccess(vs, _), JsSuccess(v, _)) => JsSuccess(vs += v)
-              case (_: JsSuccess[_], jsError: JsError) => jsError.repath(JsPath(idx))
-              case (JsError(errors0), JsError(errors)) => JsError(errors0 ++ JsResult.repath(errors, JsPath(idx)))
-              case (jsError: JsError, _: JsSuccess[_]) => jsError
-            }
+          }: JsResult[Builder[A, F[A]]]) {
+            case (acc, (elem, idx)) =>
+              (acc, ra.reads(elem)) match {
+                case (JsSuccess(vs, _), JsSuccess(v, _)) => JsSuccess(vs += v)
+                case (_: JsSuccess[_], jsError: JsError) => jsError.repath(JsPath(idx))
+                case (JsError(errors0), JsError(errors)) => JsError(errors0 ++ JsResult.repath(errors, JsPath(idx)))
+                case (jsError: JsError, _: JsSuccess[_]) => jsError
+              }
           }
           .map(_.result())
       case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsarray"))))
@@ -543,23 +544,25 @@ trait DefaultReads extends LowPriorityDefaultReads {
   implicit def mapReads[K, V](k: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
     case JsObject(m) => {
       type Errors = Seq[(JsPath, Seq[JsonValidationError])]
-      def locate(e: Errors, key: String) = e.map { case (p, valerr) =>
-        (JsPath \ key) ++ p -> valerr
+      def locate(e: Errors, key: String) = e.map {
+        case (p, valerr) =>
+          (JsPath \ key) ++ p -> valerr
       }
 
       // !! Keep accumulating the error after the first one
-      m.foldLeft(Right(Map.empty): Either[Errors, Map[K, V]]) { case (acc, (key, value)) =>
-        val result = for {
-          rv <- fmtv.reads(value)
-          rk <- k(key)
-        } yield rk -> rv
+      m.foldLeft(Right(Map.empty): Either[Errors, Map[K, V]]) {
+        case (acc, (key, value)) =>
+          val result = for {
+            rv <- fmtv.reads(value)
+            rk <- k(key)
+          } yield rk -> rv
 
-        (acc, result) match {
-          case (Right(vs), JsSuccess(v, _)) => Right(vs + v)
-          case (Right(_), JsError(e))       => Left(locate(e, key))
-          case (Left(e), _: JsSuccess[_])   => Left(e)
-          case (Left(e1), JsError(e2))      => Left(e1 ++ locate(e2, key))
-        }
+          (acc, result) match {
+            case (Right(vs), JsSuccess(v, _)) => Right(vs + v)
+            case (Right(_), JsError(e))       => Left(locate(e, key))
+            case (Left(e), _: JsSuccess[_])   => Left(e)
+            case (Left(e1), JsError(e2))      => Left(e1 ++ locate(e2, key))
+          }
       }.fold(JsError.apply, res => JsSuccess(res))
     }
 

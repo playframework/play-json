@@ -4,8 +4,6 @@
 
 package play.api.libs.json
 
-import scala.deriving._
-
 import scala.quoted._
 
 import play.api.libs.functional.ContravariantFunctor
@@ -14,32 +12,38 @@ import play.api.libs.functional.ContravariantFunctor
  * Implementation for the JSON macro.
  */
 object JsMacroImpl {
-  def withOptionsReads[A: Type](configExpr: Expr[JsonConfiguration])(using Quotes, Type[Reads]): Expr[Reads[A]] =
-    macroImpl[A, Reads, Reads](configExpr, "read", "map", reads = true, writes = false)
+  import Json.MacroOptions
 
-  def withOptionsWrites[A: Type](configExpr: Expr[JsonConfiguration])(using Quotes, Type[OWrites]): Expr[OWrites[A]] =
-    macroImpl[A, OWrites, Writes](configExpr, "write", "contramap", reads = false, writes = true)
+  def withOptionsReads[A: Type, Opts <: MacroOptions: Type](
+      configExpr: Expr[JsonConfiguration.Aux[Opts]]
+  )(using Quotes, Type[Reads]): Expr[Reads[A]] =
+    readsImpl(configExpr)
 
-  def withOptionsFormat[A: Type](
-      configExpr: Expr[JsonConfiguration]
+  def withOptionsWrites[A: Type, Opts <: MacroOptions: Type](
+      configExpr: Expr[JsonConfiguration.Aux[Opts]]
+  )(using Quotes, Type[OWrites]): Expr[OWrites[A]] =
+    macroImpl[A, Opts, OWrites, Writes](configExpr, "write", "contramap", reads = false, writes = true)
+
+  def withOptionsFormat[A: Type, Opts <: MacroOptions: Type](
+      configExpr: Expr[JsonConfiguration.Aux[Opts]]
   )(using Quotes, Type[OFormat], Type[Format]): Expr[OFormat[A]] =
-    withSummonedConfig(macroImpl[A, OFormat, Format](_, "format", "inmap", reads = true, writes = true))
+    withSummonedConfig(macroImpl[A, MacroOptions, OFormat, Format](_, "format", "inmap", reads = true, writes = true))
 
-  def implicitConfigReads[A: Type](using Quotes, Type[Reads]): Expr[Reads[A]] =
-    withSummonedConfig(macroImpl[A, Reads, Reads](_, "read", "map", reads = true, writes = false))
+  def reads[A: Type](using Quotes, Type[Reads]): Expr[Reads[A]] =
+    withSummonedConfig(readsImpl(_))
 
-  def implicitConfigWrites[A: Type](using Quotes, Type[OWrites]): Expr[OWrites[A]] = withSummonedConfig(
-    macroImpl[A, OWrites, Writes](_, "write", "contramap", reads = false, writes = true)
+  def writes[A: Type](using Quotes, Type[OWrites]): Expr[OWrites[A]] = withSummonedConfig(
+    macroImpl[A, MacroOptions, OWrites, Writes](_, "write", "contramap", reads = false, writes = true)
   )
 
-  def implicitConfigFormat[A: Type](using Quotes, Type[Format]): Expr[OFormat[A]] = withSummonedConfig(
-    macroImpl[A, OFormat, Format](_, "format", "inmap", reads = true, writes = true)
+  def format[A: Type](using Quotes, Type[Format]): Expr[OFormat[A]] = withSummonedConfig(
+    macroImpl[A, MacroOptions, OFormat, Format](_, "format", "inmap", reads = true, writes = true)
   )
 
   // ---
 
-  private def withSummonedConfig[T](f: Expr[JsonConfiguration] => Expr[T])(using q: Quotes): Expr[T] =
-    Expr.summon[JsonConfiguration] match {
+  private def withSummonedConfig[T](f: Expr[JsonConfiguration.Aux[MacroOptions]] => Expr[T])(using q: Quotes): Expr[T] =
+    Expr.summon[JsonConfiguration.Aux[MacroOptions]] match {
       case Some(config) =>
         f(config)
 
@@ -47,25 +51,52 @@ object JsMacroImpl {
         q.reflect.report.errorAndAbort("No instance of JsonConfiguration is available in the implicit scope")
     }
 
-  /**
-   * Generic implementation of the macro.
-   *
-   * The reads/writes flags are used to say whether a reads/writes is being generated (in the case format,
-   * these are both true).  This is also used to determine what arguments should be passed to various
-   * functions, for example, if the apply, unapply, or both should be passed to the functional builder apply
-   * method.
-   *
-   * @param config The configuration tree
-   * @param methodName The name of the method on JsPath that gets called, ie, read/write/format
-   * @param mapLikeMethod The method that's used to map the type of thing being built, used in case there is
-   * only one field in the case class.
-   * @param reads Whether we should generate a reads.
-   * @param writes Whether we should generate a writes
-   * @param atag The class of the type we're generating a reads/writes/format for.
-   * @param matag The class of the reads/writes/format.
-   * @param natag The class of the reads/writes/format.
-   */
-  private def macroImpl[A: Type, M[_]: Type, N[_]: Type](
+  private def readsImpl[A: Type, OptsT <: MacroOptions: Type](
+      config: Expr[JsonConfiguration],
+  )(using q: Quotes): Expr[Reads[A]] = {
+    import q.reflect.*
+
+    val repr = TypeRepr.of[A]
+
+    val helper = new QuotesHelper with OptionSupport with ImplicitResolver[A] {
+      type Q = q.type
+      val quotes = q
+
+      val aTpeRepr = repr
+
+      type Opts = OptsT
+      val optsTpe = Type.of[Opts]
+    }
+
+    def singletonReader: Expr[Reads[A]] =
+      Expr.summon[ValueOf[A]] match {
+        case Some(vof) =>
+          '{ Reads[A](_ => JsSuccess(${ vof }.value)) }
+
+        case _ =>
+          report.errorAndAbort(
+            s"Something weird is going on with '${helper.prettyType(repr)}'. Should be a singleton but can't parse it"
+          )
+      }
+
+    helper.knownSubclasses(repr) match {
+      case Some(subTypes) =>
+        ???
+
+      case _ =>
+        if (repr.isSingleton) {
+          singletonReader
+        } else if (repr.typeSymbol == repr.typeSymbol.moduleClass) {
+          val instance = Ref(repr.typeSymbol.companionModule).asExprOf[A]
+
+          '{ Reads[A](_ => JsSuccess($instance)) }
+        } else {
+          ??? // macroCaseImpl
+        }
+    }
+  }
+
+  private def macroImpl[A: Type, OptsT <: MacroOptions: Type, M[_]: Type, N[_]: Type](
       config: Expr[JsonConfiguration],
       methodName: String,
       mapLikeMethod: String,
@@ -194,18 +225,4 @@ object JsMacroImpl {
     Option(System.getProperty("play.json.macro.debug")).filterNot(_.isEmpty).map(_.toLowerCase).exists { v =>
       "true".equals(v) || v.substring(0, 1) == "y"
     }
-
-  // ---
-
-  /** Only for internal purposes */
-  final class Placeholder {} // TODO: Common with Scala-2
-
-  /** Only for internal purposes */
-  object Placeholder {
-    implicit object Format extends OFormat[Placeholder] {
-      val success                                     = JsSuccess(new Placeholder())
-      def reads(json: JsValue): JsResult[Placeholder] = success
-      def writes(pl: Placeholder)                     = Json.obj()
-    }
-  }
 }
