@@ -8,6 +8,8 @@ import scala.deriving._
 
 import scala.quoted._
 
+import play.api.libs.functional.ContravariantFunctor
+
 /**
  * Implementation for the JSON macro.
  */
@@ -26,24 +28,12 @@ object JsMacroImpl {
   def implicitConfigReads[A: Type](using Quotes, Type[Reads]): Expr[Reads[A]] =
     withSummonedConfig(macroImpl[A, Reads, Reads](_, "read", "map", reads = true, writes = false))
 
-  def implicitConfigValueReads[A: Type](using Quotes, Type[Reads]): Expr[Reads[A]] = withSummonedConfig(
-    valueImpl[A, Reads](_, "read")
-  )
-
   def implicitConfigWrites[A: Type](using Quotes, Type[OWrites]): Expr[OWrites[A]] = withSummonedConfig(
     macroImpl[A, OWrites, Writes](_, "write", "contramap", reads = false, writes = true)
   )
 
-  def implicitConfigValueWrites[A: Type](using Quotes, Type[Writes]): Expr[Writes[A]] = withSummonedConfig(
-    valueImpl[A, Writes](_, "write")
-  )
-
   def implicitConfigFormat[A: Type](using Quotes, Type[Format]): Expr[OFormat[A]] = withSummonedConfig(
     macroImpl[A, OFormat, Format](_, "format", "inmap", reads = true, writes = true)
-  )
-
-  def implicitConfigValueFormat[A: Type](using Quotes, Type[Format]): Expr[Format[A]] = withSummonedConfig(
-    valueImpl[A, Format](_, "format")
   )
 
   // ---
@@ -83,10 +73,127 @@ object JsMacroImpl {
       writes: Boolean
   )(using q: Quotes): Expr[M[A]] = ???
 
-  private def valueImpl[A: Type, M[_]: Type](
-      config: Expr[JsonConfiguration],
-      methodName: String
-  )(using q: Quotes): Expr[M[A]] = ???
+  def anyValReads[A <: AnyVal: Type](using q: Quotes): Expr[Reads[A]] = {
+    import q.reflect.*
+
+    val aTpr = TypeRepr.of[A]
+    val ctor = aTpr.typeSymbol.primaryConstructor
+
+    ctor.paramSymss match {
+      case List(v: Symbol) :: Nil =>
+        v.tree match {
+          case vd: ValDef => {
+            val tpr = vd.tpt.tpe
+
+            tpr.asType match {
+              case vtpe @ '[t] =>
+                Expr.summon[Reads[t]] match {
+                  case Some(reads) => {
+                    def mapf(in: Expr[t]): Expr[A] =
+                      New(Inferred(aTpr))
+                        .select(ctor)
+                        .appliedTo(in.asTerm)
+                        .asExprOf[A]
+
+                    val expr = '{
+                      ${ reads }.map { v => ${ mapf('v) } }
+                    }
+
+                    debug(expr.show)
+
+                    expr
+                  }
+
+                  case None =>
+                    report.errorAndAbort(
+                      s"Instance not found: ${classOf[Reads[_]].getName}[${tpr.typeSymbol.fullName}]"
+                    )
+                }
+            }
+          }
+
+          case _ =>
+            report.errorAndAbort(
+              s"Constructor parameter expected, found: ${v}"
+            )
+        }
+
+      case _ =>
+        report.errorAndAbort(
+          s"Cannot resolve value reader for '${aTpr.typeSymbol.name}'"
+        )
+
+    }
+  }
+
+  def anyValWrites[A <: AnyVal: Type](using q: Quotes): Expr[Writes[A]] = {
+    import q.reflect.*
+
+    val aTpr = TypeRepr.of[A]
+    val ctor = aTpr.typeSymbol.primaryConstructor
+
+    ctor.paramSymss match {
+      case List(v: Symbol) :: Nil =>
+        v.tree match {
+          case vd: ValDef => {
+            val tpr = vd.tpt.tpe
+
+            tpr.asType match {
+              case vtpe @ '[t] =>
+                Expr.summon[Writes[t]] match {
+                  case Some(writes) => {
+                    def contramapf(in: Expr[A]): Expr[t] = {
+                      val term = in.asTerm
+
+                      term
+                        .select(term.symbol.fieldMember(v.name))
+                        .asExprOf[t](using vtpe)
+                    }
+
+                    val expr = '{
+                      val fn = summon[ContravariantFunctor[Writes]]
+
+                      fn.contramap[t, A](${ writes }, (in: A) => ${ contramapf('in) })
+                    }
+
+                    debug(expr.show)
+
+                    expr
+                  }
+
+                  case None =>
+                    report.errorAndAbort(
+                      s"Instance not found: ${classOf[Writes[_]].getName}[${tpr.typeSymbol.fullName}]"
+                    )
+                }
+            }
+          }
+
+          case _ =>
+            report.errorAndAbort(
+              s"Constructor parameter expected, found: ${v}"
+            )
+        }
+
+      case _ =>
+        report.errorAndAbort(
+          s"Cannot resolve value writer for '${aTpr.typeSymbol.name}'"
+        )
+
+    }
+  }
+
+  def anyValFormat[A <: AnyVal: Type](using Quotes): Expr[Format[A]] = '{
+    Format[A](${ anyValReads[A] }, ${ anyValWrites[A] })
+  }
+
+  private def debug(msg: => String)(using q: Quotes): Unit =
+    if (debugEnabled) q.reflect.report.info(msg)
+
+  private lazy val debugEnabled: Boolean =
+    Option(System.getProperty("play.json.macro.debug")).filterNot(_.isEmpty).map(_.toLowerCase).exists { v =>
+      "true".equals(v) || v.substring(0, 1) == "y"
+    }
 
   // ---
 

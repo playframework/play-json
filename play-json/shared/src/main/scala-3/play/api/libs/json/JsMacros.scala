@@ -97,8 +97,8 @@ private[json] trait JsValueMacros {
    * val r: Reads[IdText] = Json.valueReads
    * }}}
    */
-  inline def valueReads[A]: Reads[A] =
-    ${ JsMacroImpl.implicitConfigValueReads[A] }
+  inline def valueReads[A <: AnyVal]: Reads[A] =
+    ${ JsMacroImpl.anyValReads[A] }
 
   /**
    * Creates a `OWrites[T]`, if `T` is a ValueClass,
@@ -117,8 +117,8 @@ private[json] trait JsValueMacros {
    * val w: Writes[TextId] = Json.valueWrites[TextId]
    * }}}
    */
-  inline def valueWrites[A]: Writes[A] =
-    ${ JsMacroImpl.implicitConfigValueWrites[A] }
+  inline def valueWrites[A <: AnyVal]: Writes[A] =
+    ${ JsMacroImpl.anyValWrites[A] }
 
   /**
    * Creates a `OFormat[T]` by resolving, if `T` is a ValueClass
@@ -136,8 +136,8 @@ private[json] trait JsValueMacros {
    * implicit val userFormat: Format[User] = Json.valueFormat[User]
    * }}}
    */
-  inline def valueFormat[A]: Format[A] =
-    ${ JsMacroImpl.implicitConfigValueFormat[A] }
+  inline def valueFormat[A <: AnyVal]: Format[A] =
+    ${ JsMacroImpl.anyValFormat[A] }
 }
 
 trait JsMacrosWithOptions { withOpts: Json.WithOptions[_] =>
