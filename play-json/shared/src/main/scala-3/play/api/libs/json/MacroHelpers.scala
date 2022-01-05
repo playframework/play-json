@@ -8,6 +8,32 @@ import scala.deriving._
 
 import scala.quoted._
 
+private[json] trait MacroHelpers { self: OptionSupport =>
+  type Q <: Quotes
+  protected val quotes: Q
+
+  import quotes.reflect.*
+
+  // format: off
+  private given q: Q = quotes
+
+  /* Some(A) for Option[A] else None */
+  protected object OptionTypeParameter {
+
+    def unapply(tpr: TypeRepr): Option[TypeRepr] = {
+      if (self.isOptionalType(tpr)) {
+        tpr match {
+          case AppliedType(_, args) =>
+            args.headOption
+
+          case _ =>
+            None
+        }
+      } else None
+    }
+  }
+}
+
 private[json] trait OptionSupport {
   type Q <: Quotes
   protected val quotes: Q

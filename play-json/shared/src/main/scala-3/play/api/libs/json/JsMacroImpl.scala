@@ -190,7 +190,11 @@ object JsMacroImpl {
     }
   }
 
-  private sealed trait ReadsHelper[Qts <: Quotes, A] extends QuotesHelper with OptionSupport with ImplicitResolver[A] {
+  private sealed trait ReadsHelper[Qts <: Quotes, A]
+      extends MacroHelpers
+      with QuotesHelper
+      with OptionSupport
+      with ImplicitResolver[A] {
     type Q = Qts
     val quotes: Q
 
@@ -305,73 +309,107 @@ object JsMacroImpl {
                   case defaultSym if sym.flags.is(Flags.HasDefault) =>
                     compMod.select(defaultSym).asExprOf[t]
                 }
-              val _: TypeRepr = pt
 
               ReadableField(sym, i, pt, default)
           }
       }.toSeq.partition { case ReadableField(_, _, t, _) => isOptionalType(t) }
 
-      type JsFailure    = (JsPath, Seq[JsonValidationError])
-      type ExceptionAcc = MBuilder[JsFailure, Seq[JsFailure]]
+      def handleFields(input: Expr[JsObject]): Expr[JsResult[T]] = {
+        val reqElmts: Seq[(Int, Expr[JsResult[_]])] = required.map {
+          case ReadableField(param, n, pt, defaultValue) =>
+            pt.asType match {
+              case ptpe @ '[p] =>
+                val reads: Expr[Reads[p]] = resolve(pt) match {
+                  case Some((givenReads, _)) =>
+                    givenReads.asExprOf[Reads[p]]
 
-      def withIdents[U: Type](
-          f: Expr[ExceptionAcc] => Expr[U]
-      ): Expr[U] = '{
-        val err = Seq.newBuilder[JsFailure]
+                  case _ =>
+                    report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[${prettyType(pt)}]")
+                }
 
-        ${ f('{ err }) }
+                val pname = param.name
+
+                val get: Expr[JsResult[p]] = {
+                  val field = '{ ${ config }.naming(${ Expr(pname) }) }
+                  val path  = '{ JsPath \ ${ field } }
+
+                  val pathReads: Expr[Reads[p]] = defaultValue match {
+                    case Some(v) =>
+                      '{ ${ path }.readWithDefault[p](${ v.asExprOf[p] })($reads) }
+
+                    case _ =>
+                      '{ ${ path }.read[p]($reads) }
+                  }
+
+                  '{ ${ pathReads }.reads($input) }
+                }
+
+                n -> get
+            }
+        }
+
+        val exElmts: Seq[(Int, Expr[JsResult[_]])] = optional.map {
+          case p @ ReadableField(_, _, OptionTypeParameter(it), _) =>
+            p.copy(tpr = it)
+
+          case ReadableField(param, _, pt, _) =>
+            report.errorAndAbort(
+              s"Invalid optional field '${param.name}': ${prettyType(pt)}"
+            )
+
+        }.map {
+          case ReadableField(param, n, it, defaultValue) =>
+            val pname = param.name
+
+            it.asType match {
+              case '[i] =>
+                val reads: Expr[Reads[i]] = resolve(it) match {
+                  case Some((givenReads, _)) =>
+                    givenReads.asExprOf[Reads[i]]
+
+                  case _ =>
+                    report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[Option[${prettyType(it)}]]")
+                }
+
+                type p = Option[i]
+
+                val get: Expr[JsResult[p]] = {
+                  val field = '{ ${ config }.naming(${ Expr(pname) }) }
+                  val path  = '{ JsPath \ ${ field } }
+
+                  val pathReads: Expr[Reads[p]] = defaultValue match {
+                    case Some(v) =>
+                      '{ ${ config }.optionHandlers.readHandlerWithDefault($path, ${ v.asExprOf[p] })($reads) }
+
+                    case _ =>
+                      '{ ${ config }.optionHandlers.readHandler($path)($reads) }
+                  }
+
+                  '{ ${ pathReads }.reads($input) }
+                }
+
+                n -> get
+            }
+        }
+
+        val tupElmts: Seq[Expr[JsResult[_]]] =
+          (reqElmts ++ exElmts).toSeq.sortBy(_._1).map(_._2)
+
+        '{
+          trySeq(${ Expr.ofList(tupElmts.toList) }).map { ls => ${ pof }.fromProduct(Tuple.fromArray(ls.toArray)) }
+        }
+
       }
 
-      // For required field
-      def tryWithDefault[U: Type](
-          res: Expr[JsResult[U]],
-          default: Expr[U]
-      ): Expr[JsResult[U]] =
-        '{
-          ${ res } match {
-            case JsError(_) =>
-              JsSuccess(${ default })
+      '{
+        Reads[T] {
+          case obj @ JsObject(_) =>
+            ${ handleFields('obj) }
 
-            case result =>
-              result
-          }
+          case _ =>
+            JsError("error.expected.jsobject")
         }
-
-      // For optional field
-      def tryWithOptDefault[U: Type](
-          res: Expr[JsResult[Option[U]]],
-          default: Expr[Option[U]]
-      ): Expr[JsResult[Option[U]]] =
-        '{
-          ${ res } match {
-            case JsError(_) | JsSuccess(None, _) =>
-              JsSuccess(${ default })
-
-            case result =>
-              result
-          }
-        }
-
-      /* TODO
-            (isOption, defaultValue) match {
-              case (true, Some(v)) =>
-                val c = TermName(s"${methodName}HandlerWithDefault")
-                q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
-
-              case (true, _) =>
-                val c = TermName(s"${methodName}Handler")
-                q"$config.optionHandlers.$c($jspathTree)($impl)"
-
-              case (false, Some(v)) =>
-                val c = TermName(s"${methodName}WithDefault")
-                q"$jspathTree.$c($v)($impl)"
-
-              case _ =>
-                q"$jspathTree.${TermName(methodName)}($impl)"
-            }
-       */
-
-      ???
+      }
     }
   }
 
@@ -477,7 +515,11 @@ object JsMacroImpl {
     }
   }
 
-  private sealed trait WritesHelper[Qts <: Quotes, A] extends QuotesHelper with OptionSupport with ImplicitResolver[A] {
+  private sealed trait WritesHelper[Qts <: Quotes, A]
+      extends MacroHelpers
+      with QuotesHelper
+      with OptionSupport
+      with ImplicitResolver[A] {
     type Q = Qts
     val quotes: Q
 
@@ -689,6 +731,32 @@ object JsMacroImpl {
   }
 
   // ---
+
+  inline private def trySeq[T](in: List[JsResult[T]]): JsResult[Seq[T]] = {
+    type JsFail = (JsPath, collection.Seq[JsonValidationError])
+
+    @annotation.tailrec
+    def execute[T](
+        in: List[JsResult[T]],
+        suc: List[T],
+        fail: collection.Seq[JsFail]
+    ): JsResult[List[T]] = in.headOption match {
+      case Some(JsSuccess(v, _)) =>
+        execute(in.tail, v :: suc, fail)
+
+      case Some(JsError(details)) =>
+        execute(in.tail, suc, details ++: fail)
+
+      case _ =>
+        if (fail.isEmpty) {
+          JsError(fail)
+        } else {
+          JsSuccess(suc)
+        }
+    }
+
+    execute[T](in, List.empty, List.empty)
+  }
 
   private def ensureFindType[A](using
       q: Quotes,
