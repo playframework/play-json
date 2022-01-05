@@ -11,11 +11,13 @@ trait Applicative[M[_]] extends DeprecatedApplicative[M] {
 }
 
 sealed trait DeprecatedApplicative[M[_]] { self: Applicative[M] =>
+
   @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
   def pure[A](value: A): M[A] = pure(f = value)
 }
 
 object Applicative {
+
   implicit val applicativeOption: Applicative[Option] = new Applicative[Option] {
     def pure[A](f: => A): Option[A] = Option(f)
 
@@ -25,12 +27,19 @@ object Applicative {
   }
 }
 
-class ApplicativeOps[M[_], A](ma: M[A])(implicit a: Applicative[M]) {
+class ApplicativeOps[M[_], A](ma: M[A])(implicit
+    a: Applicative[M]
+) {
   def ~>[B](mb: M[B]): M[B]      = a(a(a.pure(((_: A) => (b: B) => b): A => B => B), ma), mb)
   def <~[B](mb: M[B]): M[A]      = a(a(a.pure(((a: A) => (_: B) => a): A => B => A), ma), mb)
   def andKeep[B](mb: M[B]): M[B] = ~>(mb)
   def keepAnd[B](mb: M[B]): M[A] = <~(mb)
 
-  def <~>[B, C](mb: M[B])(implicit witness: <:<[A, B => C]): M[C]   = apply(mb)
-  def apply[B, C](mb: M[B])(implicit witness: <:<[A, B => C]): M[C] = a(a.map(ma, witness), mb)
+  def <~>[B, C](mb: M[B])(implicit
+      witness: <:<[A, B => C]
+  ): M[C] = apply(mb)
+
+  def apply[B, C](mb: M[B])(implicit
+      witness: <:<[A, B => C]
+  ): M[C] = a(a.map(ma, witness), mb)
 }

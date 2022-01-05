@@ -19,10 +19,15 @@ private[json] trait OptionSupport {
 
   protected type Opts <: Json.MacroOptions
 
+  protected final lazy val optionTpe: TypeRepr = TypeRepr.of[Option[_]]
+
   /* Type of compile-time options; See [[MacroOptions]] */
   protected def optsTpe: Type[Opts]
   protected final def optsTpr: TypeRepr = TypeRepr.of(using optsTpe)
 
   @inline protected final def hasOption[O: Type]: Boolean =
     optsTpr <:< TypeRepr.of[O]
+
+  @inline protected final def isOptionalType(tpr: TypeRepr): Boolean =
+    tpr <:< optionTpe
 }

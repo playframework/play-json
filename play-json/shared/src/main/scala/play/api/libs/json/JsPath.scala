@@ -16,6 +16,7 @@ sealed trait PathNode {
 }
 
 case class RecursiveSearch(key: String) extends PathNode {
+
   def apply(json: JsValue): List[JsValue] = json match {
     case obj: JsObject => (json \\ key).toList
     case arr: JsArray  => (json \\ key).toList
@@ -56,6 +57,7 @@ case class RecursiveSearch(key: String) extends PathNode {
 }
 
 case class KeyPathNode(key: String) extends PathNode {
+
   def apply(json: JsValue): List[JsValue] = json match {
     case obj: JsObject => obj.underlying.get(key).toList
     case _             => List()
@@ -87,6 +89,7 @@ case _ => List.empty
 }
 
 case class IdxPathNode(idx: Int) extends PathNode {
+
   def apply(json: JsValue): List[JsValue] = json match {
     case arr: JsArray => List(arr \ idx).flatMap(_.toOption)
     case _            => List()
@@ -134,6 +137,7 @@ case class IdxPathNode(idx: Int) extends PathNode {
  * }}}
  */
 object JsPath extends JsPath(List.empty) {
+
   // TODO implement it correctly (doesn't merge )
   def createObj(pathValues: (JsPath, JsValue)*): JsObject = {
     def buildSubPath(path: JsPath, value: JsValue) = {
@@ -317,10 +321,14 @@ case class JsPath(path: List[PathNode] = List()) {
   }
 
   /** Reads a T at JsPath */
-  def read[T](implicit r: Reads[T]): Reads[T] = Reads.at[T](this)(r)
+  def read[T](implicit
+      r: Reads[T]
+  ): Reads[T] = Reads.at[T](this)(r)
 
   /** Reads a T at JsPath */
-  def readWithDefault[T](defaultValue: => T)(implicit r: Reads[T]): Reads[T] =
+  def readWithDefault[T](defaultValue: => T)(implicit
+      r: Reads[T]
+  ): Reads[T] =
     Reads.withDefault[T](this, defaultValue)
 
   /**
@@ -332,7 +340,9 @@ case class JsPath(path: List[PathNode] = List()) {
    * - If any node in JsPath is found with value "null" => returns None
    * - If the entire path is found => applies implicit Reads[T]
    */
-  def readNullable[T](implicit r: Reads[T]): Reads[Option[T]] = Reads.nullable[T](this)(r)
+  def readNullable[T](implicit
+      r: Reads[T]
+  ): Reads[Option[T]] = Reads.nullable[T](this)(r)
 
   /**
    * Reads an Option[T] search optional or nullable field at JsPath (field not found replaced by
@@ -343,7 +353,9 @@ case class JsPath(path: List[PathNode] = List()) {
    * - If any node in JsPath is found with value "null" => returns None
    * - If the entire path is found => applies implicit Reads[T]
    */
-  def readNullableWithDefault[T](defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] =
+  def readNullableWithDefault[T](defaultValue: => Option[T])(implicit
+      r: Reads[T]
+  ): Reads[Option[T]] =
     Reads.nullableWithDefault[T](this, defaultValue)(r)
 
   /**
@@ -388,21 +400,27 @@ case class JsPath(path: List[PathNode] = List()) {
   def read[T](t: T) = Reads.pure(f = t)
 
   /** Writes a T at given JsPath */
-  def write[T](implicit w: Writes[T]): OWrites[T] = Writes.at[T](this)(w)
+  def write[T](implicit
+      w: Writes[T]
+  ): OWrites[T] = Writes.at[T](this)(w)
 
   /**
    * Writes a Option[T] at given JsPath
    * If None => doesn't write the field (never writes null actually)
    * else => writes the field using implicit Writes[T]
    */
-  def writeNullable[T](implicit w: Writes[T]): OWrites[Option[T]] = Writes.nullable[T](this)(w)
+  def writeNullable[T](implicit
+      w: Writes[T]
+  ): OWrites[Option[T]] = Writes.nullable[T](this)(w)
 
   /**
    * Writes a Option[T] at given JsPath
    * If None => writes 'null'
    * else => writes the field using implicit Writes[T]
    */
-  def writeOptionWithNull[T](implicit w: Writes[T]): OWrites[Option[T]] =
+  def writeOptionWithNull[T](implicit
+      w: Writes[T]
+  ): OWrites[Option[T]] =
     Writes.at[Option[T]](this)(Writes.optionWithNull[T](w))
 
   /**
@@ -448,28 +466,41 @@ case class JsPath(path: List[PathNode] = List()) {
     OWrites((t: Option[T]) => Writes.nullable[T](this)(w).writes(t))
 
   /** Writes a pure value at given JsPath */
-  def write[T](t: T)(implicit w: Writes[T]): OWrites[JsValue] = Writes.pure(this, t)
+  def write[T](t: T)(implicit
+      w: Writes[T]
+  ): OWrites[JsValue] = Writes.pure(this, t)
 
   /** Reads/Writes a T at JsPath using provided implicit Format[T] */
-  def format[T](implicit f: Format[T]): OFormat[T] = Format.at[T](this)(f)
+  def format[T](implicit
+      f: Format[T]
+  ): OFormat[T] = Format.at[T](this)(f)
 
   /** Reads/Writes a T at JsPath using provided implicit Format[T] with fallback to default value */
-  def formatWithDefault[T](defaultValue: => T)(implicit f: Format[T]): OFormat[T] = {
+  def formatWithDefault[T](defaultValue: => T)(implicit
+      f: Format[T]
+  ): OFormat[T] = {
     Format.withDefault[T](this, defaultValue)(f)
   }
 
   /** Reads/Writes a T at JsPath using provided explicit Reads[T] and implicit Writes[T] */
-  def format[T](r: Reads[T])(implicit w: Writes[T]): OFormat[T] = Format.at[T](this)(Format(r, w))
+  def format[T](r: Reads[T])(implicit
+      w: Writes[T]
+  ): OFormat[T] = Format.at[T](this)(Format(r, w))
 
   /** Reads/Writes a T at JsPath using provided explicit Writes[T] and implicit Reads[T] */
-  def format[T](w: Writes[T])(implicit r: Reads[T]): OFormat[T] = Format.at[T](this)(Format(r, w))
+  def format[T](w: Writes[T])(implicit
+      r: Reads[T]
+  ): OFormat[T] = Format.at[T](this)(Format(r, w))
 
   /**
    * Reads/Writes a T at JsPath using provided implicit Reads[T] and Writes[T]
    *
    * Please note we couldn't call it "format" to prevent conflicts
    */
-  def rw[T](implicit r: Reads[T], w: Writes[T]): OFormat[T] = Format.at[T](this)(Format(r, w))
+  def rw[T](implicit
+      r: Reads[T],
+      w: Writes[T]
+  ): OFormat[T] = Format.at[T](this)(Format(r, w))
 
   /**
    * Reads/Writes a Option[T] (optional or nullable field) at given JsPath
@@ -477,7 +508,9 @@ case class JsPath(path: List[PathNode] = List()) {
    * @see JsPath.readNullable to see behavior in reads
    * @see JsPath.writeNullable to see behavior in writes
    */
-  def formatNullable[T](implicit f: Format[T]): OFormat[Option[T]] = Format.nullable[T](this)(f)
+  def formatNullable[T](implicit
+      f: Format[T]
+  ): OFormat[Option[T]] = Format.nullable[T](this)(f)
 
   /**
    * Reads/Writes a Option[T] (nullable field) at given JsPath
@@ -485,7 +518,9 @@ case class JsPath(path: List[PathNode] = List()) {
    * @see [[JsPath.readNullableWithDefault]] to see behavior in reads
    * @see [[JsPath.writeNullable]] to see behavior in writes
    */
-  def formatNullableWithDefault[T](defaultValue: => Option[T])(implicit f: Format[T]): OFormat[Option[T]] = {
+  def formatNullableWithDefault[T](defaultValue: => Option[T])(implicit
+      f: Format[T]
+  ): OFormat[Option[T]] = {
     Format.nullableWithDefault[T](this, defaultValue)(f)
   }
 
@@ -549,7 +584,9 @@ case class JsPath(path: List[PathNode] = List()) {
      * // => JsSuccess(JsNumber(123),/key2)
      * }}}
      */
-    def pick[A <: JsValue](implicit r: Reads[A]): Reads[A] = Reads.jsPick(self)
+    def pick[A <: JsValue](implicit
+        r: Reads[A]
+    ): Reads[A] = Reads.jsPick(self)
 
     /**
      * `(__ \ 'key).json.pick` is a `Reads[JsValue]` that:

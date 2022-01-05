@@ -72,9 +72,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
 
     "be read with character keys".which {
       "are characters" in {
-        Json
-          .fromJson[Map[Char, Int]](Json.obj("a" -> 1, "b" -> 2))
-          .mustEqual(JsSuccess(Map('a' -> 1, 'b' -> 2)))
+        Json.fromJson[Map[Char, Int]](Json.obj("a" -> 1, "b" -> 2)).mustEqual(JsSuccess(Map('a' -> 1, 'b' -> 2)))
       }
 
       "are not characters" in {
@@ -304,7 +302,10 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
   }
 
   "Identity reads" should {
-    def success[T <: JsValue](fixture: T)(implicit r: Reads[T], ct: scala.reflect.ClassTag[T]) =
+    def success[T <: JsValue](fixture: T)(implicit
+        r: Reads[T],
+        ct: scala.reflect.ClassTag[T]
+    ) =
       s"be resolved for $fixture as ${ct.runtimeClass.getSimpleName}" in {
         r.reads(fixture).mustEqual(JsSuccess(fixture))
       }

@@ -54,9 +54,7 @@ class JsonTransSpec extends AnyWordSpec with Matchers {
     "copy input JSON and update a branch (merge the updated branch with input JSON)" in {
       js.transform(
         (__ \ Symbol("field3")).json.update(
-          __.read[JsObject].map { o =>
-            o ++ Json.obj("field33" -> false)
-          }
+          __.read[JsObject].map { o => o ++ Json.obj("field33" -> false) }
         )
       ).mustEqual(
         JsSuccess(

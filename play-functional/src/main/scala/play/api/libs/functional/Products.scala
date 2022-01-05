@@ -11,14 +11,21 @@ trait FunctionalCanBuild[M[_]] {
 }
 
 object FunctionalCanBuild {
-  implicit def functionalCanBuildApplicative[M[_]](implicit app: Applicative[M]): FunctionalCanBuild[M] =
+
+  implicit def functionalCanBuildApplicative[M[_]](implicit
+      app: Applicative[M]
+  ): FunctionalCanBuild[M] =
     new FunctionalCanBuild[M] {
+
       def apply[A, B](a: M[A], b: M[B]): M[A ~ B] =
         app.apply(app.map[A, B => A ~ B](a, a => ((b: B) => new ~(a, b))), b)
     }
 }
 
-class FunctionalBuilderOps[M[_], A](ma: M[A])(implicit fcb: FunctionalCanBuild[M]) {
+class FunctionalBuilderOps[M[_], A](ma: M[A])(implicit
+    fcb: FunctionalCanBuild[M]
+) {
+
   def ~[B](mb: M[B]): FunctionalBuilder[M]#CanBuild2[A, B] = {
     val b = new FunctionalBuilder(fcb)
     new b.CanBuild2[A, B](ma, mb)
@@ -28,15 +35,20 @@ class FunctionalBuilderOps[M[_], A](ma: M[A])(implicit fcb: FunctionalCanBuild[M
 }
 
 class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
+
   class CanBuild2[A1, A2](m1: M[A1], m2: M[A2]) {
     def ~[A3](m3: M[A3]) = new CanBuild3[A1, A2, A3](canBuild(m1, m2), m3)
 
     def and[A3](m3: M[A3]) = this.~(m3)
 
-    def apply[B](f: (A1, A2) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2, B](canBuild(m1, m2), { case a1 ~ a2 => f(a1, a2) })
 
-    def apply[B](f: B => (A1, A2))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         { (b: B) =>
@@ -45,14 +57,20 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f1: (A1, A2) => B, f2: B => (A1, A2))(implicit fu: InvariantFunctor[M]): M[B] =
+    def apply[B](f1: (A1, A2) => B, f2: B => (A1, A2))(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2, B](
         canBuild(m1, m2),
         { case a1 ~ a2 => f1(a1, a2) },
         (b: B) => { val (a1, a2) = f2(b); new ~(a1, a2) }
       )
 
-    def join[A >: A1](implicit witness1: <:<[A, A1], witness2: <:<[A, A2], fu: ContravariantFunctor[M]): M[A] =
+    def join[A >: A1](implicit
+        witness1: <:<[A, A1],
+        witness2: <:<[A, A2],
+        fu: ContravariantFunctor[M]
+    ): M[A] =
       apply[A]((a: A) => (a: A1, a: A2))(fu)
 
     def reduce[A >: A1, B](implicit
@@ -63,23 +81,17 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     ): M[B] =
       apply[B]((a1: A1, a2: A2) => reducer.append(reducer.unit(a1: A), a2: A))(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2)] = v match {
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2)] = v match {
       case FunctorExtractor(fu) =>
-        apply { (a1: A1, a2: A2) =>
-          (a1, a2)
-        }(fu)
+        apply { (a1: A1, a2: A2) => (a1, a2) }(fu)
       case ContravariantFunctorExtractor(fu) =>
-        apply[(A1, A2)] { (a: (A1, A2)) =>
-          (a._1, a._2)
-        }(fu)
+        apply[(A1, A2)] { (a: (A1, A2)) => (a._1, a._2) }(fu)
       case InvariantFunctorExtractor(fu) =>
         apply[(A1, A2)](
-          { (a1: A1, a2: A2) =>
-            (a1, a2)
-          },
-          { (a: (A1, A2)) =>
-            (a._1, a._2)
-          }
+          { (a1: A1, a2: A2) => (a1, a2) },
+          { (a: (A1, A2)) => (a._1, a._2) }
         )(fu)
     }
   }
@@ -89,13 +101,19 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A4](m3: M[A4]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3, B](canBuild(m1, m2), { case a1 ~ a2 ~ a3 => f(a1, a2, a3) })
 
-    def apply[B](f: B => (A1, A2, A3))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(canBuild(m1, m2), (b: B) => { val (a1, a2, a3) = f(b); new ~(new ~(a1, a2), a3) })
 
-    def apply[B](f1: (A1, A2, A3) => B, f2: B => (A1, A2, A3))(implicit fu: InvariantFunctor[M]): M[B] =
+    def apply[B](f1: (A1, A2, A3) => B, f2: B => (A1, A2, A3))(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3, B](
         canBuild(m1, m2),
         { case a1 ~ a2 ~ a3 => f1(a1, a2, a3) },
@@ -119,25 +137,19 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     ): M[B] =
       apply[B]((a1: A1, a2: A2, a3: A3) => reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A))(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3)] = v match {
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3)] = v match {
       case FunctorExtractor(fu) =>
-        apply { (a1: A1, a2: A2, a3: A3) =>
-          (a1, a2, a3)
-        }(fu)
+        apply { (a1: A1, a2: A2, a3: A3) => (a1, a2, a3) }(fu)
 
       case ContravariantFunctorExtractor(fu) =>
-        apply[(A1, A2, A3)] { (a: (A1, A2, A3)) =>
-          (a._1, a._2, a._3)
-        }(fu)
+        apply[(A1, A2, A3)] { (a: (A1, A2, A3)) => (a._1, a._2, a._3) }(fu)
 
       case InvariantFunctorExtractor(fu) =>
         apply[(A1, A2, A3)](
-          { (a1: A1, a2: A2, a3: A3) =>
-            (a1, a2, a3)
-          },
-          { (a: (A1, A2, A3)) =>
-            (a._1, a._2, a._3)
-          }
+          { (a1: A1, a2: A2, a3: A3) => (a1, a2, a3) },
+          { (a: (A1, A2, A3)) => (a._1, a._2, a._3) }
         )(fu)
     }
   }
@@ -147,13 +159,19 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A5](m3: M[A5]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4, B](canBuild(m1, m2), { case a1 ~ a2 ~ a3 ~ a4 => f(a1, a2, a3, a4) })
 
-    def apply[B](f: B => (A1, A2, A3, A4))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(canBuild(m1, m2), (b: B) => { val (a1, a2, a3, a4) = f(b); new ~(new ~(new ~(a1, a2), a3), a4) })
 
-    def apply[B](f1: (A1, A2, A3, A4) => B, f2: B => (A1, A2, A3, A4))(implicit fu: InvariantFunctor[M]): M[B] =
+    def apply[B](f1: (A1, A2, A3, A4) => B, f2: B => (A1, A2, A3, A4))(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4, B](
         canBuild(m1, m2),
         { case a1 ~ a2 ~ a3 ~ a4 => f1(a1, a2, a3, a4) },
@@ -181,24 +199,18 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A)
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4)] =
       v match {
         case FunctorExtractor(fu) =>
-          apply { (a1: A1, a2: A2, a3: A3, a4: A4) =>
-            (a1, a2, a3, a4)
-          }(fu)
+          apply { (a1: A1, a2: A2, a3: A3, a4: A4) => (a1, a2, a3, a4) }(fu)
         case ContravariantFunctorExtractor(fu) =>
-          apply[(A1, A2, A3, A4)] { (a: (A1, A2, A3, A4)) =>
-            (a._1, a._2, a._3, a._4)
-          }(fu)
+          apply[(A1, A2, A3, A4)] { (a: (A1, A2, A3, A4)) => (a._1, a._2, a._3, a._4) }(fu)
         case InvariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4)](
-            { (a1: A1, a2: A2, a3: A3, a4: A4) =>
-              (a1, a2, a3, a4)
-            },
-            { (a: (A1, A2, A3, A4)) =>
-              (a._1, a._2, a._3, a._4)
-            }
+            { (a1: A1, a2: A2, a3: A3, a4: A4) => (a1, a2, a3, a4) },
+            { (a: (A1, A2, A3, A4)) => (a._1, a._2, a._3, a._4) }
           )(fu)
       }
   }
@@ -208,10 +220,14 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A6](m3: M[A6]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5, B](canBuild(m1, m2), { case a1 ~ a2 ~ a3 ~ a4 ~ a5 => f(a1, a2, a3, a4, a5) })
 
-    def apply[B](f: B => (A1, A2, A3, A4, A5))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4, A5))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -219,7 +235,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f1: (A1, A2, A3, A4, A5) => B, f2: B => (A1, A2, A3, A4, A5))(implicit fu: InvariantFunctor[M]): M[B] =
+    def apply[B](f1: (A1, A2, A3, A4, A5) => B, f2: B => (A1, A2, A3, A4, A5))(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5, B](
         canBuild(m1, m2),
         { case a1 ~ a2 ~ a3 ~ a4 ~ a5 => f1(a1, a2, a3, a4, a5) },
@@ -246,28 +264,21 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         reducer: Reducer[A, B]
     ): M[B] =
       apply[B]((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) =>
-        reducer
-          .append(reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A), a5: A)
+        reducer.append(reducer.append(reducer.append(reducer.append(reducer.unit(a1: A), a2: A), a3: A), a4: A), a5: A)
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5)] =
       v match {
         case FunctorExtractor(fu) =>
-          apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) =>
-            (a1, a2, a3, a4, a5)
-          }(fu)
+          apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => (a1, a2, a3, a4, a5) }(fu)
         case ContravariantFunctorExtractor(fu) =>
-          apply[(A1, A2, A3, A4, A5)] { (a: (A1, A2, A3, A4, A5)) =>
-            (a._1, a._2, a._3, a._4, a._5)
-          }(fu)
+          apply[(A1, A2, A3, A4, A5)] { (a: (A1, A2, A3, A4, A5)) => (a._1, a._2, a._3, a._4, a._5) }(fu)
         case InvariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5)](
-            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) =>
-              (a1, a2, a3, a4, a5)
-            },
-            { (a: (A1, A2, A3, A4, A5)) =>
-              (a._1, a._2, a._3, a._4, a._5)
-            }
+            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => (a1, a2, a3, a4, a5) },
+            { (a: (A1, A2, A3, A4, A5)) => (a._1, a._2, a._3, a._4, a._5) }
           )(fu)
       }
   }
@@ -277,7 +288,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A7](m3: M[A7]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6, B](
         canBuild(m1, m2),
         {
@@ -286,7 +299,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f: B => (A1, A2, A3, A4, A5, A6))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4, A5, A6))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -332,24 +347,18 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6)] =
       v match {
         case FunctorExtractor(fu) =>
-          apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) =>
-            (a1, a2, a3, a4, a5, a6)
-          }(fu)
+          apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) => (a1, a2, a3, a4, a5, a6) }(fu)
         case ContravariantFunctorExtractor(fu) =>
-          apply[(A1, A2, A3, A4, A5, A6)] { (a: (A1, A2, A3, A4, A5, A6)) =>
-            (a._1, a._2, a._3, a._4, a._5, a._6)
-          }(fu)
+          apply[(A1, A2, A3, A4, A5, A6)] { (a: (A1, A2, A3, A4, A5, A6)) => (a._1, a._2, a._3, a._4, a._5, a._6) }(fu)
         case InvariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6)](
-            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) =>
-              (a1, a2, a3, a4, a5, a6)
-            },
-            { (a: (A1, A2, A3, A4, A5, A6)) =>
-              (a._1, a._2, a._3, a._4, a._5, a._6)
-            }
+            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) => (a1, a2, a3, a4, a5, a6) },
+            { (a: (A1, A2, A3, A4, A5, A6)) => (a._1, a._2, a._3, a._4, a._5, a._6) }
           )(fu)
       }
   }
@@ -359,7 +368,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A8](m3: M[A8]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7, B](
         canBuild(m1, m2),
         {
@@ -368,7 +379,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -423,24 +436,20 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7)] =
       v match {
         case FunctorExtractor(fu) =>
-          apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) =>
-            (a1, a2, a3, a4, a5, a6, a7)
-          }(fu)
+          apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) => (a1, a2, a3, a4, a5, a6, a7) }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7)] { (a: (A1, A2, A3, A4, A5, A6, A7)) =>
             (a._1, a._2, a._3, a._4, a._5, a._6, a._7)
           }(fu)
         case InvariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7)](
-            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) =>
-              (a1, a2, a3, a4, a5, a6, a7)
-            },
-            { (a: (A1, A2, A3, A4, A5, A6, A7)) =>
-              (a._1, a._2, a._3, a._4, a._5, a._6, a._7)
-            }
+            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) => (a1, a2, a3, a4, a5, a6, a7) },
+            { (a: (A1, A2, A3, A4, A5, A6, A7)) => (a._1, a._2, a._3, a._4, a._5, a._6, a._7) }
           )(fu)
       }
   }
@@ -450,7 +459,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A9](m3: M[A9]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8, B](
         canBuild(m1, m2),
         {
@@ -459,7 +470,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -521,7 +534,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8)] =
       v match {
         case FunctorExtractor(fu) =>
           apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8) =>
@@ -533,12 +548,8 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
           }(fu)
         case InvariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8)](
-            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8)
-            },
-            { (a: (A1, A2, A3, A4, A5, A6, A7, A8)) =>
-              (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8)
-            }
+            { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8) => (a1, a2, a3, a4, a5, a6, a7, a8) },
+            { (a: (A1, A2, A3, A4, A5, A6, A7, A8)) => (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8) }
           )(fu)
       }
   }
@@ -548,7 +559,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A10](m3: M[A10]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9, B](
         canBuild(m1, m2),
         {
@@ -557,7 +570,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -624,7 +639,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9)] =
       v match {
         case FunctorExtractor(fu) =>
           apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9) =>
@@ -639,9 +656,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
             { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9) =>
               (a1, a2, a3, a4, a5, a6, a7, a8, a9)
             },
-            { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9)) =>
-              (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8, a._9)
-            }
+            { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9)) => (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8, a._9) }
           )(fu)
       }
   }
@@ -654,7 +669,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A11](m3: M[A11]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10, B](
         canBuild(m1, m2),
         {
@@ -663,7 +680,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -675,7 +694,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10, B](
         canBuild(m1, m2),
         {
@@ -739,7 +760,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)] =
       v match {
         case FunctorExtractor(fu) =>
           apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10) =>
@@ -769,7 +792,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def and[A12](m3: M[A12]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11, B](
         canBuild(m1, m2),
         {
@@ -778,7 +803,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         }
       )
 
-    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11))(implicit fu: ContravariantFunctor[M]): M[B] =
+    def apply[B](f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11))(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -793,7 +820,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11, B](
         canBuild(m1, m2),
         {
@@ -865,7 +894,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)] =
       v match {
         case FunctorExtractor(fu) =>
           apply { (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11) =>
@@ -891,12 +922,15 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11],
       m2: M[A12]
   ) {
+
     def ~[A13](m3: M[A13]) =
       new CanBuild13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13](canBuild(m1, m2), m3)
 
     def and[A13](m3: M[A13]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12, B](
         canBuild(m1, m2),
         {
@@ -907,7 +941,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -925,7 +961,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12, B](
         canBuild(m1, m2),
         {
@@ -1005,7 +1043,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
         )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)] =
       v match {
         case FunctorExtractor(fu) =>
           apply {
@@ -1033,12 +1073,15 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12],
       m2: M[A13]
   ) {
+
     def ~[A14](m3: M[A14]) =
       new CanBuild14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14](canBuild(m1, m2), m3)
 
     def and[A14](m3: M[A14]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13, B](
         canBuild(m1, m2),
         {
@@ -1049,7 +1092,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -1070,7 +1115,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13, B](
         canBuild(m1, m2),
         {
@@ -1175,7 +1222,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
           )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)] =
       v match {
         case FunctorExtractor(fu) =>
           apply {
@@ -1193,8 +1242,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a11: A11,
                 a12: A12,
                 a13: A13
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)] {
@@ -1218,8 +1266,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a11: A11,
                   a12: A12,
                   a13: A13
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)) =>
               (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8, a._9, a._10, a._11, a._12, a._13)
@@ -1232,12 +1279,15 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13],
       m2: M[A14]
   ) {
+
     def ~[A15](m3: M[A15]) =
       new CanBuild15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15](canBuild(m1, m2), m3)
 
     def and[A15](m3: M[A15]) = this.~(m3)
 
-    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14) => B)(implicit fu: Functor[M]): M[B] =
+    def apply[B](f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14) => B)(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14, B](
         canBuild(m1, m2),
         {
@@ -1248,7 +1298,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -1275,7 +1327,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14, B](
         canBuild(m1, m2),
         {
@@ -1392,7 +1446,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
           )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)] =
       v match {
         case FunctorExtractor(fu) =>
           apply {
@@ -1411,8 +1467,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a12: A12,
                 a13: A13,
                 a14: A14
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)] {
@@ -1437,8 +1492,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a12: A12,
                   a13: A13,
                   a14: A14
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)) =>
               (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8, a._9, a._10, a._11, a._12, a._13, a._14)
@@ -1451,6 +1505,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14],
       m2: M[A15]
   ) {
+
     def ~[A16](m3: M[A16]) =
       new CanBuild16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16](canBuild(m1, m2), m3)
 
@@ -1458,7 +1513,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15, B](
         canBuild(m1, m2),
         {
@@ -1469,7 +1526,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -1499,7 +1558,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15, B](
         canBuild(m1, m2),
         {
@@ -1642,7 +1703,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
           )
       )(fu)
 
-    def tupled(implicit v: VariantExtractor[M]): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)] =
+    def tupled(implicit
+        v: VariantExtractor[M]
+    ): M[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)] =
       v match {
         case FunctorExtractor(fu) =>
           apply {
@@ -1662,8 +1725,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a13: A13,
                 a14: A14,
                 a15: A15
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)] {
@@ -1689,8 +1751,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a13: A13,
                   a14: A14,
                   a15: A15
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)) =>
               (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8, a._9, a._10, a._11, a._12, a._13, a._14, a._15)
@@ -1703,6 +1764,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15],
       m2: M[A16]
   ) {
+
     def ~[A17](m3: M[A17]) =
       new CanBuild17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17](canBuild(m1, m2), m3)
 
@@ -1710,7 +1772,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16, B](
         canBuild(m1, m2),
         {
@@ -1721,7 +1785,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -1754,7 +1820,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16, B](
         canBuild(m1, m2),
         {
@@ -1930,8 +1998,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a14: A14,
                 a15: A15,
                 a16: A16
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)] {
@@ -1958,8 +2025,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a14: A14,
                   a15: A15,
                   a16: A16
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)) =>
               (a._1, a._2, a._3, a._4, a._5, a._6, a._7, a._8, a._9, a._10, a._11, a._12, a._13, a._14, a._15, a._16)
@@ -1972,6 +2038,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16],
       m2: M[A17]
   ) {
+
     def ~[A18](m3: M[A18]) =
       new CanBuild18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18](
         canBuild(m1, m2),
@@ -1982,7 +2049,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17, B](
         canBuild(m1, m2),
         {
@@ -1993,7 +2062,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -2029,7 +2100,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17, B](
         canBuild(m1, m2),
         {
@@ -2216,8 +2289,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a15: A15,
                 a16: A16,
                 a17: A17
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)] {
@@ -2263,8 +2335,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a15: A15,
                   a16: A16,
                   a17: A17
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)) =>
               (
@@ -2295,6 +2366,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17],
       m2: M[A18]
   ) {
+
     def ~[A19](m3: M[A19]) =
       new CanBuild19[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19](
         canBuild(m1, m2),
@@ -2305,7 +2377,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18, B](
         canBuild(m1, m2),
         {
@@ -2316,7 +2390,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -2355,7 +2431,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18, B](
         canBuild(m1, m2),
         {
@@ -2555,8 +2633,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a16: A16,
                 a17: A17,
                 a18: A18
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)] {
@@ -2604,8 +2681,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a16: A16,
                   a17: A17,
                   a18: A18
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)) =>
               (
@@ -2637,6 +2713,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18],
       m2: M[A19]
   ) {
+
     def ~[A20](m3: M[A20]) =
       new CanBuild20[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20](
         canBuild(m1, m2),
@@ -2647,7 +2724,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19,
         B
@@ -2661,7 +2740,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -2706,7 +2787,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19,
         B
@@ -2923,8 +3006,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a17: A17,
                 a18: A18,
                 a19: A19
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19)] {
@@ -2974,8 +3056,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a17: A17,
                   a18: A18,
                   a19: A19
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19)) =>
               (
@@ -3008,6 +3089,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       m1: M[A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19],
       m2: M[A20]
   ) {
+
     def ~[A21](m3: M[A21]) =
       new CanBuild21[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21](
         canBuild(m1, m2),
@@ -3018,7 +3100,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19 ~ A20,
         B
@@ -3032,7 +3116,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -3080,7 +3166,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19 ~ A20,
         B
@@ -3308,8 +3396,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a18: A18,
                 a19: A19,
                 a20: A20
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20)] {
@@ -3361,8 +3448,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a18: A18,
                   a19: A19,
                   a20: A20
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20)) =>
               (
@@ -3398,6 +3484,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       ],
       m2: M[A21]
   ) {
+
     def ~[A22](m3: M[A22]) =
       new CanBuild22[
         A1,
@@ -3428,7 +3515,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19 ~ A20 ~ A21,
         B
@@ -3442,7 +3531,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -3493,7 +3584,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19 ~ A20 ~ A21,
         B
@@ -3732,8 +3825,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a19: A19,
                 a20: A20,
                 a21: A21
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21)] {
@@ -3787,8 +3879,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a19: A19,
                   a20: A20,
                   a21: A21
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21)
             },
             { (a: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21)) =>
               (
@@ -3825,9 +3916,12 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
       ],
       m2: M[A22]
   ) {
+
     def apply[B](
         f: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, A22) => B
-    )(implicit fu: Functor[M]): M[B] =
+    )(implicit
+        fu: Functor[M]
+    ): M[B] =
       fu.fmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19 ~ A20 ~ A21 ~ A22,
         B
@@ -3841,7 +3935,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
 
     def apply[B](
         f: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, A22)
-    )(implicit fu: ContravariantFunctor[M]): M[B] =
+    )(implicit
+        fu: ContravariantFunctor[M]
+    ): M[B] =
       fu.contramap(
         canBuild(m1, m2),
         (b: B) => {
@@ -3896,7 +3992,9 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
     def apply[B](
         f1: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, A22) => B,
         f2: B => (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, A22)
-    )(implicit fu: InvariantFunctor[M]): M[B] =
+    )(implicit
+        fu: InvariantFunctor[M]
+    ): M[B] =
       fu.inmap[
         A1 ~ A2 ~ A3 ~ A4 ~ A5 ~ A6 ~ A7 ~ A8 ~ A9 ~ A10 ~ A11 ~ A12 ~ A13 ~ A14 ~ A15 ~ A16 ~ A17 ~ A18 ~ A19 ~ A20 ~ A21 ~ A22,
         B
@@ -4147,8 +4245,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                 a20: A20,
                 a21: A21,
                 a22: A22
-            ) =>
-              (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22)
+            ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22)
           }(fu)
         case ContravariantFunctorExtractor(fu) =>
           apply[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, A22)] {
@@ -4227,8 +4324,7 @@ class FunctionalBuilder[M[_]](canBuild: FunctionalCanBuild[M]) {
                   a20: A20,
                   a21: A21,
                   a22: A22
-              ) =>
-                (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22)
+              ) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22)
             },
             {
               (a: (

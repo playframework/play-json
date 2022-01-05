@@ -22,8 +22,6 @@ object MapWrites {
   def mapWrites[V: Writes]: OWrites[Map[String, V]] = {
     val w = implicitly[Writes[V]]
 
-    OWrites[Map[String, V]] { ts =>
-      JsObject(ts.iterator.map(kv => kv._1 -> w.writes(kv._2)).toSeq)
-    }
+    OWrites[Map[String, V]] { ts => JsObject(ts.iterator.map(kv => kv._1 -> w.writes(kv._2)).toSeq) }
   }
 }

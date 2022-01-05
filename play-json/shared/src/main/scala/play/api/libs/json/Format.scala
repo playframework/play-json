@@ -3,6 +3,7 @@
  */
 
 package play.api.libs.json
+
 import scala.annotation.implicitNotFound
 import play.api.libs.functional._
 
@@ -24,29 +25,39 @@ trait Format[A] extends Writes[A] with Reads[A] {
 }
 
 trait OFormat[A] extends OWrites[A] with Reads[A] with Format[A] {
+
   final override def bimap[B](readsMap: A => B, writesContramap: B => A): OFormat[B] =
     OFormat.invariantFunctorOFormat.inmap(this, readsMap, writesContramap)
 
 }
 
 object OFormat {
+
   implicit def functionalCanBuildFormats(implicit
       rcb: FunctionalCanBuild[Reads],
       wcb: FunctionalCanBuild[OWrites]
   ): FunctionalCanBuild[OFormat] = new FunctionalCanBuild[OFormat] {
+
     def apply[A, B](fa: OFormat[A], fb: OFormat[B]): OFormat[A ~ B] =
       OFormat[A ~ B](rcb(fa, fb), wcb(fa, fb))
   }
 
   implicit val invariantFunctorOFormat: InvariantFunctor[OFormat] = new InvariantFunctor[OFormat] {
+
     def inmap[A, B](fa: OFormat[A], f1: A => B, f2: B => A): OFormat[B] =
       OFormat[B]((js: JsValue) => fa.reads(js).map(f1), (b: B) => fa.writes(f2(b)))
   }
 
   @deprecated("Use `oFormatFromReadsAndOWrites`", "2.7.0")
-  def GenericOFormat[T](implicit fjs: Reads[T], tjs: OWrites[T]): Format[T] = apply(fjs, tjs)
+  def GenericOFormat[T](implicit
+      fjs: Reads[T],
+      tjs: OWrites[T]
+  ): Format[T] = apply(fjs, tjs)
 
-  implicit def oFormatFromReadsAndOWrites[T](implicit fjs: Reads[T], tjs: OWrites[T]): OFormat[T] = apply(fjs, tjs)
+  implicit def oFormatFromReadsAndOWrites[T](implicit
+      fjs: Reads[T],
+      tjs: OWrites[T]
+  ): OFormat[T] = apply(fjs, tjs)
 
   def apply[A](read: JsValue => JsResult[A], write: A => JsObject): OFormat[A] = new OFormat[A] {
     def reads(js: JsValue): JsResult[A] = read(js)
@@ -70,6 +81,7 @@ object Format extends PathFormat with ConstraintFormat with DefaultFormat {
 
   implicit val invariantFunctorFormat: InvariantFunctor[Format] =
     new InvariantFunctor[Format] {
+
       def inmap[A, B](fa: Format[A], f1: A => B, f2: B => A) =
         Format(fa.map(f1), Writes(b => fa.writes(f2(b))))
     }
@@ -84,7 +96,11 @@ object Format extends PathFormat with ConstraintFormat with DefaultFormat {
  * Default Json formatters.
  */
 trait DefaultFormat {
-  implicit def GenericFormat[T](implicit fjs: Reads[T], tjs: Writes[T]): Format[T] = new Format[T] {
+
+  implicit def GenericFormat[T](implicit
+      fjs: Reads[T],
+      tjs: Writes[T]
+  ): Format[T] = new Format[T] {
     def reads(json: JsValue) = fjs.reads(json)
     def writes(o: T)         = tjs.writes(o)
   }

@@ -15,12 +15,16 @@ trait JsReadable extends Any {
    *
    * @return Some[T] if it succeeds, None if it fails.
    */
-  def asOpt[T](implicit fjs: Reads[T]): Option[T] = validate(fjs).asOpt
+  def asOpt[T](implicit
+      fjs: Reads[T]
+  ): Option[T] = validate(fjs).asOpt
 
   /**
    * Tries to convert the node into a T, throwing an exception if it can't. An implicit Reads[T] must be defined.
    */
-  def as[T](implicit fjs: Reads[T]): T = validate(fjs).fold(
+  def as[T](implicit
+      fjs: Reads[T]
+  ): T = validate(fjs).fold(
     valid = identity,
     invalid = e => throw JsResultException(e)
   )
@@ -34,5 +38,7 @@ trait JsReadable extends Any {
   /**
    * Tries to convert the node into a JsResult[T] (Success or Error). An implicit Reads[T] must be defined.
    */
-  def validate[T](implicit rds: Reads[T]): JsResult[T]
+  def validate[T](implicit
+      rds: Reads[T]
+  ): JsResult[T]
 }

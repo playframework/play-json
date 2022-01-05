@@ -9,6 +9,7 @@ import Matchers._
 import org.scalatest.wordspec.AnyWordSpec
 
 object TestFormats {
+
   implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]] = Reads[Either[A, B]] { js =>
     implicitly[Reads[A]].reads(js).map(Left(_)).orElse(implicitly[Reads[B]].reads(js).map(Right(_)))
   }
@@ -99,9 +100,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "be generated for a sealed family" when {
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
+      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
       // import LoremCodec.loremReads // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]  = LoremCodec.loremReads
       implicit val optionalReads: Reads[Optional] = Json.reads[Optional]
@@ -194,9 +193,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "be generated for a sealed family" in {
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
-        Json.obj("bar" -> simple.bar)
-      }
+      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
       // import LoremCodec.loremWrites // Doesn't work in Scala 3.0.0-RC1
       implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
       implicit val optionalWrites: OWrites[Optional] = Json.writes[Optional]
@@ -371,12 +368,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "handle sealed family" in {
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
-        Json.obj("bar" -> simple.bar)
-      }
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
+      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
+      implicit val simpleReads: Reads[Simple]    = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
       // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
       implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
@@ -402,13 +395,9 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "handle sealed family with custom discriminator name" in {
-      implicit val cfg: JsonConfiguration = JsonConfiguration(discriminator = "_discriminator")
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
-        Json.obj("bar" -> simple.bar)
-      }
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
+      implicit val cfg: JsonConfiguration        = JsonConfiguration(discriminator = "_discriminator")
+      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
+      implicit val simpleReads: Reads[Simple]    = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
       // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
       implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
@@ -442,12 +431,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         case "Lorem"                                 => "lorem"
         case "Optional"                              => "optional"
       })
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
-        Json.obj("bar" -> simple.bar)
-      }
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
-        (js \ "bar").validate[String].map(Simple(_))
-      }
+      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
+      implicit val simpleReads: Reads[Simple]    = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
       implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
       // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]    = LoremCodec.loremReads
@@ -532,12 +517,14 @@ object MacroSpec {
   // ---
 
   sealed trait Family1
+
   object Family1 {
     def w: OWrites[Family1]                    = Json.writes[Family1]
     implicit lazy val writes: OWrites[Family1] = w
   }
 
   case class Family1Member(foo: String) extends Family1
+
   object Family1Member {
     implicit def writer: OWrites[Family1Member] = Json.writes[Family1Member]
   }
@@ -546,7 +533,9 @@ object MacroSpec {
 
   sealed trait Family2
   case class Family2Member(p: Int) extends Family2
+
   object Family2 {
+
     implicit def w: OWrites[Family2] = {
       "Json.writes[Family2]".mustNot(typeCheck)
       ???

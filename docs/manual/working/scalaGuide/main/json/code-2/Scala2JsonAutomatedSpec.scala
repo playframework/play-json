@@ -16,31 +16,31 @@ class Scala2JsonAutomatedSpec extends Specification {
     // lampepfl/dotty#7000 No Mirrors for value classes
     "for value class" >> {
       "produce a Reads" in {
-        // #value-reads
+        //#value-reads
         import play.api.libs.json._
 
         implicit val idTextReads: Reads[IdText] = Json.valueReads[IdText]
-        // #value-reads
+        //#value-reads
 
         JsString("foo").as[IdText].must_===(new IdText("foo"))
       }
 
       "produce a Writes" in {
-        // #value-writes
+        //#value-writes
         import play.api.libs.json._
 
         implicit val idTextWrites: Writes[IdText] = Json.valueWrites[IdText]
-        // #value-writes
+        //#value-writes
 
         Json.toJson(new IdText("bar")).must_===(JsString("bar"))
       }
 
       "produce a Format" in {
-        // #value-format
+        //#value-format
         import play.api.libs.json._
 
         implicit val idTextFormat: Format[IdText] = Json.valueFormat[IdText]
-        // #value-format
+        //#value-format
 
         val id = new IdText("lorem")
 

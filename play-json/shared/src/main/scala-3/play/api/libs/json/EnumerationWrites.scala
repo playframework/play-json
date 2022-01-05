@@ -7,7 +7,9 @@ package play.api.libs.json
 private[json] trait EnumerationWrites {
 
   /** Serializer for scala.Enumeration by name. */
-  given enumNameWrites[E <: Enumeration](using e: ValueOf[E]): Writes[e.value.Value] =
+  given enumNameWrites[E <: Enumeration](using
+      e: ValueOf[E]
+  ): Writes[e.value.Value] =
     Writes[e.value.Value](value => JsString(value.toString))
 
 }

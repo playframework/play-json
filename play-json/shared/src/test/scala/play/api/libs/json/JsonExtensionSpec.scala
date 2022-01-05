@@ -14,9 +14,11 @@ import org.scalatest.wordspec.AnyWordSpec
 case class User(age: Int, name: String)
 case class Dog(name: String, master: User)
 case class UserProfile(firstName: String, lastName: String, zip: Option[String], _homeCity: String)
+
 object UserProfile {
   def obj1  = UserProfile("Christian", "Schmitt", None, "Kenzingen")
   def json1 = Json.obj("first_name" -> "Christian", "last_name" -> "Schmitt", "home_city" -> "Kenzingen")
+
   def json2 =
     Json.obj(
       "lightbend_firstName" -> "Christian",
@@ -76,11 +78,13 @@ case class X(
 )
 
 case class Program(id: Long, name: String, logoPath: Option[String], logoThumb: Option[String])
+
 object Program {
   def programs = List.empty[Program]
 }
 
 case class Person(name: String, age: Int)
+
 object Person {
   implicit val personReads: Reads[Person]    = Json.reads[Person]
   implicit val personWrites: OWrites[Person] = Json.writes[Person]
@@ -89,6 +93,7 @@ object Person {
 package foreign {
   case class Foreigner(name: String)
 }
+
 object ForeignTest {
   implicit val foreignerReads: Reads[foreign.Foreigner]    = Json.reads[foreign.Foreigner]
   implicit val foreignerWrites: OWrites[foreign.Foreigner] = Json.writes[foreign.Foreigner]
@@ -109,6 +114,7 @@ object Person2 {
 }
 
 case class CustomApply(a: Int, b: String)
+
 object CustomApply {
   def apply(): CustomApply = apply(10, "foo")
 }
@@ -485,14 +491,16 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "manage Boxed class" in {
       import play.api.libs.functional.syntax._
 
-      implicit def idReads[A](implicit rds: Reads[A]): Reads[Id[A]] =
-        Reads[Id[A]] { js =>
-          rds.reads(js).map(Id[A](_))
-        }
+      implicit def idReads[A](implicit
+          rds: Reads[A]
+      ): Reads[Id[A]] =
+        Reads[Id[A]] { js => rds.reads(js).map(Id[A](_)) }
 
       // val c2Reads1 = Json.reads[C2]
 
-      implicit def c1Reads[A](implicit rds: Reads[Id[A]]): Reads[C1[A]] = {
+      implicit def c1Reads[A](implicit
+          rds: Reads[Id[A]]
+      ): Reads[C1[A]] = {
         (
           (__ \ Symbol("id")).read(rds) and
             (__ \ Symbol("name")).read[String]

@@ -128,7 +128,9 @@ sealed trait JsonFacade {
    * @tparam T the type of the value to be written as JSON
    * @param o the value to convert as JSON
    */
-  def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue
+  def toJson[T](o: T)(implicit
+      tjs: Writes[T]
+  ): JsValue
 
   /**
    * Converts any object writeable value to a [[JsObject]].
@@ -139,7 +141,9 @@ sealed trait JsonFacade {
    * @tparam T the type of the value to be written as `JsObject`
    * @param o the value to convert as JSON object
    */
-  def toJsObject[T](o: T)(implicit tjs: OWrites[T]): JsObject
+  def toJsObject[T](o: T)(implicit
+      tjs: OWrites[T]
+  ): JsObject
 
   /**
    * Converts a [[JsValue]] to a value of requested type `T`.
@@ -149,7 +153,9 @@ sealed trait JsonFacade {
    *
    * $jsonParam
    */
-  def fromJson[T](json: JsValue)(implicit fjs: Reads[T]): JsResult[T]
+  def fromJson[T](json: JsValue)(implicit
+      fjs: Reads[T]
+  ): JsResult[T]
 
   /**
    * Returns a [[JsObject]] with given fields.
@@ -188,11 +194,17 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
 
   def prettyPrint(json: JsValue): String = StaticBinding.prettyPrint(json)
 
-  def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue = tjs.writes(o)
+  def toJson[T](o: T)(implicit
+      tjs: Writes[T]
+  ): JsValue = tjs.writes(o)
 
-  def toJsObject[T](o: T)(implicit tjs: OWrites[T]): JsObject = tjs.writes(o)
+  def toJsObject[T](o: T)(implicit
+      tjs: OWrites[T]
+  ): JsObject = tjs.writes(o)
 
-  def fromJson[T](json: JsValue)(implicit fjs: Reads[T]): JsResult[T] = fjs.reads(json)
+  def fromJson[T](json: JsValue)(implicit
+      fjs: Reads[T]
+  ): JsResult[T] = fjs.reads(json)
 
   /**
    * Next is the trait that allows Simplified Json syntax :
@@ -221,7 +233,9 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
 
   import scala.language.implicitConversions
 
-  implicit def toJsFieldJsValueWrapper[T](field: T)(implicit w: Writes[T]): JsValueWrapper =
+  implicit def toJsFieldJsValueWrapper[T](field: T)(implicit
+      w: Writes[T]
+  ): JsValueWrapper =
     JsValueWrapperImpl(w.writes(field))
 
   def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map(f => (f._1, unwrap(f._2))))
@@ -286,13 +300,20 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
       Json.asciiStringify(json)
 
     @inline def prettyPrint(json: JsValue): String = Json.prettyPrint(json)
-    @inline def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue =
+
+    @inline def toJson[T](o: T)(implicit
+        tjs: Writes[T]
+    ): JsValue =
       Json.toJson[T](o)
 
-    @inline def toJsObject[T](o: T)(implicit tjs: OWrites[T]): JsObject =
+    @inline def toJsObject[T](o: T)(implicit
+        tjs: OWrites[T]
+    ): JsObject =
       Json.toJsObject[T](o)
 
-    @inline def fromJson[T](json: JsValue)(implicit fjs: Reads[T]): JsResult[T] = Json.fromJson[T](json)
+    @inline def fromJson[T](json: JsValue)(implicit
+        fjs: Reads[T]
+    ): JsResult[T] = Json.fromJson[T](json)
 
     @inline def obj(fields: (String, JsValueWrapper)*): JsObject = Json.obj(fields: _*)
 
@@ -314,7 +335,9 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
    * val r: Reads[Foo] = Json.configured.reads[Foo]
    * }}}
    */
-  def configured[Opts <: MacroOptions](implicit config: JsonConfiguration.Aux[Opts]) = new WithOptions[Opts](config)
+  def configured[Opts <: MacroOptions](implicit
+      config: JsonConfiguration.Aux[Opts]
+  ) = new WithOptions[Opts](config)
 
   /**
    * Returns an inference context to call the JSON macros,

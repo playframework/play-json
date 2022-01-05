@@ -7,15 +7,17 @@ package play.api.libs.json
 import scala.quoted.{ Expr, Quotes, Type }
 
 private[json] trait ImplicitResolver[A] {
-  protected val quotes: Quotes
+  type Q <: Quotes
+
+  protected implicit val quotes: Q
 
   import quotes.reflect.*
 
-  // format: off
-  private given q: Quotes = quotes
-  // format: on
+  protected implicit val aTpe: Type[A]
 
-  protected val aTpeRepr: TypeRepr
+  protected final lazy val aTpeRepr: TypeRepr = TypeRepr.of(using
+    aTpe
+  )
 
   import Json.Placeholder
 
@@ -38,7 +40,7 @@ private[json] trait ImplicitResolver[A] {
       filter: TypeRepr => Boolean,
       replacement: TypeRepr,
       altered: Boolean
-    ): (TypeRepr, Boolean) = in match {
+  ): (TypeRepr, Boolean) = in match {
     case tpe :: ts =>
       tpe match {
         case t if filter(t) =>
@@ -101,7 +103,7 @@ private[json] trait ImplicitResolver[A] {
    */
   private def normalized(tpe: TypeRepr): (TypeRepr, Boolean) =
     tpe match {
-      case t if (t =:= aTpeRepr) => PlaceholderType -> true
+      case t if t =:= aTpeRepr => PlaceholderType -> true
 
       case AppliedType(t, args) if args.nonEmpty =>
         refactor(
@@ -119,7 +121,7 @@ private[json] trait ImplicitResolver[A] {
 
   /* Restores reference to the type itself when Placeholder is found. */
   private def denormalized(ptype: TypeRepr): TypeRepr = ptype match {
-    case t if (t =:= PlaceholderType) =>
+    case t if t =:= PlaceholderType =>
       aTpeRepr
 
     case AppliedType(_, args) if args.nonEmpty =>
@@ -148,9 +150,13 @@ private[json] trait ImplicitResolver[A] {
 
     override def transformTree(tree: Tree)(owner: Symbol): Tree = tree match {
       case tt: TypeTree =>
-        super.transformTree(TypeTree.of(using denorm(tt.tpe).asType))(owner)
+        super.transformTree(
+          TypeTree.of(using
+            denorm(tt.tpe).asType
+          )
+        )(owner)
 
-      case id @ Ident(_) if (id.show == PlaceholderHandlerName) =>
+      case id @ Ident(_) if id.show == PlaceholderHandlerName =>
         forwardExpr.asTerm
 
       case _ => super.transformTree(tree)(owner)
@@ -159,16 +165,17 @@ private[json] trait ImplicitResolver[A] {
 
   private def createImplicit[M[_]](
       debug: String => Unit
-    )(tc: Type[M],
-      ptype: TypeRepr,
-      tx: TreeMap
-    ): Option[Implicit] = {
-    val pt = ptype.asType
+  )(tc: Type[M], ptype: TypeRepr, tx: TreeMap): Option[Implicit] = {
+    val pt              = ptype.asType
     val (ntpe, selfRef) = normalized(ptype)
-    val ptpe = ntpe
+    val ptpe            = ntpe
 
     // infers given
-    val neededGivenType = TypeRepr.of[M](using tc).appliedTo(ptpe)
+    val neededGivenType = TypeRepr
+      .of[M](using
+        tc
+      )
+      .appliedTo(ptpe)
 
     val neededGiven: Option[Term] = Implicits.search(neededGivenType) match {
       case suc: ImplicitSearchSuccess => {
@@ -195,7 +202,11 @@ private[json] trait ImplicitResolver[A] {
             neededGiven.map(_.symbol.fullName)
         }
 
-      s"// Resolve given ${prettyType(TypeRepr.of(using tc))} for ${prettyType(ntpe)} as ${prettyType(
+      s"// Resolve given ${prettyType(
+        TypeRepr.of(using
+          tc
+        )
+      )} for ${prettyType(ntpe)} as ${prettyType(
         neededGivenType
       )} (self? ${selfRef}) = ${show.mkString}"
     }
@@ -206,8 +217,7 @@ private[json] trait ImplicitResolver[A] {
   protected def resolver[M[_], T](
       forwardExpr: Expr[M[T]],
       debug: String => Unit
-    )(tc: Type[M]
-    ): TypeRepr => Option[Implicit] = {
+  )(tc: Type[M]): TypeRepr => Option[Implicit] = {
     val tx =
       new ImplicitTransformer[M[T]](forwardExpr)
 
@@ -219,10 +229,10 @@ private[json] trait ImplicitResolver[A] {
 
   // To print the implicit types in the compiler messages
   private[json] final def prettyType(t: TypeRepr): String = t match {
-    case _ if (t <:< TypeRepr.of[EmptyTuple]) =>
+    case _ if t <:< TypeRepr.of[EmptyTuple] =>
       "EmptyTuple"
 
-    case AppliedType(ty, a :: b :: Nil) if (ty <:< TypeRepr.of[*:]) =>
+    case AppliedType(ty, a :: b :: Nil) if ty <:< TypeRepr.of[*:] =>
       s"${prettyType(a)} *: ${prettyType(b)}"
 
     case AppliedType(_, args) =>

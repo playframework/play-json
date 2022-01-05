@@ -163,7 +163,9 @@ sealed trait JsLookupResult extends Any with JsReadable {
   def orElse(alternative: => JsLookupResult): JsLookupResult =
     if (isDefined) this else alternative
 
-  def validate[A](implicit rds: Reads[A]): JsResult[A] = this match {
+  def validate[A](implicit
+      rds: Reads[A]
+  ): JsResult[A] = this match {
     case JsDefined(v)       => v.validate[A]
     case undef: JsUndefined => JsError(undef.validationError)
   }
@@ -172,12 +174,15 @@ sealed trait JsLookupResult extends Any with JsReadable {
    * If this result contains `JsNull` or is undefined, returns `JsSuccess(None)`.
    * Otherwise returns the result of validating as an `A` and wrapping the result in a `Some`.
    */
-  def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] =
+  def validateOpt[A](implicit
+      rds: Reads[A]
+  ): JsResult[Option[A]] =
     this match {
       case JsDefined(a) => Reads.optionWithNull(rds).reads(a)
       case _            => JsSuccess(None)
     }
 }
+
 object JsLookupResult {
   import scala.language.implicitConversions
   implicit def jsLookupResultToJsLookup(value: JsLookupResult): JsLookup = JsLookup(value)

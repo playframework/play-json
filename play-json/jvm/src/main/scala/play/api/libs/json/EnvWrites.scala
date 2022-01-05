@@ -42,6 +42,7 @@ trait EnvWrites {
 
   /** Formatting companion */
   object TemporalFormatter {
+
     implicit def DefaultLocalDateTimeFormatter(formatter: DateTimeFormatter): TemporalFormatter[LocalDateTime] =
       new TemporalFormatter[LocalDateTime] {
         def format(temporal: LocalDateTime): String = formatter.format(temporal)
@@ -111,7 +112,9 @@ trait EnvWrites {
    *     DateTimeFormatter.ISO_LOCAL_DATE_TIME)
    * }}}
    */
-  def temporalWrites[A <: Temporal, B](formatting: B)(implicit f: B => TemporalFormatter[A]): Writes[A] =
+  def temporalWrites[A <: Temporal, B](formatting: B)(implicit
+      f: B => TemporalFormatter[A]
+  ): Writes[A] =
     new Writes[A] {
       def writes(temporal: A): JsValue = JsString(f(formatting).format(temporal))
     }
@@ -157,9 +160,7 @@ trait EnvWrites {
    * using '2011-12-03T10:15:30Z' format.
    */
   implicit val DefaultInstantWrites: Writes[Instant] =
-    Writes[Instant] { i =>
-      JsString(i.toString)
-    }
+    Writes[Instant] { i => JsString(i.toString) }
 
   /**
    * The default typeclass to write a `java.time.LocalTime`,
@@ -222,6 +223,7 @@ trait EnvWrites {
    */
   val ZonedDateTimeEpochMilliWrites: Writes[ZonedDateTime] =
     new Writes[ZonedDateTime] {
+
       def writes(t: ZonedDateTime): JsValue =
         JsNumber(BigDecimal.valueOf(t.toInstant.toEpochMilli))
     }
@@ -258,15 +260,14 @@ trait EnvWrites {
    * }}}
    */
   val InstantEpochMilliWrites: Writes[Instant] = new Writes[Instant] {
+
     def writes(t: Instant): JsValue =
       JsNumber(BigDecimal.valueOf(t.toEpochMilli))
   }
 
   /** Serializer for a `Locale` using the IETF BCP 47 string representation */
   implicit val localeWrites: Writes[Locale] =
-    Writes[Locale] { l =>
-      JsString(KeyWrites.LanguageTagWrites.writeKey(l))
-    }
+    Writes[Locale] { l => JsString(KeyWrites.LanguageTagWrites.writeKey(l)) }
 
   /** Serializer for a `Locale` using a object representation */
   val localeObjectWrites: OWrites[Locale] = {
@@ -277,17 +278,11 @@ trait EnvWrites {
 
       fields += "language" -> Json.toJson(l.getLanguage)
 
-      Option(l.getCountry).filter(_.nonEmpty).foreach { country =>
-        fields += "country" -> Json.toJson(country)
-      }
+      Option(l.getCountry).filter(_.nonEmpty).foreach { country => fields += "country" -> Json.toJson(country) }
 
-      Option(l.getVariant).filter(_.nonEmpty).foreach { variant =>
-        fields += "variant" -> Json.toJson(variant)
-      }
+      Option(l.getVariant).filter(_.nonEmpty).foreach { variant => fields += "variant" -> Json.toJson(variant) }
 
-      Option(l.getScript).filter(_.nonEmpty).foreach { script =>
-        fields += "script" -> Json.toJson(script)
-      }
+      Option(l.getScript).filter(_.nonEmpty).foreach { script => fields += "script" -> Json.toJson(script) }
 
       val attrs = l.getUnicodeLocaleAttributes.asScala
       if (attrs.nonEmpty) {
@@ -299,11 +294,7 @@ trait EnvWrites {
         fields += "keywords" -> Json.toJson {
           val ks = Map.newBuilder[String, String]
 
-          keywords.foreach { key =>
-            Option(l.getUnicodeLocaleType(key)).foreach { typ =>
-              ks += (key -> typ)
-            }
-          }
+          keywords.foreach { key => Option(l.getUnicodeLocaleType(key)).foreach { typ => ks += (key -> typ) } }
 
           ks.result()
         }
@@ -314,11 +305,7 @@ trait EnvWrites {
         fields += "extension" -> Json.toJson {
           val ext = Map.newBuilder[String, String]
 
-          extension.foreach { key =>
-            Option(l.getExtension(key)).foreach { v =>
-              ext += (key.toString -> v)
-            }
-          }
+          extension.foreach { key => Option(l.getExtension(key)).foreach { v => ext += (key.toString -> v) } }
 
           ext.result()
         }
@@ -330,30 +317,25 @@ trait EnvWrites {
 
   /** Serializer of Java Duration as a number of milliseconds. */
   val javaDurationMillisWrites: Writes[JDuration] =
-    Writes[JDuration] { d =>
-      JsNumber(d.toMillis)
-    }
+    Writes[JDuration] { d => JsNumber(d.toMillis) }
 
   /**
    * Serializer of Java Duration using ISO representation
    * (e.g. PT1S for 1 second).
    */
   implicit val javaDurationWrites: Writes[JDuration] =
-    Writes[JDuration] { d =>
-      JsString(d.toString)
-    }
+    Writes[JDuration] { d => JsString(d.toString) }
 
   /**
    * Serializer of Java Period using ISO representation
    * (e.g. P2D for 2 days).
    */
   implicit val javaPeriodWrites: Writes[Period] =
-    Writes[Period] { d =>
-      JsString(d.toString)
-    }
+    Writes[Period] { d => JsString(d.toString) }
 }
 
 trait EnvKeyWrites {
+
   implicit object LanguageTagWrites extends KeyWrites[Locale] {
     def writeKey(locale: Locale): String = locale.toLanguageTag
   }

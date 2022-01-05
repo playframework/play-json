@@ -10,6 +10,8 @@ import com.typesafe.tools.mima.core._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import sbtcrossproject.CrossType
 
+ThisBuild / scalafmtOnCompile := true
+
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 val isScala3 = Def.setting {

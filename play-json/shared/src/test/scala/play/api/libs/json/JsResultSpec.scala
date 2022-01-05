@@ -50,11 +50,7 @@ class JsResultSpec extends AnyWordSpec with Matchers {
     "be recovered" in {
       val succ = JsSuccess("success")
 
-      succ
-        .recoverWith { _ =>
-          JsSuccess("fallback")
-        }
-        .mustEqual(succ)
+      succ.recoverWith { _ => JsSuccess("fallback") }.mustEqual(succ)
     }
   }
 
@@ -62,11 +58,7 @@ class JsResultSpec extends AnyWordSpec with Matchers {
     "be recovered" in {
       val succ = JsSuccess("success")
 
-      JsError("err")
-        .recoverWith { _ =>
-          succ
-        }
-        .mustEqual(succ)
+      JsError("err").recoverWith { _ => succ }.mustEqual(succ)
     }
   }
 

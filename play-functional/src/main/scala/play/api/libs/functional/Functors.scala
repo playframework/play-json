@@ -11,6 +11,7 @@ trait Functor[M[_]] extends Variant[M] {
 }
 
 object Functor {
+
   implicit val functorOption: Functor[Option] = new Functor[Option] {
     def fmap[A, B](a: Option[A], f: A => B): Option[B] = a.map(f)
   }
@@ -24,15 +25,21 @@ trait ContravariantFunctor[M[_]] extends Variant[M] {
   def contramap[A, B](m: M[A], f1: B => A): M[B]
 }
 
-class FunctorOps[M[_], A](ma: M[A])(implicit fu: Functor[M]) {
+class FunctorOps[M[_], A](ma: M[A])(implicit
+    fu: Functor[M]
+) {
   def fmap[B](f: A => B): M[B] = fu.fmap(ma, f)
 }
 
-class ContravariantFunctorOps[M[_], A](ma: M[A])(implicit fu: ContravariantFunctor[M]) {
+class ContravariantFunctorOps[M[_], A](ma: M[A])(implicit
+    fu: ContravariantFunctor[M]
+) {
   def contramap[B](f: B => A): M[B] = fu.contramap(ma, f)
 }
 
-class InvariantFunctorOps[M[_], A](ma: M[A])(implicit fu: InvariantFunctor[M]) {
+class InvariantFunctorOps[M[_], A](ma: M[A])(implicit
+    fu: InvariantFunctor[M]
+) {
   def inmap[B](f: A => B, g: B => A): M[B] = fu.inmap(ma, f, g)
 }
 
@@ -48,6 +55,7 @@ case class ContravariantFunctorExtractor[M[_]](ContraVariantFunctor: Contravaria
     extends VariantExtractor[M]
 
 object VariantExtractor {
+
   implicit def functor[M[_]: Functor]: FunctorExtractor[M] =
     FunctorExtractor(implicitly[Functor[M]])
 

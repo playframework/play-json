@@ -51,6 +51,7 @@ import play.api.libs.json._
  */
 sealed class PlayJsonModule(parserSettings: JsonParserSettings)
     extends SimpleModule("PlayJson", Version.unknownVersion()) {
+
   override def setupModule(context: SetupContext): Unit = {
     context.addDeserializers(new PlayDeserializers(parserSettings))
     context.addSerializers(new PlaySerializers(parserSettings))
@@ -93,9 +94,7 @@ private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) ext
 
       case JsArray(elements) => {
         json.writeStartArray()
-        elements.foreach { t =>
-          serialize(t, json, provider)
-        }
+        elements.foreach { t => serialize(t, json, provider) }
         json.writeEndArray()
       }
 
@@ -118,6 +117,7 @@ private[jackson] sealed trait DeserializerContext {
 }
 
 private[jackson] case class ReadingList(content: mutable.ArrayBuffer[JsValue]) extends DeserializerContext {
+
   override def addValue(value: JsValue): DeserializerContext = {
     ReadingList(content += value)
   }
@@ -132,6 +132,7 @@ private[jackson] case class KeyRead(content: ListBuffer[(String, JsValue)], fiel
 // Context for reading one item of an Object (we already red fieldName)
 private[jackson] case class ReadingMap(content: ListBuffer[(String, JsValue)]) extends DeserializerContext {
   def setField(fieldName: String) = KeyRead(content, fieldName)
+
   def addValue(value: JsValue): DeserializerContext =
     throw new Exception("Cannot add a value on an object without a key, malformed JSON object!")
 }
@@ -237,6 +238,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 }
 
 private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) extends Deserializers.Base {
+
   override def findBeanDeserializer(javaType: JavaType, config: DeserializationConfig, beanDesc: BeanDescription) = {
     val klass = javaType.getRawClass
     if (classOf[JsValue].isAssignableFrom(klass) || klass == JsNull.getClass) {
@@ -246,6 +248,7 @@ private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) ext
 }
 
 private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) extends Serializers.Base {
+
   override def findSerializer(config: SerializationConfig, javaType: JavaType, beanDesc: BeanDescription) = {
     val ser: Object = if (classOf[JsValue].isAssignableFrom(beanDesc.getBeanClass)) {
       new JsValueSerializer(parserSettings)

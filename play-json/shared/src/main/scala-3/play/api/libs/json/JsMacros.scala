@@ -146,7 +146,9 @@ private[json] trait JsValueMacros {
 
   /** Only for internal purposes */
   object Placeholder {
+
     implicit object Format extends OFormat[Placeholder] {
+
       val success =
         JsSuccess(new Placeholder())
 

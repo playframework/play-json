@@ -57,9 +57,7 @@ object StaticBinding {
       jsValue,
       false,
       0,
-      { l =>
-        0.until(l * 2).map(_ => ' ').mkString
-      },
+      { l => 0.until(l * 2).map(_ => ' ').mkString },
       newline = true,
       fieldValueSep = " : ",
       arraySep = ("[ ", ", ", " ]")
@@ -100,14 +98,13 @@ object StaticBinding {
           s"\n${indent(il)}" -> s"\n${indent(ilevel)}}"
         } else indent(il) -> "}"
 
-        fields
-          .map { case (k, v) =>
+        fields.map {
+          case (k, v) =>
             @inline def key   = fromString(k, escapeNonASCII)
             @inline def value = fromJs(v, escapeNonASCII, il, indent, newline, fieldValueSep, arraySep)
 
             s"$before$key$fieldValueSep$value"
-          }
-          .mkString("{", ",", after)
+        }.mkString("{", ",", after)
       }
     }
 

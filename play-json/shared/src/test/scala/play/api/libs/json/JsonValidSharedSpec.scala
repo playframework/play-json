@@ -11,6 +11,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class JsonValidSharedSpec extends AnyWordSpec with Matchers {
+
   // lampepfl/dotty#11052 doesn't work as a locally-defined Enumeration
   //     - should validate Enums *** FAILED *** (1 millisecond)
   //       java.lang.IllegalAccessException: class scala.Enumeration cannot access a member of class play.api.libs.json.JsonValidSharedSpec$Weekdays$1$ with modifiers "public"
@@ -121,9 +122,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     }
 
     "validate JsObject to Map with custom key type" in {
-      implicit val keyReads: KeyReads[Int] = KeyReads[Int] { key =>
-        JsResult.fromTry(scala.util.Try(key.toInt))
-      }
+      implicit val keyReads: KeyReads[Int] = KeyReads[Int] { key => JsResult.fromTry(scala.util.Try(key.toInt)) }
 
       Json
         .obj("1" -> "value1", "2" -> "value2")
@@ -217,20 +216,13 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       }
 
       "reject malformed UUIDs" in {
-        JsString("bogus string")
-          .validate[java.util.UUID]
-          .recoverTotal { e =>
-            "error"
-          }
-          .mustEqual("error")
+        JsString("bogus string").validate[java.util.UUID].recoverTotal { e => "error" }.mustEqual("error")
       }
 
       "reject well-formed but incorrect UUIDS in strict mode" in {
         JsString("0-0-0-0-0")
           .validate[java.util.UUID](new Reads.UUIDReader(true))
-          .recoverTotal { e =>
-            "error"
-          }
+          .recoverTotal { e => "error" }
           .mustEqual("error")
       }
     }
@@ -281,12 +273,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         }
         .mustEqual(JsSuccess("error"))
 
-      JsNumber(123)
-        .validate[String]
-        .recoverTotal { _ =>
-          "error"
-        }
-        .mustEqual("error")
+      JsNumber(123).validate[String].recoverTotal { _ => "error" }.mustEqual("error")
 
       JsNumber(123).validate[Int].recoverTotal(_ => 0).mustEqual(123)
     }
@@ -302,7 +289,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "validate reads on the root path" when {
       case class Address(street: String, zip: String)
 
-      implicit val userReads: Reads[User] = (
+      implicit
+      val userReads: Reads[User] = (
         (__ \ "name").read[String] and
           (__ \ "age").read[Int]
       )(User.apply _)
@@ -644,7 +632,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "manage nullable/option".taggedAs(UnstableInScala213) in {
       case class User(name: String, email: String, phone: Option[String])
 
-      implicit val UserReads: Reads[User] = (
+      implicit
+      val UserReads: Reads[User] = (
         (__ \ Symbol("name")).read[String] and
           (__ \ Symbol("coords") \ Symbol("email")).read(Reads.email) and
           (__ \ Symbol("coords") \ Symbol("phone")).readNullable(Reads.minLength[String](8))
@@ -715,7 +704,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "report correct path for validation errors" in {
       case class User(email: String, phone: Option[String])
 
-      implicit val UserReads: Reads[User] = (
+      implicit
+      val UserReads: Reads[User] = (
         (__ \ Symbol("email")).read(Reads.email) and
           (__ \ Symbol("phone")).readNullable(Reads.minLength[String](8))
       )(User.apply _)
@@ -730,7 +720,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "mix reads constraints" in {
       case class User(id: Long, email: String, age: Int)
 
-      implicit val UserReads: Reads[User] = (
+      implicit
+      val UserReads: Reads[User] = (
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("email")).read(Reads.email andKeep Reads.minLength[String](5)) and
           (__ \ Symbol("age")).read(Reads.max(55).or(Reads.min(65)))
@@ -763,7 +754,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive reads" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit lazy val UserReads: Reads[User] = (
+      implicit
+      lazy val UserReads: Reads[User] = (
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("name")).read[String] and
           (__ \ Symbol("friend")).lazyReadNullable(UserReads)
@@ -789,7 +781,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive writes" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit lazy val UserWrites: Writes[User] = (
+      implicit
+      lazy val UserWrites: Writes[User] = (
         (__ \ Symbol("id")).write[Long] and
           (__ \ Symbol("name")).write[String] and
           (__ \ Symbol("friend")).lazyWriteNullable(UserWrites)
@@ -807,7 +800,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive formats" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit lazy val UserFormats: Format[User] = (
+      implicit
+      lazy val UserFormats: Format[User] = (
         (__ \ Symbol("id")).format[Long] and
           (__ \ Symbol("name")).format[String] and
           (__ \ Symbol("friend")).lazyFormatNullable(UserFormats)
@@ -1016,7 +1010,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit val UserWrites: OWrites[User] = (
+      implicit
+      val UserWrites: OWrites[User] = (
         (__ \ Symbol("email")).write[String] and
           (__ \ Symbol("phone")).writeNullable[String]
       )(u => (u.email, u.phone))
@@ -1062,7 +1057,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit val UserFormat: OFormat[User] = (
+      implicit
+      val UserFormat: OFormat[User] = (
         (__ \ Symbol("email")).format(email) and
           (__ \ Symbol("phone")).formatNullable(Format(minLength[String](8), Writes.of[String]))
       )(User.apply, u => (u.email, u.phone))

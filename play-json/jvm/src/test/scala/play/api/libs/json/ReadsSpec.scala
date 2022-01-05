@@ -742,9 +742,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     val settings = JsonParserSettings.settings.bigDecimalParseSettings
 
     val longNumberString =
-      Iterator
-        .fill(settings.digitsLimit)("1")
-        .mkString
+      Iterator.fill(settings.digitsLimit)("1").mkString
 
     "parse long string" in {
       reads(JsString(longNumberString)) must_=== JsSuccess(
@@ -774,9 +772,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     val settings = JsonParserSettings.settings.bigDecimalParseSettings
 
     val longNumberString =
-      Iterator
-        .fill(settings.digitsLimit)("1")
-        .mkString
+      Iterator.fill(settings.digitsLimit)("1").mkString
 
     "parse long string" in {
       reads(JsString(longNumberString)) must_=== JsSuccess(BigInt(longNumberString))

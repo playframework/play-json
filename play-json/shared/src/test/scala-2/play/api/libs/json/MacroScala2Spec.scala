@@ -314,7 +314,9 @@ object MacroScala2Spec {
   case class WithDefault(id: Int, a: String = "a", b: Option[String] = Some("b"))
   case class ComplexWithDefault(id: Int, ref: Option[WithDefault] = Some(WithDefault(1)))
 
-  case class WithImplicit1(pos: Int, text: String)(implicit x: Numeric[Int]) { def x1 = x.one }
+  case class WithImplicit1(pos: Int, text: String)(implicit
+      x: Numeric[Int]
+  ) { def x1 = x.one }
   case class WithImplicit2[N: Numeric](ident: String, value: N)
 
   case class WithColl[A: Numeric, B](
@@ -326,7 +328,9 @@ object MacroScala2Spec {
   )
 
   case class WithDefaultInCompanion(id: Int, a: String = "a")
+
   object WithDefaultInCompanion {
+
     implicit val format: OFormat[WithDefaultInCompanion] =
       Json.using[Json.WithDefaultValues].format[WithDefaultInCompanion]
   }

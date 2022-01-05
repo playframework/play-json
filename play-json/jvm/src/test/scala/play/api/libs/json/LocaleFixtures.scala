@@ -7,6 +7,7 @@ package play.api.libs.json
 import java.util.Locale
 
 object LocaleFixtures {
+
   def fullLocale =
     new Locale.Builder()
       .setLocale(Locale.FRANCE)

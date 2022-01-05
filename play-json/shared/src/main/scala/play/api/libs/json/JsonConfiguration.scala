@@ -43,6 +43,7 @@ object JsonConfiguration {
 
   // These methods exist for binary compatibility, since Scala protected methods are public from a binary perspective.
   protected def apply(naming: JsonNaming): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming)
+
   protected def apply(naming: JsonNaming, optionHandlers: OptionHandlers): JsonConfiguration.Aux[Json.MacroOptions] =
     new Impl(naming, optionHandlers)
   protected def default: JsonConfiguration.Aux[Json.MacroOptions] = apply()
@@ -96,6 +97,7 @@ object JsonNaming {
    * to name its column (e.g. fooBar -> foo_bar).
    */
   object SnakeCase extends JsonNaming {
+
     def apply(property: String): String = {
       val length            = property.length
       val result            = new StringBuilder(length * 2)
@@ -146,17 +148,30 @@ object JsonNaming {
 
 /** Configure how options should be handled */
 trait OptionHandlers {
-  def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]]
-  def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]]
 
-  def readHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit r: Reads[T]): Reads[Option[T]] = {
+  // Not used by Scala3 macros
+  def writeHandler[T](jsPath: JsPath)(implicit
+      writes: Writes[T]
+  ): OWrites[Option[T]]
+
+  def readHandler[T](jsPath: JsPath)(implicit
+      r: Reads[T]
+  ): Reads[Option[T]]
+
+  def readHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit
+      r: Reads[T]
+  ): Reads[Option[T]] = {
     jsPath.readNullableWithDefault(defaultValue)
   }
 
-  final def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
+  // Not used by Scala3 macros
+  final def formatHandler[T](jsPath: JsPath)(implicit
+      format: Format[T]
+  ): OFormat[Option[T]] = {
     OFormat(readHandler(jsPath), writeHandler(jsPath))
   }
 
+  // Not used by Scala3 macros
   final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit
       format: Format[T]
   ): OFormat[Option[T]] = {
@@ -172,8 +187,14 @@ object OptionHandlers {
    * Uses readNullable and writesNullable
    */
   object Default extends OptionHandlers {
-    def readHandler[T](jsPath: JsPath)(implicit r: Reads[T]): Reads[Option[T]]          = jsPath.readNullable
-    def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeNullable
+
+    def readHandler[T](jsPath: JsPath)(implicit
+        r: Reads[T]
+    ): Reads[Option[T]] = jsPath.readNullable
+
+    def writeHandler[T](jsPath: JsPath)(implicit
+        writes: Writes[T]
+    ): OWrites[Option[T]] = jsPath.writeNullable
   }
 
   /**
@@ -181,7 +202,13 @@ object OptionHandlers {
    * Uses readNullable and writeOptionWithNull
    */
   object WritesNull extends OptionHandlers {
-    def readHandler[T](jsPath: JsPath)(implicit reads: Reads[T]): Reads[Option[T]]      = jsPath.readNullable
-    def writeHandler[T](jsPath: JsPath)(implicit writes: Writes[T]): OWrites[Option[T]] = jsPath.writeOptionWithNull
+
+    def readHandler[T](jsPath: JsPath)(implicit
+        reads: Reads[T]
+    ): Reads[Option[T]] = jsPath.readNullable
+
+    def writeHandler[T](jsPath: JsPath)(implicit
+        writes: Writes[T]
+    ): OWrites[Option[T]] = jsPath.writeOptionWithNull
   }
 }
