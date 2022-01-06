@@ -124,10 +124,10 @@ private[json] trait ImplicitResolver[A] {
     case t if t =:= PlaceholderType =>
       aTpeRepr
 
-    case AppliedType(_, args) if args.nonEmpty =>
+    case AppliedType(base, args) if args.nonEmpty =>
       refactor(
         args,
-        ptype -> ptype.typeSymbol,
+        base -> base.typeSymbol,
         List.empty,
         List.empty,
         _ == PlaceholderType,
@@ -135,7 +135,8 @@ private[json] trait ImplicitResolver[A] {
         false
       )._1
 
-    case _ => ptype
+    case _ =>
+      ptype
   }
 
   private val PlaceholderHandlerName =
@@ -148,7 +149,17 @@ private[json] trait ImplicitResolver[A] {
   private class ImplicitTransformer[T](forwardExpr: Expr[T]) extends TreeMap {
     private val denorm = denormalized _
 
+    @SuppressWarnings(Array("AsInstanceOf"))
     override def transformTree(tree: Tree)(owner: Symbol): Tree = tree match {
+      case TypeApply(tpt, args) =>
+        TypeApply(
+          transformTree(tpt)(owner).asInstanceOf[Term],
+          args.map(transformTree(_)(owner).asInstanceOf[TypeTree])
+        )
+
+      case t @ (Select(_, _) | Ident(_)) if t.show == PlaceholderHandlerName =>
+        forwardExpr.asTerm
+
       case tt: TypeTree =>
         super.transformTree(
           TypeTree.of(using
@@ -156,10 +167,11 @@ private[json] trait ImplicitResolver[A] {
           )
         )(owner)
 
-      case id @ Ident(_) if id.show == PlaceholderHandlerName =>
-        forwardExpr.asTerm
+      case Apply(fun, args) =>
+        Apply(transformTree(fun)(owner).asInstanceOf[Term], args.map(transformTree(_)(owner).asInstanceOf[Term]))
 
-      case _ => super.transformTree(tree)(owner)
+      case _ =>
+        super.transformTree(tree)(owner)
     }
   }
 
@@ -224,7 +236,10 @@ private[json] trait ImplicitResolver[A] {
     createImplicit(debug)(tc, _: TypeRepr, tx)
   }
 
-  private def fullName(sym: Symbol): String =
+  /**
+   * @param sym a type symbol
+   */
+  protected def typeName(sym: Symbol): String =
     sym.fullName.replaceAll("(\\.package\\$|\\$|scala\\.Predef\\$\\.)", "")
 
   // To print the implicit types in the compiler messages
@@ -236,13 +251,20 @@ private[json] trait ImplicitResolver[A] {
       s"${prettyType(a)} *: ${prettyType(b)}"
 
     case AppliedType(_, args) =>
-      fullName(t.typeSymbol) + args.map(prettyType).mkString("[", ", ", "]")
+      typeName(t.typeSymbol) + args.map(prettyType).mkString("[", ", ", "]")
 
     case OrType(a, b) =>
       s"${prettyType(a)} | ${prettyType(b)}"
 
-    case _ =>
-      fullName(t.typeSymbol)
+    case _ => {
+      val sym = t.typeSymbol
+
+      if (sym.isTypeParam) {
+        sym.name
+      } else {
+        typeName(sym)
+      }
+    }
   }
 
   type Implicit = (Term, Boolean)

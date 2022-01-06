@@ -717,8 +717,8 @@ class JsMacroImpl(val c: blackbox.Context) {
         }
 
       val resolvedImplicits = utility.implicits(resolver)
-      val canBuild = resolvedImplicits
-        .map { case (name, Implicit(pt, impl, _, _)) =>
+      val canBuild = resolvedImplicits.map {
+        case (name, Implicit(pt, impl, _, _)) =>
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
           val cn = c.Expr[String](
@@ -749,8 +749,7 @@ class JsMacroImpl(val c: blackbox.Context) {
             case _ =>
               q"$jspathTree.${TermName(methodName)}($impl)"
           }
-        }
-        .reduceLeft[Tree] { (acc, r) => q"$acc.and($r)" }
+      }.reduceLeft[Tree] { (acc, r) => q"$acc.and($r)" }
 
       val multiParam = params.length > 1
       // if case class has one single field, needs to use map/contramap/inmap on the Reads/Writes/Format instead of

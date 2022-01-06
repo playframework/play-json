@@ -18,17 +18,11 @@ val isScala3 = Def.setting {
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 != 2)
 }
 
-// specs2 hasn't been doing Scala 3 releases, so we use for3Use2_13.
-//
-// Since these are just test dependencies, it isn't really a problem.
-// But if too much more time passes and specs2 still hasn't released
-// for Scala 3, we should consider ripping it out.
-
 def specs2(scalaVersion: String) =
-  Seq(
-    "org.specs2" %% "specs2-core"  % "4.14.1" % Test,
-    "org.specs2" %% "specs2-junit" % "4.14.1" % Test,
-  ).map(_.cross(CrossVersion.for3Use2_13))
+  Seq("core", "junit").map { n =>
+    ("org.specs2" %% s"specs2-$n" % "4.13.2").
+      cross(CrossVersion.for3Use2_13) % Test
+  }
 
 val jacksonVersion         = "2.11.4"
 val jacksonDatabindVersion = jacksonVersion
@@ -149,28 +143,28 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
       libraryDependencies ++= (
-        if (isScala3.value) Nil
+        if (isScala3.value) Seq.empty
         else
-          Seq(
-            "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-            "com.chuusai"   %% "shapeless"     % "2.3.8" % Test,
-          )
+          Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
       ),
       libraryDependencies ++= Seq(
         "org.scalatest"     %%% "scalatest"       % "3.2.11"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.11.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.15.4"   % Test,
+            ("com.chuusai"    %% "shapeless"    % "2.3.7").
+              cross(CrossVersion.for3Use2_13) % Test
       ),
       libraryDependencies += {
-        if (isScala3.value)
+        if (isScala3.value) {
           "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
-        else
+        } else {
           "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided
+        }
       },
       libraryDependencies ++=
         (CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, 13)) => Seq()
-          case Some((3, _))  => Nil
+          case Some((2, 13)) => Seq.empty
+          case Some((3, _))  => Seq.empty
           case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
         }),
       Compile / unmanagedSourceDirectories += {

@@ -149,7 +149,6 @@ object JsonNaming {
 /** Configure how options should be handled */
 trait OptionHandlers {
 
-  // Not used by Scala3 macros
   def writeHandler[T](jsPath: JsPath)(implicit
       writes: Writes[T]
   ): OWrites[Option[T]]

@@ -16,7 +16,7 @@ import play.api.libs.functional.ContravariantFunctor
 /**
  * Implementation for the JSON macro.
  */
-object JsMacroImpl {
+object JsMacroImpl { // TODO: debug
   import Json.MacroOptions
 
   def withOptionsReads[A: Type, Opts <: MacroOptions: Type](
@@ -70,10 +70,10 @@ object JsMacroImpl {
 
   // ---
 
-  private def withSummonedConfig[T](f: Expr[JsonConfiguration.Aux[MacroOptions]] => Expr[T])(using
+  private def withSummonedConfig[T: Type](f: Expr[JsonConfiguration.Aux[_ <: MacroOptions]] => Expr[T])(using
       q: Quotes
   ): Expr[T] =
-    Expr.summon[JsonConfiguration.Aux[MacroOptions]] match {
+    Expr.summon[JsonConfiguration.Aux[_ <: MacroOptions]] match {
       case Some(config) =>
         f(config)
 
@@ -98,11 +98,19 @@ object JsMacroImpl {
   ): Expr[Reads[A]] = {
     import q.reflect.*
 
-    '{
+    val expr = '{
       lazy val cfg = ${ config }
 
       withSelfOReads[A] { (forwardReads: Reads[A]) => ${ readsExpr[A, OptsT]('cfg, 'forwardReads) } }
     }
+
+    if (debugEnabled) {
+      report.info(s"/* Generated Reads:\n${expr.asTerm.show(using
+        Printer.TreeAnsiCode
+      )}\n*/")
+    }
+
+    expr
   }
 
   private def readsExpr[A: Type, OptsT <: MacroOptions: Type](
@@ -211,7 +219,17 @@ object JsMacroImpl {
       def handleSubTypes(discriminator: Expr[String], input: Expr[JsValue]): Expr[JsResult[A]] = {
         type Subtype[U <: A] = U
 
-        val cases = subTypes.zipWithIndex.map { (tpr, i) =>
+        val cases = subTypes.filter {
+          case tpr @ AppliedType(_, _) => {
+            report.warning(
+              s"Generic type ${prettyType(tpr)} is not supported as member of sealed family ${prettyType(aTpeRepr)}."
+            )
+
+            false
+          }
+
+          case _ => true
+        }.zipWithIndex.map { (tpr, i) =>
           tpr.asType match {
             case st @ '[Subtype[sub]] =>
               val subTpr = TypeRepr.of[sub](using
@@ -226,11 +244,17 @@ object JsMacroImpl {
               )
 
               val tpeCaseName: Expr[String] = '{
-                ${ config }.typeNaming(${ Expr(subTpr.typeSymbol.fullName) })
+                ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
               }
 
               val resolve = resolver[Reads, sub](
-                forwardExpr.asExprOf[Reads[sub]],
+                '{
+                  @SuppressWarnings(Array("AsInstanceOf"))
+                  def forward =
+                    ${ forwardExpr }.asInstanceOf[Reads[sub]]
+
+                  forward
+                },
                 debug
               )(readsTpe)
 
@@ -245,8 +269,7 @@ object JsMacroImpl {
               }
 
               val matchedRef: Expr[String] = Ref(bind).asExprOf[String]
-
-              val cond: Expr[Boolean] = '{ ${ matchedRef } == ${ tpeCaseName } }
+              val cond: Expr[Boolean]      = '{ ${ matchedRef } == ${ tpeCaseName } }
 
               CaseDef(Bind(bind, Wildcard()), guard = Some(cond.asTerm), rhs = body.asTerm)
           }
@@ -301,7 +324,9 @@ object JsMacroImpl {
       val compMod = Ref(tpr.typeSymbol.companionModule)
 
       val (optional, required) = tprElements.zipWithIndex.map {
-        case ((sym, pt), i) =>
+        case ((sym, rpt), i) =>
+          val pt = rpt.dealias
+
           pt.asType match {
             case '[t] =>
               val default: Option[Expr[t]] =
@@ -314,7 +339,7 @@ object JsMacroImpl {
           }
       }.toSeq.partition { case ReadableField(_, _, t, _) => isOptionalType(t) }
 
-      def handleFields(input: Expr[JsObject]): Expr[JsResult[T]] = {
+      def readFields(input: Expr[JsObject]): Expr[JsResult[T]] = {
         val reqElmts: Seq[(Int, Expr[JsResult[_]])] = required.map {
           case ReadableField(param, n, pt, defaultValue) =>
             pt.asType match {
@@ -396,15 +421,14 @@ object JsMacroImpl {
           (reqElmts ++ exElmts).toSeq.sortBy(_._1).map(_._2)
 
         '{
-          trySeq(${ Expr.ofList(tupElmts.toList) }).map { ls => ${ pof }.fromProduct(Tuple.fromArray(ls.toArray)) }
+          trySeq(${ Expr.ofSeq(tupElmts) }).map { ls => ${ pof }.fromProduct(Tuple.fromArray(ls.toArray)) }
         }
-
       }
 
       '{
         Reads[T] {
           case obj @ JsObject(_) =>
-            ${ handleFields('obj) }
+            ${ readFields('obj) }
 
           case _ =>
             JsError("error.expected.jsobject")
@@ -432,11 +456,19 @@ object JsMacroImpl {
 
     ensureFindType[A]
 
-    '{
+    val expr = '{
       lazy val cfg = ${ config }
 
       withSelfOWrites[A] { (forwardWrites: OWrites[A]) => ${ writesExpr[A, OptsT]('cfg, 'forwardWrites) } }
     }
+
+    if (debugEnabled) {
+      report.info(s"/* Generated OWrites:\n${expr.asTerm.show(using
+        Printer.TreeAnsiCode
+      )}\n*/")
+    }
+
+    expr
   }
 
   private def writesExpr[A: Type, OptsT <: MacroOptions: Type](
@@ -536,7 +568,18 @@ object JsMacroImpl {
       def handleSubTypes(input: Expr[A]): Expr[JsObject] = {
         type Subtype[U <: A] = U
 
-        val cases = subTypes.zipWithIndex.map { (tpr, i) =>
+        val cases = subTypes.filter {
+          case tpr @ AppliedType(_, _) => {
+            report.warning(
+              s"Generic type ${prettyType(tpr)} is not supported as a member of sealed family ${prettyType(aTpeRepr)}"
+            )
+
+            false
+          }
+
+          case _ =>
+            true
+        }.zipWithIndex.map { (tpr, i) =>
           tpr.asType match {
             case st @ '[Subtype[sub]] =>
               val subTpr = TypeRepr.of[sub](using
@@ -551,11 +594,11 @@ object JsMacroImpl {
               )
 
               val tpeCaseName: Expr[String] = '{
-                ${ config }.typeNaming(${ Expr(subTpr.typeSymbol.fullName) })
+                ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
               }
 
               val resolve = resolver[Writes, sub](
-                forwardExpr.asExprOf[Writes[sub]],
+                '{ ${ forwardExpr }.asInstanceOf[Writes[sub]] },
                 debug
               )(writesTpe)
 
@@ -572,9 +615,7 @@ object JsMacroImpl {
                         Json.obj("_value" -> jsValue)
                     }
 
-                    output ++ JsObject(Map(${ config }.discriminator -> JsString(${ config }.typeNaming(${
-                      tpeCaseName
-                    }))))
+                    output ++ JsObject(Map(${ config }.discriminator -> JsString(${ tpeCaseName })))
                   }
 
                 case _ =>
@@ -594,6 +635,8 @@ object JsMacroImpl {
       }
     }
 
+    private case class WritableField(sym: Symbol, i: Int, pt: TypeRepr)
+
     def productWrites[T: Type, P <: Product: Type](
         config: Expr[JsonConfiguration],
         forwardExpr: Expr[OWrites[T]],
@@ -601,8 +644,138 @@ object JsMacroImpl {
         pof: Expr[ProductOf[T]]
     ): Expr[OWrites[T]] = {
       val tpr = TypeRepr.of[T]
+      val tprElements = productElements[T, P](tpr, pof) match {
+        case TryFailure(cause) =>
+          report.errorAndAbort(cause.getMessage)
 
-      ???
+        case TrySuccess(elms) =>
+          elms
+      }
+
+      val types   = tprElements.map(_._2)
+      val resolve = resolver[Writes, T](forwardExpr, debug)(writesTpe)
+
+      val (optional, required) = tprElements.zipWithIndex.view.map {
+        case ((sym, rpt), i) =>
+          val pt = rpt.dealias
+
+          pt.asType match {
+            case '[t] =>
+              WritableField(sym, i, pt)
+          }
+      }.toSeq.partition { case WritableField(_, _, t) => isOptionalType(t) }
+
+      type ElementAcc = MBuilder[(String, JsValue), Map[String, JsValue]]
+
+      def withIdents[U: Type](f: Expr[ElementAcc] => Expr[U]): Expr[U] =
+        '{
+          val ok = Map.newBuilder[String, JsValue]
+
+          ${ f('{ ok }) }
+        }
+
+      val (tupleTpe, withTupled) =
+        withTuple[T, P, JsObject](tpr, toProduct, types)
+
+      def writeFields(input: Expr[T]): Expr[JsObject] =
+        withTupled(input) { tupled =>
+          val fieldMap = withFields(tupled, tupleTpe, tprElements, debug)
+
+          withIdents[JsObject] { bufOk =>
+            val values: Seq[Expr[Unit]] = required.map {
+              case WritableField(param, i, pt) =>
+                val pname = param.name
+
+                val withField = fieldMap.get(pname) match {
+                  case Some(f) => f
+
+                  case _ =>
+                    report.errorAndAbort(
+                      s"Field not found: ${prettyType(tpr)}.${pname}"
+                    )
+                }
+
+                pt.asType match {
+                  case pTpe @ '[p] =>
+                    val writes: Expr[Writes[p]] = resolve(pt) match {
+                      case Some((givenWrites, _)) =>
+                        givenWrites.asExprOf[Writes[p]]
+
+                      case _ =>
+                        report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(pt)}]")
+                    }
+
+                    withField { v =>
+                      ('{
+                        val nme = ${ config }.naming(${ Expr(pname) })
+                        ${ bufOk } += nme -> ${ writes }.writes(${ v.asExprOf[p] })
+                        ()
+                      }).asTerm
+                    }.asExprOf[Unit]
+                }
+            } // end of required.map
+
+            val extra: Seq[Expr[Unit]] = optional.map {
+              case WritableField(param, i, optType @ OptionTypeParameter(pt)) =>
+                val pname = param.name
+
+                val withField = fieldMap.get(pname) match {
+                  case Some(f) => f
+
+                  case _ =>
+                    report.errorAndAbort(
+                      s"Field not found: ${prettyType(tpr)}.${pname}"
+                    )
+                }
+
+                pt.asType match {
+                  case pTpe @ '[p] =>
+                    val writes: Expr[Writes[p]] = resolve(pt) match {
+                      case Some((givenWrites, _)) =>
+                        givenWrites.asExprOf[Writes[p]]
+
+                      case _ =>
+                        report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(pt)}]")
+                    }
+
+                    val field = '{ ${ config }.naming(${ Expr(pname) }) }
+                    val path  = '{ JsPath \ ${ field } }
+
+                    val pathWrites: Expr[OWrites[Option[p]]] = '{
+                      ${ config }.optionHandlers.writeHandler($path)($writes)
+                    }
+
+                    withField { v =>
+                      ('{
+                        val nme = ${ config }.naming(${ Expr(pname) })
+                        val js  = ${ pathWrites }.writes(${ v.asExprOf[Option[p]] })
+
+                        ${ bufOk } ++= js.value
+                        ()
+                      }).asTerm
+                    }.asExprOf[Unit]
+                }
+            } // end of extra.collect
+
+            if (values.isEmpty && extra.isEmpty) {
+              debug(
+                s"No field found: class ${prettyType(TypeRepr.of[T])}"
+              )
+
+              '{ JsObject(Map.empty) }
+            } else {
+              val fields = values ++ extra
+
+              val resExpr = '{ JsObject(${ bufOk }.result()) }
+
+              Block(fields.map(_.asTerm).toList, resExpr.asTerm).asExprOf[JsObject]
+            }
+          }
+        }
+
+      '{
+        OWrites[T] { (t: T) => ${ writeFields('t) } }
+      }
     }
   }
 
@@ -732,15 +905,15 @@ object JsMacroImpl {
 
   // ---
 
-  inline private def trySeq[T](in: List[JsResult[T]]): JsResult[Seq[T]] = {
+  inline private def trySeq(in: Seq[JsResult[_]]): JsResult[Seq[Any]] = {
     type JsFail = (JsPath, collection.Seq[JsonValidationError])
 
     @annotation.tailrec
-    def execute[T](
-        in: List[JsResult[T]],
-        suc: List[T],
+    def execute(
+        in: Seq[JsResult[_]],
+        suc: List[Any],
         fail: collection.Seq[JsFail]
-    ): JsResult[List[T]] = in.headOption match {
+    ): JsResult[List[Any]] = in.headOption match {
       case Some(JsSuccess(v, _)) =>
         execute(in.tail, v :: suc, fail)
 
@@ -748,14 +921,14 @@ object JsMacroImpl {
         execute(in.tail, suc, details ++: fail)
 
       case _ =>
-        if (fail.isEmpty) {
+        if (fail.nonEmpty) {
           JsError(fail)
         } else {
-          JsSuccess(suc)
+          JsSuccess(suc.reverse)
         }
     }
 
-    execute[T](in, List.empty, List.empty)
+    execute(in, List.empty, List.empty)
   }
 
   private def ensureFindType[A](using

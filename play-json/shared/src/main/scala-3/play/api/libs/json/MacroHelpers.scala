@@ -22,13 +22,7 @@ private[json] trait MacroHelpers { self: OptionSupport =>
 
     def unapply(tpr: TypeRepr): Option[TypeRepr] = {
       if (self.isOptionalType(tpr)) {
-        tpr match {
-          case AppliedType(_, args) =>
-            args.headOption
-
-          case _ =>
-            None
-        }
+        tpr.typeArgs.headOption
       } else None
     }
   }

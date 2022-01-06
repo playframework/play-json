@@ -39,13 +39,19 @@ import org.scalacheck.Gen
 class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
   import MacroSpec._
 
+  import FamilyCodec._
+
   "Reads" should {
     "be generated for simple case class" in {
       val json     = Json.obj("bar" -> "lorem")
       val expected = Simple("lorem")
 
       forAll(
-        Json.reads[Simple],
+        Gen.oneOf(
+          Json.reads[Simple],
+          Json.configured.reads[Simple],
+          Json.using[Json.MacroOptions].reads[Simple]
+        )
       ) { _.reads(json).mustEqual(JsSuccess(expected)) }
     }
 
@@ -100,46 +106,63 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "be generated for a sealed family" when {
-      implicit val simpleReads: Reads[Simple] = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
-      // import LoremCodec.loremReads // Doesn't work in Scala 3.0.0-RC1
-      implicit val loremReads: Reads[Lorem[Any]]  = LoremCodec.loremReads
-      implicit val optionalReads: Reads[Optional] = Json.reads[Optional]
-      implicit val familyReads: Reads[Family]     = Json.reads[Family]
+      "not exhaustive" when {
+        implicit val simpleReads: Reads[Simple] = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
+        // import LoremCodec.loremReads // Doesn't work in Scala 3.0.0-RC1
+        implicit val loremReads: Reads[Lorem[Any]]  = LoremCodec.loremReads
+        implicit val optionalReads: Reads[Optional] = Json.reads[Optional]
+        implicit val familyReads: Reads[Family]     = Json.reads[Family]
 
-      val simple   = Simple("foo")
-      val optional = Optional(None)
+        val simple   = Simple("foo")
+        val optional = Optional(None)
 
-      "Json.reads[EmptyFamily]".mustNot(typeCheck)
-      "Json.writes[EmptyFamily]".mustNot(typeCheck)
-      "Json.format[EmptyFamily]".mustNot(typeCheck)
+        "Json.reads[EmptyFamily]".mustNot(typeCheck)
+        "Json.writes[EmptyFamily]".mustNot(typeCheck)
+        "Json.format[EmptyFamily]".mustNot(typeCheck)
 
-      "using the _value syntax" in {
-        val jsSimple = Json.obj(
-          "_type"  -> "play.api.libs.json.MacroSpec.Simple",
-          "_value" -> Json.writes[Simple].writes(simple)
-        )
+        "using the _value syntax" in {
+          val jsSimple = Json.obj(
+            "_type"  -> "play.api.libs.json.MacroSpec.Simple",
+            "_value" -> Json.writes[Simple].writes(simple)
+          )
 
-        val jsOptional = Json.obj(
-          "_type"  -> "play.api.libs.json.MacroSpec.Optional",
-          "_value" -> Json.writes[Optional].writes(optional)
-        )
+          val jsOptional = Json.obj(
+            "_type"  -> "play.api.libs.json.MacroSpec.Optional",
+            "_value" -> Json.writes[Optional].writes(optional)
+          )
 
-        jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-        jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+          jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+          jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+        }
+
+        "using the compact syntax" in {
+          val jsSimple = Json.writes[Simple].writes(simple) + (
+            "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
+          )
+
+          val jsOptional = Json.writes[Optional].writes(optional) + (
+            "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
+          )
+
+          jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+          jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+        }
       }
 
-      "using the compact syntax" in {
-        val jsSimple = Json.writes[Simple].writes(simple) + (
-          "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
-        )
+      "subtype is a sealed trait itself" in {
+        val expected   = Leaf2(1)
+        val expectedJs = Json.obj("_type" -> "play.api.libs.json.MacroSpec.Leaf2", "value" -> 1)
 
-        val jsOptional = Json.writes[Optional].writes(optional) + (
-          "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
-        )
-
-        jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-        jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+        Json.toJson[TreeValue](expected).mustEqual(expectedJs)
+        expectedJs.validate[TreeValue].mustEqual(JsSuccess(expected))
       }
+    }
+
+    "be generated for a ValueClass" in {
+      val expected                  = new TextId("foo")
+      implicit val r: Reads[TextId] = Json.valueReads
+
+      JsString("foo").validate[TextId].mustEqual(JsSuccess(expected))
     }
   }
 
@@ -199,7 +222,6 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val optionalWrites: OWrites[Optional] = Json.writes[Optional]
       // Following won't work due to inference issue (see #117)
       // with inheritance/contravariance/implicit resolution
-      // val _: OWrites[Optional] = Json.writes
 
       implicit val familyWrites: OWrites[Family] = Json.writes[Family]
 
@@ -232,229 +254,369 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
           )
         )
     }
+
+    "be generated for a ValueClass" in {
+      val js = Json.valueWrites[TextId].writes(new TextId("bar"))
+
+      js.mustEqual(JsString("bar"))
+    }
   }
 
   "Macro" should {
-    "handle case class with self type as nested type parameter" when {
-      // import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
-      implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]]     = TestFormats.eitherReads[A, B]
-      implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] = TestFormats.eitherWrites[A, B]
-      implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)]           = TestFormats.tuple2Reads[A, B]
-      implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)]     = TestFormats.tuple2OWrites[A, B]
+    "handle case class" when {
+      "default values" when {
+        val json01   = Json.obj("id" -> 15)
+        val json02   = Json.obj("id" -> 15, "a" -> "a")
+        val json03   = Json.obj("id" -> 15, "a" -> "a", "b" -> "b")
+        val fixture0 = WithDefault(15, "a", Some("b"))
 
-      val jsonNoValue  = Json.obj("id" -> "A")
-      val jsonStrValue = Json.obj("id" -> "B", "value" -> "str")
-      val jsonFooValue = Json.obj("id" -> "C", "value" -> jsonStrValue)
+        val json1    = Json.obj("id" -> 15, "b" -> JsNull)
+        val fixture1 = WithDefault(15, "a", None)
 
-      val fooStrValue = Foo(Foo.id("B"), Some(Left("str")))
-      val fooFooValue = Foo(Foo.id("C"), Some(Right(fooStrValue)))
+        val json2    = Json.obj("id" -> 15, "a" -> "aa")
+        val fixture2 = WithDefault(15, "aa", Some("b"))
 
-      def readSpec(r: Reads[Foo]) = {
-        r.reads(jsonNoValue).mustEqual(JsSuccess(Foo(Foo.id("A"), None)))
-        r.reads(jsonStrValue).mustEqual(JsSuccess(fooStrValue))
-        r.reads(jsonFooValue).mustEqual(JsSuccess(fooFooValue))
-        r.reads(Json.obj("id" -> "D", "value" -> jsonFooValue))
-          .mustEqual(JsSuccess(Foo(Foo.id("D"), Some(Right(fooFooValue)))))
+        val json3    = Json.obj("id" -> 15, "a" -> "aa", "b" -> "bb")
+        val fixture3 = WithDefault(15, "aa", Some("bb"))
+
+        val json4    = Json.obj("id" -> 18)
+        val fixture4 = WithDefault(18)
+
+        def readSpec(r: Reads[WithDefault]) = {
+          r.reads(json01).mustEqual(JsSuccess(fixture0))
+          r.reads(json02).mustEqual(JsSuccess(fixture0))
+          r.reads(json03).mustEqual(JsSuccess(fixture0))
+          r.reads(json1).mustEqual(JsSuccess(fixture1))
+          r.reads(json2).mustEqual(JsSuccess(fixture2))
+          r.reads(json3).mustEqual(JsSuccess(fixture3))
+          r.reads(json4).mustEqual(JsSuccess(fixture4))
+        }
+
+        val jsWithDefaults = Json.using[Json.WithDefaultValues]
+
+        "to generate Reads" in readSpec(
+          jsWithDefaults.reads[WithDefault]
+        )
+
+        "to generate Format" in readSpec(
+          jsWithDefaults.format[WithDefault]
+        )
       }
 
-      def writeSpec(w: Writes[Foo]) = {
-        w.writes(Foo(Foo.id("A"), None)).mustEqual(jsonNoValue)
-        w.writes(fooStrValue).mustEqual(jsonStrValue)
-        w.writes(fooFooValue).mustEqual(jsonFooValue)
-        w.writes(Foo(Foo.id("D"), Some(Right(fooFooValue)))).mustEqual(Json.obj("id" -> "D", "value" -> jsonFooValue))
+      "default values, format defined in companion object" in {
+        val json     = Json.obj("id" -> 15)
+        val expected = WithDefaultInCompanion(15, "a")
+        Json.fromJson[WithDefaultInCompanion](json).mustEqual(JsSuccess(expected))
       }
 
-      "to generate Reads" in readSpec(Json.reads[Foo])
+      "default values inner optional case class containing default values" when {
+        implicit val withDefaultFormat: OFormat[WithDefault] =
+          Json.using[Json.MacroOptions with Json.DefaultValues].format[WithDefault]
 
-      "to generate Writes" in writeSpec(Json.writes[Foo])
+        val json01 = Json.obj("id" -> 3)
+        val json02 = Json.obj(
+          "id" -> 3,
+          "ref" -> Json.obj(
+            "id" -> 1
+          )
+        )
+        val json03 = Json.obj(
+          "id" -> 3,
+          "ref" -> Json.obj(
+            "id" -> 1,
+            "a"  -> "a",
+            "b"  -> "b"
+          )
+        )
+        val fixture0 = ComplexWithDefault(3)
+
+        val json11   = Json.obj("id" -> 15, "ref" -> JsNull)
+        val fixture1 = ComplexWithDefault(15, None)
+
+        def readSpec(r: Reads[ComplexWithDefault]) = {
+          r.reads(json01).mustEqual(JsSuccess(fixture0))
+          r.reads(json02).mustEqual(JsSuccess(fixture0))
+          r.reads(json03).mustEqual(JsSuccess(fixture0))
+          r.reads(json11).mustEqual(JsSuccess(fixture1))
+        }
+
+        val jsWithDefaults = Json.using[Json.WithDefaultValues]
+
+        "to generate Reads" in readSpec(
+          jsWithDefaults.reads[ComplexWithDefault]
+        )
+
+        "to generate Format" in readSpec(
+          jsWithDefaults.format[ComplexWithDefault]
+        )
+      }
+
+      "self type as nested type parameter" when {
+        // import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
+        implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]]     = TestFormats.eitherReads[A, B]
+        implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] = TestFormats.eitherWrites[A, B]
+        implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)]           = TestFormats.tuple2Reads[A, B]
+        implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)]     = TestFormats.tuple2OWrites[A, B]
+
+        val jsonNoValue  = Json.obj("id" -> "A")
+        val jsonStrValue = Json.obj("id" -> "B", "value" -> "str")
+        val jsonFooValue = Json.obj("id" -> "C", "value" -> jsonStrValue)
+
+        val fooStrValue = Foo(Foo.id("B"), Some(Left("str")))
+        val fooFooValue = Foo(Foo.id("C"), Some(Right(fooStrValue)))
+
+        def readSpec(r: Reads[Foo]) = {
+          r.reads(jsonNoValue).mustEqual(JsSuccess(Foo(Foo.id("A"), None)))
+          r.reads(jsonStrValue).mustEqual(JsSuccess(fooStrValue))
+          r.reads(jsonFooValue).mustEqual(JsSuccess(fooFooValue))
+          r.reads(Json.obj("id" -> "D", "value" -> jsonFooValue))
+            .mustEqual(JsSuccess(Foo(Foo.id("D"), Some(Right(fooFooValue)))))
+        }
+
+        def writeSpec(w: Writes[Foo]) = {
+          w.writes(Foo(Foo.id("A"), None)).mustEqual(jsonNoValue)
+          w.writes(fooStrValue).mustEqual(jsonStrValue)
+          w.writes(fooFooValue).mustEqual(jsonFooValue)
+          w.writes(Foo(Foo.id("D"), Some(Right(fooFooValue)))).mustEqual(Json.obj("id" -> "D", "value" -> jsonFooValue))
+        }
+
+        "to generate Reads" in readSpec(Json.reads[Foo])
+
+        "to generate Writes" in writeSpec(Json.writes[Foo])
+
+        "to generate Format" in {
+          val f: OFormat[Foo] = Json.format[Foo]
+
+          readSpec(f)
+          writeSpec(f)
+        }
+      }
+
+      "multiple generic parameters" when {
+        val jsonNoOther = Json.obj("base" -> 1)
+        val jsonOther   = Json.obj("base" -> 2, "other" -> 3)
+
+        val noOther = Interval(1, None)
+        val other   = Interval(2, Some(3))
+
+        def readSpec(r: Reads[Interval[Int]]) = {
+          r.reads(jsonNoOther).mustEqual(JsSuccess(noOther))
+          r.reads(jsonOther).mustEqual(JsSuccess(other))
+        }
+
+        def writeSpec(r: Writes[Interval[Int]]) = {
+          r.writes(noOther).mustEqual(jsonNoOther)
+          r.writes(other).mustEqual(jsonOther)
+        }
+
+        "to generate Reads" in readSpec(Json.reads[Interval[Int]])
+
+        "to generate Writes" in writeSpec(Json.writes[Interval[Int]])
+
+        "to generate Format" in {
+          val f = Json.format[Interval[Int]]
+          readSpec(f)
+          writeSpec(f)
+        }
+      }
+
+      "multiple generic parameters and self references" when {
+        // import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
+        implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]]     = TestFormats.eitherReads[A, B]
+        implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] = TestFormats.eitherWrites[A, B]
+        implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)]           = TestFormats.tuple2Reads[A, B]
+        implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)]     = TestFormats.tuple2OWrites[A, B]
+
+        val nestedLeft = Json.obj("id" -> 2, "a" -> 0.2F, "b" -> 0.3F, "c" -> 3)
+
+        val nestedRight = Json.obj(
+          "id" -> 1,
+          "a"  -> 0.1F,
+          "b"  -> "right1",
+          "c"  -> 2
+        )
+
+        val jsonRight = Json.obj(
+          "id" -> 3,
+          "a"  -> nestedRight,
+          "b"  -> "right2",
+          "c"  -> 0.4D
+        )
+
+        val jsonLeft = Json.obj(
+          "id" -> 4,
+          "a"  -> nestedLeft,
+          "b"  -> nestedRight,
+          "c"  -> 0.5D
+        )
+
+        val complexRight = Complex(3, Complex(1, 0.1F, Right("right1"), 2), Right("right2"), 0.4D)
+
+        val complexLeft = Complex(4, Complex(2, 0.2F, Left(0.3F), 3), Left(Complex(1, 0.1F, Right("right1"), 2)), 0.5D)
+
+        def readSpec(r: Reads[Complex[Complex[Float, Int], Double]]) = {
+          r.reads(jsonRight).mustEqual(JsSuccess(complexRight))
+          r.reads(jsonLeft).mustEqual(JsSuccess(complexLeft))
+        }
+
+        def writeSpec(r: Writes[Complex[Complex[Float, Int], Double]]) = {
+          r.writes(complexRight).mustEqual(jsonRight)
+          r.writes(complexLeft).mustEqual(jsonLeft)
+        }
+
+        "to generate Reads" in readSpec {
+          implicit val nested: Reads[Complex[Float, Int]] = Json.reads[Complex[Float, Int]]
+          Json.reads[Complex[Complex[Float, Int], Double]]
+        }
+
+        "to generate Writes" in writeSpec {
+          implicit val nested: OWrites[Complex[Float, Int]] = Json.writes[Complex[Float, Int]]
+          Json.writes[Complex[Complex[Float, Int], Double]]
+        }
+
+        "to generate Format" in {
+          implicit val nested: OFormat[Complex[Float, Int]] = Json.format[Complex[Float, Int]]
+          val f                                             = Json.format[Complex[Complex[Float, Int], Double]]
+
+          readSpec(f)
+          writeSpec(f)
+        }
+      }
+    }
+
+    "with collection types" when {
+      import TestFormats._
+
+      val json = Json.obj(
+        "id"  -> "foo",
+        "ls"  -> List(1.2D, 23.45D),
+        "set" -> List(1, 3, 4, 7),
+        "seq" -> List(
+          Json.obj("_1" -> 2, "_2"       -> "bar"),
+          Json.obj("_1" -> 4, "_2"       -> "lorem"),
+          Json.obj("_2" -> "ipsum", "_1" -> 5)
+        ),
+        "scores" -> Json.obj("A1" -> 0.1F, "EF" -> 12.3F)
+      )
+      val withColl = WithColl(
+        id = "foo",
+        ls = List(1.2D, 23.45D),
+        set = Set(1, 3, 4, 7),
+        seq = Seq(2 -> "bar", 4 -> "lorem", 5 -> "ipsum"),
+        scores = Map("A1" -> 0.1F, "EF" -> 12.3F)
+      )
+
+      def readSpec(r: Reads[WithColl[(Int, String)]]) =
+        r.reads(json).mustEqual(JsSuccess(withColl))
+
+      def writeSpec(w: Writes[WithColl[(Int, String)]]) =
+        w.writes(withColl).mustEqual(json)
+
+      "to generated Reads" in readSpec {
+        Json.reads[WithColl[(Int, String)]]
+      }
+
+      "to generated Writes" in writeSpec {
+        Json.writes[WithColl[(Int, String)]]
+      }
 
       "to generate Format" in {
-        val f: OFormat[Foo] = Json.format[Foo]
-
+        val f = Json.format[WithColl[(Int, String)]]
         readSpec(f)
         writeSpec(f)
       }
     }
 
-    "handle generic case class with multiple generic parameters" when {
-      val jsonNoOther = Json.obj("base" -> 1)
-      val jsonOther   = Json.obj("base" -> 2, "other" -> 3)
+    "handle sealed family" when {
+      "with default configuration" in {
+        implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
+        implicit val simpleReads: Reads[Simple] = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
+        // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
+        implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
+        implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
+        implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+        implicit val familyFormat: OFormat[Family]     = Json.format[Family]
 
-      val noOther = Interval(1, None)
-      val other   = Interval(2, Some(3))
+        val simple = Simple("foo")
+        val jsSimple = simpleWrites.writes(simple) + (
+          "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
+        )
 
-      def readSpec(r: Reads[Interval[Int]]) = {
-        r.reads(jsonNoOther).mustEqual(JsSuccess(noOther))
-        r.reads(jsonOther).mustEqual(JsSuccess(other))
+        val optional = Optional(None)
+        val jsOptional = optionalFormat.writes(optional) + (
+          "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
+        )
+
+        Json.toJson[Family](simple).mustEqual(jsSimple)
+        Json.toJson[Family](optional).mustEqual(jsOptional)
+        jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+        jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+        jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+        jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
       }
 
-      def writeSpec(r: Writes[Interval[Int]]) = {
-        r.writes(noOther).mustEqual(jsonNoOther)
-        r.writes(other).mustEqual(jsonOther)
+      "with custom discriminator name" in {
+        implicit val cfg: JsonConfiguration        = JsonConfiguration(discriminator = "_discriminator")
+        implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
+        implicit val simpleReads: Reads[Simple] = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
+        // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
+        implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
+        implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
+        implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+        implicit val familyFormat: OFormat[Family]     = Json.format[Family]
+
+        val simple = Simple("foo")
+        val jsSimple = simpleWrites.writes(simple) + (
+          "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Simple")
+        )
+
+        val optional = Optional(None)
+        val jsOptional = optionalFormat.writes(optional) + (
+          "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
+        )
+
+        Json.toJson[Family](simple).mustEqual(jsSimple)
+        Json.toJson[Family](optional).mustEqual(jsOptional)
+        jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+        jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+        jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+        jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
       }
 
-      "to generate Reads" in readSpec(Json.reads[Interval[Int]])
+      "with custom typeNaming" in {
+        implicit val cfg: JsonConfiguration = JsonConfiguration(typeNaming = JsonNaming {
+          case "play.api.libs.json.MacroSpec.Simple"   => "simple"
+          case "play.api.libs.json.MacroSpec.Lorem"    => "lorem"
+          case "play.api.libs.json.MacroSpec.Optional" => "optional"
+          case "Simple"                                => "simple"
+          case "Lorem"                                 => "lorem"
+          case "Optional"                              => "optional"
+        })
+        implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
+        implicit val simpleReads: Reads[Simple] = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
+        implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
+        // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
+        implicit val loremReads: Reads[Lorem[Any]]    = LoremCodec.loremReads
+        implicit val loremWrites: OWrites[Lorem[Any]] = LoremCodec.loremWrites
+        implicit val familyFormat: OFormat[Family]    = Json.format[Family]
 
-      "to generate Writes" in writeSpec(Json.writes[Interval[Int]])
+        val simple = Simple("foo")
+        val jsSimple = simpleWrites.writes(simple) + (
+          "_type" -> JsString("simple")
+        )
 
-      "to generate Format" in {
-        val f = Json.format[Interval[Int]]
-        readSpec(f)
-        writeSpec(f)
+        val optional = Optional(None)
+        val jsOptional = optionalFormat.writes(optional) + (
+          "_type" -> JsString("optional")
+        )
+
+        Json.toJson[Family](simple).mustEqual(jsSimple)
+        Json.toJson[Family](optional).mustEqual(jsOptional)
+        jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+        jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+        jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+        jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
       }
-    }
-
-    "handle generic case class with multiple generic parameters and self references" when {
-      // import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
-      implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]]     = TestFormats.eitherReads[A, B]
-      implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] = TestFormats.eitherWrites[A, B]
-      implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)]           = TestFormats.tuple2Reads[A, B]
-      implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)]     = TestFormats.tuple2OWrites[A, B]
-
-      val nestedLeft = Json.obj("id" -> 2, "a" -> 0.2F, "b" -> 0.3F, "c" -> 3)
-
-      val nestedRight = Json.obj(
-        "id" -> 1,
-        "a"  -> 0.1F,
-        "b"  -> "right1",
-        "c"  -> 2
-      )
-
-      val jsonRight = Json.obj(
-        "id" -> 3,
-        "a"  -> nestedRight,
-        "b"  -> "right2",
-        "c"  -> 0.4D
-      )
-
-      val jsonLeft = Json.obj(
-        "id" -> 4,
-        "a"  -> nestedLeft,
-        "b"  -> nestedRight,
-        "c"  -> 0.5D
-      )
-
-      val complexRight = Complex(3, Complex(1, 0.1F, Right("right1"), 2), Right("right2"), 0.4D)
-
-      val complexLeft = Complex(4, Complex(2, 0.2F, Left(0.3F), 3), Left(Complex(1, 0.1F, Right("right1"), 2)), 0.5D)
-
-      def readSpec(r: Reads[Complex[Complex[Float, Int], Double]]) = {
-        r.reads(jsonRight).mustEqual(JsSuccess(complexRight))
-        r.reads(jsonLeft).mustEqual(JsSuccess(complexLeft))
-      }
-
-      def writeSpec(r: Writes[Complex[Complex[Float, Int], Double]]) = {
-        r.writes(complexRight).mustEqual(jsonRight)
-        r.writes(complexLeft).mustEqual(jsonLeft)
-      }
-
-      "to generate Reads" in readSpec {
-        implicit val nested: Reads[Complex[Float, Int]] = Json.reads[Complex[Float, Int]]
-        Json.reads[Complex[Complex[Float, Int], Double]]
-      }
-
-      "to generate Writes" in writeSpec {
-        implicit val nested: OWrites[Complex[Float, Int]] = Json.writes[Complex[Float, Int]]
-        Json.writes[Complex[Complex[Float, Int], Double]]
-      }
-
-      "to generate Format" in {
-        implicit val nested: OFormat[Complex[Float, Int]] = Json.format[Complex[Float, Int]]
-        val f                                             = Json.format[Complex[Complex[Float, Int], Double]]
-
-        readSpec(f)
-        writeSpec(f)
-      }
-    }
-
-    "handle sealed family" in {
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
-      implicit val simpleReads: Reads[Simple]    = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
-      // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
-      implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
-      implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
-      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
-      implicit val familyFormat: OFormat[Family]     = Json.format[Family]
-
-      val simple = Simple("foo")
-      val jsSimple = simpleWrites.writes(simple) + (
-        "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
-      )
-
-      val optional = Optional(None)
-      val jsOptional = optionalFormat.writes(optional) + (
-        "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
-      )
-
-      Json.toJson[Family](simple).mustEqual(jsSimple)
-      Json.toJson[Family](optional).mustEqual(jsOptional)
-      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
-      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
-    }
-
-    "handle sealed family with custom discriminator name" in {
-      implicit val cfg: JsonConfiguration        = JsonConfiguration(discriminator = "_discriminator")
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
-      implicit val simpleReads: Reads[Simple]    = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
-      // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
-      implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
-      implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
-      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
-      implicit val familyFormat: OFormat[Family]     = Json.format[Family]
-
-      val simple = Simple("foo")
-      val jsSimple = simpleWrites.writes(simple) + (
-        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Simple")
-      )
-
-      val optional = Optional(None)
-      val jsOptional = optionalFormat.writes(optional) + (
-        "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
-      )
-
-      Json.toJson[Family](simple).mustEqual(jsSimple)
-      Json.toJson[Family](optional).mustEqual(jsOptional)
-      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
-      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
-    }
-
-    "handle sealed family with typeNaming" in {
-      implicit val cfg: JsonConfiguration = JsonConfiguration(typeNaming = JsonNaming {
-        case "play.api.libs.json.MacroSpec.Simple"   => "simple"
-        case "play.api.libs.json.MacroSpec.Lorem"    => "lorem"
-        case "play.api.libs.json.MacroSpec.Optional" => "optional"
-        case "Simple"                                => "simple"
-        case "Lorem"                                 => "lorem"
-        case "Optional"                              => "optional"
-      })
-      implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple => Json.obj("bar" -> simple.bar) }
-      implicit val simpleReads: Reads[Simple]    = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
-      implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
-      // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
-      implicit val loremReads: Reads[Lorem[Any]]    = LoremCodec.loremReads
-      implicit val loremWrites: OWrites[Lorem[Any]] = LoremCodec.loremWrites
-      implicit val familyFormat: OFormat[Family]    = Json.format[Family]
-
-      val simple = Simple("foo")
-      val jsSimple = simpleWrites.writes(simple) + (
-        "_type" -> JsString("simple")
-      )
-
-      val optional = Optional(None)
-      val jsOptional = optionalFormat.writes(optional) + (
-        "_type" -> JsString("optional")
-      )
-
-      Json.toJson[Family](simple).mustEqual(jsSimple)
-      Json.toJson[Family](optional).mustEqual(jsOptional)
-      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
-      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
-      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
-      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
     }
 
     "handle case objects as empty JsObject" in {
@@ -469,6 +631,15 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       formatter.writes(Obj).mustEqual(jsObj)
       formatter.reads(jsObj).mustEqual(JsSuccess(Obj))
     }
+
+    "handle ValueClass" in {
+      val id                           = new TextId("foo")
+      val js                           = JsString("foo")
+      implicit val fmt: Format[TextId] = Json.valueFormat[TextId]
+
+      js.validate[TextId].mustEqual(JsSuccess(id))
+      fmt.writes(id).mustEqual(js)
+    }
   }
 }
 
@@ -478,7 +649,6 @@ object MacroSpec {
   case class Lorem[T](ipsum: T, age: Int)   extends Family
   case class Optional(prop: Option[String]) extends Family
 
-  // lampepfl/dotty#11053 No support in inline/derivation for identifying generic subclasses
   object LoremCodec {
     implicit val loremReads: Reads[Lorem[Any]]    = Reads.failed("error.invalid")
     implicit val loremWrites: OWrites[Lorem[Any]] = OWrites(_ => JsObject.empty)
@@ -488,7 +658,8 @@ object MacroSpec {
   sealed trait EmptyFamily
 
   object FamilyCodec {
-    implicit val simpleWrites: OWrites[Simple]     = Json.writes[Simple]
+    implicit val simpleWrites: OWrites[Simple] = Json.writes[Simple]
+
     implicit val optionalWrites: OWrites[Optional] = Json.writes[Optional]
     import LoremCodec.loremWrites
 
@@ -499,12 +670,12 @@ object MacroSpec {
   }
 
   object Foo {
-    // https://github.com/lampepfl/dotty/issues/11054 Type aliasing breaks constValue
-    // import shapeless.tag.@@
-    type Id = String // @@ Foo
+    import shapeless.tag.@@
+
+    type Id = String @@ Foo
     def id(value: String): Id = value.asInstanceOf[Id]
 
-    implicit val idReads: Reads[Id] = implicitly[Reads[String]].asInstanceOf[Reads[Id]]
+    implicit val idReads: Reads[Id] = Reads.StringReads.asInstanceOf[Reads[Id]]
   }
   case class Foo(id: Foo.Id, value: Option[Either[String, Foo]])
 
@@ -531,6 +702,23 @@ object MacroSpec {
 
   // ---
 
+  sealed trait TreeValue
+
+  sealed trait SubLevel extends TreeValue
+
+  case class Leaf1(value: String) extends TreeValue
+  case class Leaf2(value: Int)    extends SubLevel
+
+  object TreeValue {
+    private implicit val leaf1: OFormat[Leaf1]       = Json.format
+    private implicit val leaf2: OFormat[Leaf2]       = Json.format
+    private implicit val subLevel: OFormat[SubLevel] = Json.format
+
+    implicit val format: OFormat[TreeValue] = Json.format
+  }
+
+  // ---
+
   sealed trait Family2
   case class Family2Member(p: Int) extends Family2
 
@@ -545,4 +733,29 @@ object MacroSpec {
      as Writes instance this subtype Family2Member
      */
   }
+
+  // ---
+
+  case class WithDefault(id: Int, a: String = "a", b: Option[String] = Some("b"))
+
+  case class WithDefaultInCompanion(id: Int, a: String = "a")
+
+  object WithDefaultInCompanion {
+
+    implicit val format: OFormat[WithDefaultInCompanion] =
+      Json.using[Json.WithDefaultValues].format[WithDefaultInCompanion]
+  }
+
+  case class ComplexWithDefault(id: Int, ref: Option[WithDefault] = Some(WithDefault(1)))
+
+  // ---
+
+  case class WithColl[B](
+      id: String,
+      ls: List[Double],
+      set: Set[Int],
+      seq: Seq[B],
+      scores: Map[String, Float]
+  )
+
 }

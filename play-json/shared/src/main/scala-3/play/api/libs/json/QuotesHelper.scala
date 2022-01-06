@@ -14,6 +14,7 @@ import scala.quoted.Expr
 import scala.quoted.Quotes
 import scala.quoted.Type
 
+// TODO: Unit tests
 private[json] trait QuotesHelper {
   protected type Q <: Quotes
 
@@ -89,6 +90,93 @@ private[json] trait QuotesHelper {
 
       if (types.isEmpty) None else Some(types)
     }
+
+  @annotation.tailrec
+  private def withElems[U <: Product](
+      tupled: Expr[U],
+      fields: List[(Symbol, TypeRepr, Symbol)],
+      prepared: List[Tuple2[String, (Ref => Term) => Term]]
+  ): Map[String, (Ref => Term) => Term] = fields match {
+    case (sym, t, f) :: tail => {
+      val elem = ValDef.let(
+        Symbol.spliceOwner,
+        s"tuple${f.name}",
+        Typed(tupled.asTerm.select(f), Inferred(t))
+      )
+
+      withElems(tupled, tail, (sym.name -> elem) :: prepared)
+    }
+
+    case _ => prepared.reverse.toMap
+  }
+
+  /**
+   * @param tupled the tupled term
+   * @param tupleTpe the tuple type
+   * @param decls the field declarations
+   */
+  def withFields[U <: Product](
+      tupled: Expr[U],
+      tupleTpe: TypeRepr,
+      decls: List[(Symbol, TypeRepr)],
+      debug: String => Unit
+  ): Map[String, (Term => Term) => Term] = {
+    val fields = decls.zipWithIndex.flatMap {
+      case ((sym, t), i) =>
+        val field = tupleTpe.typeSymbol.declaredMethod(s"_${i + 1}")
+
+        field.map { meth =>
+          debug(
+            s"// Field: ${sym.owner.owner.fullName}.${sym.name}, type = ${t.typeSymbol.fullName}, annotations = [${sym.annotations.map(_.show).mkString(", ")}]"
+          )
+
+          Tuple3(sym, t, meth)
+        }
+    }
+
+    withElems[U](tupled, fields, List.empty)
+  }
+
+  /**
+   * @tparam T the class type
+   * @tparam U the type of the product corresponding to class `T`
+   * @tparam R the result type (from the field operation)
+   *
+   * @param tpr the type for which a `ProductOf` is provided
+   * @param toProduct the function to convert the input value as product `U`
+   * @param types the types of the elements (fields)
+   *
+   * @return The tuple type + `{ v: Term => { tuple: Ref => ... } }`
+   * with `v` a term of type `tpe`, and `tuple` the product created from.
+   */
+  def withTuple[T, U <: Product, R: Type](
+      tpr: TypeRepr,
+      toProduct: Expr[T => U],
+      types: List[TypeRepr]
+  )(using
+      Type[T],
+      Type[U]
+  ): Tuple2[TypeRepr, Expr[T] => (Expr[U] => Expr[R]) => Expr[R]] = {
+    val unappliedTupleTpr: TypeRepr = {
+      if (types.isEmpty) {
+        TypeRepr.of[EmptyTuple]
+      } else {
+        TypeRepr.typeConstructorOf(Class.forName(s"scala.Tuple${types.size}"))
+      }
+    }
+
+    val tupleTpr = unappliedTupleTpr.appliedTo(types)
+
+    tupleTpr -> {
+      (in: Expr[T]) =>
+        { (f: (Expr[U] => Expr[R])) =>
+          '{
+            val tuple: U = ${ toProduct }($in)
+            ${ f('{ tuple }) }
+          }
+        }
+    }
+  }
 
   /**
    * Returns the elements type for `product`.
