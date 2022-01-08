@@ -628,6 +628,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
   "JSON Reads" should {
     "manage nullable/option".taggedAs(UnstableInScala213) in {
+      // TODO: Remove tag
       case class User(name: String, email: String, phone: Option[String])
 
       implicit val UserReads: Reads[User] = (
