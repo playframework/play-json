@@ -267,9 +267,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recover from error" in {
       JsNumber(123)
         .validate[String]
-        .recover {
-          case JsError(_) =>
-            "error"
+        .recover { case JsError(_) =>
+          "error"
         }
         .mustEqual(JsSuccess("error"))
 
@@ -289,8 +288,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "validate reads on the root path" when {
       case class Address(street: String, zip: String)
 
-      implicit
-      val userReads: Reads[User] = (
+      implicit val userReads: Reads[User] = (
         (__ \ "name").read[String] and
           (__ \ "age").read[Int]
       )(User.apply _)
@@ -632,8 +630,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "manage nullable/option".taggedAs(UnstableInScala213) in {
       case class User(name: String, email: String, phone: Option[String])
 
-      implicit
-      val UserReads: Reads[User] = (
+      implicit val UserReads: Reads[User] = (
         (__ \ Symbol("name")).read[String] and
           (__ \ Symbol("coords") \ Symbol("email")).read(Reads.email) and
           (__ \ Symbol("coords") \ Symbol("phone")).readNullable(Reads.minLength[String](8))
@@ -704,8 +701,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "report correct path for validation errors" in {
       case class User(email: String, phone: Option[String])
 
-      implicit
-      val UserReads: Reads[User] = (
+      implicit val UserReads: Reads[User] = (
         (__ \ Symbol("email")).read(Reads.email) and
           (__ \ Symbol("phone")).readNullable(Reads.minLength[String](8))
       )(User.apply _)
@@ -720,8 +716,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "mix reads constraints" in {
       case class User(id: Long, email: String, age: Int)
 
-      implicit
-      val UserReads: Reads[User] = (
+      implicit val UserReads: Reads[User] = (
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("email")).read(Reads.email andKeep Reads.minLength[String](5)) and
           (__ \ Symbol("age")).read(Reads.max(55).or(Reads.min(65)))
@@ -754,8 +749,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive reads" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit
-      lazy val UserReads: Reads[User] = (
+      implicit lazy val UserReads: Reads[User] = (
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("name")).read[String] and
           (__ \ Symbol("friend")).lazyReadNullable(UserReads)
@@ -781,8 +775,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive writes" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit
-      lazy val UserWrites: Writes[User] = (
+      implicit lazy val UserWrites: Writes[User] = (
         (__ \ Symbol("id")).write[Long] and
           (__ \ Symbol("name")).write[String] and
           (__ \ Symbol("friend")).lazyWriteNullable(UserWrites)
@@ -800,8 +793,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive formats" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit
-      lazy val UserFormats: Format[User] = (
+      implicit lazy val UserFormats: Format[User] = (
         (__ \ Symbol("id")).format[Long] and
           (__ \ Symbol("name")).format[String] and
           (__ \ Symbol("friend")).lazyFormatNullable(UserFormats)
@@ -1010,8 +1002,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit
-      val UserWrites: OWrites[User] = (
+      implicit val UserWrites: OWrites[User] = (
         (__ \ Symbol("email")).write[String] and
           (__ \ Symbol("phone")).writeNullable[String]
       )(u => (u.email, u.phone))
@@ -1057,8 +1048,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit
-      val UserFormat: OFormat[User] = (
+      implicit val UserFormat: OFormat[User] = (
         (__ \ Symbol("email")).format(email) and
           (__ \ Symbol("phone")).formatNullable(Format(minLength[String](8), Writes.of[String]))
       )(User.apply, u => (u.email, u.phone))

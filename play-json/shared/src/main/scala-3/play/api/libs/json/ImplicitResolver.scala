@@ -15,9 +15,7 @@ private[json] trait ImplicitResolver[A] {
 
   protected implicit val aTpe: Type[A]
 
-  protected final lazy val aTpeRepr: TypeRepr = TypeRepr.of(using
-    aTpe
-  )
+  protected final lazy val aTpeRepr: TypeRepr = TypeRepr.of(using aTpe)
 
   import Json.Placeholder
 
@@ -162,9 +160,7 @@ private[json] trait ImplicitResolver[A] {
 
       case tt: TypeTree =>
         super.transformTree(
-          TypeTree.of(using
-            denorm(tt.tpe).asType
-          )
+          TypeTree.of(using denorm(tt.tpe).asType)
         )(owner)
 
       case Apply(fun, args) =>
@@ -184,9 +180,7 @@ private[json] trait ImplicitResolver[A] {
 
     // infers given
     val neededGivenType = TypeRepr
-      .of[M](using
-        tc
-      )
+      .of[M](using tc)
       .appliedTo(ptpe)
 
     val neededGiven: Option[Term] = Implicits.search(neededGivenType) match {
@@ -215,9 +209,7 @@ private[json] trait ImplicitResolver[A] {
         }
 
       s"// Resolve given ${prettyType(
-        TypeRepr.of(using
-          tc
-        )
+        TypeRepr.of(using tc)
       )} for ${prettyType(ntpe)} as ${prettyType(
         neededGivenType
       )} (self? ${selfRef}) = ${show.mkString}"

@@ -124,9 +124,8 @@ object JsError {
   def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])]): JsObject = toJson(errors, false)
 
   // def toJsonErrorsOnly: JsValue = original // TODO
-  def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map {
-    case (path, seq) =>
-      path.toJsonString -> seq
+  def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map { case (path, seq) =>
+    path.toJsonString -> seq
   }
 
   private def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])], flat: Boolean): JsObject = {
@@ -176,9 +175,8 @@ object JsError {
   object Message {
 
     def unapply(error: JsError): Option[String] =
-      error.errors.headOption.collect {
-        case (_, JsonValidationError.Message(msg) +: _) =>
-          msg
+      error.errors.headOption.collect { case (_, JsonValidationError.Message(msg) +: _) =>
+        msg
       }
   }
 
@@ -197,9 +195,8 @@ object JsError {
   object Detailed {
 
     def unapply(error: JsError): Option[(String, Any)] =
-      error.errors.headOption.collect {
-        case (_, JsonValidationError.Detailed(msg, arg) +: _) =>
-          msg -> arg
+      error.errors.headOption.collect { case (_, JsonValidationError.Detailed(msg, arg) +: _) =>
+        msg -> arg
       }
   }
 }

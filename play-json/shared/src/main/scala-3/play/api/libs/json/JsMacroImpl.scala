@@ -105,9 +105,7 @@ object JsMacroImpl { // TODO: debug
     }
 
     if (debugEnabled) {
-      report.info(s"/* Generated Reads:\n${expr.asTerm.show(using
-        Printer.TreeAnsiCode
-      )}\n*/")
+      report.info(s"/* Generated Reads:\n${expr.asTerm.show(using Printer.TreeAnsiCode)}\n*/")
     }
 
     expr
@@ -122,10 +120,8 @@ object JsMacroImpl { // TODO: debug
   ): Expr[Reads[A]] = {
     import q.reflect.*
 
-    val tpe = Type.of[A]
-    val repr = TypeRepr.of[A](using
-      tpe
-    )
+    val tpe  = Type.of[A]
+    val repr = TypeRepr.of[A](using tpe)
 
     val helper = new ReadsHelper[q.type, A] {
       type Q = q.type
@@ -219,61 +215,62 @@ object JsMacroImpl { // TODO: debug
       def handleSubTypes(discriminator: Expr[String], input: Expr[JsValue]): Expr[JsResult[A]] = {
         type Subtype[U <: A] = U
 
-        val cases = subTypes.filter {
-          case tpr @ AppliedType(_, _) => {
-            report.warning(
-              s"Generic type ${prettyType(tpr)} is not supported as member of sealed family ${prettyType(aTpeRepr)}."
-            )
+        val cases = subTypes
+          .filter {
+            case tpr @ AppliedType(_, _) => {
+              report.warning(
+                s"Generic type ${prettyType(tpr)} is not supported as member of sealed family ${prettyType(aTpeRepr)}."
+              )
 
-            false
+              false
+            }
+
+            case _ => true
           }
+          .zipWithIndex
+          .map { (tpr, i) =>
+            tpr.asType match {
+              case st @ '[Subtype[sub]] =>
+                val subTpr = TypeRepr.of[sub](using st)
 
-          case _ => true
-        }.zipWithIndex.map { (tpr, i) =>
-          tpr.asType match {
-            case st @ '[Subtype[sub]] =>
-              val subTpr = TypeRepr.of[sub](using
-                st
-              )
+                val bind = Symbol.newBind(
+                  Symbol.spliceOwner,
+                  s"macroTpe${i}",
+                  Flags.Case,
+                  TypeRepr.of[String]
+                )
 
-              val bind = Symbol.newBind(
-                Symbol.spliceOwner,
-                s"macroTpe${i}",
-                Flags.Case,
-                TypeRepr.of[String]
-              )
+                val tpeCaseName: Expr[String] = '{
+                  ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
+                }
 
-              val tpeCaseName: Expr[String] = '{
-                ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
-              }
-
-              val resolve = resolver[Reads, sub](
-                '{
-                  @SuppressWarnings(Array("AsInstanceOf"))
-                  def forward =
-                    ${ forwardExpr }.asInstanceOf[Reads[sub]]
-
-                  forward
-                },
-                debug
-              )(readsTpe)
-
-              val body: Expr[JsResult[sub]] = resolve(subTpr) match {
-                case Some((givenReads, _)) =>
+                val resolve = resolver[Reads, sub](
                   '{
-                    ${ givenReads.asExprOf[Reads[sub]] }.reads(${ input })
-                  }
+                    @SuppressWarnings(Array("AsInstanceOf"))
+                    def forward =
+                      ${ forwardExpr }.asInstanceOf[Reads[sub]]
 
-                case _ =>
-                  report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[${prettyType(tpr)}]")
-              }
+                    forward
+                  },
+                  debug
+                )(readsTpe)
 
-              val matchedRef: Expr[String] = Ref(bind).asExprOf[String]
-              val cond: Expr[Boolean]      = '{ ${ matchedRef } == ${ tpeCaseName } }
+                val body: Expr[JsResult[sub]] = resolve(subTpr) match {
+                  case Some((givenReads, _)) =>
+                    '{
+                      ${ givenReads.asExprOf[Reads[sub]] }.reads(${ input })
+                    }
 
-              CaseDef(Bind(bind, Wildcard()), guard = Some(cond.asTerm), rhs = body.asTerm)
+                  case _ =>
+                    report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[${prettyType(tpr)}]")
+                }
+
+                val matchedRef: Expr[String] = Ref(bind).asExprOf[String]
+                val cond: Expr[Boolean]      = '{ ${ matchedRef } == ${ tpeCaseName } }
+
+                CaseDef(Bind(bind, Wildcard()), guard = Some(cond.asTerm), rhs = body.asTerm)
+            }
           }
-        }
 
         val fallback = CaseDef(Wildcard(), None, '{ JsError("error.invalid") }.asTerm)
 
@@ -323,8 +320,8 @@ object JsMacroImpl { // TODO: debug
       val compCls = tpr.typeSymbol.companionClass
       val compMod = Ref(tpr.typeSymbol.companionModule)
 
-      val (optional, required) = tprElements.zipWithIndex.map {
-        case ((sym, rpt), i) =>
+      val (optional, required) = tprElements.zipWithIndex
+        .map { case ((sym, rpt), i) =>
           val pt = rpt.dealias
 
           pt.asType match {
@@ -337,53 +334,55 @@ object JsMacroImpl { // TODO: debug
 
               ReadableField(sym, i, pt, default)
           }
-      }.toSeq.partition { case ReadableField(_, _, t, _) => isOptionalType(t) }
+        }
+        .toSeq
+        .partition { case ReadableField(_, _, t, _) => isOptionalType(t) }
 
       def readFields(input: Expr[JsObject]): Expr[JsResult[T]] = {
-        val reqElmts: Seq[(Int, Expr[JsResult[_]])] = required.map {
-          case ReadableField(param, n, pt, defaultValue) =>
-            pt.asType match {
-              case ptpe @ '[p] =>
-                val reads: Expr[Reads[p]] = resolve(pt) match {
-                  case Some((givenReads, _)) =>
-                    givenReads.asExprOf[Reads[p]]
+        val reqElmts: Seq[(Int, Expr[JsResult[_]])] = required.map { case ReadableField(param, n, pt, defaultValue) =>
+          pt.asType match {
+            case ptpe @ '[p] =>
+              val reads: Expr[Reads[p]] = resolve(pt) match {
+                case Some((givenReads, _)) =>
+                  givenReads.asExprOf[Reads[p]]
+
+                case _ =>
+                  report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[${prettyType(pt)}]")
+              }
+
+              val pname = param.name
+
+              val get: Expr[JsResult[p]] = {
+                val field = '{ ${ config }.naming(${ Expr(pname) }) }
+                val path  = '{ JsPath \ ${ field } }
+
+                val pathReads: Expr[Reads[p]] = defaultValue match {
+                  case Some(v) =>
+                    '{ ${ path }.readWithDefault[p](${ v.asExprOf[p] })($reads) }
 
                   case _ =>
-                    report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[${prettyType(pt)}]")
+                    '{ ${ path }.read[p]($reads) }
                 }
 
-                val pname = param.name
+                '{ ${ pathReads }.reads($input) }
+              }
 
-                val get: Expr[JsResult[p]] = {
-                  val field = '{ ${ config }.naming(${ Expr(pname) }) }
-                  val path  = '{ JsPath \ ${ field } }
-
-                  val pathReads: Expr[Reads[p]] = defaultValue match {
-                    case Some(v) =>
-                      '{ ${ path }.readWithDefault[p](${ v.asExprOf[p] })($reads) }
-
-                    case _ =>
-                      '{ ${ path }.read[p]($reads) }
-                  }
-
-                  '{ ${ pathReads }.reads($input) }
-                }
-
-                n -> get
-            }
+              n -> get
+          }
         }
 
-        val exElmts: Seq[(Int, Expr[JsResult[_]])] = optional.map {
-          case p @ ReadableField(_, _, OptionTypeParameter(it), _) =>
-            p.copy(tpr = it)
+        val exElmts: Seq[(Int, Expr[JsResult[_]])] = optional
+          .map {
+            case p @ ReadableField(_, _, OptionTypeParameter(it), _) =>
+              p.copy(tpr = it)
 
-          case ReadableField(param, _, pt, _) =>
-            report.errorAndAbort(
-              s"Invalid optional field '${param.name}': ${prettyType(pt)}"
-            )
+            case ReadableField(param, _, pt, _) =>
+              report.errorAndAbort(
+                s"Invalid optional field '${param.name}': ${prettyType(pt)}"
+              )
 
-        }.map {
-          case ReadableField(param, n, it, defaultValue) =>
+          }
+          .map { case ReadableField(param, n, it, defaultValue) =>
             val pname = param.name
 
             it.asType match {
@@ -415,7 +414,7 @@ object JsMacroImpl { // TODO: debug
 
                 n -> get
             }
-        }
+          }
 
         val tupElmts: Seq[Expr[JsResult[_]]] =
           (reqElmts ++ exElmts).toSeq.sortBy(_._1).map(_._2)
@@ -463,9 +462,7 @@ object JsMacroImpl { // TODO: debug
     }
 
     if (debugEnabled) {
-      report.info(s"/* Generated OWrites:\n${expr.asTerm.show(using
-        Printer.TreeAnsiCode
-      )}\n*/")
+      report.info(s"/* Generated OWrites:\n${expr.asTerm.show(using Printer.TreeAnsiCode)}\n*/")
     }
 
     expr
@@ -480,10 +477,8 @@ object JsMacroImpl { // TODO: debug
   ): Expr[OWrites[A]] = {
     import q.reflect.*
 
-    val tpe = Type.of[A]
-    val repr = TypeRepr.of[A](using
-      tpe
-    )
+    val tpe  = Type.of[A]
+    val repr = TypeRepr.of[A](using tpe)
 
     val helper = new WritesHelper[q.type, A] {
       type Q = q.type
@@ -568,64 +563,65 @@ object JsMacroImpl { // TODO: debug
       def handleSubTypes(input: Expr[A]): Expr[JsObject] = {
         type Subtype[U <: A] = U
 
-        val cases = subTypes.filter {
-          case tpr @ AppliedType(_, _) => {
-            report.warning(
-              s"Generic type ${prettyType(tpr)} is not supported as a member of sealed family ${prettyType(aTpeRepr)}"
-            )
+        val cases = subTypes
+          .filter {
+            case tpr @ AppliedType(_, _) => {
+              report.warning(
+                s"Generic type ${prettyType(tpr)} is not supported as a member of sealed family ${prettyType(aTpeRepr)}"
+              )
 
-            false
+              false
+            }
+
+            case _ =>
+              true
           }
+          .zipWithIndex
+          .map { (tpr, i) =>
+            tpr.asType match {
+              case st @ '[Subtype[sub]] =>
+                val subTpr = TypeRepr.of[sub](using st)
 
-          case _ =>
-            true
-        }.zipWithIndex.map { (tpr, i) =>
-          tpr.asType match {
-            case st @ '[Subtype[sub]] =>
-              val subTpr = TypeRepr.of[sub](using
-                st
-              )
+                val bind = Symbol.newBind(
+                  Symbol.spliceOwner,
+                  s"macroVal${i}",
+                  Flags.Case,
+                  subTpr
+                )
 
-              val bind = Symbol.newBind(
-                Symbol.spliceOwner,
-                s"macroVal${i}",
-                Flags.Case,
-                subTpr
-              )
+                val tpeCaseName: Expr[String] = '{
+                  ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
+                }
 
-              val tpeCaseName: Expr[String] = '{
-                ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
-              }
+                val resolve = resolver[Writes, sub](
+                  '{ ${ forwardExpr }.asInstanceOf[Writes[sub]] },
+                  debug
+                )(writesTpe)
 
-              val resolve = resolver[Writes, sub](
-                '{ ${ forwardExpr }.asInstanceOf[Writes[sub]] },
-                debug
-              )(writesTpe)
+                val matchedRef: Expr[sub] = Ref(bind).asExprOf[sub]
 
-              val matchedRef: Expr[sub] = Ref(bind).asExprOf[sub]
+                val body: Expr[JsObject] = resolve(subTpr) match {
+                  case Some((givenWrites, _)) =>
+                    '{
+                      def output: JsObject = ${ givenWrites.asExprOf[Writes[sub]] }.writes($matchedRef) match {
+                        case obj @ JsObject(_) =>
+                          obj
 
-              val body: Expr[JsObject] = resolve(subTpr) match {
-                case Some((givenWrites, _)) =>
-                  '{
-                    def output: JsObject = ${ givenWrites.asExprOf[Writes[sub]] }.writes($matchedRef) match {
-                      case obj @ JsObject(_) =>
-                        obj
+                        case jsValue =>
+                          Json.obj("_value" -> jsValue)
+                      }
 
-                      case jsValue =>
-                        Json.obj("_value" -> jsValue)
+                      output ++ JsObject(Map(${ config }.discriminator -> JsString(${ tpeCaseName })))
                     }
 
-                    output ++ JsObject(Map(${ config }.discriminator -> JsString(${ tpeCaseName })))
-                  }
+                  case _ =>
+                    report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(tpr)}]")
 
-                case _ =>
-                  report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(tpr)}]")
+                }
 
-              }
-
-              CaseDef(Bind(bind, Typed(Wildcard(), Inferred(tpr))), guard = None, rhs = body.asTerm)
+                CaseDef(Bind(bind, Typed(Wildcard(), Inferred(tpr))), guard = None, rhs = body.asTerm)
+            }
           }
-        }
 
         Match(input.asTerm, cases).asExprOf[JsObject]
       }
@@ -655,15 +651,17 @@ object JsMacroImpl { // TODO: debug
       val types   = tprElements.map(_._2)
       val resolve = resolver[Writes, T](forwardExpr, debug)(writesTpe)
 
-      val (optional, required) = tprElements.zipWithIndex.view.map {
-        case ((sym, rpt), i) =>
+      val (optional, required) = tprElements.zipWithIndex.view
+        .map { case ((sym, rpt), i) =>
           val pt = rpt.dealias
 
           pt.asType match {
             case '[t] =>
               WritableField(sym, i, pt)
           }
-      }.toSeq.partition { case WritableField(_, _, t) => isOptionalType(t) }
+        }
+        .toSeq
+        .partition { case WritableField(_, _, t) => isOptionalType(t) }
 
       type ElementAcc = MBuilder[(String, JsValue), Map[String, JsValue]]
 
@@ -682,37 +680,36 @@ object JsMacroImpl { // TODO: debug
           val fieldMap = withFields(tupled, tupleTpe, tprElements, debug)
 
           withIdents[JsObject] { bufOk =>
-            val values: Seq[Expr[Unit]] = required.map {
-              case WritableField(param, i, pt) =>
-                val pname = param.name
+            val values: Seq[Expr[Unit]] = required.map { case WritableField(param, i, pt) =>
+              val pname = param.name
 
-                val withField = fieldMap.get(pname) match {
-                  case Some(f) => f
+              val withField = fieldMap.get(pname) match {
+                case Some(f) => f
 
-                  case _ =>
-                    report.errorAndAbort(
-                      s"Field not found: ${prettyType(tpr)}.${pname}"
-                    )
-                }
+                case _ =>
+                  report.errorAndAbort(
+                    s"Field not found: ${prettyType(tpr)}.${pname}"
+                  )
+              }
 
-                pt.asType match {
-                  case pTpe @ '[p] =>
-                    val writes: Expr[Writes[p]] = resolve(pt) match {
-                      case Some((givenWrites, _)) =>
-                        givenWrites.asExprOf[Writes[p]]
+              pt.asType match {
+                case pTpe @ '[p] =>
+                  val writes: Expr[Writes[p]] = resolve(pt) match {
+                    case Some((givenWrites, _)) =>
+                      givenWrites.asExprOf[Writes[p]]
 
-                      case _ =>
-                        report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(pt)}]")
-                    }
+                    case _ =>
+                      report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(pt)}]")
+                  }
 
-                    withField { v =>
-                      ('{
-                        val nme = ${ config }.naming(${ Expr(pname) })
-                        ${ bufOk } += nme -> ${ writes }.writes(${ v.asExprOf[p] })
-                        ()
-                      }).asTerm
-                    }.asExprOf[Unit]
-                }
+                  withField { v =>
+                    ('{
+                      val nme = ${ config }.naming(${ Expr(pname) })
+                      ${ bufOk } += nme -> ${ writes }.writes(${ v.asExprOf[p] })
+                      ()
+                    }).asTerm
+                  }.asExprOf[Unit]
+              }
             } // end of required.map
 
             val extra: Seq[Expr[Unit]] = optional.map {
@@ -865,9 +862,7 @@ object JsMacroImpl { // TODO: debug
 
                       term
                         .select(term.symbol.fieldMember(v.name))
-                        .asExprOf[t](using
-                          vtpe
-                        )
+                        .asExprOf[t](using vtpe)
                     }
 
                     val expr = '{
@@ -938,9 +933,7 @@ object JsMacroImpl { // TODO: debug
     import q.reflect.*
 
     TypeRepr
-      .of[A](using
-        tpe
-      )
+      .of[A](using tpe)
       .dealias match {
       case OrType(_, _) =>
 

@@ -647,14 +647,12 @@ trait EnvReads {
 
         ats.foreach(_.foreach { builder.addUnicodeLocaleAttribute(_) })
 
-        kws.foreach(_.foreach {
-          case (key, typ) =>
-            builder.setUnicodeLocaleKeyword(key, typ)
+        kws.foreach(_.foreach { case (key, typ) =>
+          builder.setUnicodeLocaleKeyword(key, typ)
         })
 
-        ext.foreach(_.foreach {
-          case (key, value) =>
-            builder.setExtension(key, value)
+        ext.foreach(_.foreach { case (key, value) =>
+          builder.setExtension(key, value)
         })
 
         spt.foreach { builder.setScript(_) }

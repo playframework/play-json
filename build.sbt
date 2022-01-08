@@ -20,8 +20,7 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq("core", "junit").map { n =>
-    ("org.specs2" %% s"specs2-$n" % "4.13.2").
-      cross(CrossVersion.for3Use2_13) % Test
+    ("org.specs2" %% s"specs2-$n" % "4.13.2").cross(CrossVersion.for3Use2_13) % Test
   }
 
 val jacksonVersion         = "2.11.4"
@@ -151,8 +150,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         "org.scalatest"     %%% "scalatest"       % "3.2.11"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.11.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.15.4"   % Test,
-            ("com.chuusai"    %% "shapeless"    % "2.3.7").
-              cross(CrossVersion.for3Use2_13) % Test
+        ("com.chuusai" %% "shapeless" % "2.3.7").cross(CrossVersion.for3Use2_13) % Test
       ),
       libraryDependencies += {
         if (isScala3.value) {

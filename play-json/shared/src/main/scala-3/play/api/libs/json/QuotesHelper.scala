@@ -121,17 +121,16 @@ private[json] trait QuotesHelper {
       decls: List[(Symbol, TypeRepr)],
       debug: String => Unit
   ): Map[String, (Term => Term) => Term] = {
-    val fields = decls.zipWithIndex.flatMap {
-      case ((sym, t), i) =>
-        val field = tupleTpe.typeSymbol.declaredMethod(s"_${i + 1}")
+    val fields = decls.zipWithIndex.flatMap { case ((sym, t), i) =>
+      val field = tupleTpe.typeSymbol.declaredMethod(s"_${i + 1}")
 
-        field.map { meth =>
-          debug(
-            s"// Field: ${sym.owner.owner.fullName}.${sym.name}, type = ${t.typeSymbol.fullName}, annotations = [${sym.annotations.map(_.show).mkString(", ")}]"
-          )
+      field.map { meth =>
+        debug(
+          s"// Field: ${sym.owner.owner.fullName}.${sym.name}, type = ${t.typeSymbol.fullName}, annotations = [${sym.annotations.map(_.show).mkString(", ")}]"
+        )
 
-          Tuple3(sym, t, meth)
-        }
+        Tuple3(sym, t, meth)
+      }
     }
 
     withElems[U](tupled, fields, List.empty)
@@ -225,28 +224,27 @@ private[json] trait QuotesHelper {
 
       names
         .lazyZip(elementTypes(names.size, List(elmTypes), List.empty))
-        .map {
-          case (n, t) =>
-            val csym = paramss.get(n)
-            def fsym =
-              Option(ownerSym.declaredField(n)).filterNot(_ == Symbol.noSymbol)
+        .map { case (n, t) =>
+          val csym = paramss.get(n)
+          def fsym =
+            Option(ownerSym.declaredField(n)).filterNot(_ == Symbol.noSymbol)
 
-            val psym: Symbol = csym
-              .orElse(fsym)
-              .orElse {
-                ownerSym.declaredMethod(n).headOption
-              }
-              .getOrElse(
-                Symbol.newVal(
-                  ownerSym,
-                  n,
-                  t,
-                  Flags.EmptyFlags,
-                  Symbol.noSymbol
-                )
+          val psym: Symbol = csym
+            .orElse(fsym)
+            .orElse {
+              ownerSym.declaredMethod(n).headOption
+            }
+            .getOrElse(
+              Symbol.newVal(
+                ownerSym,
+                n,
+                t,
+                Flags.EmptyFlags,
+                Symbol.noSymbol
               )
+            )
 
-            psym -> t
+          psym -> t
         }
         .toList
     }
@@ -272,13 +270,15 @@ private[json] trait QuotesHelper {
       case pofTpe =>
         pofTpe.dealias.typeSymbol.tree match {
           case ClassDef(_, _, _, _, members) =>
-            members.collect {
-              case TypeDef(
-                    n @ ("MirroredElemTypes" | "MirroredElemLabels"),
-                    tt: TypeTree
-                  ) if tt.tpe <:< TypeRepr.of[Product] =>
-                n -> tt.tpe
-            }.sortBy(_._1) match {
+            members
+              .collect {
+                case TypeDef(
+                      n @ ("MirroredElemTypes" | "MirroredElemLabels"),
+                      tt: TypeTree
+                    ) if tt.tpe <:< TypeRepr.of[Product] =>
+                  n -> tt.tpe
+              }
+              .sortBy(_._1) match {
               case (_, elmLabels) :: (_, elmTypes) :: Nil =>
                 Option(prepare(elmLabels, elmTypes))
 

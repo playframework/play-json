@@ -15,8 +15,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
   case class User(id: Long, name: String, friends: List[User])
 
-  implicit
-  val UserFormat: Format[User] = (
+  implicit val UserFormat: Format[User] = (
     (__ \ Symbol("id")).format[Long] and
       (__ \ Symbol("name")).format[String] and
       (__ \ Symbol("friends")).lazyFormat(Reads.list(UserFormat), Writes.list(UserFormat))
@@ -24,8 +23,7 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
 
   case class Car(id: Long, models: Map[String, String])
 
-  implicit
-  val CarFormat: Format[Car] = (
+  implicit val CarFormat: Format[Car] = (
     (__ \ Symbol("id")).format[Long] and
       (__ \ Symbol("models")).format[Map[String, String]]
   )(Car.apply, c => (c.id, c.models))
