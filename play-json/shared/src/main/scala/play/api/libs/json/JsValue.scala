@@ -5,6 +5,7 @@
 package play.api.libs.json
 
 import scala.collection._
+import scala.util.hashing.MurmurHash3
 
 case class JsResultException(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])])
     extends RuntimeException(s"JsResultException(errors:$errors)")
@@ -188,14 +189,20 @@ case class JsObject(
     merge(this, other)
   }
 
-  override def equals(other: Any): Boolean = other match {
-    case that @ JsObject(_) => (that.canEqual(this)) && fieldSet == that.fieldSet
-    case _                  => false
+  override def equals(other: Any): Boolean = {
+    other match {
+      case o: AnyRef if this.eq(o) =>
+        true
+      case JsObject(that) =>
+        underlying == that
+      case _ =>
+        false
+    }
   }
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[JsObject]
 
-  override def hashCode: Int = fieldSet.hashCode()
+  override def hashCode(): Int = MurmurHash3.unorderedHash(underlying, MurmurHash3.setSeed)
 }
 
 object JsObject extends (Seq[(String, JsValue)] => JsObject) {

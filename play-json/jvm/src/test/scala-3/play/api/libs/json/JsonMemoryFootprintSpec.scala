@@ -12,8 +12,8 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
 
   "Json.parse" - {
     "obj0" in assertSizes("""{}""", 32, 32)
-    "obj1" in assertSizes("""{"1":true}""", 168, 232)
-    "obj4" in assertSizes("""{"1":true,"2":true,"3":true,"4":true}""", 312, 520)
+    "obj1" in assertSizes("""{"1":true}""", 168, 184)
+    "obj4" in assertSizes("""{"1":true,"2":true,"3":true,"4":true}""", 312, 328)
 
     "arr0" in assertSizes("""[]""", 120, 120)
     "arr1" in assertSizes("""[true]""", 120, 120)
@@ -44,7 +44,7 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     def arr1KB(elem: String, targetSize: Int = 1000): String =
       Iterator.continually(elem).take(targetSize / (elem.length + 1)).mkString("[", ",", "]")
     "obj0" in assertSizes(arr1KB("{}"), 12760, 12760)
-    "obj1" in assertSizes(arr1KB("""{"a":6}"""), 31568, 39568)
+    "obj1" in assertSizes(arr1KB("""{"a":6}"""), 31568, 33568)
     "nums" in assertSizes(arr1KB("6"), 42104, 42104)
     "arr0" in assertSizes(arr1KB("[]"), 42064, 42064)
     "arr1" in assertSizes(arr1KB("[6]"), 51080, 51080)
