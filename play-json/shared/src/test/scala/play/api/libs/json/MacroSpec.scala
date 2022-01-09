@@ -104,6 +104,16 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
     }
 
+    "be generated for object" when {
+      "case modifier" in {
+        Json.reads[Singleton1.type].reads(Json.obj()).mustEqual(JsSuccess(Singleton1))
+      }
+
+      "not case" in {
+        Json.reads[Singleton2.type].reads(Json.obj()).mustEqual(JsSuccess(Singleton2))
+      }
+    }
+
     "be generated for a sealed family" when {
       "not exhaustive" when {
         implicit val simpleReads: Reads[Simple] = Reads[Simple] { js => (js \ "bar").validate[String].map(Simple(_)) }
@@ -211,6 +221,16 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       forAll(Gen.oneOf(a, b, c, d)) { r =>
         r.writes(UsingAlias(Some(1))).mustEqual(Json.obj("v" -> 1))
         r.writes(UsingAlias(None)).mustEqual(Json.obj())
+      }
+    }
+
+    "be generated for object" when {
+      "case modifier" in {
+        Json.writes[Singleton1.type].writes(Singleton1).mustEqual(Json.obj())
+      }
+
+      "not case" in {
+        Json.writes[Singleton2.type].writes(Singleton2).mustEqual(Json.obj())
       }
     }
 
@@ -680,6 +700,9 @@ object MacroSpec {
 
   case class Interval[T](base: T, other: Option[T])
   case class Complex[T, U](id: Int, a: T, b: Either[T, String], c: U)
+
+  case object Singleton1
+  object Singleton2
 
   type OptionalInt = Option[Int]
 
