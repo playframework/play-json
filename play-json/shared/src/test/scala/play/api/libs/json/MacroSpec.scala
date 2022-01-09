@@ -73,7 +73,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
     }
 
-    "ignore Option alias" in {
+    "be generated for simple/non-case class & ignore Option alias" in {
       def a: Reads[UsingAlias] = {
         implicit lazy val x: Reads[OptionalInt] = ???
 
@@ -183,7 +183,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         )
     }
 
-    "ignore Option alias" in {
+    "be generated for simple/non-case class & ignore Option alias" in {
       def a: OWrites[UsingAlias] = {
         implicit lazy val x: Writes[OptionalInt] = ???
 
@@ -682,7 +682,24 @@ object MacroSpec {
   case class Complex[T, U](id: Int, a: T, b: Either[T, String], c: U)
 
   type OptionalInt = Option[Int]
-  case class UsingAlias(v: OptionalInt)
+
+  class UsingAlias(val v: OptionalInt) {
+    override def equals(that: Any): Boolean = that match {
+      case other: UsingAlias =>
+        this.v == other.v
+
+      case _ =>
+        false
+    }
+
+    override def hashCode: Int = v.hashCode
+  }
+
+  object UsingAlias {
+    def apply(v: OptionalInt): UsingAlias = new UsingAlias(v)
+
+    def unapply(alias: UsingAlias): Option[OptionalInt] = Some(alias.v)
+  }
 
   // ---
 
