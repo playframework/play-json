@@ -35,7 +35,12 @@ final class TextId(val value: String) extends AnyVal
 
 import org.scalacheck.Gen
 
-class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+class MacroSpec
+    extends AnyWordSpec
+    with MacroSpecCompat
+    with Matchers
+    with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+
   import MacroSpec._
 
   import FamilyCodec._
@@ -74,6 +79,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "be generated for simple/non-case class & ignore Option alias" in {
+      import UsingAliasImplicits._
+
       def a: Reads[UsingAlias] = {
         implicit lazy val x: Reads[OptionalInt] = ???
 
@@ -194,6 +201,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "be generated for simple/non-case class & ignore Option alias" in {
+      import UsingAliasImplicits._
+
       def a: OWrites[UsingAlias] = {
         implicit lazy val x: Writes[OptionalInt] = ???
 
@@ -716,6 +725,8 @@ object MacroSpec {
     }
 
     override def hashCode: Int = v.hashCode
+
+    override def toString = s"UsingAlias($v)"
   }
 
   object UsingAlias {
