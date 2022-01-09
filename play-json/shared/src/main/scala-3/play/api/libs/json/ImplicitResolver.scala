@@ -232,7 +232,7 @@ private[json] trait ImplicitResolver[A] {
    * @param sym a type symbol
    */
   protected def typeName(sym: Symbol): String =
-    sym.fullName.replaceAll("(\\.package\\$|\\$|scala\\.Predef\\$\\.)", "")
+    sym.fullName.replaceAll("(\\.package\\$|\\$|java\\.lang\\.|scala\\.Predef\\$\\.)", "")
 
   // To print the implicit types in the compiler messages
   private[json] final def prettyType(t: TypeRepr): String = t match {

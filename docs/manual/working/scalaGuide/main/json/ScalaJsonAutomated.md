@@ -49,9 +49,16 @@ The above example can be made even more concise by using body parsers with a typ
 
 The macros work for classes and traits meeting the following requirements.
 
+**Class in Scala 2.x:**
+
 - It must have a companion object having `apply` and `unapply` methods.
 - The return types of the `unapply` must match the argument types of the `apply` method.
 - The parameter names of the `apply` method must be the same as the property names desired in the JSON.
+
+**Class in Scala 3.x:**
+
+- It must be provided a [`Conversion`](https://dotty.epfl.ch/api/scala/Conversion.html) to a `_ <: Product`.
+- It must be provided a valid [`ProductOf`](https://dotty.epfl.ch/api/scala/deriving/Mirror$.html#ProductOf-0).
 
 Case classes automatically meet these requirements. For custom classes or traits, you might have to implement them.
 

@@ -5,5 +5,7 @@
 package play.api.libs.json
 
 private[json] trait MacroSpecCompat {
-  // Empty for Scala2
+  object UsingAliasImplicits {
+    // Empty for Scala2 - Using apply/unapply
+  }
 }
