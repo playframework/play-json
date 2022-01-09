@@ -162,16 +162,17 @@ object JsPath extends JsPath(List.empty) {
     }
 
     // optimize fast path
-    val objectMap = JsObject.createFieldsMap()
+    val objectMap = ImmutableLinkedHashMap.newBuilder[String, JsValue]
+    objectMap.sizeHint(pathValues.size)
     val isSimpleObject = pathValues.forall {
       case (JsPath(KeyPathNode(key) :: Nil), value) =>
-        objectMap.put(key, value)
+        objectMap += (key -> value)
         true
       case _ =>
         false
     }
     if (isSimpleObject) {
-      JsObject(objectMap)
+      JsObject(objectMap.result())
     } else {
       pathValues.foldLeft(JsObject.empty) { case (obj, (path, value)) =>
         obj.deepMerge(buildSubPath(path, value))

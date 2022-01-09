@@ -234,17 +234,25 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
 
 lazy val `play-jsonJS` = `play-json`.js
 
-lazy val `play-jsonJVM` = `play-json`.jvm.settings(
-  libraryDependencies ++=
-    jacksons ++ {
-      if (isScala3.value)
-        specs2(scalaVersion.value).map(_.exclude("org.scala-lang.modules", "scala-xml_2.13"))
-      else
-        specs2(scalaVersion.value)
-    } :+ (
-      "ch.qos.logback" % "logback-classic" % "1.2.10" % Test
-    ),
-  Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
+lazy val `play-jsonJVM` = `play-json`.jvm
+  .settings(
+    libraryDependencies ++=
+      jacksons ++ {
+        if (isScala3.value)
+          specs2(scalaVersion.value).map(_.exclude("org.scala-lang.modules", "scala-xml_2.13"))
+        else
+          specs2(scalaVersion.value)
+      } :+ (
+        "ch.qos.logback" % "logback-classic" % "1.2.10" % Test
+      ),
+    Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
+  )
+  .settings(enableJol)
+
+def enableJol = Seq(
+  libraryDependencies += "org.openjdk.jol" % "jol-core" % "0.16" % Test,
+  Test / javaOptions += "-Djdk.attach.allowAttachSelf",
+  compileOrder := CompileOrder.JavaThenScala,
 )
 
 lazy val `play-json-joda` = project
