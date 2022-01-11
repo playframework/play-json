@@ -7,13 +7,9 @@ This is released from the `main` branch from `2.9.0` forward. Unless an older ve
 ### Requires contributor access
 
 - Check the [draft release notes](https://github.com/playframework/play-json/releases) to see if everything is there
-- Wait until [main build finished](https://travis-ci.com/github/playframework/play-json/builds) after merging the last PR
+- Wait until [main build finished](https://github.com/playframework/play-json/actions/workflows/publish.yml) after merging the last PR
 - Update the [draft release](https://github.com/playframework/play-json/releases) with the next tag version (eg. `2.9.0`), title and release description
-- Check that Travis CI release build has executed successfully (Travis will start a [CI build](https://travis-ci.com/github/playframework/play-json/builds) for the new tag and publish artifacts to Sonatype)
-
-### Requires Sonatype access
-
-- Release the staging repos at https://oss.sonatype.org/#stagingRepositories
+- Check that GitHub Actions release build has executed successfully (GA will start a [CI build](https://github.com/playframework/play-json/actions/workflows/publish.yml) for the new tag and publish artifacts to Sonatype)
 
 ### Check Maven Central
 

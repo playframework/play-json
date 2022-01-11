@@ -1,21 +1,44 @@
-pull_request_rules:
+queue_rules:
+  - name: default
+    conditions:
+      # Conditions to get out of the queue (= merged)
+      - check-success=Check / Code Style
+      - check-success=Check / Binary Compatibility
+      - check-success=Check / Docs
+      - check-success=Check / Tests (Scala 2.12.15 & JDK 11)
+      - check-success=Check / Tests (Scala 2.13.7 & JDK 11)
+      - check-success=Check / Tests (Scala 3.0.2 & JDK 11)
+      - check-success=Check / Tests (Scala 2.12.15 & JDK 8)
+      - check-success=Check / Tests (Scala 2.13.7 & JDK 8)
+      - check-success=Check / Tests (Scala 3.0.2 & JDK 8)
 
+pull_request_rules:
   - name: Merge PRs that are ready
     conditions:
-      - status-success=Travis CI - Pull Request
+      - check-success=Check / Code Style
+      - check-success=Check / Binary Compatibility
+      - check-success=Check / Docs
+      - check-success=Check / Tests (Scala 2.12.15 & JDK 11)
+      - check-success=Check / Tests (Scala 2.13.7 & JDK 11)
+      - check-success=Check / Tests (Scala 3.0.2 & JDK 11)
+      - check-success=Check / Tests (Scala 2.12.15 & JDK 8)
+      - check-success=Check / Tests (Scala 2.13.7 & JDK 8)
+      - check-success=Check / Tests (Scala 3.0.2 & JDK 8)
       - status-success=typesafe-cla-validator
       - "#approved-reviews-by>=1"
       - "#review-requested=0"
       - "#changes-requested-reviews-by=0"
       - label!=status:block-merge
-      - label=status:merge-when-green      
+      - label=status:merge-when-green
     actions:
-      merge:
+      queue:
         method: merge
-        strict: smart
+        name: default
 
   - name: Delete the PR branch after merge
     conditions:
       - merged
     actions:
       delete_head_branch: {}
+      label:
+        remove: [ "status:merge-when-green" ]

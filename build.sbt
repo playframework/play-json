@@ -68,13 +68,6 @@ def playJsonMimaSettings = Seq(
   ),
 )
 
-// Workaround for https://github.com/scala-js/scala-js/issues/2378
-// Use "sbt -DscalaJSStage=full" in .travis.yml
-ThisBuild / scalaJSStage := (sys.props.get("scalaJSStage") match {
-  case Some("full") => FullOptStage
-  case _            => FastOptStage
-})
-
 val javacSettings = Seq(
   "-source",
   "1.8",
