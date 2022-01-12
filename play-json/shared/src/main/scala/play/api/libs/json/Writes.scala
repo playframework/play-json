@@ -144,9 +144,7 @@ object OWrites extends PathWrites with ConstraintWrites {
   /**
    * Returns an instance which uses `f` as [[OWrites.writes]] function.
    */
-  def apply[A](f: A => JsObject): OWrites[A] = new OWrites[A] {
-    def writes(a: A): JsObject = f(a)
-  }
+  def apply[A](f: A => JsObject): OWrites[A] = new FunctionalOWrites[A](f)
 
   /**
    * Transforms the resulting [[JsObject]] using the given function,
@@ -159,6 +157,12 @@ object OWrites extends PathWrites with ConstraintWrites {
     OWrites[A] { a =>
       f(a, w.writes(a))
     }
+
+  // ---
+
+  private[json] final class FunctionalOWrites[A](w: A => JsObject) extends OWrites[A] {
+    def writes(a: A): JsObject = w(a)
+  }
 }
 
 /**
@@ -177,9 +181,7 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
   /**
    * Returns an instance which uses `f` as [[Writes.writes]] function.
    */
-  def apply[A](f: A => JsValue): Writes[A] = new Writes[A] {
-    def writes(a: A): JsValue = f(a)
-  }
+  def apply[A](f: A => JsValue): Writes[A] = new FunctionalWrites[A](f)
 
   /**
    * Transforms the resulting [[JsValue]] using the given function,
@@ -194,6 +196,12 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
     Writes[A] { a =>
       f(a, w.writes(a))
     }
+
+  // ---
+
+  private[json] final class FunctionalWrites[A](w: A => JsValue) extends Writes[A] {
+    def writes(a: A): JsValue = w(a)
+  }
 }
 
 /**

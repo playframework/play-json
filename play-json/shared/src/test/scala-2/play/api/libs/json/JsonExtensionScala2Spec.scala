@@ -127,7 +127,9 @@ class JsonExtensionScala2Spec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration: JsonConfiguration.Aux[Json.WithDefaultValues] =
         JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
       val formatter = Json.format[OptionalWithDefault]
-      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props"            -> JsNull))
+
+      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props" -> JsNull))
+
       formatter.writes(OptionalWithDefault(Some("foo"))).mustEqual(Json.obj("props" -> "foo"))
 
       formatter.reads(Json.obj()).mustEqual(JsSuccess(OptionalWithDefault()))

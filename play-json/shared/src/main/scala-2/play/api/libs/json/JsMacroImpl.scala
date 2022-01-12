@@ -170,8 +170,9 @@ class JsMacroImpl(val c: blackbox.Context) {
         selfRef: Boolean
     )
 
-    val optTpeCtor  = typeOf[Option[_]].typeConstructor
-    val forwardName = TermName(c.freshName("forward"))
+    val optTpeCtor    = typeOf[Option[_]].typeConstructor
+    val forwardPrefix = "play_jsmacro"
+    val forwardName   = TermName(c.freshName(forwardPrefix))
 
     // MacroOptions
     val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
@@ -693,7 +694,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         case _ =>
           c.abort(
             c.enclosingPosition,
-            s"No apply function found matching unapply parameters"
+            "No apply function found matching unapply parameters"
           )
       }
 
@@ -731,24 +732,38 @@ class JsMacroImpl(val c: blackbox.Context) {
             val defaultValue = // not applicable for 'write' only
               defaultValueMap.get(name).filter(_ => methodName != "write")
 
+            val resolvedImpl = {
+              val implTpeName = Option(impl.tpe).fold("null")(_.toString)
+
+              if (implTpeName.startsWith(forwardPrefix) ||
+                  (implTpeName.startsWith("play.api.libs.json") &&
+                  !(implTpeName.startsWith("play.api.libs.json.Functional") ||
+                    implTpeName.contains("MacroSpec")))) {
+                impl // Avoid extra check for builtin formats
+              } else {
+                q"""_root_.java.util.Objects.requireNonNull($impl, "Implicit value for '" + $cn + "' was null (forward reference?): " + ${implTpeName})"""
+              }
+            }
+
             // - If we're an default value, invoke the withDefault version
             // - If we're an option with default value,
             //   invoke the WithDefault version
             (isOption, defaultValue) match {
               case (true, Some(v)) =>
                 val c = TermName(s"${methodName}HandlerWithDefault")
-                q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
+                q"$config.optionHandlers.$c($jspathTree, $v)($resolvedImpl)"
 
-              case (true, _) =>
+              case (true, _) => {
                 val c = TermName(s"${methodName}Handler")
                 q"$config.optionHandlers.$c($jspathTree)($impl)"
+              }
 
               case (false, Some(v)) =>
                 val c = TermName(s"${methodName}WithDefault")
-                q"$jspathTree.$c($v)($impl)"
+                q"$jspathTree.$c($v)($resolvedImpl)"
 
               case _ =>
-                q"$jspathTree.${TermName(methodName)}($impl)"
+                q"$jspathTree.${TermName(methodName)}($resolvedImpl)"
             }
         }
         .reduceLeft[Tree] { (acc, r) =>
@@ -820,6 +835,7 @@ class JsMacroImpl(val c: blackbox.Context) {
             case _ =>
               q"$json.OFormat[${atpe}](instance.reads(_), instance.writes(_))"
           }
+
           val forwardCall =
             q"private val $forwardName = $forward"
 
