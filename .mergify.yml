@@ -6,10 +6,10 @@ queue_rules:
       - check-success=Check / Binary Compatibility
       - check-success=Check / Docs
       - check-success=Check / Tests (Scala 2.12.15 & JDK 11)
-      - check-success=Check / Tests (Scala 2.13.7 & JDK 11)
+      - check-success=Check / Tests (Scala 2.13.8 & JDK 11)
       - check-success=Check / Tests (Scala 3.0.2 & JDK 11)
       - check-success=Check / Tests (Scala 2.12.15 & JDK 8)
-      - check-success=Check / Tests (Scala 2.13.7 & JDK 8)
+      - check-success=Check / Tests (Scala 2.13.8 & JDK 8)
       - check-success=Check / Tests (Scala 3.0.2 & JDK 8)
 
 pull_request_rules:
@@ -19,10 +19,10 @@ pull_request_rules:
       - check-success=Check / Binary Compatibility
       - check-success=Check / Docs
       - check-success=Check / Tests (Scala 2.12.15 & JDK 11)
-      - check-success=Check / Tests (Scala 2.13.7 & JDK 11)
+      - check-success=Check / Tests (Scala 2.13.8 & JDK 11)
       - check-success=Check / Tests (Scala 3.0.2 & JDK 11)
       - check-success=Check / Tests (Scala 2.12.15 & JDK 8)
-      - check-success=Check / Tests (Scala 2.13.7 & JDK 8)
+      - check-success=Check / Tests (Scala 2.13.8 & JDK 8)
       - check-success=Check / Tests (Scala 3.0.2 & JDK 8)
       - status-success=typesafe-cla-validator
       - "#approved-reviews-by>=1"
