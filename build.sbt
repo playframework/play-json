@@ -24,8 +24,8 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq(
-    "org.specs2" %% "specs2-core"  % "4.13.1" % Test,
-    "org.specs2" %% "specs2-junit" % "4.13.1" % Test,
+    "org.specs2" %% "specs2-core"  % "4.13.2" % Test,
+    "org.specs2" %% "specs2-junit" % "4.13.2" % Test,
   ).map(_.cross(CrossVersion.for3Use2_13))
 
 val jacksonVersion         = "2.11.4"
