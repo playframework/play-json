@@ -176,7 +176,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "success for valid negative number" in {
-          Json.parse(intsJson(long = (-123).toString)).as[IntNumbers].long.mustEqual(-123)
+          Json.parse(intsJson(long = -123.toString)).as[IntNumbers].long.mustEqual(-123)
         }
 
         "success for max value" in {
@@ -204,7 +204,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "success for valid negative number" in {
-          Json.parse(intsJson(int = (-123).toString)).as[IntNumbers].integer.mustEqual(-123)
+          Json.parse(intsJson(int = -123.toString)).as[IntNumbers].integer.mustEqual(-123)
         }
 
         "fail for positive number out of Int limits" in {
@@ -224,7 +224,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "success for valid negative number" in {
-          Json.parse(floatsJson(float = (-123.123).toString)).as[FloatNumbers].float.mustEqual(-123.123F)
+          Json.parse(floatsJson(float = -123.123.toString)).as[FloatNumbers].float.mustEqual(-123.123F)
         }
 
         "success for max value" in {
@@ -244,7 +244,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "success for valid negative number" in {
-          Json.parse(floatsJson(double = (-123.123).toString)).as[FloatNumbers].double.mustEqual(-123.123D)
+          Json.parse(floatsJson(double = -123.123.toString)).as[FloatNumbers].double.mustEqual(-123.123D)
         }
 
         "success when parsing max value" in {

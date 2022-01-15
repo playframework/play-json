@@ -25,8 +25,8 @@ object TestFormats {
     } yield a -> b
   }
 
-  implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)] = OWrites {
-    case (a, b) => Json.obj("_1" -> a, "_2" -> b)
+  implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)] = OWrites { case (a, b) =>
+    Json.obj("_1" -> a, "_2" -> b)
   }
 }
 
@@ -101,7 +101,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
         (js \ "bar").validate[String].map(Simple(_))
       }
-      //import LoremCodec.loremReads // Doesn't work in Scala 3.0.0-RC1
+      // import LoremCodec.loremReads // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]  = LoremCodec.loremReads
       implicit val optionalReads: Reads[Optional] = Json.reads[Optional]
       implicit val familyReads: Reads[Family]     = Json.reads[Family]
@@ -196,12 +196,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
         Json.obj("bar" -> simple.bar)
       }
-      //import LoremCodec.loremWrites // Doesn't work in Scala 3.0.0-RC1
+      // import LoremCodec.loremWrites // Doesn't work in Scala 3.0.0-RC1
       implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
       implicit val optionalWrites: OWrites[Optional] = Json.writes[Optional]
       // Following won't work due to inference issue (see #117)
       // with inheritance/contravariance/implicit resolution
-      //val _: OWrites[Optional] = Json.writes
+      // val _: OWrites[Optional] = Json.writes
 
       implicit val familyWrites: OWrites[Family] = Json.writes[Family]
 
@@ -238,7 +238,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
   "Macro" should {
     "handle case class with self type as nested type parameter" when {
-      //import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
+      // import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
       implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]]     = TestFormats.eitherReads[A, B]
       implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] = TestFormats.eitherWrites[A, B]
       implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)]           = TestFormats.tuple2Reads[A, B]
@@ -307,7 +307,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "handle generic case class with multiple generic parameters and self references" when {
-      //import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
+      // import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
       implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]]     = TestFormats.eitherReads[A, B]
       implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] = TestFormats.eitherWrites[A, B]
       implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)]           = TestFormats.tuple2Reads[A, B]
@@ -376,7 +376,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
         (js \ "bar").validate[String].map(Simple(_))
       }
-      //import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
+      // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
       implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
       implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
@@ -408,7 +408,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val simpleReads: Reads[Simple] = Reads[Simple] { js =>
         (js \ "bar").validate[String].map(Simple(_))
       }
-      //import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
+      // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]     = LoremCodec.loremReads
       implicit val loremWrites: OWrites[Lorem[Any]]  = LoremCodec.loremWrites
       implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
@@ -448,7 +448,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         (js \ "bar").validate[String].map(Simple(_))
       }
       implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
-      //import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
+      // import import LoremCodec._ // Doesn't work in Scala 3.0.0-RC1
       implicit val loremReads: Reads[Lorem[Any]]    = LoremCodec.loremReads
       implicit val loremWrites: OWrites[Lorem[Any]] = LoremCodec.loremWrites
       implicit val familyFormat: OFormat[Family]    = Json.format[Family]
@@ -509,7 +509,7 @@ object MacroSpec {
     implicit val familyWrites: OWrites[Family] = Json.writes[Family] // Failing:
     /* java.lang.IllegalArgumentException:
      requirement failed: familyWrites  is not a valid identifier
-   */
+     */
   }
 
   object Foo {
@@ -553,6 +553,6 @@ object MacroSpec {
     /* Should fail, as there is no implicit for Family2Member,
      for now due to the contravariance `w` being defined is self resolved
      as Writes instance this subtype Family2Member
-   */
+     */
   }
 }

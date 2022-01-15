@@ -181,8 +181,8 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
 
   def toBytes(json: JsValue): Array[Byte] = StaticBinding.toBytes(json)
 
-  //We use unicode \u005C for a backlash in comments, because Scala will replace unicode escapes during lexing
-  //anywhere in the program.
+  // We use unicode \u005C for a backlash in comments, because Scala will replace unicode escapes during lexing
+  // anywhere in the program.
   def asciiStringify(json: JsValue): String =
     StaticBinding.generateFromJsValue(json, true)
 
@@ -375,8 +375,7 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
    * type Opts = MacroOptions with DefaultValues
    * }}}
    */
-  trait DefaultValues { self: MacroOptions =>
-  }
+  trait DefaultValues { self: MacroOptions => }
 
   /**
    * Alias for `MacroOptions with DefaultValues`

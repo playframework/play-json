@@ -123,9 +123,9 @@ object JsError {
 
   def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])]): JsObject = toJson(errors, false)
 
-  //def toJsonErrorsOnly: JsValue = original // TODO
-  def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map {
-    case (path, seq) => path.toJsonString -> seq
+  // def toJsonErrorsOnly: JsValue = original // TODO
+  def toFlatForm(e: JsError): Seq[(String, Seq[JsonValidationError])] = e.errors.map { case (path, seq) =>
+    path.toJsonString -> seq
   }
 
   private def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])], flat: Boolean): JsObject = {
@@ -174,8 +174,8 @@ object JsError {
    */
   object Message {
     def unapply(error: JsError): Option[String] =
-      error.errors.headOption.collect {
-        case (_, JsonValidationError.Message(msg) +: _) => msg
+      error.errors.headOption.collect { case (_, JsonValidationError.Message(msg) +: _) =>
+        msg
       }
   }
 
@@ -193,8 +193,8 @@ object JsError {
    */
   object Detailed {
     def unapply(error: JsError): Option[(String, Any)] =
-      error.errors.headOption.collect {
-        case (_, JsonValidationError.Detailed(msg, arg) +: _) => msg -> arg
+      error.errors.headOption.collect { case (_, JsonValidationError.Detailed(msg, arg) +: _) =>
+        msg -> arg
       }
   }
 }
@@ -368,9 +368,12 @@ object JsResult {
    * @param result the result
    * @param err the function to be applied for [[scala.util.Failure]]
    */
-  def fromTry[T](result: Try[T], err: Throwable => JsError = { e =>
-    JsError(e.getMessage)
-  }): JsResult[T] = result match {
+  def fromTry[T](
+      result: Try[T],
+      err: Throwable => JsError = { e =>
+        JsError(e.getMessage)
+      }
+  ): JsResult[T] = result match {
     case Success(v) => JsSuccess(v)
     case Failure(e) => err(e)
   }

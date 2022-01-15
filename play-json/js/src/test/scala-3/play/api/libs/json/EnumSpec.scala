@@ -13,8 +13,12 @@ final class EnumSpec extends AnyWordSpec with Matchers {
 
     // https://gitter.im/lampepfl/dotty?at=5ee22d1e7b6da9126a8b4a51 ¯\_(ツ)_/¯
     "serialize correctly enum with default names" in {
-      Json.toJson(defaultEnum1).mustEqual(JsString("<Unknown name for enum field #0 of class class scala.Enumeration$Val>"))
-      Json.toJson(defaultEnum2).mustEqual(JsString("<Unknown name for enum field #1 of class class scala.Enumeration$Val>"))
+      Json
+        .toJson(defaultEnum1)
+        .mustEqual(JsString("<Unknown name for enum field #0 of class class scala.Enumeration$Val>"))
+      Json
+        .toJson(defaultEnum2)
+        .mustEqual(JsString("<Unknown name for enum field #1 of class class scala.Enumeration$Val>"))
     }
 
     "deserialize correctly enum with default names" in {

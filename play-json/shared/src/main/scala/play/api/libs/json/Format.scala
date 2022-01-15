@@ -30,8 +30,8 @@ trait OFormat[A] extends OWrites[A] with Reads[A] with Format[A] {
 }
 
 object OFormat {
-  implicit def functionalCanBuildFormats(
-      implicit rcb: FunctionalCanBuild[Reads],
+  implicit def functionalCanBuildFormats(implicit
+      rcb: FunctionalCanBuild[Reads],
       wcb: FunctionalCanBuild[OWrites]
   ): FunctionalCanBuild[OFormat] = new FunctionalCanBuild[OFormat] {
     def apply[A, B](fa: OFormat[A], fb: OFormat[B]): OFormat[A ~ B] =

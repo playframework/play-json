@@ -120,7 +120,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a reads[User]" in {
       import play.api.libs.json.Json
 
-      //object User {def apply(age:Int):User = User(age,"")}
+      // object User {def apply(age:Int):User = User(age,"")}
       implicit val userReads: Reads[User] = Json.reads[User]
 
       Json.fromJson[User](Json.obj("name" -> "toto", "age" -> 45)).mustEqual(JsSuccess(User(45, "toto")))
@@ -406,10 +406,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       implicit def genericEntityWrapperFormat[A: Format, B: Format]: Format[GenericCaseClass2[A, B]] =
         (
-          (
-            (__ \ "obj1").format[A] and
-              (__ \ "obj2").format[B]
-          )
+          (__ \ "obj1").format[A] and
+            (__ \ "obj2").format[B]
         )(GenericCaseClass2[A, B] _, x => (x.obj1, x.obj2))
 
       implicit val genericHolderFormat: OFormat[WrappedGenericIntString] = Json.format[WrappedGenericIntString]
@@ -492,7 +490,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
           rds.reads(js).map(Id[A](_))
         }
 
-      //val c2Reads1 = Json.reads[C2]
+      // val c2Reads1 = Json.reads[C2]
 
       implicit def c1Reads[A](implicit rds: Reads[Id[A]]): Reads[C1[A]] = {
         (
@@ -623,8 +621,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       implicit val fmt: OFormat[CustomApply] = Json.format[CustomApply]
 
       Json.fromJson[CustomApply](Json.obj("a" -> 5, "b" -> "foo")).mustEqual(JsSuccess(CustomApply(5, "foo")))
-      Json.toJson(CustomApply(5, "foo")).mustEqual(Json.obj("a" -> 5, "b"  -> "foo"))
-      Json.toJson(CustomApply()).mustEqual(Json.obj("a"         -> 10, "b" -> "foo"))
+      Json.toJson(CustomApply(5, "foo")).mustEqual(Json.obj("a" -> 5, "b" -> "foo"))
+      Json.toJson(CustomApply()).mustEqual(Json.obj("a" -> 10, "b" -> "foo"))
     }
 
     "create a writes[UserProfile] with SnakeCase" in {

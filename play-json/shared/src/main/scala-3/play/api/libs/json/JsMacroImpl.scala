@@ -16,18 +16,19 @@ object JsMacroImpl {
 
   inline def reads[A](using m: Mirror.Of[A]): Reads[A] = new Reads[A] { self =>
     given subject: Reads[A] = this
-    def reads(js: JsValue)  = js match {
-      case obj @ JsObject(_) => inline m match {
-        case m: Mirror.ProductOf[A] => readElems[A](obj)(using self, m)
-        case m: Mirror.SumOf[A]     => readCases[A](obj)(using self, m)
-      }
-      case _                 => JsError("error.expected.jsobject")
+    def reads(js: JsValue) = js match {
+      case obj @ JsObject(_) =>
+        inline m match {
+          case m: Mirror.ProductOf[A] => readElems[A](obj)(using self, m)
+          case m: Mirror.SumOf[A]     => readCases[A](obj)(using self, m)
+        }
+      case _ => JsError("error.expected.jsobject")
     }
   }
 
   inline def writes[A](using m: Mirror.Of[A]): OWrites[A] = new OWrites[A] { self =>
     given subject: OWrites[A] = this
-    def writes(x: A)          = inline m match {
+    def writes(x: A) = inline m match {
       case m: Mirror.ProductOf[A] => writeElems[A](x)(using self, m)
       case m: Mirror.SumOf[A]     => writeCases[A](x)(using self, m)
     }
@@ -43,7 +44,7 @@ object JsMacroImpl {
 
   inline def readCases[A: Reads](obj: JsObject)(using m: Mirror.SumOf[A]): JsResult[A] = {
     obj.value.get(config.discriminator) match {
-      case None      => JsError(JsPath \ config.discriminator, "error.missing.path")
+      case None => JsError(JsPath \ config.discriminator, "error.missing.path")
       case Some(tjs) => {
         val vjs = obj.value.get("_value").getOrElse(obj)
         tjs.validate[String].flatMap { dis =>
@@ -56,15 +57,18 @@ object JsMacroImpl {
   inline def writeCases[A: OWrites](x: A)(using m: Mirror.SumOf[A]): JsObject =
     writeCasesL[A, m.MirroredElemTypes](x, m.ordinal(x))(0)
 
-  inline def readElemsL[A: Reads, L <: Tuple, T <: Tuple](obj: JsObject, elems: Array[Any])(n: Int)(using m: Mirror.ProductOf[A]): JsResult[A] =
+  inline def readElemsL[A: Reads, L <: Tuple, T <: Tuple](obj: JsObject, elems: Array[Any])(
+      n: Int
+  )(using m: Mirror.ProductOf[A]): JsResult[A] =
     inline (erasedValue[L], erasedValue[T]) match {
       case _: (EmptyTuple, EmptyTuple) => JsSuccess(m.fromProduct(new ArrayProduct(elems)))
-      case _: (l *: ls, t *: ts)       => readElems1[A, l, t](obj) match {
-        case e @ JsError(_)  => e
-        case JsSuccess(x, _) =>
-          elems(n) = x
-          readElemsL[A, ls, ts](obj, elems)(n + 1)
-      }
+      case _: (l *: ls, t *: ts) =>
+        readElems1[A, l, t](obj) match {
+          case e @ JsError(_) => e
+          case JsSuccess(x, _) =>
+            elems(n) = x
+            readElemsL[A, ls, ts](obj, elems)(n + 1)
+        }
     }
 
   inline def writeElemsL[A: OWrites, L <: Tuple, T <: Tuple](x: A)(n: Int, kvs: Map[String, JsValue]): JsObject =
@@ -75,7 +79,7 @@ object JsMacroImpl {
 
   inline def readCasesL[A: Reads, T <: Tuple](js: JsValue, name: String): JsResult[A] =
     inline erasedValue[T] match {
-      case _: (t *: ts)  =>
+      case _: (t *: ts) =>
         if (name == typeName[t]) summonReads[t & A].reads(js)
         else readCasesL[A, ts](js, name)
       case _: EmptyTuple => JsError("error.invalid")
@@ -83,7 +87,7 @@ object JsMacroImpl {
 
   inline def writeCasesL[A: OWrites, T <: Tuple](x: A, ord: Int)(n: Int): JsObject =
     inline erasedValue[T] match {
-      case _: (t *: ts)  =>
+      case _: (t *: ts) =>
         if (ord == n) {
           val xjs = summonWrites[t].writes(x.asInstanceOf[t])
           def jso = xjs match {
@@ -109,7 +113,7 @@ object JsMacroImpl {
       case _: Option[a] =>
         val writer = config.optionHandlers.writeHandler(path[L])(summonWrites[a]).asInstanceOf[OWrites[T]]
         writer.writes(value).underlying
-      case _            =>
+      case _ =>
         Map((fieldName[L], summonWrites[T].writes(value)))
     }
   }
@@ -122,7 +126,7 @@ object JsMacroImpl {
   inline def summonWrites[A]: Writes[A] = summonInline[Writes[A]]
   inline def summonLabel[L]: L          = inline erasedValue[L] match { case _: String => constValue[L] }
 
-  inline def summonClassName[A]: String = ${summonClassNameImpl[A]}
+  inline def summonClassName[A]: String = ${ summonClassNameImpl[A] }
 
   final class ArrayProduct[A](elems: Array[A]) extends Product {
     def canEqual(that: Any): Boolean  = true
@@ -131,14 +135,17 @@ object JsMacroImpl {
   }
 
   // lampepfl/dotty#7000 No Mirrors for value classes
-  inline def valueReads [A]: Reads [A] = boom("https://github.com/lampepfl/dotty/issues/7000", "value classes")
+  inline def valueReads[A]: Reads[A]   = boom("https://github.com/lampepfl/dotty/issues/7000", "value classes")
   inline def valueWrites[A]: Writes[A] = boom("https://github.com/lampepfl/dotty/issues/7000", "value classes")
   inline def valueFormat[A]: Format[A] = boom("https://github.com/lampepfl/dotty/issues/7000", "value classes")
 
   // lampepfl/dotty-feature-requests#162 No support in Mirror for default arguments
-  inline def withOptionsReads [A: Mirror.Of]: Reads[A]   = boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
-  inline def withOptionsWrites[A: Mirror.Of]: OWrites[A] = boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
-  inline def withOptionsFormat[A: Mirror.Of]: OFormat[A] = boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
+  inline def withOptionsReads[A: Mirror.Of]: Reads[A] =
+    boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
+  inline def withOptionsWrites[A: Mirror.Of]: OWrites[A] =
+    boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
+  inline def withOptionsFormat[A: Mirror.Of]: OFormat[A] =
+    boom("https://github.com/lampepfl/dotty-feature-requests/issues/162", "default arguments")
 
   inline def boom(url: String, name: String) = {
     inline val msg = "No support in Scala 3's type class derivation (Mirrors) for " + name

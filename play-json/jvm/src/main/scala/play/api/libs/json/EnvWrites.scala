@@ -296,7 +296,7 @@ trait EnvWrites {
 
       val keywords = l.getUnicodeLocaleKeys.asScala
       if (keywords.nonEmpty) {
-        fields += "keywords" -> Json.toJson({
+        fields += "keywords" -> Json.toJson {
           val ks = Map.newBuilder[String, String]
 
           keywords.foreach { key =>
@@ -306,12 +306,12 @@ trait EnvWrites {
           }
 
           ks.result()
-        })
+        }
       }
 
       val extension = l.getExtensionKeys.asScala
       if (extension.nonEmpty) {
-        fields += "extension" -> Json.toJson({
+        fields += "extension" -> Json.toJson {
           val ext = Map.newBuilder[String, String]
 
           extension.foreach { key =>
@@ -321,7 +321,7 @@ trait EnvWrites {
           }
 
           ext.result()
-        })
+        }
       }
 
       JsObject(fields.result())

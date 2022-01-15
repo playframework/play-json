@@ -66,9 +66,9 @@ class JsonExtensionScala2Spec extends AnyWordSpec with Matchers {
 
       def validateReads(fooReads: Reads[WithDefault2]) = {
         fooReads.reads(Json.obj()).mustEqual(JsSuccess(WithDefault2()))
-        fooReads.reads(Json.obj("a"   -> JsNull)).mustEqual(JsSuccess(WithDefault2()))
+        fooReads.reads(Json.obj("a" -> JsNull)).mustEqual(JsSuccess(WithDefault2()))
         fooReads.reads(Json.obj("bar" -> JsNull)).mustEqual(JsSuccess(WithDefault2(bar = None)))
-        fooReads.reads(Json.obj("a"   -> "z")).mustEqual(JsSuccess(WithDefault2(a = "z")))
+        fooReads.reads(Json.obj("a" -> "z")).mustEqual(JsSuccess(WithDefault2(a = "z")))
         fooReads
           .reads(Json.obj("a" -> "z", "bar" -> Json.obj("b" -> "z")))
           .mustEqual(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
@@ -108,7 +108,7 @@ class JsonExtensionScala2Spec extends AnyWordSpec with Matchers {
     "create a Format[OptionalWithDefault] with optionHandlers=WritesNull" in {
       implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
       val formatter                                     = Json.format[OptionalWithDefault]
-      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props"            -> JsNull))
+      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props" -> JsNull))
       formatter.writes(OptionalWithDefault(Some("foo"))).mustEqual(Json.obj("props" -> "foo"))
 
       formatter.reads(Json.obj()).mustEqual(JsSuccess(OptionalWithDefault()))
@@ -127,7 +127,7 @@ class JsonExtensionScala2Spec extends AnyWordSpec with Matchers {
       implicit val jsonConfiguration: JsonConfiguration.Aux[Json.WithDefaultValues] =
         JsonConfiguration[Json.WithDefaultValues](optionHandlers = OptionHandlers.WritesNull)
       val formatter = Json.format[OptionalWithDefault]
-      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props"            -> JsNull))
+      formatter.writes(OptionalWithDefault()).mustEqual(Json.obj("props" -> JsNull))
       formatter.writes(OptionalWithDefault(Some("foo"))).mustEqual(Json.obj("props" -> "foo"))
 
       formatter.reads(Json.obj()).mustEqual(JsSuccess(OptionalWithDefault()))

@@ -203,7 +203,7 @@ class JsMacroImpl(val c: blackbox.Context) {
       ): (Type, Boolean) = in match {
         case tpe :: ts =>
           resolvedType(tpe) match {
-            case t if (filter(t)) =>
+            case t if filter(t) =>
               refactor(ts, base, (replacement :: out), tail, filter, replacement, true)
 
             case TypeRef(_, sym, as) if as.nonEmpty =>
@@ -230,7 +230,7 @@ class JsMacroImpl(val c: blackbox.Context) {
        */
       private def normalized(subject: Type, tpe: Type): (Type, Boolean) =
         resolvedType(tpe) match {
-          case t if (t =:= subject) => PlaceholderType -> true
+          case t if t =:= subject => PlaceholderType -> true
 
           case TypeRef(_, sym, args) if args.nonEmpty =>
             refactor(args, sym.asType, List.empty, List.empty, _ =:= subject, PlaceholderType, false)
@@ -256,9 +256,7 @@ class JsMacroImpl(val c: blackbox.Context) {
             super.transform(TypeTree(denormalized(tt.tpe).dealias))
 
           case Select(Select(This(TypeName("JsMacroImpl")), t), sym)
-              if (
-                t.toString == "Placeholder" && sym.toString == "Format"
-              ) =>
+              if t.toString == "Placeholder" && sym.toString == "Format" =>
             super.transform(q"$forwardName")
 
           case _ => super.transform(tree)
@@ -365,7 +363,7 @@ class JsMacroImpl(val c: blackbox.Context) {
             } else conforms(types.tail)
           }
 
-          case Some((a, b)) if (a.typeArgs.size != b.typeArgs.size) => {
+          case Some((a, b)) if a.typeArgs.size != b.typeArgs.size => {
             debug(s"Type parameters are not matching: $a != $b")
             false
           }
@@ -377,7 +375,7 @@ class JsMacroImpl(val c: blackbox.Context) {
               false
             }
 
-          case Some((a, b)) if (a.baseClasses != b.baseClasses) => {
+          case Some((a, b)) if a.baseClasses != b.baseClasses => {
             debug(s"Generic types are not compatible: $a != $b")
             false
           }
@@ -402,13 +400,10 @@ class JsMacroImpl(val c: blackbox.Context) {
               val meth = apply.asMethod
 
               meth.paramLists match {
-                case ps :: pss
-                    if (
-                      ps.nonEmpty && pss.forall {
-                        case p :: _ => p.isImplicit
-                        case _      => false
-                      }
-                    ) =>
+                case ps :: pss if ps.nonEmpty && pss.forall {
+                      case p :: _ => p.isImplicit
+                      case _      => false
+                    } =>
                   List(meth)
 
                 case _ => List.empty
@@ -457,13 +452,12 @@ class JsMacroImpl(val c: blackbox.Context) {
       lazy val applyFunction: Option[(Tree, List[TypeSymbol], List[Symbol], List[Option[Tree]])] =
         maybeApply.flatMap { app =>
           app.paramLists.headOption.map { params =>
-            val defaultValues = params.map(_.asTerm).zipWithIndex.map {
-              case (p, i) =>
-                if (!p.isParamWithDefault) None
-                else {
-                  val getter = TermName("apply$default$" + (i + 1))
-                  Some(q"$companionObject.$getter")
-                }
+            val defaultValues = params.map(_.asTerm).zipWithIndex.map { case (p, i) =>
+              if (!p.isParamWithDefault) None
+              else {
+                val getter = TermName("apply$default$" + (i + 1))
+                Some(q"$companionObject.$getter")
+              }
             }
 
             val tree = if (hasVarArgs) {
@@ -509,13 +503,13 @@ class JsMacroImpl(val c: blackbox.Context) {
       def implicits(resolver: ImplicitResolver): List[(Name, Implicit)] = {
         val createImplicit = resolver.createImplicit(atpe, natag.tpe) _
 
-        val effectiveImplicits = params.map {
-          case (n, t) => n -> createImplicit(t)
+        val effectiveImplicits = params.map { case (n, t) =>
+          n -> createImplicit(t)
         }
 
         // if any implicit is missing, abort
-        val missingImplicits = effectiveImplicits.collect {
-          case (_, Implicit(t, EmptyTree /* ~= not found */, _, _)) => t
+        val missingImplicits = effectiveImplicits.collect { case (_, Implicit(t, EmptyTree /* ~= not found */, _, _)) =>
+          t
         }
 
         if (missingImplicits.nonEmpty) {
@@ -529,14 +523,13 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       lazy val boundTypes: Map[String, Type] =
-        applyFunction.fold(Map.empty[String, Type]) {
-          case (_, tparams, _, _) =>
-            tparams
-              .zip(tpeArgs)
-              .map {
-                case (sym, ty) => sym.fullName -> ty
-              }
-              .toMap
+        applyFunction.fold(Map.empty[String, Type]) { case (_, tparams, _, _) =>
+          tparams
+            .zip(tpeArgs)
+            .map { case (sym, ty) =>
+              sym.fullName -> ty
+            }
+            .toMap
         }
 
       // To print the implicit types in the compiler messages
@@ -565,8 +558,8 @@ class JsMacroImpl(val c: blackbox.Context) {
         }
 
         case (o: ModuleSymbol) :: tail
-            if (o.companion == NoSymbol // not a companion object
-              && o.typeSignature.baseClasses.contains(tpeSym)) =>
+            if o.companion == NoSymbol // not a companion object
+              && o.typeSignature.baseClasses.contains(tpeSym) =>
           allSubclasses(tail, subclasses ++ Set(o.typeSignature))
 
         case _ :: tail => allSubclasses(tail, subclasses)
@@ -594,7 +587,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         })
         val cases = Match(
           q"dis",
-          (subTypes.map { t =>
+          subTypes.map { t =>
             val rtpe = appliedType(readsType, List(t))
             val reader = resolver
               .createImplicit(
@@ -611,7 +604,7 @@ class JsMacroImpl(val c: blackbox.Context) {
             }
 
             cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)"
-          }) :+ cq"""_ => $json.JsError("error.invalid")"""
+          } :+ cq"""_ => $json.JsError("error.invalid")"""
         )
 
         q"""(_: $json.JsValue) match {
@@ -711,45 +704,44 @@ class JsMacroImpl(val c: blackbox.Context) {
       val defaultValueMap: Map[Name, Tree] =
         if (!hasOption[Json.DefaultValues]) Map.empty
         else {
-          (params, defaultValues).zipped.collect {
-            case (p, Some(dv)) => p.name.encodedName -> dv
+          (params, defaultValues).zipped.collect { case (p, Some(dv)) =>
+            p.name.encodedName -> dv
           }.toMap
         }
 
       val resolvedImplicits = utility.implicits(resolver)
       val canBuild = resolvedImplicits
-        .map {
-          case (name, Implicit(pt, impl, _, _)) =>
-            // Equivalent to __ \ "name", but uses a naming scheme
-            // of (String) => (String) to find the correct "name"
-            val cn = c.Expr[String](
-              q"$config.naming(${name.decodedName.toString})"
-            )
-            val jspathTree = q"$JsPath \ $cn"
-            val isOption   = pt.typeConstructor <:< optTpeCtor
+        .map { case (name, Implicit(pt, impl, _, _)) =>
+          // Equivalent to __ \ "name", but uses a naming scheme
+          // of (String) => (String) to find the correct "name"
+          val cn = c.Expr[String](
+            q"$config.naming(${name.decodedName.toString})"
+          )
+          val jspathTree = q"$JsPath \ $cn"
+          val isOption   = pt.typeConstructor <:< optTpeCtor
 
-            val defaultValue = // not applicable for 'write' only
-              defaultValueMap.get(name).filter(_ => methodName != "write")
+          val defaultValue = // not applicable for 'write' only
+            defaultValueMap.get(name).filter(_ => methodName != "write")
 
-            // - If we're an default value, invoke the withDefault version
-            // - If we're an option with default value,
-            //   invoke the WithDefault version
-            (isOption, defaultValue) match {
-              case (true, Some(v)) =>
-                val c = TermName(s"${methodName}HandlerWithDefault")
-                q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
+          // - If we're an default value, invoke the withDefault version
+          // - If we're an option with default value,
+          //   invoke the WithDefault version
+          (isOption, defaultValue) match {
+            case (true, Some(v)) =>
+              val c = TermName(s"${methodName}HandlerWithDefault")
+              q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
 
-              case (true, _) =>
-                val c = TermName(s"${methodName}Handler")
-                q"$config.optionHandlers.$c($jspathTree)($impl)"
+            case (true, _) =>
+              val c = TermName(s"${methodName}Handler")
+              q"$config.optionHandlers.$c($jspathTree)($impl)"
 
-              case (false, Some(v)) =>
-                val c = TermName(s"${methodName}WithDefault")
-                q"$jspathTree.$c($v)($impl)"
+            case (false, Some(v)) =>
+              val c = TermName(s"${methodName}WithDefault")
+              q"$jspathTree.$c($v)($impl)"
 
-              case _ =>
-                q"$jspathTree.${TermName(methodName)}($impl)"
-            }
+            case _ =>
+              q"$jspathTree.${TermName(methodName)}($impl)"
+          }
         }
         .reduceLeft[Tree] { (acc, r) =>
           q"$acc.and($r)"
