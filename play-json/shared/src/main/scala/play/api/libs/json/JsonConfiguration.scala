@@ -157,8 +157,8 @@ trait OptionHandlers {
     OFormat(readHandler(jsPath), writeHandler(jsPath))
   }
 
-  final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(
-      implicit format: Format[T]
+  final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit
+      format: Format[T]
   ): OFormat[Option[T]] = {
     OFormat(readHandlerWithDefault(jsPath, defaultValue), writeHandler(jsPath))
   }

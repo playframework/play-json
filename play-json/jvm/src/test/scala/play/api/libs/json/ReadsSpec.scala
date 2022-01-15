@@ -57,14 +57,14 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
 
     "not be read from invalid number" in {
-      reads(JsNumber(BigDecimal("1000000000e1000000000"))).must(beLike {
-        case JsError.Message("error.expected.long") => ok
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))).must(beLike { case JsError.Message("error.expected.long") =>
+        ok
       })
     }
 
     "not be read from invalid string" in {
-      reads(JsString("invalid")).must(beLike {
-        case JsError.Message("error.expected.date.isoformat") => ok
+      reads(JsString("invalid")).must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+        ok
       })
     }
 
@@ -97,17 +97,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with default implicit" in {
         correctedReads
           .reads(JsString("2011-12-03T10:15:30"))
-          .must(beLike {
-            case JsError.Message(key) =>
-              key.must_===("error.expected.date.isoformat")
+          .must(beLike { case JsError.Message(key) =>
+            key.must_===("error.expected.date.isoformat")
           })
       }
 
       "with custom formatter" in {
         CustomReads2
           .reads(JsString("03/12/2011, 10:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
     }
@@ -145,14 +144,14 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     "not be read" >> {
       "from an invalid string" in {
-        reads(JsString("invalid")).must(beLike {
-          case JsError.Message("error.expected.date.isoformat") => ok
+        reads(JsString("invalid")).must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+          ok
         })
       }
 
       "from a number" in {
-        reads(JsNumber(123L)).must(beLike {
-          case JsError.Message("error.expected.date") => ok
+        reads(JsNumber(123L)).must(beLike { case JsError.Message("error.expected.date") =>
+          ok
         })
       }
     }
@@ -176,16 +175,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with default implicit" in {
         correctedReads
           .reads(JsString("2011-12-03T10:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
 
       "with custom formatter" in {
         CustomReads2
           .reads(JsString("03/12/2011, 10:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
     }
@@ -233,16 +232,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
 
     "not be read from invalid string" in {
-      reads(JsString("invalid")).must(beLike {
-        case JsError.Message("error.expected.date.isoformat") => ok
+      reads(JsString("invalid")).must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+        ok
       })
     }
 
     "not be read from invalid number" in {
       reads(JsNumber(BigDecimal("1000000000e1000000000")))
         .aka("read date")
-        .must(beLike {
-          case JsError.Message("error.expected.long") => ok
+        .must(beLike { case JsError.Message("error.expected.long") =>
+          ok
         })
     }
 
@@ -271,16 +270,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with default implicit" in {
         correctedReads
           .reads(JsString("2011-12-03T10:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
 
       "with custom formatter" in {
         CustomReads2
           .reads(JsString("03/12/2011, 10:15:30+08:00"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
     }
@@ -324,14 +323,14 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
 
     "not be read from invalid number" in {
-      reads(JsNumber(BigDecimal("1000000000e1000000000"))).must(beLike {
-        case JsError.Message("error.expected.long") => ok
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))).must(beLike { case JsError.Message("error.expected.long") =>
+        ok
       })
     }
 
     "not be read from invalid string" in {
-      reads(JsString("invalid")).must(beLike {
-        case JsError.Message("error.expected.date.isoformat") => ok
+      reads(JsString("invalid")).must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+        ok
       })
     }
 
@@ -347,16 +346,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with default implicit" in {
         correctedReads
           .reads(JsString("2011-12-03"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
 
       "with custom formatter" in {
         CustomReads2
           .reads(JsString("03/12/2011"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
     }
@@ -397,14 +396,14 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
 
     "not be read from invalid number" in {
-      reads(JsNumber(BigDecimal("1000000000e1000000000"))).must(beLike {
-        case JsError.Message("error.expected.long") => ok
+      reads(JsNumber(BigDecimal("1000000000e1000000000"))).must(beLike { case JsError.Message("error.expected.long") =>
+        ok
       })
     }
 
     "not be read from invalid string" in {
-      reads(JsString("invalid")).must(beLike {
-        case JsError.Message("error.expected.date.isoformat") => ok
+      reads(JsString("invalid")).must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+        ok
       })
     }
 
@@ -420,16 +419,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with default implicit" in {
         correctedReads
           .reads(JsString("0:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
 
       "with custom formatter" in {
         CustomReads2
           .reads(JsString("10:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
     }
@@ -470,14 +469,14 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     "not be read from invalid number" in {
       reads(JsNumber(BigDecimal("1000000000e1000000000")))
         .aka("read date")
-        .must(beLike {
-          case JsError.Message("error.expected.long") => ok
+        .must(beLike { case JsError.Message("error.expected.long") =>
+          ok
         })
     }
 
     "not be read from invalid string" in {
-      reads(JsString("invalid")).must(beLike {
-        case JsError.Message("error.expected.date.isoformat") => ok
+      reads(JsString("invalid")).must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+        ok
       })
     }
 
@@ -534,16 +533,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
       "with default implicit" in {
         correctedReads
           .reads(JsString("2011-12-03T10:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
 
       "with custom formatter" in {
         CustomReads2
           .reads(JsString("03/12/2011, 10:15:30"))
-          .must(beLike {
-            case JsError.Message("error.expected.date.isoformat") => ok
+          .must(beLike { case JsError.Message("error.expected.date.isoformat") =>
+            ok
           })
       }
     }
@@ -575,8 +574,8 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     "not be read from number" in {
       val reads1 = reads(JsNumber(123))
-      reads1.must(beLike {
-        case JsError.Message("error.expected.jsstring") => ok
+      reads1.must(beLike { case JsError.Message("error.expected.jsstring") =>
+        ok
       })
     }
 
@@ -587,8 +586,8 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     }
 
     "not be read from malformed time zone" in {
-      reads(JsString("UTC+x")).must(beLike {
-        case JsError.Detailed("error.expected.timezone", "UTC+x") => ok
+      reads(JsString("UTC+x")).must(beLike { case JsError.Detailed("error.expected.timezone", "UTC+x") =>
+        ok
       })
     }
   }
@@ -596,18 +595,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
   "Locale" should {
     import LocaleFixtures._
 
-    Fragment.foreach(locales.zip(objs)) {
-      case (locale, obj) =>
-        s"be ${locale.toLanguageTag} and be read as JSON object" in {
-          Json.fromJson[Locale](obj)(Reads.localeObjectReads).mustEqual(JsSuccess(locale))
-        }
+    Fragment.foreach(locales.zip(objs)) { case (locale, obj) =>
+      s"be ${locale.toLanguageTag} and be read as JSON object" in {
+        Json.fromJson[Locale](obj)(Reads.localeObjectReads).mustEqual(JsSuccess(locale))
+      }
     }
 
-    Fragment.foreach(locales.zip(tags)) {
-      case (locale, tag) =>
-        s"be ${locale.toLanguageTag} and be read from JSON string (tag)" in {
-          Json.fromJson[Locale](JsString(tag)).must_==(JsSuccess(locale))
-        }
+    Fragment.foreach(locales.zip(tags)) { case (locale, tag) =>
+      s"be ${locale.toLanguageTag} and be read from JSON string (tag)" in {
+        Json.fromJson[Locale](JsString(tag)).must_==(JsSuccess(locale))
+      }
     }
   }
 
@@ -622,11 +619,10 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         JsNumber(BigDecimal(1000L))  -> JsSuccess(oneSec),
         JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.long")
       )
-    ) {
-      case (input, result) =>
-        s"be parsed from ${Json.stringify(input)} as $result" in {
-          Json.fromJson[JDuration](input).mustEqual(result)
-        }
+    ) { case (input, result) =>
+      s"be parsed from ${Json.stringify(input)} as $result" in {
+        Json.fromJson[JDuration](input).mustEqual(result)
+      }
     }
   }
 
@@ -647,11 +643,10 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         JsString("foo")              -> JsError("error.invalid.stringPeriod"),
         JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.int")
       )
-    ) {
-      case (input, result) =>
-        s"be parsed from ${Json.stringify(input)} as $result" in {
-          Json.fromJson[Period](input).mustEqual(result)
-        }
+    ) { case (input, result) =>
+      s"be parsed from ${Json.stringify(input)} as $result" in {
+        Json.fromJson[Period](input).mustEqual(result)
+      }
     }
 
     Fragment.foreach[(Long, Period)](
@@ -659,11 +654,10 @@ class ReadsSpec extends org.specs2.mutable.Specification {
         2L  -> twoDays,
         19L -> period1
       )
-    ) {
-      case (days, result) =>
-        s"be parsed as days from '$days' as $result" in {
-          Json.fromJson[Period](JsNumber(days))(Reads.javaPeriodDaysReads).mustEqual(JsSuccess(result))
-        }
+    ) { case (days, result) =>
+      s"be parsed as days from '$days' as $result" in {
+        Json.fromJson[Period](JsNumber(days))(Reads.javaPeriodDaysReads).mustEqual(JsSuccess(result))
+      }
     }
 
     "be parsed as weeks" in {
@@ -694,16 +688,16 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     "not read from invalid number" in {
       reads(JsNumber(BigDecimal("1000000000e1000000000")))
         .aka("read long number")
-        .must(beLike {
-          case JsError.Message("error.expected.long") => ok
+        .must(beLike { case JsError.Message("error.expected.long") =>
+          ok
         })
     }
 
     "parse a large long number 2" in {
       reads(JsNumber(veryLargeNumber))
         .aka("read long number")
-        .must(beLike {
-          case JsError.Message("error.expected.long") => ok
+        .must(beLike { case JsError.Message("error.expected.long") =>
+          ok
         })
     }
   }

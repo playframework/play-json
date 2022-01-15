@@ -53,9 +53,17 @@ object StaticBinding {
     fromJs(jsValue, escapeNonASCII, 0, _ => "")
 
   def prettyPrint(jsValue: JsValue): String =
-    fromJs(jsValue, false, 0, { l =>
-      0.until(l * 2).map(_ => ' ').mkString
-    }, newline = true, fieldValueSep = " : ", arraySep = ("[ ", ", ", " ]"))
+    fromJs(
+      jsValue,
+      false,
+      0,
+      { l =>
+        0.until(l * 2).map(_ => ' ').mkString
+      },
+      newline = true,
+      fieldValueSep = " : ",
+      arraySep = ("[ ", ", ", " ]")
+    )
 
   def toBytes(jsValue: JsValue): Array[Byte] =
     generateFromJsValue(jsValue, false).getBytes("UTF-8")
@@ -93,12 +101,11 @@ object StaticBinding {
         } else indent(il) -> "}"
 
         fields
-          .map {
-            case (k, v) =>
-              @inline def key   = fromString(k, escapeNonASCII)
-              @inline def value = fromJs(v, escapeNonASCII, il, indent, newline, fieldValueSep, arraySep)
+          .map { case (k, v) =>
+            @inline def key   = fromString(k, escapeNonASCII)
+            @inline def value = fromJs(v, escapeNonASCII, il, indent, newline, fieldValueSep, arraySep)
 
-              s"$before$key$fieldValueSep$value"
+            s"$before$key$fieldValueSep$value"
           }
           .mkString("{", ",", after)
       }

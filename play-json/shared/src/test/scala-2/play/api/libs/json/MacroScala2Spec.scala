@@ -233,7 +233,7 @@ class MacroScala2Spec extends AnyWordSpec with Matchers with org.scalatestplus.s
         id = "foo",
         ls = List(1.2D, 23.45D),
         set = Set(1, 3, 4, 7),
-        seq = Seq(2       -> "bar", 4   -> "lorem", 5 -> "ipsum"),
+        seq = Seq(2 -> "bar", 4 -> "lorem", 5 -> "ipsum"),
         scores = Map("A1" -> 0.1F, "EF" -> 12.3F)
       )
 
@@ -283,7 +283,7 @@ object MacroScala2Spec {
     implicit val familyWrites: OWrites[Family] = Json.writes[Family] // Failing:
     /* java.lang.IllegalArgumentException:
      requirement failed: familyWrites  is not a valid identifier
-   */
+     */
   }
 
   sealed trait TreeValue

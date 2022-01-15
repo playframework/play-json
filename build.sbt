@@ -110,7 +110,7 @@ lazy val commonSettings = Def.settings(
     Tests.Argument(TestFrameworks.ScalaTest, "-l", "play.api.libs.json.UnstableInScala213")
   ),
   headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2009-2021 Lightbend Inc. <https://www.lightbend.com>")),
-  scalaVersion := Dependencies.Scala212,
+  scalaVersion  := Dependencies.Scala212,
   crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213, Dependencies.Scala3),
   Compile / javacOptions ++= javacSettings,
   Test / javacOptions ++= javacSettings,
@@ -148,7 +148,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         else
           Seq(
             "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-            "com.chuusai"    %% "shapeless"    % "2.3.7" % Test,
+            "com.chuusai"   %% "shapeless"     % "2.3.7" % Test,
           )
       ),
       libraryDependencies ++= Seq(
@@ -169,7 +169,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
         }),
       Compile / unmanagedSourceDirectories += {
-        //val sourceDir = (sourceDirectory in Compile).value
+        // val sourceDir = (sourceDirectory in Compile).value
         // ^ gives jvm/src/main, for some reason
         val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
         CrossVersion.partialVersion(scalaVersion.value) match {
@@ -183,34 +183,33 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         val file = dir / "Generated.scala"
         val (writes, reads) = 1
           .to(22)
-          .map {
-            i =>
-              def commaSeparated(s: Int => String)   = 1.to(i).map(s).mkString(", ")
-              def newlineSeparated(s: Int => String) = 1.to(i).map(s).mkString("\n        ")
-              val writerTypes                        = commaSeparated(j => s"T$j: Writes")
-              val readerTypes                        = commaSeparated(j => s"T$j: Reads")
-              val typeTuple                          = commaSeparated(j => s"T$j")
-              val written                            = commaSeparated(j => s"implicitly[Writes[T$j]].writes(x._$j)")
-              val readValues                         = commaSeparated(j => s"t$j")
-              val readGenerators                     = newlineSeparated(j => s"t$j <- implicitly[Reads[T$j]].reads(arr(${j - 1}))")
+          .map { i =>
+            def commaSeparated(s: Int => String)   = 1.to(i).map(s).mkString(", ")
+            def newlineSeparated(s: Int => String) = 1.to(i).map(s).mkString("\n        ")
+            val writerTypes                        = commaSeparated(j => s"T$j: Writes")
+            val readerTypes                        = commaSeparated(j => s"T$j: Reads")
+            val typeTuple                          = commaSeparated(j => s"T$j")
+            val written                            = commaSeparated(j => s"implicitly[Writes[T$j]].writes(x._$j)")
+            val readValues                         = commaSeparated(j => s"t$j")
+            val readGenerators = newlineSeparated(j => s"t$j <- implicitly[Reads[T$j]].reads(arr(${j - 1}))")
 
-              val writes =
-                s"""  implicit def Tuple${i}W[$writerTypes]: Writes[Tuple$i[$typeTuple]] = Writes[Tuple${i}[$typeTuple]](
-                   |    x => JsArray(Array($written))
-                   |  )""".stripMargin
+            val writes =
+              s"""  implicit def Tuple${i}W[$writerTypes]: Writes[Tuple$i[$typeTuple]] = Writes[Tuple${i}[$typeTuple]](
+                 |    x => JsArray(Array($written))
+                 |  )""".stripMargin
 
-              val reads =
-                s"""  implicit def Tuple${i}R[$readerTypes]: Reads[Tuple$i[$typeTuple]] = Reads[Tuple${i}[$typeTuple]] {
-                   |    case JsArray(arr) if arr.size == $i =>
-                   |      for {
-                   |        $readGenerators
-                   |      } yield Tuple$i($readValues)
-                   |
-                   |    case _ =>
-                   |      JsError(Seq(JsPath() -> Seq(JsonValidationError("Expected array of $i elements"))))
-                   |  }""".stripMargin
+            val reads =
+              s"""  implicit def Tuple${i}R[$readerTypes]: Reads[Tuple$i[$typeTuple]] = Reads[Tuple${i}[$typeTuple]] {
+                 |    case JsArray(arr) if arr.size == $i =>
+                 |      for {
+                 |        $readGenerators
+                 |      } yield Tuple$i($readValues)
+                 |
+                 |    case _ =>
+                 |      JsError(Seq(JsPath() -> Seq(JsonValidationError("Expected array of $i elements"))))
+                 |  }""".stripMargin
 
-              (writes, reads)
+            (writes, reads)
           }
           .unzip
 
@@ -298,8 +297,8 @@ lazy val docs = project
       // Copy the docs to a place so they have the correct api/scala prefix
       val apiDocsStage = target.value / "api-docs-stage"
       val cacheFile    = streams.value.cacheDirectory / "api-docs-stage"
-      val mappings = apiDocs.allPaths.filter(!_.isDirectory).get.pair(relativeTo(apiDocs)).map {
-        case (file, path) => file -> apiDocsStage / "api" / "scala" / path
+      val mappings = apiDocs.allPaths.filter(!_.isDirectory).get.pair(relativeTo(apiDocs)).map { case (file, path) =>
+        file -> apiDocsStage / "api" / "scala" / path
       }
       Sync.sync(CacheStore(cacheFile))(mappings)
       PlayDocsDirectoryResource(apiDocsStage)

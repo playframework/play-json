@@ -139,8 +139,8 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     success[JsNumber, Writes](JsNumber(1))
     success[JsValue, Writes](JsNumber(1))
 
-    success[JsObject, Writes](JsObject(Map("foo"  -> JsNumber(1))))
-    success[JsValue, Writes](JsObject(Map("foo"   -> JsNumber(1))))
+    success[JsObject, Writes](JsObject(Map("foo" -> JsNumber(1))))
+    success[JsValue, Writes](JsObject(Map("foo" -> JsNumber(1))))
     success[JsObject, OWrites](JsObject(Map("foo" -> JsNumber(1))))
 
     success[JsString, Writes](JsString("foo"))

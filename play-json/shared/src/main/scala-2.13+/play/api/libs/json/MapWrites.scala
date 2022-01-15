@@ -10,7 +10,7 @@ import scala.collection.MapOps
 object MapWrites {
   type Map[K, V] = MapOps[K, V, CC, _]
 
-  //see scala.collection.AnyConstr
+  // see scala.collection.AnyConstr
   private[json] type AnyConstr[X] = Any
 
   // see scala.collections.MapOps

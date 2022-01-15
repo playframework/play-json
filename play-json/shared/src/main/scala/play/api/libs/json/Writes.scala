@@ -109,10 +109,13 @@ object OWrites extends PathWrites with ConstraintWrites {
       case w: OWrites[A] =>
         w.writes(a).underlying.foreach {
           case (key, value: JsObject) =>
-            fieldsMap.put(key, fieldsMap.get(key) match {
-              case Some(o: JsObject) => o.deepMerge(value)
-              case _                 => value
-            })
+            fieldsMap.put(
+              key,
+              fieldsMap.get(key) match {
+                case Some(o: JsObject) => o.deepMerge(value)
+                case _                 => value
+              }
+            )
           case (key, value) =>
             fieldsMap.put(key, value)
         }
@@ -300,8 +303,8 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
     val vw = implicitly[Writes[V]]
 
     OWrites[M[K, V]] { ts =>
-      JsObject(ts.toSeq.map {
-        case (k, v) => kw.writeKey(k) -> vw.writes(v)
+      JsObject(ts.toSeq.map { case (k, v) =>
+        kw.writeKey(k) -> vw.writes(v)
       })
     }
   }

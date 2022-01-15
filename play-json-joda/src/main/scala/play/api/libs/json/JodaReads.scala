@@ -59,7 +59,7 @@ trait JodaReads {
         case JsString(s) =>
           parseDate(corrector(s)) match {
             case Some(d) => JsSuccess(d)
-            case _       => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+            case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
           }
         case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
       }
@@ -88,7 +88,7 @@ trait JodaReads {
         case JsString(s) =>
           parseTime(corrector(s)) match {
             case Some(d) => JsSuccess(d)
-            case None    => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodatime.format", pattern))))
+            case None => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodatime.format", pattern))))
           }
         case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
       }

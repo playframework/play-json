@@ -198,7 +198,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       case JsonTokenId.ID_END_ARRAY =>
         parserContext match {
           case ReadingList(content) :: stack => (Some(JsArray(content)), stack)
-          case _                             => throw new RuntimeException("We should have been reading list, something got wrong")
+          case _ => throw new RuntimeException("We should have been reading list, something got wrong")
         }
 
       case JsonTokenId.ID_START_OBJECT => (None, ReadingMap(ListBuffer()) +: parserContext)
@@ -212,7 +212,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       case JsonTokenId.ID_END_OBJECT =>
         parserContext match {
           case ReadingMap(content) :: stack => (Some(JsObject(content)), stack)
-          case _                            => throw new RuntimeException("We should have been reading an object, something got wrong")
+          case _ => throw new RuntimeException("We should have been reading an object, something got wrong")
         }
 
       case JsonTokenId.ID_NOT_AVAILABLE =>

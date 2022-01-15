@@ -19,8 +19,8 @@ object `package` {
   implicit def toApplicativeOps[M[_], A](a: M[A])(implicit app: Applicative[M]): ApplicativeOps[M, A] =
     new ApplicativeOps(a)
 
-  implicit def toFunctionalBuilderOps[M[_], A](a: M[A])(
-      implicit fcb: FunctionalCanBuild[M]
+  implicit def toFunctionalBuilderOps[M[_], A](a: M[A])(implicit
+      fcb: FunctionalCanBuild[M]
   ): FunctionalBuilderOps[M, A] =
     new FunctionalBuilderOps[M, A](a)(fcb)
 
@@ -28,8 +28,8 @@ object `package` {
 
   implicit def toFunctorOps[M[_], A](ma: M[A])(implicit fu: Functor[M]): FunctorOps[M, A] = new FunctorOps(ma)
 
-  implicit def toContraFunctorOps[M[_], A](ma: M[A])(
-      implicit fu: ContravariantFunctor[M]
+  implicit def toContraFunctorOps[M[_], A](ma: M[A])(implicit
+      fu: ContravariantFunctor[M]
   ): ContravariantFunctorOps[M, A] = new ContravariantFunctorOps(ma)
 
   implicit def toInvariantFunctorOps[M[_], A](ma: M[A])(implicit fu: InvariantFunctor[M]): InvariantFunctorOps[M, A] =

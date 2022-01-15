@@ -140,7 +140,7 @@ private[json] trait JsValueMacros {
 }
 
 trait JsMacrosWithOptions {
-  inline def reads [A: Mirror.Of]: Reads  [A] = JsMacroImpl.withOptionsReads [A]
+  inline def reads[A: Mirror.Of]: Reads[A]    = JsMacroImpl.withOptionsReads[A]
   inline def writes[A: Mirror.Of]: OWrites[A] = JsMacroImpl.withOptionsWrites[A]
   inline def format[A: Mirror.Of]: OFormat[A] = JsMacroImpl.withOptionsFormat[A]
 }

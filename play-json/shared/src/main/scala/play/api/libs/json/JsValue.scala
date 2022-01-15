@@ -175,15 +175,14 @@ case class JsObject(
    */
   def deepMerge(other: JsObject): JsObject = {
     def merge(existingObject: JsObject, otherObject: JsObject): JsObject = {
-      val result = existingObject.underlying ++ otherObject.underlying.map {
-        case (otherKey, otherValue) =>
-          val maybeExistingValue = existingObject.underlying.get(otherKey)
+      val result = existingObject.underlying ++ otherObject.underlying.map { case (otherKey, otherValue) =>
+        val maybeExistingValue = existingObject.underlying.get(otherKey)
 
-          val newValue = (maybeExistingValue, otherValue) match {
-            case (Some(e: JsObject), o: JsObject) => merge(e, o)
-            case _                                => otherValue
-          }
-          otherKey -> newValue
+        val newValue = (maybeExistingValue, otherValue) match {
+          case (Some(e: JsObject), o: JsObject) => merge(e, o)
+          case _                                => otherValue
+        }
+        otherKey -> newValue
       }
       JsObject(result)
     }

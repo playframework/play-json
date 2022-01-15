@@ -26,160 +26,151 @@ class JsonTransSpec extends AnyWordSpec with Matchers {
 
     "pick a value at a path" in {
       js.transform(
-          (__ \ Symbol("field3")).json.pick
+        (__ \ Symbol("field3")).json.pick
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field31" -> "beta",
+            "field32" -> 345
+          ),
+          __ \ "field3"
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field31" -> "beta",
-              "field32" -> 345
-            ),
-            __ \ "field3"
-          )
-        )
+      )
     }
 
     "pick a branch" in {
       js.transform(
-          (__ \ Symbol("field3")).json.pickBranch
+        (__ \ Symbol("field3")).json.pickBranch
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field3" -> Json.obj("field31" -> "beta", "field32" -> 345)
+          ),
+          __ \ "field3"
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field3" -> Json.obj("field31" -> "beta", "field32" -> 345)
-            ),
-            __ \ "field3"
-          )
-        )
+      )
     }
 
     "copy input JSON and update a branch (merge the updated branch with input JSON)" in {
       js.transform(
-          (__ \ Symbol("field3")).json.update(
-            __.read[JsObject].map { o =>
-              o ++ Json.obj("field33" -> false)
-            }
-          )
+        (__ \ Symbol("field3")).json.update(
+          __.read[JsObject].map { o =>
+            o ++ Json.obj("field33" -> false)
+          }
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field1" -> "alpha",
-              "field2" -> 123L,
-              "field3" -> Json.obj(
-                "field31" -> "beta",
-                "field32" -> 345,
-                "field33" -> false
-              ),
-              "field4" -> Json.arr("alpha", 2, true, Json.obj("field41" -> "toto", "field42" -> "tata"))
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field1" -> "alpha",
+            "field2" -> 123L,
+            "field3" -> Json.obj(
+              "field31" -> "beta",
+              "field32" -> 345,
+              "field33" -> false
             ),
-            __ \ "field3"
-          )
+            "field4" -> Json.arr("alpha", 2, true, Json.obj("field41" -> "toto", "field42" -> "tata"))
+          ),
+          __ \ "field3"
         )
+      )
     }
 
     "pick a branch and update its content" in {
       js.transform(
-          (__ \ Symbol("field3")).json.pickBranch(
-            (__ \ Symbol("field32")).json.update(
-              Reads.of[JsNumber].map { case JsNumber(nb) => JsNumber(nb + 12) }
-            ) andThen
-              (__ \ Symbol("field31")).json.update(
-                Reads.of[JsString].map { case JsString(s) => JsString(s + "toto") }
-              )
-          )
+        (__ \ Symbol("field3")).json.pickBranch(
+          (__ \ Symbol("field32")).json.update(
+            Reads.of[JsNumber].map { case JsNumber(nb) => JsNumber(nb + 12) }
+          ) andThen
+            (__ \ Symbol("field31")).json.update(
+              Reads.of[JsString].map { case JsString(s) => JsString(s + "toto") }
+            )
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field3" -> Json.obj("field31" -> "betatoto", "field32" -> 357)
-            ),
-            __ \ "field3" \ "field32" \ "field31"
-          )
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field3" -> Json.obj("field31" -> "betatoto", "field32" -> 357)
+          ),
+          __ \ "field3" \ "field32" \ "field31"
         )
+      )
     }
 
     "put a value in a new branch (don't keep passed json)" in {
       js.transform(
-          (__ \ Symbol("field3")).json.put(JsNumber(234))
-        )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field3" -> 234
-            )
+        (__ \ Symbol("field3")).json.put(JsNumber(234))
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field3" -> 234
           )
         )
+      )
     }
 
     "create a new path by copying a branch" in {
       js.transform(
-          (__ \ Symbol("field5")).json.copyFrom((__ \ Symbol("field3")).json.pick)
+        (__ \ Symbol("field5")).json.copyFrom((__ \ Symbol("field3")).json.pick)
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field5" -> Json.obj(
+              "field31" -> "beta",
+              "field32" -> 345
+            )
+          ),
+          __ \ "field3"
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field5" -> Json.obj(
-                "field31" -> "beta",
-                "field32" -> 345
-              )
-            ),
-            __ \ "field3"
-          )
-        )
+      )
     }
 
     "copy full json and prune a branch" in {
       js.transform(
-          (__ \ Symbol("field3")).json.prune
+        (__ \ Symbol("field3")).json.prune
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field1" -> "alpha",
+            "field2" -> 123L,
+            "field4" -> Json.arr("alpha", 2, true, Json.obj("field41" -> "toto", "field42" -> "tata"))
+          ),
+          __ \ "field3"
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field1" -> "alpha",
-              "field2" -> 123L,
-              "field4" -> Json.arr("alpha", 2, true, Json.obj("field41" -> "toto", "field42" -> "tata"))
-            ),
-            __ \ "field3"
-          )
-        )
+      )
     }
 
     "pick a single branch and prune a sub-branch" in {
       js.transform(
-          (__ \ Symbol("field3")).json.pickBranch(
-            (__ \ Symbol("field32")).json.prune
-          )
+        (__ \ Symbol("field3")).json.pickBranch(
+          (__ \ Symbol("field32")).json.prune
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field3" -> Json.obj("field31" -> "beta")
-            ),
-            __ \ "field3" \ "field32"
-          )
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field3" -> Json.obj("field31" -> "beta")
+          ),
+          __ \ "field3" \ "field32"
         )
+      )
     }
 
     "copy the full json and update a 2nd-level path and then prune a subbranch" in {
       js.validate(
-          (__ \ Symbol("field3") \ Symbol("field32")).json.update(
-            Reads.of[JsNumber].map { case JsNumber(nb) => JsNumber(nb + 5) }
-          ) andThen (__ \ Symbol("field4")).json.prune
+        (__ \ Symbol("field3") \ Symbol("field32")).json.update(
+          Reads.of[JsNumber].map { case JsNumber(nb) => JsNumber(nb + 5) }
+        ) andThen (__ \ Symbol("field4")).json.prune
+      ).mustEqual(
+        JsSuccess(
+          Json.obj(
+            "field1" -> "alpha",
+            "field2" -> 123L,
+            "field3" -> Json.obj(
+              "field31" -> "beta",
+              "field32" -> 350
+            )
+          ),
+          __ \ "field3" \ "field32" \ "field4"
         )
-        .mustEqual(
-          JsSuccess(
-            Json.obj(
-              "field1" -> "alpha",
-              "field2" -> 123L,
-              "field3" -> Json.obj(
-                "field31" -> "beta",
-                "field32" -> 350
-              )
-            ),
-            __ \ "field3" \ "field32" \ "field4"
-          )
-        )
+      )
     }
 
     "deepMerge when reducing JsObjects" in {

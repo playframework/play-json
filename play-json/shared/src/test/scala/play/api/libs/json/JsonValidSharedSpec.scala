@@ -55,9 +55,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         .mustEqual(JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsnumber")))))
       JsNumber(5)
         .validate[String]
-        .mustEqual(JsError(Seq(JsPath()                            -> Seq(JsonValidationError("error.expected.jsstring")))))
+        .mustEqual(JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsstring")))))
       JsNumber(5.123).validate[Int].mustEqual(JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.int")))))
-      JsNumber(300).validate[Byte].mustEqual(JsError(Seq(JsPath()  -> Seq(JsonValidationError("error.expected.byte")))))
+      JsNumber(300).validate[Byte].mustEqual(JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.byte")))))
       JsNumber(Long.MaxValue)
         .validate[Int]
         .mustEqual(JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.int")))))
@@ -275,8 +275,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recover from error" in {
       JsNumber(123)
         .validate[String]
-        .recover {
-          case JsError(_) => "error"
+        .recover { case JsError(_) =>
+          "error"
         }
         .mustEqual(JsSuccess("error"))
 
@@ -631,7 +631,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       js0
         .validate(jsonTransformer)
         .mustEqual(
-          //JsError( (__ \ 'key3), "error.expected.jsarray" ) ++
+          // JsError( (__ \ 'key3), "error.expected.jsarray" ) ++
           JsError((__ \ Symbol("key2") \ Symbol("key22")), "error.path.missing")
         )
 
@@ -891,9 +891,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("field2")).json.pickBranch
       ).reduce
 
-      val js0 = Json.obj("field1"        -> "alpha")
+      val js0 = Json.obj("field1" -> "alpha")
       val js  = js0 ++ Json.obj("field2" -> Json.obj("field21" -> 123, "field22" -> true))
-      val js2 = js ++ Json.obj("field3"  -> "beta")
+      val js2 = js ++ Json.obj("field3" -> "beta")
       js.validate(myReads).mustEqual(JsSuccess(js))
       js2.validate(myReads).mustEqual(JsSuccess(js))
       js0.validate(myReads).mustEqual(JsError(__ \ Symbol("field2"), "error.path.missing"))
@@ -908,9 +908,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("field3")).json.pick[JsBoolean]
       ).reduce[JsValue, JsArray]
 
-      val js0 = Json.obj("field1"        -> "alpha")
+      val js0 = Json.obj("field1" -> "alpha")
       val js  = js0 ++ Json.obj("field2" -> 123L, "field3" -> false)
-      val js2 = js ++ Json.obj("field4"  -> false)
+      val js2 = js ++ Json.obj("field4" -> false)
       js.validate(myReads).mustEqual(JsSuccess(Json.arr("alpha", 123L, false)))
       js2.validate(myReads).mustEqual(JsSuccess(Json.arr("alpha", 123L, false)))
 
@@ -930,9 +930,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
           (__ \ Symbol("field3")).json.pick
       ).reduce
 
-      val js0 = Json.obj("field1"        -> "alpha")
+      val js0 = Json.obj("field1" -> "alpha")
       val js  = js0 ++ Json.obj("field2" -> 123L, "field3" -> false)
-      val js2 = js ++ Json.obj("field4"  -> false)
+      val js2 = js ++ Json.obj("field4" -> false)
       js.validate(myReads).mustEqual(JsSuccess(Json.arr("alpha", 123L, false)))
       js2.validate(myReads).mustEqual(JsSuccess(Json.arr("alpha", 123L, false)))
       js0

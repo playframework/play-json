@@ -322,12 +322,17 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_DATE_TIME, _.drop(1))
    * }}}
    */
-  def localDateTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[LocalDateTime]
+  def localDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[LocalDateTime]
   ): Reads[LocalDateTime] =
-    new TemporalReads[T, LocalDateTime](parsing, corrector, p, { (millis: Long) =>
-      LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-    })
+    new TemporalReads[T, LocalDateTime](
+      parsing,
+      corrector,
+      p,
+      { (millis: Long) =>
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      }
+    )
 
   /**
    * The default typeclass to reads `java.time.LocalDateTime` from JSON.
@@ -359,8 +364,8 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_OFFSET_DATE_TIME, _.drop(1))
    * }}}
    */
-  def offsetDateTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[OffsetDateTime]
+  def offsetDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[OffsetDateTime]
   ): Reads[OffsetDateTime] = new Reads[OffsetDateTime] {
     def reads(json: JsValue): JsResult[OffsetDateTime] = json match {
       case JsString(s) =>
@@ -411,12 +416,17 @@ trait EnvReads {
    *   DateTimeFormatter.ISO_DATE_TIME, _.drop(1))
    * }}}
    */
-  def zonedDateTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[ZonedDateTime]
+  def zonedDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[ZonedDateTime]
   ): Reads[ZonedDateTime] =
-    new TemporalReads[T, ZonedDateTime](parsing, corrector, p, { (millis: Long) =>
-      ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-    })
+    new TemporalReads[T, ZonedDateTime](
+      parsing,
+      corrector,
+      p,
+      { (millis: Long) =>
+        ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      }
+    )
 
   /**
    * The default typeclass to reads `java.time.ZonedDateTime` from JSON.
@@ -444,8 +454,8 @@ trait EnvReads {
    * val customReads3 = localDateReads(DateTimeFormatter.ISO_DATE, _.drop(1))
    * }}}
    */
-  def localDateReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[LocalDate]
+  def localDateReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[LocalDate]
   ): Reads[LocalDate] =
     new Reads[LocalDate] {
       def reads(json: JsValue): JsResult[LocalDate] = json match {
@@ -501,8 +511,8 @@ trait EnvReads {
    * val customReads3 = instantReads(DateTimeFormatter.ISO_INSTANT, _.drop(1))
    * }}}
    */
-  def instantReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[Instant]
+  def instantReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[Instant]
   ): Reads[Instant] = new TemporalReads[T, Instant](parsing, corrector, p, Instant.ofEpochMilli(_))
 
   /**
@@ -533,8 +543,8 @@ trait EnvReads {
    * val customReads3 = localTimeReads(DateTimeFormatter.ISO_TIME, _.drop(1))
    * }}}
    */
-  def localTimeReads[T](parsing: T, corrector: String => String = identity)(
-      implicit p: T => TemporalParser[LocalTime]
+  def localTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
+      p: T => TemporalParser[LocalTime]
   ): Reads[LocalTime] =
     new Reads[LocalTime] {
       def reads(json: JsValue): JsResult[LocalTime] = json match {
@@ -627,12 +637,12 @@ trait EnvReads {
 
         ats.foreach(_.foreach { builder.addUnicodeLocaleAttribute(_) })
 
-        kws.foreach(_.foreach {
-          case (key, typ) => builder.setUnicodeLocaleKeyword(key, typ)
+        kws.foreach(_.foreach { case (key, typ) =>
+          builder.setUnicodeLocaleKeyword(key, typ)
         })
 
-        ext.foreach(_.foreach {
-          case (key, value) => builder.setExtension(key, value)
+        ext.foreach(_.foreach { case (key, value) =>
+          builder.setExtension(key, value)
         })
 
         spt.foreach { builder.setScript(_) }
