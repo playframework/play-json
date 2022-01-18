@@ -38,7 +38,6 @@ object ScalaJsonAutomatedSpec {
       "user_age": 26
     }"""
   )
-
   val sampleJson3 = Json.parse(
     """{
       "lightbend_name": "Schmitt",
@@ -233,13 +232,12 @@ class ScalaJsonAutomatedSpec extends Specification {
       import play.api.libs.json._
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](
-        Reads[Admin.type] {
-          case JsObject(_) => JsSuccess(Admin)
-          case _           => JsError("Empty object expected")
-        },
-        OWrites[Admin.type] { _ => Json.obj() }
-      )
+      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
+        case JsObject(_) => JsSuccess(Admin)
+        case _           => JsError("Empty object expected")
+      }, OWrites[Admin.type] { _ =>
+        Json.obj()
+      })
 
       implicit val contributorFormat: OFormat[Contributor] = Json.format[Contributor]
 
@@ -283,17 +281,18 @@ class ScalaJsonAutomatedSpec extends Specification {
         // Each JSON objects is marked with the admTpe, ...
         discriminator = "admTpe",
         // ... indicating the lower-cased name of sub-type
-        typeNaming = JsonNaming { fullName => fullName.drop(39 /* remove pkg */ ).toLowerCase }
+        typeNaming = JsonNaming { fullName =>
+          fullName.drop(39 /* remove pkg */ ).toLowerCase
+        }
       )
 
       // First provide instance for each sub-types 'Admin' and 'Contributor':
-      implicit val adminFormat = OFormat[Admin.type](
-        Reads[Admin.type] {
-          case JsObject(_) => JsSuccess(Admin)
-          case _           => JsError("Empty object expected")
-        },
-        OWrites[Admin.type] { _ => Json.obj() }
-      )
+      implicit val adminFormat = OFormat[Admin.type](Reads[Admin.type] {
+        case JsObject(_) => JsSuccess(Admin)
+        case _           => JsError("Empty object expected")
+      }, OWrites[Admin.type] { _ =>
+        Json.obj()
+      })
 
       implicit val contributorFormat: OFormat[Contributor] = Json.format[Contributor]
 

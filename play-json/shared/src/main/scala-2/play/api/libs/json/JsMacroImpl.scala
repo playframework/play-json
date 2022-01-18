@@ -18,7 +18,6 @@ class JsMacroImpl(val c: blackbox.Context) {
 
   /** Only for internal purposes */
   object Placeholder {
-
     implicit object Format extends OFormat[Placeholder] {
       val success                                     = JsSuccess(new Placeholder())
       def reads(json: JsValue): JsResult[Placeholder] = success
@@ -77,10 +76,7 @@ class JsMacroImpl(val c: blackbox.Context) {
   private def valueImpl[A, M[_]](
       config: c.Expr[JsonConfiguration],
       methodName: String
-  )(implicit
-      atag: c.WeakTypeTag[A],
-      matag: c.WeakTypeTag[M[A]]
-  ): c.Expr[M[A]] = {
+  )(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]]): c.Expr[M[A]] = {
     def debug(msg: => String): Unit = {
       if (debugEnabled) {
         c.info(c.enclosingPosition, msg, force = false)
@@ -148,11 +144,7 @@ class JsMacroImpl(val c: blackbox.Context) {
       mapLikeMethod: String,
       reads: Boolean,
       writes: Boolean
-  )(implicit
-      atag: c.WeakTypeTag[A],
-      matag: c.WeakTypeTag[M[A]],
-      natag: c.WeakTypeTag[N[A]]
-  ): c.Expr[M[A]] = {
+  )(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]], natag: c.WeakTypeTag[N[A]]): c.Expr[M[A]] = {
     def debug(msg: => String): Unit = {
       if (debugEnabled) {
         c.info(c.enclosingPosition, msg, force = false)
@@ -313,9 +305,7 @@ class JsMacroImpl(val c: blackbox.Context) {
     // ---
 
     // Utility about apply/unapply
-    class CaseClass[T](tpeArgs: List[Type])(implicit
-        tag: WeakTypeTag[T]
-    ) {
+    class CaseClass[T](tpeArgs: List[Type])(implicit tag: WeakTypeTag[T]) {
       // Common definitions
       private val companioned     = weakTypeOf[T].typeSymbol
       private val companionObject = companioned.companion
@@ -495,7 +485,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       @inline private def params: List[(Name, Type)] = applyFunction match {
         case Some((_, _, ps, _)) => {
           val base = if (hasVarArgs) ps.init else ps
-          val defs = base.map { p => p.name -> p.typeSignature }.toList
+          val defs = base.map { p =>
+            p.name -> p.typeSignature
+          }.toList
           val end =
             if (!hasVarArgs) List.empty[(Name, Type)]
             else {
@@ -590,7 +582,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       def readLambda: Tree = {
-        val resolver = new ImplicitResolver({ orig: Type => orig })
+        val resolver = new ImplicitResolver({ orig: Type =>
+          orig
+        })
         val cases = Match(
           q"dis",
           subTypes.map { t =>
@@ -628,7 +622,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       def writeLambda: Tree = {
-        val resolver = new ImplicitResolver({ orig: Type => orig })
+        val resolver = new ImplicitResolver({ orig: Type =>
+          orig
+        })
         val cases = Match(
           q"v",
           subTypes.map { t =>
@@ -700,7 +696,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       val resolver = new ImplicitResolver({
         import utility.boundTypes
 
-        { orig: Type => boundTypes.getOrElse(orig.typeSymbol.fullName, orig) }
+        { orig: Type =>
+          boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
+        }
       })
 
       val defaultValueMap: Map[Name, Tree] =
@@ -745,7 +743,9 @@ class JsMacroImpl(val c: blackbox.Context) {
               q"$jspathTree.${TermName(methodName)}($impl)"
           }
         }
-        .reduceLeft[Tree] { (acc, r) => q"$acc.and($r)" }
+        .reduceLeft[Tree] { (acc, r) =>
+          q"$acc.and($r)"
+        }
 
       val multiParam = params.length > 1
       // if case class has one single field, needs to use map/contramap/inmap on the Reads/Writes/Format instead of

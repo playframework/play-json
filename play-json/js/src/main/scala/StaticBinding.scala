@@ -57,7 +57,9 @@ object StaticBinding {
       jsValue,
       false,
       0,
-      { l => 0.until(l * 2).map(_ => ' ').mkString },
+      { l =>
+        0.until(l * 2).map(_ => ' ').mkString
+      },
       newline = true,
       fieldValueSep = " : ",
       arraySep = ("[ ", ", ", " ]")

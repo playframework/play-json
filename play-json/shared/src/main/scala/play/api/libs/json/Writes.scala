@@ -38,12 +38,16 @@ trait Writes[A] { self =>
   /**
    * Transforms the resulting [[JsValue]] using transformer function.
    */
-  def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a => transformer(self.writes(a)) }
+  def transform(transformer: JsValue => JsValue): Writes[A] = Writes[A] { a =>
+    transformer(self.writes(a))
+  }
 
   /**
    * Transforms the resulting [[JsValue]] using a `Writes[JsValue]`.
    */
-  def transform(transformer: Writes[JsValue]): Writes[A] = Writes[A] { a => transformer.writes(self.writes(a)) }
+  def transform(transformer: Writes[JsValue]): Writes[A] = Writes[A] { a =>
+    transformer.writes(self.writes(a))
+  }
 }
 
 @implicitNotFound(
@@ -56,13 +60,17 @@ trait OWrites[A] extends Writes[A] {
    * Transforms the resulting [[JsObject]] using a transformer function.
    */
   def transform(transformer: JsObject => JsObject): OWrites[A] =
-    OWrites[A] { a => transformer(this.writes(a)) }
+    OWrites[A] { a =>
+      transformer(this.writes(a))
+    }
 
   /**
    * Transforms the resulting [[JsValue]] using a `Writes[JsValue]`.
    */
   def transform(transformer: OWrites[JsObject]): OWrites[A] =
-    OWrites[A] { a => transformer.writes(this.writes(a)) }
+    OWrites[A] { a =>
+      transformer.writes(this.writes(a))
+    }
 
   override def contramap[B](f: B => A): OWrites[B] =
     OWrites[B](b => this.writes(f(b)))
@@ -73,23 +81,19 @@ trait OWrites[A] extends Writes[A] {
 object OWrites extends PathWrites with ConstraintWrites {
   import play.api.libs.functional._
 
-  def of[A](implicit
-      w: OWrites[A]
-  ): OWrites[A] = w
+  def of[A](implicit w: OWrites[A]): OWrites[A] = w
 
-  def pure[A](fixed: => A)(implicit
-      wrs: OWrites[A]
-  ): OWrites[JsValue] =
-    OWrites[JsValue] { js => wrs.writes(fixed) }
+  def pure[A](fixed: => A)(implicit wrs: OWrites[A]): OWrites[JsValue] =
+    OWrites[JsValue] { js =>
+      wrs.writes(fixed)
+    }
 
   /**
    * An `OWrites` merging the results of two separate `OWrites`.
    */
   private object MergedOWrites {
-
     def apply[A, B](wa: OWrites[A], wb: OWrites[B]): OWrites[A ~ B] =
       new OWritesFromFields[A ~ B] {
-
         def writeFields(fieldsMap: mutable.Map[String, JsValue], obj: A ~ B): Unit = {
           val a ~ b = obj
           mergeIn(fieldsMap, wa, a)
@@ -135,7 +139,6 @@ object OWrites extends PathWrites with ConstraintWrites {
   }
 
   implicit val contravariantfunctorOWrites: ContravariantFunctor[OWrites] = new ContravariantFunctor[OWrites] {
-
     def contramap[A, B](wa: OWrites[A], f: B => A): OWrites[B] =
       wa.contramap[B](f)
   }
@@ -155,7 +158,9 @@ object OWrites extends PathWrites with ConstraintWrites {
    * @param f the transformer function
    */
   def transform[A](w: OWrites[A])(f: (A, JsObject) => JsObject): OWrites[A] =
-    OWrites[A] { a => f(a, w.writes(a)) }
+    OWrites[A] { a =>
+      f(a, w.writes(a))
+    }
 }
 
 /**
@@ -167,7 +172,6 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
 
   implicit val contravariantfunctorWrites: ContravariantFunctor[Writes] =
     new ContravariantFunctor[Writes] {
-
       def contramap[A, B](wa: Writes[A], f: B => A): Writes[B] =
         wa.contramap[B](f)
     }
@@ -189,7 +193,9 @@ object Writes extends PathWrites with ConstraintWrites with DefaultWrites with G
    * @param f the transformer function
    */
   def transform[A](w: Writes[A])(f: (A, JsValue) => JsValue): Writes[A] =
-    Writes[A] { a => f(a, w.writes(a)) }
+    Writes[A] { a =>
+      f(a, w.writes(a))
+    }
 }
 
 /**
@@ -280,7 +286,9 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
   implicit def arrayWrites[T: ClassTag: Writes]: Writes[Array[T]] = {
     val w = implicitly[Writes[T]]
 
-    Writes[Array[T]] { ts => JsArray(ts.map(w.writes(_)).toArray[JsValue]) }
+    Writes[Array[T]] { ts =>
+      JsArray(ts.map(w.writes(_)).toArray[JsValue])
+    }
   }
 
   /**
@@ -303,10 +311,10 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
   /**
    * Serializer for Map[String,V] types.
    */
-  implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit
-      w: Writes[V]
-  ): OWrites[M[String, V]] =
-    OWrites[M[String, V]] { ts => JsObject(ts.iterator.map { case (k, v) => k -> w.writes(v) }.toSeq) }
+  implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] =
+    OWrites[M[String, V]] { ts =>
+      JsObject(ts.iterator.map { case (k, v) => k -> w.writes(v) }.toSeq)
+    }
 
   @deprecated("Use `jsValueWrites`", "2.8.0")
   object JsValueWrites extends Writes[JsValue] {
@@ -316,7 +324,9 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
   /**
    * Serializer for JsValues.
    */
-  implicit def jsValueWrites[T <: JsValue]: Writes[T] = Writes[T] { js => js }
+  implicit def jsValueWrites[T <: JsValue]: Writes[T] = Writes[T] { js =>
+    js
+  }
 
   /**
    * Serializer for JsNull.
@@ -329,7 +339,9 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
    * }}}
    */
   implicit val NoneWrites: Writes[None.type] =
-    Writes[None.type] { _ => JsNull }
+    Writes[None.type] { _ =>
+      JsNull
+    }
 
   /**
    * If `Some` is directly used (not as `Option`).
@@ -342,18 +354,15 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
    *   // equivalent to Json.obj("foo" -> writeableValue)
    * }}}
    */
-  implicit def someWrites[T](implicit
-      w: Writes[T]
-  ): Writes[Some[T]] =
-    Writes[Some[T]] { some => w.writes(some.get) }
+  implicit def someWrites[T](implicit w: Writes[T]): Writes[Some[T]] =
+    Writes[Some[T]] { some =>
+      w.writes(some.get)
+    }
 
   /**
    * Serializer for Option.
    */
-  implicit def OptionWrites[T](implicit
-      fmt: Writes[T]
-  ): Writes[Option[T]] = new Writes[Option[T]] {
-
+  implicit def OptionWrites[T](implicit fmt: Writes[T]): Writes[Option[T]] = new Writes[Option[T]] {
     def writes(o: Option[T]) = o match {
       case Some(value) => fmt.writes(value)
       case None        => JsNull
@@ -377,7 +386,9 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
    * Default Serializer java.util.Date -> JsNumber(d.getTime (nb of ms))
    */
   implicit def defaultDateWrites[T <: Date]: Writes[T] =
-    Writes[T] { d => JsNumber(d.getTime) }
+    Writes[T] { d =>
+      JsNumber(d.getTime)
+    }
 
   /**
    * Serializer for java.sql.Date
@@ -421,7 +432,9 @@ sealed trait LowPriorityWrites extends EnvWrites {
 
     Writes[Traversable[A]] { as =>
       val builder = mutable.ArrayBuilder.make[JsValue]
-      as.foreach { a => builder += w.writes(a) }
+      as.foreach { a =>
+        builder += w.writes(a)
+      }
       JsArray(builder.result())
     }
     // Avoid resolution ambiguity with more specific Traversable Writes,
@@ -434,24 +447,21 @@ sealed trait LowPriorityWrites extends EnvWrites {
    * Deprecated due to incompatibility with non `_[_]` shapes, #368.
    */
   @deprecated("Use `iterableWrites2`", "2.8.1")
-  def iterableWrites[A, M[T] <: Iterable[T]](implicit
-      w: Writes[A]
-  ): Writes[M[A]] =
+  def iterableWrites[A, M[T] <: Iterable[T]](implicit w: Writes[A]): Writes[M[A]] =
     iterableWrites2[A, M[A]]
 
   /**
    * Serializer for Iterable types.
    */
-  implicit def iterableWrites2[A, I](implicit
-      ev: I <:< Iterable[A],
-      w: Writes[A]
-  ): Writes[I] = {
+  implicit def iterableWrites2[A, I](implicit ev: I <:< Iterable[A], w: Writes[A]): Writes[I] = {
     // Use Iterable rather than Traversable, for 2.13 compat
 
     Writes[I] { as =>
       val builder = mutable.ArrayBuilder.make[JsValue]
 
-      as.foreach { (a: A) => builder += w.writes(a) }
+      as.foreach { (a: A) =>
+        builder += w.writes(a)
+      }
 
       JsArray(builder.result())
     }
@@ -464,7 +474,5 @@ sealed trait LowPriorityWrites extends EnvWrites {
    * Serializer for any type that is provided an implicit conversion to String
    * (e.g. tagged types).
    */
-  implicit def stringableWrites[T](implicit
-      conv: T => String
-  ): Writes[T] = Writes.StringWrites.contramap[T](conv)
+  implicit def stringableWrites[T](implicit conv: T => String): Writes[T] = Writes.StringWrites.contramap[T](conv)
 }

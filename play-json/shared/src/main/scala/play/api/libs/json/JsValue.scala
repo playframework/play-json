@@ -14,15 +14,10 @@ case class JsResultException(errors: collection.Seq[(JsPath, collection.Seq[Json
  * Generic json value
  */
 sealed trait JsValue extends JsReadable {
-
-  def validate[A](implicit
-      rds: Reads[A]
-  ): JsResult[A] =
+  def validate[A](implicit rds: Reads[A]): JsResult[A] =
     rds.reads(this)
 
-  def validateOpt[A](implicit
-      rds: Reads[A]
-  ): JsResult[Option[A]] =
+  def validateOpt[A](implicit rds: Reads[A]): JsResult[Option[A]] =
     JsDefined(this).validateOpt[A]
 
   override def toString = Json.stringify(this)
@@ -30,7 +25,6 @@ sealed trait JsValue extends JsReadable {
 
 object JsValue {
   import scala.language.implicitConversions
-
   implicit def jsValueToJsLookup(value: JsValue): JsLookup =
     JsLookup(JsDefined(value))
 }
@@ -39,7 +33,6 @@ object JsValue {
  * Represents a Json null value.
  */
 case object JsNull extends JsValue {
-
   implicit val reads: Reads[JsNull.type] = Reads[JsNull.type] {
     case JsNull => JsSuccess(JsNull)
     case _      => JsError("error.expected.null")

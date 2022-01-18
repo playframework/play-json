@@ -40,7 +40,6 @@ object JsonValidationError {
    * }}}
    */
   object Message {
-
     def unapply(error: JsonValidationError): Option[String] =
       error.messages.headOption
   }
@@ -58,7 +57,6 @@ object JsonValidationError {
    * }}}
    */
   object Detailed {
-
     def unapply(error: JsonValidationError): Option[(String, Any)] =
       for {
         msg <- error.messages.headOption

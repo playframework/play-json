@@ -260,9 +260,13 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       js.parse("""{"foo": null}""").mustEqual(JsObject(List("foo" -> JsNull)))
     }
 
-    "can parse null values in Array" in json { js => js.parse("[null]").mustEqual(JsArray(Array(JsNull))) }
+    "can parse null values in Array" in json { js =>
+      js.parse("[null]").mustEqual(JsArray(Array(JsNull)))
+    }
 
-    "null root object should be parsed as JsNull" in json { js => js.parse("null").mustEqual(JsNull) }
+    "null root object should be parsed as JsNull" in json { js =>
+      js.parse("null").mustEqual(JsNull)
+    }
 
     "JSON pretty print" in json { js =>
       def jo = js.obj(

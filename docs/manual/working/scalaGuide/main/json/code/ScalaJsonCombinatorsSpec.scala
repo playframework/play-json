@@ -68,7 +68,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       // List(JsNumber(51.235685))
       //#jspath-traverse
 
-      // val name = (JsPath \ "name").read[String] and (JsPath \ "location").read[Int]
+      //val name = (JsPath \ "name").read[String] and (JsPath \ "location").read[Int]
       longPath.toString === "/location/long" and {
         latPath.toString === "/location/lat"
       } and {
@@ -96,8 +96,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       json
         .validate(nameReads)
         .must(beLike {
-          case JsSuccess(v, _) =>
-            v must_=== "Watership Down"
+          case JsSuccess(v, _) => v must_=== "Watership Down"
         })
     }
 
@@ -152,13 +151,17 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val strReads: Reads[String] = JsPath.read[String]
 
       // .map
-      val intReads: Reads[Int] = strReads.map { str => str.toInt }
+      val intReads: Reads[Int] = strReads.map { str =>
+        str.toInt
+      }
       // e.g. reads JsString("123") as 123
 
       // .flatMap
       val objReads: Reads[JsObject] = strReads.flatMap { rawJson =>
         // consider something like { "foo": "{ \"stringified\": \"json\" }" }
-        Reads { _ => Json.parse(rawJson).validate[JsObject] }
+        Reads { _ =>
+          Json.parse(rawJson).validate[JsObject]
+        }
       }
 
       // .collect
@@ -389,7 +392,9 @@ class ScalaJsonCombinatorsSpec extends Specification {
       val plus10Writes: Writes[Int] = implicitly[Writes[Int]].contramap(_ + 10)
 
       val doubleAsObj: Writes[Double] =
-        implicitly[Writes[Double]].transform { js => Json.obj("_double" -> js) }
+        implicitly[Writes[Double]].transform { js =>
+          Json.obj("_double" -> js)
+        }
 
       val someWrites: Writes[Some[String]] =
         implicitly[Writes[Option[String]]].narrow[Some[String]]
@@ -410,8 +415,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
       //#reads-writes-recursive
       case class User(name: String, friends: Seq[User])
 
-      implicit
-      lazy val userReads: Reads[User] = (
+      implicit lazy val userReads: Reads[User] = (
         (__ \ "name").read[String] and
           (__ \ "friends").lazyRead(Reads.seq[User](userReads))
       )(User.apply _)
@@ -435,7 +439,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
         } ]
       }
       """)
-      val userResult = json.validate[User]
+      val userResult    = json.validate[User]
       userResult.must(beLike { case JsSuccess(u: User, _) => u.name === "Fiver" })
 
       // Use Writes for model -> JSON
@@ -472,7 +476,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
         "long" : -1.309197
       }
       """)
-      val location = json.validate[Location].get
+      val location      = json.validate[Location].get
       location === Location(51.235685, -1.309197)
 
       // Use Writes for model -> JSON
@@ -501,7 +505,7 @@ class ScalaJsonCombinatorsSpec extends Specification {
         "long" : -1.309197
       }
       """)
-      val location = json.validate[Location].get
+      val location      = json.validate[Location].get
       location must_=== Location(51.235685, -1.309197)
 
       // Use Writes for model -> JSON

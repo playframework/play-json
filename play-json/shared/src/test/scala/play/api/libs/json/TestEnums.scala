@@ -5,7 +5,6 @@
 package play.api.libs.json
 
 object TestEnums {
-
   object EnumWithCustomNames extends Enumeration {
     type EnumWithCustomNames = Value
 

@@ -11,7 +11,6 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class JsonValidSharedSpec extends AnyWordSpec with Matchers {
-
   // lampepfl/dotty#11052 doesn't work as a locally-defined Enumeration
   //     - should validate Enums *** FAILED *** (1 millisecond)
   //       java.lang.IllegalAccessException: class scala.Enumeration cannot access a member of class play.api.libs.json.JsonValidSharedSpec$Weekdays$1$ with modifiers "public"
@@ -122,7 +121,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     }
 
     "validate JsObject to Map with custom key type" in {
-      implicit val keyReads: KeyReads[Int] = KeyReads[Int] { key => JsResult.fromTry(scala.util.Try(key.toInt)) }
+      implicit val keyReads: KeyReads[Int] = KeyReads[Int] { key =>
+        JsResult.fromTry(scala.util.Try(key.toInt))
+      }
 
       Json
         .obj("1" -> "value1", "2" -> "value2")
@@ -216,13 +217,20 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       }
 
       "reject malformed UUIDs" in {
-        JsString("bogus string").validate[java.util.UUID].recoverTotal { e => "error" }.mustEqual("error")
+        JsString("bogus string")
+          .validate[java.util.UUID]
+          .recoverTotal { e =>
+            "error"
+          }
+          .mustEqual("error")
       }
 
       "reject well-formed but incorrect UUIDS in strict mode" in {
         JsString("0-0-0-0-0")
           .validate[java.util.UUID](new Reads.UUIDReader(true))
-          .recoverTotal { e => "error" }
+          .recoverTotal { e =>
+            "error"
+          }
           .mustEqual("error")
       }
     }
@@ -272,7 +280,12 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         }
         .mustEqual(JsSuccess("error"))
 
-      JsNumber(123).validate[String].recoverTotal { _ => "error" }.mustEqual("error")
+      JsNumber(123)
+        .validate[String]
+        .recoverTotal { _ =>
+          "error"
+        }
+        .mustEqual("error")
 
       JsNumber(123).validate[Int].recoverTotal(_ => 0).mustEqual(123)
     }
@@ -628,7 +641,6 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
   "JSON Reads" should {
     "manage nullable/option".taggedAs(UnstableInScala213) in {
-      // TODO: Remove tag
       case class User(name: String, email: String, phone: Option[String])
 
       implicit val UserReads: Reads[User] = (

@@ -10,7 +10,6 @@ trait LazyHelper[M[_], T] {
 }
 
 object LazyHelper {
-
   def apply[M[_], T](stuff: M[T]) = new LazyHelper[M, T] {
     override lazy val lazyStuff = stuff
   }

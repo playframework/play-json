@@ -58,16 +58,24 @@ trait Reads[A] { self =>
   def filter(f: A => Boolean): Reads[A] = Reads[A] { self.reads(_).filter(f) }
 
   def filter(error: JsonValidationError)(f: A => Boolean): Reads[A] =
-    Reads[A] { json => self.reads(json).filter(JsError(error))(f) }
+    Reads[A] { json =>
+      self.reads(json).filter(JsError(error))(f)
+    }
 
   def filterNot(f: A => Boolean): Reads[A] =
-    Reads[A] { json => self.reads(json).filterNot(f) }
+    Reads[A] { json =>
+      self.reads(json).filterNot(f)
+    }
 
   def filterNot(error: JsonValidationError)(f: A => Boolean): Reads[A] =
-    Reads[A] { json => self.reads(json).filterNot(JsError(error))(f) }
+    Reads[A] { json =>
+      self.reads(json).filterNot(JsError(error))(f)
+    }
 
   def collect[B](error: JsonValidationError)(f: PartialFunction[A, B]): Reads[B] =
-    Reads[B] { json => self.reads(json).collect(error)(f) }
+    Reads[B] { json =>
+      self.reads(json).collect(error)(f)
+    }
 
   /**
    * Creates a new `Reads`, based on this one, which first executes this
@@ -78,7 +86,9 @@ trait Reads[A] { self =>
    * @return A new `Reads` with the updated behavior.
    */
   def orElse(v: Reads[A]): Reads[A] =
-    Reads[A] { json => self.reads(json).orElse(v.reads(json)) }
+    Reads[A] { json =>
+      self.reads(json).orElse(v.reads(json))
+    }
 
   @deprecated("Use [[composeWith]]", "2.7.0")
   def compose[B <: JsValue](rb: Reads[B]): Reads[A] = composeWith[B](rb)
@@ -134,9 +144,7 @@ trait Reads[A] { self =>
     this.reads(_).flatMap(f)
   }
 
-  def andThen[B](rb: Reads[B])(implicit
-      witness: A <:< JsValue
-  ): Reads[B] =
+  def andThen[B](rb: Reads[B])(implicit witness: A <:< JsValue): Reads[B] =
     rb.composeWith(this.map(witness))
 
   /**
@@ -174,7 +182,9 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
    *
    * @see [[failed]]
    */
-  override def pure[A](f: => A): Reads[A] = Reads[A] { _ => JsSuccess(f) }
+  override def pure[A](f: => A): Reads[A] = Reads[A] { _ =>
+    JsSuccess(f)
+  }
 
   /**
    * Returns a `JsError(cause)` for any JSON value read.
@@ -187,17 +197,19 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
    *
    * @see [[pure]]
    */
-  def failed[A](msg: => String): Reads[A] = Reads[A] { _ => JsError(msg) }
+  def failed[A](msg: => String): Reads[A] = Reads[A] { _ =>
+    JsError(msg)
+  }
 
   @deprecated("Use `pure` with `f:=>A` parameter", "2.7.0")
   private[json] def pure[A](value: A): Reads[A] =
-    Reads[A] { _ => JsSuccess(value) }
+    Reads[A] { _ =>
+      JsSuccess(value)
+    }
 
   import play.api.libs.functional._
 
-  implicit def applicative(implicit
-      applicativeJsResult: Applicative[JsResult]
-  ): Applicative[Reads] =
+  implicit def applicative(implicit applicativeJsResult: Applicative[JsResult]): Applicative[Reads] =
     new Applicative[Reads] {
       def pure[A](f: => A): Reads[A] = Reads.pure(f = f)
 
@@ -208,13 +220,9 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
       }
     }
 
-  implicit def alternative(implicit
-      a: Applicative[Reads]
-  ): Alternative[Reads] = new Alternative[Reads] {
+  implicit def alternative(implicit a: Applicative[Reads]): Alternative[Reads] = new Alternative[Reads] {
     val app = a
-
     def |[A, B >: A](alt1: Reads[A], alt2: Reads[B]): Reads[B] = new Reads[B] {
-
       def reads(js: JsValue) = alt1.reads(js) match {
         case r @ JsSuccess(_, _) => r
         case JsError(es1) =>
@@ -235,9 +243,7 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
   def apply[A](f: JsValue => JsResult[A]): Reads[A] =
     new Reads[A] { def reads(json: JsValue) = f(json) }
 
-  implicit def functorReads(implicit
-      a: Applicative[Reads]
-  ): Functor[Reads] = new Functor[Reads] {
+  implicit def functorReads(implicit a: Applicative[Reads]): Functor[Reads] = new Functor[Reads] {
     def fmap[A, B](reads: Reads[A], f: A => B): Reads[B] = a.map(reads, f)
   }
 
@@ -265,20 +271,13 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
  * See https://github.com/playframework/playframework/issues/4313 for more details.
  */
 trait LowPriorityDefaultReads extends EnvReads {
-
-  implicit def keyMapReads[K: KeyReads, V](implicit
-      fmtv: Reads[V]
-  ): Reads[Map[K, V]] =
+  implicit def keyMapReads[K: KeyReads, V](implicit fmtv: Reads[V]): Reads[Map[K, V]] =
     Reads.mapReads[K, V](implicitly[KeyReads[K]].readKey _)
 
   /**
    * Generic deserializer for collections types.
    */
-  implicit def traversableReads[F[_], A](implicit
-      bf: Factory[A, F[A]],
-      ra: Reads[A]
-  ): Reads[F[A]] = new Reads[F[A]] {
-
+  implicit def traversableReads[F[_], A](implicit bf: Factory[A, F[A]], ra: Reads[A]): Reads[F[A]] = new Reads[F[A]] {
     def reads(json: JsValue) = json match {
       case JsArray(ts) =>
         ts.iterator.zipWithIndex
@@ -328,7 +327,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for Int types.
    */
   implicit object IntReads extends Reads[Int] {
-
     def reads(json: JsValue) = json match {
       case JsNumber(n) if n.isValidInt => JsSuccess(n.toInt)
       case JsNumber(n)                 => JsError("error.expected.int")
@@ -340,7 +338,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for Short types.
    */
   implicit object ShortReads extends Reads[Short] {
-
     def reads(json: JsValue) = json match {
       case JsNumber(n) if n.isValidShort => JsSuccess(n.toShort)
       case JsNumber(n)                   => JsError("error.expected.short")
@@ -352,7 +349,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for Byte types.
    */
   implicit object ByteReads extends Reads[Byte] {
-
     def reads(json: JsValue) = json match {
       case JsNumber(n) if n.isValidByte => JsSuccess(n.toByte)
       case JsNumber(n)                  => JsError("error.expected.byte")
@@ -364,7 +360,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for Long types.
    */
   implicit object LongReads extends Reads[Long] {
-
     def reads(json: JsValue) = json match {
       case JsNumber(n) if n.isValidLong => JsSuccess(n.toLong)
       case JsNumber(n)                  => JsError("error.expected.long")
@@ -376,7 +371,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for Float types.
    */
   implicit object FloatReads extends Reads[Float] {
-
     def reads(json: JsValue) = json match {
       case JsNumber(n) => JsSuccess(n.toFloat)
       case _           => JsError("error.expected.jsnumber")
@@ -387,7 +381,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for Double types.
    */
   implicit object DoubleReads extends Reads[Double] {
-
     def reads(json: JsValue) = json match {
       case JsNumber(n) => JsSuccess(n.toDouble)
       case _           => JsError("error.expected.jsnumber")
@@ -414,7 +407,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for BigInteger
    */
   implicit object BigIntegerReads extends Reads[java.math.BigInteger] {
-
     def reads(json: JsValue) = json match {
       case JsString(s) =>
         parseBigInteger(s)
@@ -443,7 +435,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * @param enum a `scala.Enumeration`.
    */
   def enumNameReads[E <: Enumeration](`enum`: E): Reads[`enum`.Value] = new Reads[`enum`.Value] {
-
     def reads(json: JsValue) = json match {
       case JsString(str) =>
         `enum`.values
@@ -458,7 +449,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for Boolean types.
    */
   implicit object BooleanReads extends Reads[Boolean] {
-
     def reads(json: JsValue) = json match {
       case JsBoolean(b) => JsSuccess(b)
       case _            => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsboolean"))))
@@ -469,7 +459,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for String types.
    */
   implicit object StringReads extends Reads[String] {
-
     def reads(json: JsValue) = json match {
       case JsString(s) => JsSuccess(s)
       case _           => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsstring"))))
@@ -480,7 +469,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for JsObject.
    */
   implicit object JsObjectReads extends Reads[JsObject] {
-
     def reads(json: JsValue) = json match {
       case o: JsObject => JsSuccess(o)
       case _           => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsobject"))))
@@ -491,7 +479,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for JsArray.
    */
   implicit object JsArrayReads extends Reads[JsArray] {
-
     def reads(json: JsValue) = json match {
       case o: JsArray => JsSuccess(o)
       case _          => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsarray"))))
@@ -509,7 +496,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for JsString.
    */
   implicit object JsStringReads extends Reads[JsString] {
-
     def reads(json: JsValue) = json match {
       case s: JsString => JsSuccess(s)
       case _           => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsstring"))))
@@ -520,7 +506,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for JsNumber.
    */
   implicit object JsNumberReads extends Reads[JsNumber] {
-
     def reads(json: JsValue) = json match {
       case n: JsNumber => JsSuccess(n)
       case _           => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsnumber"))))
@@ -531,7 +516,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for JsBoolean.
    */
   implicit object JsBooleanReads extends Reads[JsBoolean] {
-
     def reads(json: JsValue) = json match {
       case b: JsBoolean => JsSuccess(b)
       case _            => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsboolean"))))
@@ -543,9 +527,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
       key: String => JsResult[K],
       in: List[(String, JsValue)],
       out: Builder[(K, V), Map[K, V]]
-  )(implicit
-      vr: Reads[V]
-  ): JsResult[Map[K, V]] = in match {
+  )(implicit vr: Reads[V]): JsResult[Map[K, V]] = in match {
     case (k, v) :: entries =>
       key(k).flatMap(vk => v.validate[V].map(vk -> _)) match {
         case JsError(details) => JsError(details)
@@ -558,9 +540,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
   }
 
   /** Deserializer for a `Map[K,V]` */
-  implicit def mapReads[K, V](k: String => JsResult[K])(implicit
-      fmtv: Reads[V]
-  ): Reads[Map[K, V]] = Reads[Map[K, V]] {
+  implicit def mapReads[K, V](k: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
     case JsObject(m) => {
       type Errors = Seq[(JsPath, Seq[JsonValidationError])]
       def locate(e: Errors, key: String) = e.map { case (p, valerr) =>
@@ -587,15 +567,11 @@ trait DefaultReads extends LowPriorityDefaultReads {
   }
 
   /** Deserializer for a `Map[String,V]` */
-  implicit def mapReads[V](implicit
-      fmtv: Reads[V]
-  ): Reads[Map[String, V]] =
+  implicit def mapReads[V](implicit fmtv: Reads[V]): Reads[Map[String, V]] =
     mapReads[String, V](JsSuccess(_))
 
   /** Deserializer for a `Map[Char, V]` */
-  def charMapReads[V](implicit
-      vr: Reads[V]
-  ): Reads[Map[Char, V]] =
+  def charMapReads[V](implicit vr: Reads[V]): Reads[Map[Char, V]] =
     mapReads[Char, V] { str =>
       if (str.size == 1) JsSuccess(str.charAt(0))
       else JsError("error.invalid.character")
@@ -612,7 +588,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
    * Deserializer for java.net.URI
    */
   implicit val uriReads: Reads[URI] = Reads[URI] {
-    _.validate[String].flatMap { repr => JsResult.fromTry(Try(new URI(repr))) }
+    _.validate[String].flatMap { repr =>
+      JsResult.fromTry(Try(new URI(repr)))
+    }
   }
 
   /**
@@ -624,7 +602,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
     import scala.util.Try
 
     def check(s: String)(u: UUID): Boolean = u != null && s == u.toString()
-
     def parseUuid(s: String): Option[UUID] = {
       val uncheckedUuid = Try(UUID.fromString(s)).toOption
 

@@ -39,7 +39,6 @@ trait EnvReads {
    * Deserializer for Jackson JsonNode
    */
   implicit object JsonNodeReads extends Reads[JsonNode] {
-
     def reads(json: JsValue): JsResult[JsonNode] =
       JsSuccess(JacksonJson.jsValueToJsonNode(json))
   }
@@ -48,7 +47,6 @@ trait EnvReads {
    * Deserializer for Jackson ObjectNode
    */
   implicit object ObjectNodeReads extends Reads[ObjectNode] {
-
     def reads(json: JsValue): JsResult[ObjectNode] = {
       json.validate[JsObject].map(jo => JacksonJson.jsValueToJsonNode(jo).asInstanceOf[ObjectNode])
     }
@@ -58,7 +56,6 @@ trait EnvReads {
    * Deserializer for Jackson ArrayNode
    */
   implicit object ArrayNodeReads extends Reads[ArrayNode] {
-
     def reads(json: JsValue): JsResult[ArrayNode] = {
       json.validate[JsArray].map(ja => JacksonJson.jsValueToJsonNode(ja).asInstanceOf[ArrayNode])
     }
@@ -72,7 +69,6 @@ trait EnvReads {
    */
   def dateReads(pattern: String, corrector: String => String = identity): Reads[java.util.Date] =
     new Reads[java.util.Date] {
-
       def reads(json: JsValue): JsResult[java.util.Date] = json match {
         case n: JsNumber => n.validate[Long].map(l => new java.util.Date(l))
         case JsString(s) =>
@@ -183,7 +179,6 @@ trait EnvReads {
     /** Instance of local date/time based on formatter. */
     implicit def LocalDateTimeFormatterParser(formatter: DateTimeFormatter): TemporalParser[LocalDateTime] =
       new TemporalParser[LocalDateTime] {
-
         def parse(input: String): Option[LocalDateTime] =
           try {
             Some(LocalDateTime.parse(input, formatter))
@@ -200,7 +195,6 @@ trait EnvReads {
     /** Instance of offset date/time based on formatter. */
     implicit def OffsetDateTimeFormatterParser(formatter: DateTimeFormatter): TemporalParser[OffsetDateTime] =
       new TemporalParser[OffsetDateTime] {
-
         def parse(input: String): Option[OffsetDateTime] =
           try {
             Some(OffsetDateTime.parse(input, formatter))
@@ -217,7 +211,6 @@ trait EnvReads {
     /** Instance of date based on formatter. */
     implicit def DateFormatterParser(formatter: DateTimeFormatter): TemporalParser[LocalDate] =
       new TemporalParser[LocalDate] {
-
         def parse(input: String): Option[LocalDate] =
           try {
             Some(LocalDate.parse(input, formatter))
@@ -234,7 +227,6 @@ trait EnvReads {
     /** Instance of instant parser based on formatter. */
     implicit def InstantFormatterParser(formatter: DateTimeFormatter): TemporalParser[Instant] =
       new TemporalParser[Instant] {
-
         def parse(input: String): Option[Instant] =
           try {
             Some(Instant.from(formatter.parse(input)))
@@ -251,7 +243,6 @@ trait EnvReads {
     /** Instance of zoned date/time based on formatter. */
     implicit def ZonedDateTimeFormatterParser(formatter: DateTimeFormatter): TemporalParser[ZonedDateTime] =
       new TemporalParser[ZonedDateTime] {
-
         def parse(input: String): Option[ZonedDateTime] =
           try {
             Some(ZonedDateTime.parse(input, formatter))
@@ -268,7 +259,6 @@ trait EnvReads {
     /** Instance of LocalTime parser based on formatter. */
     implicit def LocalTimeFormatterParser(formatter: DateTimeFormatter): TemporalParser[LocalTime] =
       new TemporalParser[LocalTime] {
-
         def parse(input: String): Option[LocalTime] =
           try {
             Some(LocalTime.from(formatter.parse(input)))
@@ -289,7 +279,6 @@ trait EnvReads {
       p: A => TemporalParser[B],
       epoch: Long => B
   ) extends Reads[B] {
-
     def reads(json: JsValue): JsResult[B] = json match {
       case n: JsNumber => n.validate[Long].map(epoch)
       case JsString(s) =>
@@ -340,7 +329,9 @@ trait EnvReads {
       parsing,
       corrector,
       p,
-      { (millis: Long) => LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC) }
+      { (millis: Long) =>
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      }
     )
 
   /**
@@ -376,7 +367,6 @@ trait EnvReads {
   def offsetDateTimeReads[T](parsing: T, corrector: String => String = identity)(implicit
       p: T => TemporalParser[OffsetDateTime]
   ): Reads[OffsetDateTime] = new Reads[OffsetDateTime] {
-
     def reads(json: JsValue): JsResult[OffsetDateTime] = json match {
       case JsString(s) =>
         p(parsing).parse(corrector(s)) match {
@@ -433,7 +423,9 @@ trait EnvReads {
       parsing,
       corrector,
       p,
-      { (millis: Long) => ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC) }
+      { (millis: Long) =>
+        ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      }
     )
 
   /**
@@ -466,7 +458,6 @@ trait EnvReads {
       p: T => TemporalParser[LocalDate]
   ): Reads[LocalDate] =
     new Reads[LocalDate] {
-
       def reads(json: JsValue): JsResult[LocalDate] = json match {
         case n: JsNumber => n.validate[Long].map(epoch)
         case JsString(s) =>
@@ -556,7 +547,6 @@ trait EnvReads {
       p: T => TemporalParser[LocalTime]
   ): Reads[LocalTime] =
     new Reads[LocalTime] {
-
       def reads(json: JsValue): JsResult[LocalTime] = json match {
         case n: JsNumber => n.validate[Long].map(epoch)
         case JsString(s) =>
@@ -757,7 +747,6 @@ trait EnvKeyReads { self: KeyReads.type =>
    * to be a [[https://tools.ietf.org/html/rfc5646 language tag]].
    */
   implicit object LanguageTagReads extends KeyReads[Locale] {
-
     def readKey(key: String): JsResult[Locale] =
       try {
         JsSuccess(Locale.forLanguageTag(key))

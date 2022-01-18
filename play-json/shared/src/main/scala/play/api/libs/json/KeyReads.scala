@@ -14,7 +14,9 @@ import scala.util.control.NonFatal
 trait KeyReads[T] { self =>
   def readKey(key: String): JsResult[T]
 
-  final def map[U](f: T => U): KeyReads[U] = KeyReads[U] { key => self.readKey(key).map(f) }
+  final def map[U](f: T => U): KeyReads[U] = KeyReads[U] { key =>
+    self.readKey(key).map(f)
+  }
 }
 
 object KeyReads extends EnvKeyReads with LowPriorityKeyReads {
@@ -67,9 +69,8 @@ object KeyReads extends EnvKeyReads with LowPriorityKeyReads {
 }
 
 private[json] sealed trait LowPriorityKeyReads {
-
-  implicit def readableKeyReads[T](implicit
-      r: Reads[T]
-  ): KeyReads[T] =
-    KeyReads[T] { key => r.reads(JsString(key)) }
+  implicit def readableKeyReads[T](implicit r: Reads[T]): KeyReads[T] =
+    KeyReads[T] { key =>
+      r.reads(JsString(key))
+    }
 }

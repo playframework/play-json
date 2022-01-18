@@ -28,8 +28,10 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     }
 
     "be contramap'ed" in {
-      val w  = implicitly[Writes[String]]
-      val ow = OWrites[String] { str => Json.obj("string" -> str) }
+      val w = implicitly[Writes[String]]
+      val ow = OWrites[String] { str =>
+        Json.obj("string" -> str)
+      }
 
       w.contramap[Int](_.toString).writes(1).mustEqual(JsString("1"))
 
@@ -52,7 +54,9 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
         }
         class Lorem(val bar: String) extends Foo
 
-        val ow                  = OWrites[Foo] { foo => Json.obj("bar" -> foo.bar) }
+        val ow = OWrites[Foo] { foo =>
+          Json.obj("bar" -> foo.bar)
+        }
         val owc: OWrites[Lorem] = ow.narrow[Lorem]
 
         owc.writes(new Lorem("ipsum")).mustEqual(Json.obj("bar" -> "ipsum"))
@@ -118,11 +122,7 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     import scala.reflect.ClassTag
     import scala.language.higherKinds
 
-    def success[T <: JsValue, W[A] <: Writes[A]](fixture: T)(implicit
-        w: W[T],
-        ct: ClassTag[T],
-        wt: ClassTag[W[T]]
-    ) =
+    def success[T <: JsValue, W[A] <: Writes[A]](fixture: T)(implicit w: W[T], ct: ClassTag[T], wt: ClassTag[W[T]]) =
       s"be resolved as ${wt.runtimeClass.getSimpleName}[${ct.runtimeClass.getSimpleName}] for $fixture" in {
         w.writes(fixture).mustEqual(fixture)
       }

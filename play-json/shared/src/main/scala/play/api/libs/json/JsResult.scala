@@ -173,7 +173,6 @@ object JsError {
    * }}}
    */
   object Message {
-
     def unapply(error: JsError): Option[String] =
       error.errors.headOption.collect { case (_, JsonValidationError.Message(msg) +: _) =>
         msg
@@ -193,7 +192,6 @@ object JsError {
    * }}}
    */
   object Detailed {
-
     def unapply(error: JsError): Option[(String, Any)] =
       error.errors.headOption.collect { case (_, JsonValidationError.Detailed(msg, arg) +: _) =>
         msg -> arg
@@ -227,16 +225,24 @@ sealed trait JsResult[+A] { self =>
   def foreach(f: A => Unit): Unit
 
   def filterNot(error: JsError)(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) error else JsSuccess(a) }
+    flatMap { a =>
+      if (p(a)) error else JsSuccess(a)
+    }
 
   def filterNot(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) JsError() else JsSuccess(a) }
+    flatMap { a =>
+      if (p(a)) JsError() else JsSuccess(a)
+    }
 
   def filter(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) JsSuccess(a) else JsError() }
+    flatMap { a =>
+      if (p(a)) JsSuccess(a) else JsError()
+    }
 
   def filter(otherwise: JsError)(p: A => Boolean): JsResult[A] =
-    flatMap { a => if (p(a)) JsSuccess(a) else otherwise }
+    flatMap { a =>
+      if (p(a)) JsSuccess(a) else otherwise
+    }
 
   def collect[B](otherwise: JsonValidationError)(p: PartialFunction[A, B]): JsResult[B] = flatMap {
     case t if p.isDefinedAt(t) => JsSuccess(p(t))
@@ -246,7 +252,6 @@ sealed trait JsResult[+A] { self =>
   def withFilter(p: A => Boolean) = new WithFilter(p)
 
   final class WithFilter(p: A => Boolean) {
-
     def map[B](f: A => B): JsResult[B] = self match {
       case JsSuccess(a, path) =>
         if (p(a)) JsSuccess(f(a), path)
@@ -365,18 +370,17 @@ object JsResult {
    */
   def fromTry[T](
       result: Try[T],
-      err: Throwable => JsError = { e => JsError(e.getMessage) }
+      err: Throwable => JsError = { e =>
+        JsError(e.getMessage)
+      }
   ): JsResult[T] = result match {
     case Success(v) => JsSuccess(v)
     case Failure(e) => err(e)
   }
 
-  implicit def alternativeJsResult(implicit
-      a: Applicative[JsResult]
-  ): Alternative[JsResult] =
+  implicit def alternativeJsResult(implicit a: Applicative[JsResult]): Alternative[JsResult] =
     new Alternative[JsResult] {
       val app = a
-
       def |[A, B >: A](alt1: JsResult[A], alt2: JsResult[B]): JsResult[B] = (alt1, alt2) match {
         case (JsError(e), JsSuccess(t, p)) => JsSuccess(t, p)
         case (JsSuccess(t, p), _)          => JsSuccess(t, p)

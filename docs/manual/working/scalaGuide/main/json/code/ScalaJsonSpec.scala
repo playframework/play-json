@@ -7,7 +7,6 @@ package scalaguide.json
 import org.specs2.mutable.Specification
 
 class ScalaJsonSpec extends Specification {
-
   val sampleJson = {
     //#convert-from-string
     import play.api.libs.json._
@@ -358,7 +357,9 @@ class ScalaJsonSpec extends Specification {
       // fold
       val nameOption: Option[String] = nameResult.fold(
         invalid = { fieldErrors =>
-          fieldErrors.foreach { x => println(s"field: ${x._1}, errors: ${x._2}") }
+          fieldErrors.foreach { x =>
+            println(s"field: ${x._1}, errors: ${x._2}")
+          }
           Option.empty[String]
         },
         valid = Some(_)
@@ -366,8 +367,7 @@ class ScalaJsonSpec extends Specification {
       //#convert-to-type-validate
 
       nameResult.must(beLike {
-        case JsSuccess("Watership Down", _) =>
-          ok
+        case JsSuccess("Watership Down", _) => ok
       }) and {
         nameOrFallback must_=== "Watership Down"
       } and {
@@ -411,7 +411,7 @@ class ScalaJsonSpec extends Specification {
       // JsSuccess(Resident(Bigwig,6,Some(Owsla)),)
       //#convert-to-model
 
-      placeResult.must(beLike { case JsSuccess(Place(name, _, _), _) => name === "Watership Down" })
+      placeResult.must(beLike { case JsSuccess(Place(name, _, _), _)       => name === "Watership Down" })
       residentResult.must(beLike { case JsSuccess(Resident(name, _, _), _) => name === "Bigwig" })
     }
   }

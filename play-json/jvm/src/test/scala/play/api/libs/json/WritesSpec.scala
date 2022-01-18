@@ -225,8 +225,10 @@ class WritesSpec extends org.specs2.mutable.Specification {
   }
 
   "OWrites" should {
-    val writes = OWrites[Foo] { foo => Json.obj("bar" -> foo.bar) }
-    val time   = System.currentTimeMillis()
+    val writes = OWrites[Foo] { foo =>
+      Json.obj("bar" -> foo.bar)
+    }
+    val time = System.currentTimeMillis()
 
     "be transformed with JsObject function" in {
       val transformed: OWrites[Foo] = writes.transform((obj: JsObject) => obj ++ Json.obj("time" -> time))
@@ -260,7 +262,9 @@ class WritesSpec extends org.specs2.mutable.Specification {
 
     "be transformed with another OWrites" in {
       val transformed: OWrites[Foo] =
-        writes.transform(OWrites[JsObject] { obj => obj ++ Json.obj("time" -> time) })
+        writes.transform(OWrites[JsObject] { obj =>
+          obj ++ Json.obj("time" -> time)
+        })
       val written: JsObject = transformed.writes(Foo("Lorem"))
 
       written.must_==(Json.obj("bar" -> "Lorem", "time" -> time))
