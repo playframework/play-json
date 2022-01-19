@@ -136,7 +136,7 @@ case class JsObject(
    */
   lazy val value: Map[String, JsValue] = underlying match {
     case m: immutable.Map[String, JsValue] => m
-    case m                                 => m.toMap
+    case m                                 => JsObject.createFieldsMap(m)
   }
 
   /**
@@ -157,18 +157,17 @@ case class JsObject(
   /**
    * Merge this object with another one. Values from other override value of the current object.
    */
-  def ++(other: JsObject): JsObject = JsObject(JsObject.createFieldsMap(underlying) ++= other.underlying)
+  def ++(other: JsObject): JsObject = JsObject(underlying ++ other.underlying)
 
   /**
    * Removes one field from the JsObject
    */
-  def -(otherField: String): JsObject = JsObject(JsObject.createFieldsMap(underlying) -= otherField)
+  def -(otherField: String): JsObject = JsObject(underlying - otherField)
 
   /**
    * Adds one field to the JsObject
    */
-  def +(otherField: (String, JsValue)): JsObject =
-    JsObject(JsObject.createFieldsMap(underlying) += otherField)
+  def +(otherField: (String, JsValue)): JsObject = JsObject(underlying + otherField)
 
   /**
    * merges everything in depth and doesn't stop at first level, as ++ does
@@ -206,9 +205,8 @@ object JsObject extends (Seq[(String, JsValue)] => JsObject) {
    *
    * We use this because the Java implementation better handles hash code collisions for Comparable keys.
    */
-  private[json] def createFieldsMap(fields: Iterable[(String, JsValue)] = Seq.empty): mutable.Map[String, JsValue] = {
-    import scala.collection.JavaConverters._
-    new java.util.LinkedHashMap[String, JsValue]().asScala ++= fields
+  private[json] def createFieldsMap(fields: Iterable[(String, JsValue)] = Seq.empty): immutable.Map[String, JsValue] = {
+    (ImmutableLinkedHashMap.newBuilder ++= fields).result()
   }
 
   /**
