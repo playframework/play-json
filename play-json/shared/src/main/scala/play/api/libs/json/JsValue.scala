@@ -130,12 +130,12 @@ case class JsObject(
   /**
    * The fields of this JsObject in the order passed to the constructor
    */
-  lazy val fields: collection.Seq[(String, JsValue)] = underlying.toSeq
+  def fields: collection.Seq[(String, JsValue)] = underlying.toSeq
 
   /**
    * The value of this JsObject as an immutable map.
    */
-  lazy val value: Map[String, JsValue] = underlying match {
+  def value: Map[String, JsValue] = underlying match {
     case m: immutable.Map[String, JsValue] => m
     case m                                 => JsObject.createFieldsMap(m)
   }
@@ -143,7 +143,7 @@ case class JsObject(
   /**
    * Return all fields as a set
    */
-  def fieldSet: Set[(String, JsValue)] = fields.toSet
+  def fieldSet: Set[(String, JsValue)] = underlying.toSet
 
   /**
    * Return all keys
