@@ -5,10 +5,8 @@
 package play.api.libs.json
 
 import java.util.{ LinkedHashMap => JLinkedHashMap }
-import scala.collection.AbstractIterator
-import scala.collection.MapFactory
 import scala.collection.immutable.AbstractMap
-import scala.collection.mutable
+import scala.collection.{ AbstractIterator, MapFactory, mutable }
 
 /**
  * Wraps a Java LinkedHashMap as a Scala immutable.Map.
@@ -26,6 +24,12 @@ private[json] class ImmutableLinkedHashMap[A, +B](underlying: JLinkedHashMap[A, 
   override def updated[V1 >: B](key: A, value: V1): Map[A, V1] = {
     val c = shallowCopy[V1](size + 1)
     c.put(key, value)
+    new ImmutableLinkedHashMap(c)
+  }
+
+  override def ++[V2 >: B](xs: IterableOnce[(A, V2)]): Map[A, V2] = {
+    val c = shallowCopy[V2]()
+    xs.iterator.foreach { case (k, v) => c.put(k, v) }
     new ImmutableLinkedHashMap(c)
   }
 
