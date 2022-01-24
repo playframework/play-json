@@ -1,4 +1,4 @@
-name: Pull Requests
+name: Check
 
 on:
   pull_request:
@@ -10,95 +10,31 @@ concurrency:
 
 jobs:
   check-code-style:
-    name: Check / Code Style
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
-
-      - name: Set up JDK 11
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.11
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: Code validations
-        run: sbt validateCode
+    name: Code Style
+    uses: ihostage/.github-play/.github/workflows/sbt.yml@sharable-actions
+    with:
+      cmd: sbt validateCode
 
   check-binary-compatibility:
-    name: Check / Binary Compatibility
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
-
-      - name: Set up JDK 11
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.11
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: MiMa validations
-        run: sbt mimaReportBinaryIssues
+    name: Binary Compatibility
+    uses: ihostage/.github-play/.github/workflows/binary-check.yml@sharable-actions
 
   check-docs:
-    name: Check / Docs
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
-
-      - name: Set up JDK 11
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.11
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: Docs validations
-        run: sbt docs/validateDocs
+    name: Docs
+    uses: ihostage/.github-play/.github/workflows/sbt.yml@sharable-actions
+    with:
+      cmd: sbt docs/validateDocs
 
   tests:
-    runs-on: ubuntu-20.04
+    name: Tests
     needs: # Waiting more lightweight checks
       - "check-code-style"
       - "check-binary-compatibility"
       - "check-docs"
-    strategy:
-      matrix:
-        jdk: [ 11, 8 ]
-        scala: [ 2.12.15, 2.13.8, 3.1.2-RC3 ] # Should be sync with Mergify conditions (.mergify.yml)
-    name: Check / Tests (Scala ${{ matrix.scala }} & JDK ${{ matrix.jdk }})
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
-
-      - name: Set up JDK ${{ matrix.jdk }}
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.${{ matrix.jdk }}
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: Tests
-        run: scripts/test-code.sh
-        env:
-          SCALA_VERSION: ${{ matrix.scala }}
+    uses: ihostage/.github-play/.github/workflows/sbt-matrix.yml@sharable-actions
+    with: # Should be sync with Mergify conditions (.mergify.yml)
+      java: >-
+        [ "11", "8" ]
+      scala: >-
+        [ "2.12.15", "2.13.8", "3.1.2-RC3" ]
+      cmd: scripts/test-code.sh
