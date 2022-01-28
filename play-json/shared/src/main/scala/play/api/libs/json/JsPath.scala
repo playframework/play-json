@@ -41,10 +41,10 @@ case class RecursiveSearch(key: String) extends PathNode {
 
   private[json] def splitChildren(json: JsValue) = json match {
     case obj: JsObject =>
-      obj.fields.toList.map { case (k, v) =>
+      obj.underlying.view.map { case (k, v) =>
         if (k == this.key) Right(this -> v)
         else Left(KeyPathNode(k)      -> v)
-      }
+      }.toList
     case arr: JsArray =>
       arr.value.toList.zipWithIndex.map { case (js, j) => Left(IdxPathNode(j) -> js) }
 
@@ -63,24 +63,17 @@ case class KeyPathNode(key: String) extends PathNode {
 
   def set(json: JsValue, transform: JsValue => JsValue): JsValue = json match {
     case obj: JsObject =>
-      var found = false
-      val o = JsObject(obj.fields.map { case (k, v) =>
-        if (k == this.key) {
-          found = true
-          k -> transform(v)
-        } else k -> v
-      })
-      if (!found) o ++ JsObject(Seq(this.key -> transform(JsObject.empty)))
-      else o
+      val transformed = transform(obj.underlying.getOrElse(key, JsObject.empty))
+      obj + (key -> transformed)
     case _ => transform(json)
   }
 
   private[json] def splitChildren(json: JsValue) = json match {
     case obj: JsObject =>
-      obj.fields.toList.map { case (k, v) =>
+      obj.underlying.view.map { case (k, v) =>
         if (k == this.key) Right(this -> v)
         else Left(KeyPathNode(k)      -> v)
-      }
+      }.toList
     case _ => List()
   }
 
@@ -282,7 +275,7 @@ case class JsPath(path: List[PathNode] = List()) {
 
     def filterPathNode(json: JsObject, node: PathNode, value: JsValue): JsResult[JsObject] = {
       node match {
-        case KeyPathNode(key) => JsSuccess(JsObject(json.fields.filterNot(_._1 == key)) ++ JsObject(Seq(key -> value)))
+        case KeyPathNode(key) => JsSuccess(json + (key -> value))
         case _                => JsError(JsPath(), JsonValidationError("error.expected.keypathnode"))
       }
     }
