@@ -5,12 +5,12 @@
 package play.api.libs.json
 
 case class Employee(
-  employeeNumber: Int,
-  firstName: String,
-  lastName: String,
-  city: String,
-  country: String,
-  tags: Seq[String]
+    employeeNumber: Int,
+    firstName: String,
+    lastName: String,
+    city: String,
+    country: String,
+    tags: Seq[String]
 )
 
 object Employee {
@@ -19,11 +19,11 @@ object Employee {
   val manualWrites: Writes[Employee] = Writes { e =>
     Json.obj(
       "employeeNumber" -> e.employeeNumber,
-      "firstName" -> e.firstName,
-      "lastName" -> e.lastName,
-      "city" -> e.city,
-      "country" -> e.country,
-      "tags" -> JsArray(e.tags.map(JsString.apply))
+      "firstName"      -> e.firstName,
+      "lastName"       -> e.lastName,
+      "city"           -> e.city,
+      "country"        -> e.country,
+      "tags"           -> JsArray(e.tags.map(JsString.apply))
     )
   }
 

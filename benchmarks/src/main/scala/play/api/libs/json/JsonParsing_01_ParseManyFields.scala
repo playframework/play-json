@@ -7,8 +7,8 @@ package play.api.libs.json
 import org.openjdk.jmh.annotations._
 
 /**
-  * @see https://github.com/playframework/play-json/pull/193
-  */
+ * @see https://github.com/playframework/play-json/pull/193
+ */
 @State(Scope.Benchmark)
 class JsonParsing_01_ParseManyFields {
   @Param(Array("10", "100", "1000", "10000", "100000"))
@@ -24,7 +24,8 @@ class JsonParsing_01_ParseManyFields {
   @Setup
   def setup(): Unit = {
     val value = "42"
-    stringToParse = HashCodeCollider.zeroHashCodeStrings.take(n)
+    stringToParse = HashCodeCollider.zeroHashCodeStrings
+      .take(n)
       .mkString("""{"s":"s","""", s"""":$value,"""", s"""":$value,"i":1}""")
   }
 
