@@ -65,6 +65,7 @@ object JsMacroImpl { // TODO: debug
   def anyValFormat[A <: AnyVal: Type](using
       Quotes
   ): Expr[Format[A]] = '{
+    // format: off
     Format[A](${ anyValReads[A] }, ${ anyValWrites[A] })
   }
 

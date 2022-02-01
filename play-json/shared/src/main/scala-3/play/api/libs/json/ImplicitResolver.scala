@@ -209,10 +209,10 @@ private[json] trait ImplicitResolver[A] {
         }
 
       s"// Resolve given ${prettyType(
-        TypeRepr.of(using tc)
-      )} for ${prettyType(ntpe)} as ${prettyType(
-        neededGivenType
-      )} (self? ${selfRef}) = ${show.mkString}"
+          TypeRepr.of(using tc)
+        )} for ${prettyType(ntpe)} as ${prettyType(
+          neededGivenType
+        )} (self? ${selfRef}) = ${show.mkString}"
     }
 
     neededGiven.map(_ -> selfRef)

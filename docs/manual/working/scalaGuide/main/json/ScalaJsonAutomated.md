@@ -55,7 +55,7 @@ The macros work for classes and traits meeting the following requirements.
 - The return types of the `unapply` must match the argument types of the `apply` method.
 - The parameter names of the `apply` method must be the same as the property names desired in the JSON.
 
-**Class in Scala 3.x:**
+**Class in Scala 3.1.x:** (+3.1.2-RC2)
 
 - It must be provided a [`Conversion`](https://dotty.epfl.ch/api/scala/Conversion.html) to a `_ <: Product`.
 - It must be provided a valid [`ProductOf`](https://dotty.epfl.ch/api/scala/deriving/Mirror$.html#ProductOf-0).

@@ -7,8 +7,6 @@ package play.api.libs.json
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import org.scalacheck.Gen
-
 class MacroScala2Spec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
   import MacroScala2Spec._
 

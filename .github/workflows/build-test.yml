@@ -81,7 +81,7 @@ jobs:
     strategy:
       matrix:
         jdk: [ 11, 8 ]
-        scala: [ 2.12.15, 2.13.8, 3.1.2-RC1-bin-20211222-c94b333-NIGHTLY ] # Should be sync with Mergify conditions (.mergify.yml)
+        scala: [ 2.12.15, 2.13.8, 3.1.2-RC2 ] # Should be sync with Mergify conditions (.mergify.yml)
     name: Check / Tests (Scala ${{ matrix.scala }} & JDK ${{ matrix.jdk }})
     steps:
       - name: Checkout
