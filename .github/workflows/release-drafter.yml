@@ -12,7 +12,7 @@ jobs:
       - uses: release-drafter/release-drafter@v5
         with:
           name: "Play JSON $RESOLVED_VERSION"
-          commitish: ${{ env.GITHUB_REF_NAME }}
+          commitish: "${{ env.GITHUB_REF_NAME }}"
           config-name: release-drafts/increasing-patch-version.yml # located in .github/ in the default branch within this or the .github repo
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
