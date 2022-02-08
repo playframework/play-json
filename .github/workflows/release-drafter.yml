@@ -15,5 +15,6 @@ jobs:
           config-name: release-drafts/increasing-patch-version.yml # located in .github/ in the default branch within this or the .github repo
           prerelease: true
           commitish: "${{ env.GITHUB_REF_NAME }}"
+          disable-releaser: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
