@@ -11,10 +11,10 @@ jobs:
     steps:
       - uses: release-drafter/release-drafter@v5
         with:
-          name: "Play JSON29 ${{ env.GITHUB_REF_NAME }} / $RESOLVED_VERSION"
+          name: "Play JSON29 ${{ github.ref_name }} / $RESOLVED_VERSION"
           config-name: release-drafts/increasing-patch-version.yml # located in .github/ in the default branch within this or the .github repo
           prerelease: true
-          commitish: "${{ env.GITHUB_REF_NAME }}"
+          commitish: ${{ github.ref_name }}
           disable-releaser: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
