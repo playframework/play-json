@@ -153,10 +153,12 @@ trait OptionHandlers {
     jsPath.readNullableWithDefault(defaultValue)
   }
 
+  // Not used by Scala3 macros
   final def formatHandler[T](jsPath: JsPath)(implicit format: Format[T]): OFormat[Option[T]] = {
     OFormat(readHandler(jsPath), writeHandler(jsPath))
   }
 
+  // Not used by Scala3 macros
   final def formatHandlerWithDefault[T](jsPath: JsPath, defaultValue: => Option[T])(implicit
       format: Format[T]
   ): OFormat[Option[T]] = {

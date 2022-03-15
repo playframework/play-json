@@ -45,6 +45,7 @@ case class RecursiveSearch(key: String) extends PathNode {
         if (k == this.key) Right(this -> v)
         else Left(KeyPathNode(k)      -> v)
       }.toList
+
     case arr: JsArray =>
       arr.value.toList.zipWithIndex.map { case (js, j) => Left(IdxPathNode(j) -> js) }
 
@@ -74,7 +75,8 @@ case class KeyPathNode(key: String) extends PathNode {
         if (k == this.key) Right(this -> v)
         else Left(KeyPathNode(k)      -> v)
       }.toList
-    case _ => List()
+
+    case _ => List.empty
   }
 
   private[json] override def toJsonField(value: JsValue) =
