@@ -84,19 +84,10 @@ object TestMacros:
     }
 
     val tpe = TypeRepr.of[T]
-    val tpeElements = Expr
-      .summon[ProductOf[T]]
-      .map {
-        helper.productElements(tpe, _).get
-      }
-      .getOrElse(List.empty[(Symbol, TypeRepr)])
+    val (tupleTpe, withTupled) =
+      helper.withTuple[T, P, String](tpe, toProduct)
 
-    val types = tpeElements.map(_._2)
-
-    val (tupleTpe, withTuple) =
-      helper.withTuple[T, P, String](tpe, toProduct, types)
-
-    withTuple(pure) { (tupled: Expr[P]) =>
+    withTupled(pure) { (tupled: Expr[P]) =>
       val a = Expr(tupleTpe.show)
 
       '{
@@ -127,10 +118,9 @@ object TestMacros:
         helper.productElements(tpe, _).get
       }
       .get
-    val types = tpeElements.map(_._2)
 
     val (tupleTpe, withTuple) =
-      helper.withTuple[T, T, String](tpe, '{ identity[T] }, types)
+      helper.withTuple[T, T, String](tpe, '{ identity[T] })
 
     withTuple(pure) { (tupled: Expr[T]) =>
       val fieldMap =
