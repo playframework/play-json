@@ -70,7 +70,7 @@ final class QuotesSpec extends AnyWordSpec with Matchers with org.scalatestplus.
       "from Foo" in {
         testWithTuple(
           Foo("1", 2)
-        ).mustEqual("scala.Tuple2[scala.Predef.String, scala.Int]/Foo(1,2)")
+        ) mustEqual "scala.Tuple2[scala.Predef.String, scala.Int]/Foo(1,2)"
       }
 
       "from generic Bar" in {
@@ -85,6 +85,39 @@ final class QuotesSpec extends AnyWordSpec with Matchers with org.scalatestplus.
         ).mustEqual(
           "scala.Tuple3[scala.Predef.String, scala.Option[scala.Int], scala.collection.immutable.Seq[scala.Double]]/Bar(bar2,Some(2),List(3.45))"
         )
+      }
+
+      "from BigFat" in {
+        val tooBig = BigFat(
+          a = 1,
+          b = 2D,
+          c = 3F,
+          d = "d",
+          e = Seq(1, 2, 3),
+          f = 6,
+          g = 7D,
+          h = 8F,
+          i = "i",
+          j = Seq(4, 5),
+          k = 10,
+          l = 11D,
+          m = 12F,
+          n = "n",
+          o = Seq(6, 7),
+          p = 13,
+          q = 14D,
+          r = 15F,
+          s = "s",
+          t = Seq(8),
+          u = 16F,
+          v = "v",
+          w = Seq(9, 10, 11),
+          x = 12,
+          y = Seq(13, 14),
+          z = 15D
+        )
+
+        testWithTuple[BigFat](tooBig).mustEqual("TODO")
       }
 
       "from non-case class" when {
@@ -142,6 +175,34 @@ end QuotesSpec
 case class Foo(bar: String, lorem: Int)
 
 case class Bar[T](name: String, opt: Option[T], scores: Seq[Double])
+
+case class BigFat(
+  a: Int,
+  b: Double,
+  c: Float,
+  d: String,
+  e: Seq[Int],
+  f: Int,
+  g: Double,
+  h: Float,
+  i: String,
+  j: Seq[Int],
+  k: Int,
+  l: Double,
+  m: Float,
+  n: String,
+  o: Seq[Int],
+  p: Int,
+  q: Double,
+  r: Float,
+  s: String,
+  t: Seq[Int],
+  u: Float,
+  v: String,
+  w: Seq[Int],
+  x: Int,
+  y: Seq[Int],
+  z: Double)
 
 object TestUnion:
   sealed trait UT
