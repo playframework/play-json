@@ -11,17 +11,17 @@ concurrency:
 jobs:
   check-code-style:
     name: Code Style
-    uses: ihostage/.github-play/.github/workflows/sbt.yml@sharable-actions
+    uses: playframework/.github/.github/workflows/sbt.yml@main
     with:
       cmd: sbt validateCode
 
   check-binary-compatibility:
     name: Binary Compatibility
-    uses: ihostage/.github-play/.github/workflows/binary-check.yml@sharable-actions
+    uses: playframework/.github/.github/workflows/binary-check.yml@main
 
   check-docs:
     name: Docs
-    uses: ihostage/.github-play/.github/workflows/sbt.yml@sharable-actions
+    uses: playframework/.github/.github/workflows/sbt.yml@main
     with:
       cmd: sbt docs/validateDocs
 
@@ -31,7 +31,7 @@ jobs:
       - "check-code-style"
       - "check-binary-compatibility"
       - "check-docs"
-    uses: ihostage/.github-play/.github/workflows/sbt-matrix.yml@sharable-actions
+    uses: playframework/.github/.github/workflows/sbt-matrix.yml@main
     with: # Should be sync with Mergify conditions (.mergify.yml)
       java: >-
         [ "11", "8" ]
