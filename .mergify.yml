@@ -24,7 +24,7 @@ pull_request_rules:
       - check-success~=^Tests / Scala 2\.12\.(\d+) & JDK 8$
       - check-success~=^Tests / Scala 2\.13\.(\d+) & JDK 8$
       - check-success~=^Tests / Scala 3\.(\d+)\.(\d+)(-RC\d+)? & JDK 8$
-      - status-success=typesafe-cla-validator
+      - check-success=typesafe-cla-validator
       - "#approved-reviews-by>=1"
       - "#review-requested=0"
       - "#changes-requested-reviews-by=0"
