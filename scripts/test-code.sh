@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-echo SCALA_VERSION=$SCALA_VERSION
-sbt -DscalaJSStage=full ++$SCALA_VERSION test publishLocal || exit 1
+echo MATRIX_SCALA=$MATRIX_SCALA
+sbt -DscalaJSStage=full ++$MATRIX_SCALA test publishLocal || exit 1
 
-case "$SCALA_VERSION" in
+case "$MATRIX_SCALA" in
   3.*) echo "SKIPPING docs/test" ;;
        # ^ because there is no play-docs for Scala 3
        #   and we can't use play-docs_2.13 because then:
@@ -11,5 +11,5 @@ case "$SCALA_VERSION" in
        #    [error]    com.typesafe.play:play-functional _2.13, _3.0.0-M3
        #    [error]    com.typesafe.play:play-json _2.13, _3.0.0-M3
 
-  *) sbt ++$SCALA_VERSION docs/test || exit 2 ;;
+  *) sbt ++$MATRIX_SCALA docs/test || exit 2 ;;
 esac
