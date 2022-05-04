@@ -31,7 +31,7 @@ jobs:
       - "check-code-style"
       - "check-binary-compatibility"
       - "check-docs"
-    uses: playframework/.github/.github/workflows/contact@playframework.com
+    uses: playframework/.github/.github/workflows/cmd.yml@dynamic_matrix
     with:
       java: >-
         [ "11", "8" ]
