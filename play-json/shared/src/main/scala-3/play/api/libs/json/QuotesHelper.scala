@@ -68,11 +68,11 @@ private[json] trait QuotesHelper {
             val tpeSym = child.typeSymbol
 
             if (
-              (tpeSym.flags.is(Flags.Abstract) &&
-                tpeSym.flags.is(Flags.Sealed) &&
-                !(child <:< anyValTpe)) ||
-              (tpeSym.flags.is(Flags.Sealed) &&
-                tpeSym.flags.is(Flags.Trait))
+              tpeSym.flags.is(Flags.Abstract) &&
+              tpeSym.flags.is(Flags.Sealed) &&
+              !(child <:< anyValTpe) ||
+              tpeSym.flags.is(Flags.Sealed) &&
+              tpeSym.flags.is(Flags.Trait)
             ) {
               // Ignore sub-trait itself, but check the sub-sub-classes
               subclasses(tpeSym.children.map(_.tree) ::: children.tail, out)
@@ -97,7 +97,7 @@ private[json] trait QuotesHelper {
       fields: List[(Symbol, TypeRepr, Symbol)],
       prepared: List[Tuple2[String, (Ref => Term) => Term]]
   ): Map[String, (Ref => Term) => Term] = fields match {
-    case (sym, t, f) :: tail => {
+    case sym, t, f :: tail => {
       val elem = ValDef.let(
         Symbol.spliceOwner,
         s"tuple${f.name}",
@@ -279,7 +279,7 @@ private[json] trait QuotesHelper {
                   n -> tt.tpe
               }
               .sortBy(_._1) match {
-              case (_, elmLabels) :: (_, elmTypes) :: Nil =>
+              case _, elmLabels :: _, elmTypes :: Nil =>
                 Option(prepare(elmLabels, elmTypes))
 
               case _ =>

@@ -161,7 +161,7 @@ object JsPath extends JsPath(List.empty) {
     objectMap.sizeHint(pathValues.size)
     val isSimpleObject = pathValues.forall {
       case (JsPath(KeyPathNode(key) :: Nil), value) =>
-        objectMap += (key -> value)
+        objectMap += key -> value
         true
       case _ =>
         false

@@ -57,7 +57,7 @@ sealed abstract class JsBoolean(val value: Boolean) extends JsValue with Product
     if (value) JsTrue else JsFalse
 
   override def equals(that: Any): Boolean =
-    canEqual(that) && (this.value == that.asInstanceOf[JsBoolean].value)
+    canEqual(that) && this.value == that.asInstanceOf[JsBoolean].value
 
   override def hashCode: Int = value.hashCode
 }
@@ -72,7 +72,7 @@ case object JsTrue extends JsBoolean(true)
  */
 case object JsFalse extends JsBoolean(false)
 
-object JsBoolean extends (Boolean => JsBoolean) {
+object JsBoolean extends Boolean => JsBoolean {
   def apply(value: Boolean): JsBoolean = if (value) JsTrue else JsFalse
 
   def unapply(b: JsBoolean): Some[Boolean] = Some(b.value)
@@ -114,7 +114,7 @@ case class JsArray(value: IndexedSeq[JsValue] = Array[JsValue]()) extends JsValu
   def prepend(el: JsValue): JsArray = this.+:(el)
 }
 
-object JsArray extends (IndexedSeq[JsValue] => JsArray) {
+object JsArray extends IndexedSeq[JsValue] => JsArray {
   def apply(value: collection.Seq[JsValue]) = new JsArray(value.toArray[JsValue])
 
   def empty = JsArray(Array.empty[JsValue])
@@ -205,7 +205,7 @@ case class JsObject(
   override def hashCode(): Int = MurmurHash3.unorderedHash(underlying, MurmurHash3.setSeed)
 }
 
-object JsObject extends (Seq[(String, JsValue)] => JsObject) {
+object JsObject extends Seq[(String, JsValue)] => JsObject {
 
   /**
    * INTERNAL API: create a fields map by wrapping a Java LinkedHashMap.

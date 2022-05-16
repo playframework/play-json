@@ -58,7 +58,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         r.reads(Json.obj()).mustEqual(JsSuccess(Optional(None)))
 
         (r.reads(JsString("foo")).asEither match {
-          case Left((_, err :: Nil) :: Nil) =>
+          case Left(_, err :: Nil :: Nil) =>
             err.message == "error.expected.jsobject"
 
           case _ => false

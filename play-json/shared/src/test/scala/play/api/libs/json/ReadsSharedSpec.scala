@@ -153,7 +153,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
 
       implicitly[KeyReads[URI]]
 
-      Json.fromJson[Map[URI, String]](Json.obj(key -> "foo")).mustEqual(JsSuccess(Map((new URI(key)) -> "foo")))
+      Json.fromJson[Map[URI, String]](Json.obj(key -> "foo")).mustEqual(JsSuccess(Map(new URI(key) -> "foo")))
     }
   }
 
@@ -211,11 +211,10 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
   "Functional Reads" should {
     import play.api.libs.functional.syntax._
 
-    implicit val reads: Reads[Owner] = (
+    implicit val reads: Reads[Owner] =
       (__ \ "login").read[String] and
         (__ \ "avatar").read[String] and
-        (__ \ "url").read[String]
-    )(Owner.apply _)
+        (__ \ "url").read[String] (Owner.apply _)
 
     "be successful for simple case class Owner" in {
       val jsObj = Json.obj(

@@ -12,7 +12,7 @@ import play.api.libs.functional.syntax._
 class JsonValidSpec extends Specification {
   "JSON reads" should {
     "validate Dates" in {
-      val d  = new java.util.Date()
+      val d  = new java.util.Date
       val df = new java.text.SimpleDateFormat("yyyy-MM-dd")
       val dd = df.parse(df.format(d))
 
@@ -45,7 +45,7 @@ class JsonValidSpec extends Specification {
           )
       ).tupled
 
-      val d = (new java.util.Date()).getTime()
+      val d = (new java.util.Date).getTime()
       Json
         .obj("type" -> "coucou", "data" -> Json.obj())
         .validate(TupleReads)

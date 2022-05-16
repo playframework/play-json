@@ -45,7 +45,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
   implicit val IntNumbersFormat: Format[IntNumbers]     = Json.format[IntNumbers]
   implicit val FloatNumbersFormat: Format[FloatNumbers] = Json.format[FloatNumbers]
 
-  implicit val PostFormat: Format[Post] = (
+  implicit val PostFormat: Format[Post] =
     (__ \ Symbol("body")).format[String] and
       (__ \ Symbol("created_at"))
         .formatNullable[Option[Date]](
@@ -54,20 +54,18 @@ class JsonSpec extends org.specs2.mutable.Specification {
             Writes.optionWithNull(Writes.dateWrites(dateFormat))
           )
         )
-        .inmap(optopt => optopt.flatten, (opt: Option[Date]) => Some(opt))
-  )(Post.apply, p => (p.body, p.created_at))
+        .inmap(optopt => optopt.flatten, (opt: Option[Date]) => Some(opt)) (Post.apply, p => (p.body, p.created_at))
 
-  val LenientPostFormat: Format[Post] = (
+  val LenientPostFormat: Format[Post] =
     (__ \ Symbol("body")).format[String] and
       (__ \ Symbol("created_at")).formatNullable[Date](
         Format(
           Reads.IsoDateReads,
           Writes.dateWrites(dateFormat)
         )
-      )
-  )(Post.apply, p => (p.body, p.created_at))
+      ) (Post.apply, p => (p.body, p.created_at))
 
-  val mapper = new ObjectMapper()
+  val mapper = new ObjectMapper
 
   "Complete JSON should create full object" >> {
     lazy val postDate: Date = dateParser.parse("2011-04-22T13:33:48Z")
@@ -357,9 +355,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
         .put("bar", "two")
       val json = Json.obj("foo" -> 1, "bar" -> "two")
 
-      toJson(on).must_==(json) and (
+      toJson(on).must_==(json) and
         fromJson[JsonNode](json).map(_.toString).must_==(JsSuccess(on.toString))
-      )
     }
 
     "Serialize and deserialize Jackson ArrayNodes" in {
@@ -368,9 +365,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
         .add("one")
         .add(2)
       val json = Json.arr("one", 2)
-      toJson(an).must(equalTo(json)) and (
+      toJson(an).must(equalTo(json)) and
         fromJson[JsonNode](json).map(_.toString).must_==(JsSuccess(an.toString))
-      )
     }
 
     "Deserialize integer JsNumber as Jackson number node" in {

@@ -409,5 +409,5 @@ object JsResult {
   private[JsResult] type Errors = Seq[(JsPath, Seq[JsonValidationError])]
 
   private[json] def repath(errors: Errors, path: JsPath): Errors =
-    errors.map { case (p, s) => (path ++ p) -> s }
+    errors.map { case (p, s) => path ++ p -> s }
 }

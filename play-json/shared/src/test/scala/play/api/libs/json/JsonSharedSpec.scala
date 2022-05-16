@@ -15,18 +15,17 @@ import org.scalatest.wordspec.AnyWordSpec
 class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
   case class User(id: Long, name: String, friends: List[User])
 
-  implicit val UserFormat: Format[User] = (
+  implicit val UserFormat: Format[User] =
     (__ \ Symbol("id")).format[Long] and
       (__ \ Symbol("name")).format[String] and
-      (__ \ Symbol("friends")).lazyFormat(Reads.list(UserFormat), Writes.list(UserFormat))
-  )(User.apply, u => (u.id, u.name, u.friends))
+      (__ \ Symbol("friends"))
+        .lazyFormat(Reads.list(UserFormat), Writes.list(UserFormat)) (User.apply, u => (u.id, u.name, u.friends))
 
   case class Car(id: Long, models: Map[String, String])
 
-  implicit val CarFormat: Format[Car] = (
+  implicit val CarFormat: Format[Car] =
     (__ \ Symbol("id")).format[Long] and
-      (__ \ Symbol("models")).format[Map[String, String]]
-  )(Car.apply, c => (c.id, c.models))
+      (__ \ Symbol("models")).format[Map[String, String]] (Car.apply, c => (c.id, c.models))
 
   def json[T](f: JsonFacade => T) = forAll(Gen.oneOf(Json, Json.configured, Json.using[Json.MacroOptions]))(f)
 
@@ -358,11 +357,10 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
         )
       )
 
-      implicit val testCaseWrites: Writes[TestCase] = (
+      implicit val testCaseWrites: Writes[TestCase] =
         (__ \ "id").write[String] and
           (__ \ "data" \ "attr1").write[String] and
-          (__ \ "data" \ "attr2").write[String]
-      )(t => (t.id, t.attr1, t.attr2))
+          (__ \ "data" \ "attr2").write[String] (t => (t.id, t.attr1, t.attr2))
 
       js.toJson(TestCase("my-id", "foo", "bar")).mustEqual(jo)
     }

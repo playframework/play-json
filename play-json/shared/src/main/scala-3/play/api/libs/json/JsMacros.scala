@@ -150,7 +150,7 @@ private[json] trait JsValueMacros {
     implicit object Format extends OFormat[Placeholder] {
 
       val success =
-        JsSuccess(new Placeholder())
+        JsSuccess(new Placeholder)
 
       def reads(json: JsValue): JsResult[Placeholder] = success
 

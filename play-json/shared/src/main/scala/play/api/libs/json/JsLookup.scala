@@ -120,7 +120,7 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
       obj.underlying.foldLeft(Seq[JsValue]())((o, pair) =>
         pair match {
           case (key, value) if key == fieldName => o ++ (value +: (value \\ fieldName))
-          case (_, value)                       => o ++ (value \\ fieldName)
+          case (_, value)                       => o ++ value \\ fieldName
         }
       )
 

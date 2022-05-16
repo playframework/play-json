@@ -631,7 +631,7 @@ trait EnvReads {
           else JsError("error.invalid.character")
         })
       } yield {
-        val builder = new Locale.Builder()
+        val builder = new Locale.Builder
 
         builder.setLocale(baseLocale)
 

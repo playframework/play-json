@@ -528,12 +528,12 @@ trait DefaultReads extends LowPriorityDefaultReads {
       in: List[(String, JsValue)],
       out: Builder[(K, V), Map[K, V]]
   )(implicit vr: Reads[V]): JsResult[Map[K, V]] = in match {
-    case (k, v) :: entries =>
+    case k, v :: entries =>
       key(k).flatMap(vk => v.validate[V].map(vk -> _)) match {
         case JsError(details) => JsError(details)
 
         case JsSuccess((vk, value), _) =>
-          mapObj[K, V](key, entries, out += (vk -> value))
+          mapObj[K, V](key, entries, out += vk -> value)
       }
 
     case _ => JsSuccess(out.result())
@@ -544,7 +544,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
     case JsObject(m) => {
       type Errors = Seq[(JsPath, Seq[JsonValidationError])]
       def locate(e: Errors, key: String) = e.map { case (p, valerr) =>
-        (JsPath \ key) ++ p -> valerr
+        JsPath \ key ++ p -> valerr
       }
 
       // !! Keep accumulating the error after the first one

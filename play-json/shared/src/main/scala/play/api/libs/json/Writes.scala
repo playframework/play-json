@@ -128,7 +128,7 @@ object OWrites extends PathWrites with ConstraintWrites {
 
     def writes(a: A): JsObject = {
       import scala.collection.JavaConverters._
-      val fieldsMap = new java.util.LinkedHashMap[String, JsValue]()
+      val fieldsMap = new java.util.LinkedHashMap[String, JsValue]
       writeFields(fieldsMap.asScala, a)
       JsObject(new ImmutableLinkedHashMap(fieldsMap))
     }

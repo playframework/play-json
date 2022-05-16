@@ -69,7 +69,7 @@ object JsonConfiguration {
 /**
  * Naming strategy, to map each class property to the corresponding column.
  */
-trait JsonNaming extends (String => String) {
+trait JsonNaming extends String => String {
 
   /**
    * Returns the column name for the class property.

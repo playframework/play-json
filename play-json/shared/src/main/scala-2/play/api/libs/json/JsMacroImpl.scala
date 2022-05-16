@@ -19,7 +19,7 @@ class JsMacroImpl(val c: blackbox.Context) {
   /** Only for internal purposes */
   object Placeholder {
     implicit object Format extends OFormat[Placeholder] {
-      val success                                     = JsSuccess(new Placeholder())
+      val success                                     = JsSuccess(new Placeholder)
       def reads(json: JsValue): JsResult[Placeholder] = success
       def writes(pl: Placeholder)                     = Json.obj()
     }
@@ -216,7 +216,7 @@ class JsMacroImpl(val c: blackbox.Context) {
           val tpe = appliedType(base.toTypeConstructor, out.reverse)
 
           tail match {
-            case (x, y, more) :: ts =>
+            case x, y, more :: ts =>
               refactor(x, y, (tpe :: more), ts, filter, replacement, altered)
 
             case _ => tpe -> altered
@@ -355,7 +355,7 @@ class JsMacroImpl(val c: blackbox.Context) {
       @tailrec
       private def conforms(types: Seq[(Type, Type)]): Boolean =
         types.headOption match {
-          case Some((TypeRef(NoPrefix, a, _), TypeRef(NoPrefix, b, _))) => { // for generic parameter
+          case Some(TypeRef(NoPrefix, a, _), TypeRef(NoPrefix, b, _)) => { // for generic parameter
             if (a.fullName != b.fullName) {
               debug(s"Type symbols are not compatible: $a != $b")
 
@@ -363,24 +363,24 @@ class JsMacroImpl(val c: blackbox.Context) {
             } else conforms(types.tail)
           }
 
-          case Some((a, b)) if a.typeArgs.size != b.typeArgs.size => {
+          case Some(a, b) if a.typeArgs.size != b.typeArgs.size => {
             debug(s"Type parameters are not matching: $a != $b")
             false
           }
 
-          case Some((a, b)) if a.typeArgs.isEmpty =>
+          case Some(a, b) if a.typeArgs.isEmpty =>
             if (a =:= b) conforms(types.tail)
             else {
               debug(s"Types are not compatible: $a != $b")
               false
             }
 
-          case Some((a, b)) if a.baseClasses != b.baseClasses => {
+          case Some(a, b) if a.baseClasses != b.baseClasses => {
             debug(s"Generic types are not compatible: $a != $b")
             false
           }
 
-          case Some((a, b)) =>
+          case Some(a, b) =>
             conforms((a.typeArgs, b.typeArgs).zipped ++: types.tail)
 
           case _ => true
@@ -483,7 +483,7 @@ class JsMacroImpl(val c: blackbox.Context) {
       } else q"$unlift($companionObject.$effectiveUnapply[..$tpeArgs])"
 
       @inline private def params: List[(Name, Type)] = applyFunction match {
-        case Some((_, _, ps, _)) => {
+        case Some(_, _, ps, _) => {
           val base = if (hasVarArgs) ps.init else ps
           val defs = base.map { p =>
             p.name -> p.typeSignature

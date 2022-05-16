@@ -382,10 +382,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       implicit def genericFormat[A: Format]: Format[GenericCaseClass[A]] =
         (
-          (
-            (__ \ "obj").format[A]
-          ).inmap
-        )(GenericCaseClass[A] _, x => (x.obj))
+          (__ \ "obj").format[A]
+        ).inmap(GenericCaseClass[A] _, x => x.obj)
 
       implicit val wrappedGenericIntFormat: OFormat[WrappedGenericInt] = Json.format[WrappedGenericInt]
 
@@ -405,10 +403,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       import play.api.libs.functional.syntax._
 
       implicit def genericEntityWrapperFormat[A: Format, B: Format]: Format[GenericCaseClass2[A, B]] =
-        (
-          (__ \ "obj1").format[A] and
-            (__ \ "obj2").format[B]
-        )(GenericCaseClass2[A, B] _, x => (x.obj1, x.obj2))
+        (__ \ "obj1").format[A] and
+          (__ \ "obj2").format[B] (GenericCaseClass2[A, B] _, x => (x.obj1, x.obj2))
 
       implicit val genericHolderFormat: OFormat[WrappedGenericIntString] = Json.format[WrappedGenericIntString]
 
@@ -493,10 +489,8 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       // val c2Reads1 = Json.reads[C2]
 
       implicit def c1Reads[A](implicit rds: Reads[Id[A]]): Reads[C1[A]] = {
-        (
-          (__ \ Symbol("id")).read(rds) and
-            (__ \ Symbol("name")).read[String]
-        )((id, name) => C1[A](id, name))
+        (__ \ Symbol("id")).read(rds) and
+          (__ \ Symbol("name")).read[String] ((id, name) => C1[A](id, name))
       }
 
       val js = Json.obj("id" -> 123L, "name" -> "toto")

@@ -8,7 +8,7 @@ import java.util.Locale
 
 object LocaleFixtures {
   def fullLocale =
-    new Locale.Builder()
+    new Locale.Builder
       .setLocale(Locale.FRANCE)
       .addUnicodeLocaleAttribute("foo")
       .addUnicodeLocaleAttribute("bar")

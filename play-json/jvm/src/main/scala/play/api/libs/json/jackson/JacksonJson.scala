@@ -126,7 +126,7 @@ private[jackson] case class ReadingList(content: mutable.ArrayBuffer[JsValue]) e
 // Context for reading an Object
 private[jackson] case class KeyRead(content: ListBuffer[(String, JsValue)], fieldName: String)
     extends DeserializerContext {
-  def addValue(value: JsValue): DeserializerContext = ReadingMap(content += (fieldName -> value))
+  def addValue(value: JsValue): DeserializerContext = ReadingMap(content += fieldName -> value)
 }
 
 // Context for reading one item of an Object (we already red fieldName)
@@ -157,14 +157,14 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       case JsSuccess(bigDecimal, _) =>
         (Some(JsNumber(bigDecimal)), parserContext)
 
-      case JsError((_, JsonValidationError("error.expected.numberdigitlimit" +: _) +: _) +: _) =>
+      case JsError(_, JsonValidationError("error.expected.numberdigitlimit" +: _) +: _ +: _) =>
         throw new IllegalArgumentException(s"Number is larger than supported for field '${jp.currentName}'")
 
-      case JsError((_, JsonValidationError("error.expected.numberscalelimit" +: _, args @ _*) +: _) +: _) =>
+      case JsError(_, JsonValidationError("error.expected.numberscalelimit" +: _, args @ _*) +: _ +: _) =>
         val scale = args.headOption.fold("")(scale => s" ($scale)")
         throw new IllegalArgumentException(s"Number scale$scale is out of limits for field '${jp.currentName}'")
 
-      case JsError((_, JsonValidationError("error.expected.numberformatexception" +: _) +: _) +: _) =>
+      case JsError(_, JsonValidationError("error.expected.numberformatexception" +: _) +: _ +: _) =>
         throw new NumberFormatException
 
       case JsError(errors) =>
@@ -274,7 +274,7 @@ private[json] object JacksonJson {
     mapper.readValue(jsonFactory.createParser(stream), classOf[JsValue])
 
   private def withStringWriter[T](f: StringWriter => T): T = {
-    val sw = new StringWriter()
+    val sw = new StringWriter
 
     try {
       f(sw)
@@ -304,7 +304,7 @@ private[json] object JacksonJson {
 
   def prettyPrint(jsValue: JsValue): String = withStringWriter { sw =>
     val gen = stringJsonGenerator(sw).setPrettyPrinter(
-      new DefaultPrettyPrinter()
+      new DefaultPrettyPrinter
     )
     val writer: ObjectWriter = mapper.writerWithDefaultPrettyPrinter()
 

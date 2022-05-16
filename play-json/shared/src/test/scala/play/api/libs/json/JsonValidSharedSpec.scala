@@ -301,15 +301,13 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "validate reads on the root path" when {
       case class Address(street: String, zip: String)
 
-      implicit val userReads: Reads[User] = (
+      implicit val userReads: Reads[User] =
         (__ \ "name").read[String] and
-          (__ \ "age").read[Int]
-      )(User.apply _)
+          (__ \ "age").read[Int] (User.apply _)
 
-      implicit val addressReads: Reads[Address] = (
+      implicit val addressReads: Reads[Address] =
         (__ \ "street").read[String] and
-          (__ \ "zip").read[String]
-      )(Address.apply _)
+          (__ \ "zip").read[String] (Address.apply _)
 
       val bobby = Json.obj(
         "name"   -> "bobby",
@@ -410,20 +408,16 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       implicit val userReads: Reads[User] = {
         import Reads.path._
-        (
-          at(JsPath \ "name")(Reads.minLength[String](5))
-            and
-              at(JsPath \ "age")(Reads.min(40))
-        )(User.apply _)
+        at(JsPath \ "name")(Reads.minLength[String](5))
+          and
+            at(JsPath \ "age")(Reads.min(40)) (User.apply _)
       }
 
       implicit val userWrites: OWrites[User] = {
         import Writes.path._
-        (
-          at[String](JsPath \ "name")
-            and
-              at[Int](JsPath \ "age")
-        )(u => (u.name, u.age))
+        at[String](JsPath \ "name")
+          and
+            at[Int](JsPath \ "age") (u => (u.name, u.age))
       }
 
       val js = Json.toJson(bobby)
@@ -436,11 +430,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       implicit val userFormats: OFormat[User] = {
         import Format.path._; import Format.constraints.{ of => o }
-        (
-          at(JsPath \ "name")(Format(Reads.minLength[String](5), o[String]))
-            and
-              at(JsPath \ "age")(Format(Reads.min(40), o[Int]))
-        )(User.apply, u => (u.name, u.age))
+        at(JsPath \ "name")(Format(Reads.minLength[String](5), o[String]))
+          and
+            at(JsPath \ "age")(Format(Reads.min(40), o[Int])) (User.apply, u => (u.name, u.age))
       }
 
       Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
@@ -525,11 +517,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
       val bobby = User("bobby", 54)
 
       implicit val userFormats: OFormat[User] = {
-        (
-          (__ \ Symbol("name")).format[String]
-            and
-              (__ \ Symbol("age")).format[Int]
-        )(User.apply, u => (u.name, u.age))
+        (__ \ Symbol("name")).format[String]
+          and
+            (__ \ Symbol("age")).format[Int] (User.apply, u => (u.name, u.age))
       }
 
       Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
@@ -538,11 +528,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "Format simpler syntax with constraints" in {
       val bobby = User("bobby", 54)
 
-      implicit val userFormat: OFormat[User] = (
+      implicit val userFormat: OFormat[User] =
         (__ \ Symbol("name")).format(Reads.minLength[String](5))
           and
-            (__ \ Symbol("age")).format(Reads.min(40))
-      )(User.apply, u => (u.name, u.age))
+            (__ \ Symbol("age")).format(Reads.min(40)) (User.apply, u => (u.name, u.age))
 
       Json.toJson(bobby).validate[User].mustEqual(JsSuccess(bobby))
     }
@@ -643,11 +632,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "manage nullable/option".taggedAs(UnstableInScala213) in {
       case class User(name: String, email: String, phone: Option[String])
 
-      implicit val UserReads: Reads[User] = (
+      implicit val UserReads: Reads[User] =
         (__ \ Symbol("name")).read[String] and
           (__ \ Symbol("coords") \ Symbol("email")).read(Reads.email) and
-          (__ \ Symbol("coords") \ Symbol("phone")).readNullable(Reads.minLength[String](8))
-      )(User.apply _)
+          (__ \ Symbol("coords") \ Symbol("phone")).readNullable(Reads.minLength[String](8)) (User.apply _)
 
       Json
         .obj(
@@ -714,10 +702,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "report correct path for validation errors" in {
       case class User(email: String, phone: Option[String])
 
-      implicit val UserReads: Reads[User] = (
+      implicit val UserReads: Reads[User] =
         (__ \ Symbol("email")).read(Reads.email) and
-          (__ \ Symbol("phone")).readNullable(Reads.minLength[String](8))
-      )(User.apply _)
+          (__ \ Symbol("phone")).readNullable(Reads.minLength[String](8)) (User.apply _)
 
       Json.obj("email" -> "john").validate[User].mustEqual(JsError(__ \ "email", JsonValidationError("error.email")))
       Json
@@ -729,11 +716,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "mix reads constraints" in {
       case class User(id: Long, email: String, age: Int)
 
-      implicit val UserReads: Reads[User] = (
+      implicit val UserReads: Reads[User] =
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("email")).read(Reads.email andKeep Reads.minLength[String](5)) and
-          (__ \ Symbol("age")).read(Reads.max(55).or(Reads.min(65)))
-      )(User.apply _)
+          (__ \ Symbol("age")).read(Reads.max(55).or(Reads.min(65))) (User.apply _)
 
       Json
         .obj("id" -> 123L, "email" -> "john.doe@blibli.com", "age" -> 50)
@@ -762,11 +748,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive reads" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit lazy val UserReads: Reads[User] = (
+      implicit lazy val UserReads: Reads[User] =
         (__ \ Symbol("id")).read[Long] and
           (__ \ Symbol("name")).read[String] and
-          (__ \ Symbol("friend")).lazyReadNullable(UserReads)
-      )(User.apply _)
+          (__ \ Symbol("friend")).lazyReadNullable(UserReads) (User.apply _)
 
       val js = Json.obj(
         "id"     -> 123L,
@@ -788,11 +773,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive writes" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit lazy val UserWrites: Writes[User] = (
+      implicit lazy val UserWrites: Writes[User] =
         (__ \ Symbol("id")).write[Long] and
           (__ \ Symbol("name")).write[String] and
-          (__ \ Symbol("friend")).lazyWriteNullable(UserWrites)
-      )(u => (u.id, u.name, u.friend))
+          (__ \ Symbol("friend")).lazyWriteNullable(UserWrites) (u => (u.id, u.name, u.friend))
 
       val js = Json.obj(
         "id"     -> 123L,
@@ -806,11 +790,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "recursive formats" in {
       case class User(id: Long, name: String, friend: Option[User] = None)
 
-      implicit lazy val UserFormats: Format[User] = (
+      implicit lazy val UserFormats: Format[User] =
         (__ \ Symbol("id")).format[Long] and
           (__ \ Symbol("name")).format[String] and
-          (__ \ Symbol("friend")).lazyFormatNullable(UserFormats)
-      )(User.apply, u => (u.id, u.name, u.friend))
+          (__ \ Symbol("friend")).lazyFormatNullable(UserFormats) (User.apply, u => (u.id, u.name, u.friend))
 
       val js = Json.obj(
         "id"     -> 123L,
@@ -876,7 +859,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
     "single field case class" in {
       case class Test(field: String)
-      val myFormat = (__ \ Symbol("field")).format[String].inmap(Test.apply, (t: Test) => (t.field))
+      val myFormat = (__ \ Symbol("field")).format[String].inmap(Test.apply, (t: Test) => t.field)
 
       myFormat.reads(Json.obj("field" -> "blabla")).mustEqual(JsSuccess(Test("blabla"), __ \ Symbol("field")))
       myFormat.reads(Json.obj()).mustEqual(JsError(__ \ Symbol("field"), "error.path.missing"))
@@ -945,11 +928,11 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
     "serialize JsError to json" in {
       val jserr = JsError(
         Seq(
-          (__ \ Symbol("field1") \ Symbol("field11")) -> Seq(
+          __ \ Symbol("field1") \ Symbol("field11") -> Seq(
             JsonValidationError(Seq("msg1.msg11", "msg1.msg12"), "arg11", 123L, 123.456F),
             JsonValidationError("msg2.msg21.msg22", 456, 123.456, true, 123)
           ),
-          (__ \ Symbol("field2") \ Symbol("field21")) -> Seq(
+          __ \ Symbol("field2") \ Symbol("field21") -> Seq(
             JsonValidationError("msg1.msg21", "arg1", Json.obj("test" -> "test2")),
             JsonValidationError("msg2", "arg1", "arg2")
           )
@@ -1015,10 +998,9 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit val UserWrites: OWrites[User] = (
+      implicit val UserWrites: OWrites[User] =
         (__ \ Symbol("email")).write[String] and
-          (__ \ Symbol("phone")).writeNullable[String]
-      )(u => (u.email, u.phone))
+          (__ \ Symbol("phone")).writeNullable[String] (u => (u.email, u.phone))
 
       Json.toJson(User("john.doe@blibli.com", None)).mustEqual(Json.obj("email" -> "john.doe@blibli.com"))
       Json
@@ -1061,10 +1043,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       case class User(email: String, phone: Option[String])
 
-      implicit val UserFormat: OFormat[User] = (
+      implicit val UserFormat: OFormat[User] =
         (__ \ Symbol("email")).format(email) and
-          (__ \ Symbol("phone")).formatNullable(Format(minLength[String](8), Writes.of[String]))
-      )(User.apply, u => (u.email, u.phone))
+          (__ \ Symbol("phone"))
+            .formatNullable(Format(minLength[String](8), Writes.of[String])) (User.apply, u => (u.email, u.phone))
 
       Json.obj("email" -> "john").validate[User].mustEqual(JsError(__ \ "email", JsonValidationError("error.email")))
       Json

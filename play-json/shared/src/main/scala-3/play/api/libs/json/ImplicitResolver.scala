@@ -79,7 +79,7 @@ private[json] trait ImplicitResolver[A] {
       val tpe = base._1.appliedTo(out.reverse)
 
       tail match {
-        case (x, y, more) :: ts =>
+        case x, y, more :: ts =>
           refactor(
             x,
             y,

@@ -301,7 +301,7 @@ trait EnvWrites {
 
           keywords.foreach { key =>
             Option(l.getUnicodeLocaleType(key)).foreach { typ =>
-              ks += (key -> typ)
+              ks += key -> typ
             }
           }
 
@@ -316,7 +316,7 @@ trait EnvWrites {
 
           extension.foreach { key =>
             Option(l.getExtension(key)).foreach { v =>
-              ext += (key.toString -> v)
+              ext += key.toString -> v
             }
           }
 

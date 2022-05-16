@@ -26,30 +26,22 @@ class JsonExtensionScala2Spec extends AnyWordSpec with Matchers {
 
       def functionalReads: Reads[WithDefault2] = {
         implicit val barReads: Reads[WithDefault1] = {
-          (
-            (__ \ "a").readWithDefault("a") and
-              (__ \ "b").readNullableWithDefault(Some("b"))
-          )(WithDefault1.apply _)
+          (__ \ "a").readWithDefault("a") and
+            (__ \ "b").readNullableWithDefault(Some("b")) (WithDefault1.apply _)
         }
 
-        (
-          (__ \ "a").readWithDefault("a") and
-            (__ \ "bar").readNullableWithDefault(Some(WithDefault1()))
-        )(WithDefault2.apply _)
+        (__ \ "a").readWithDefault("a") and
+          (__ \ "bar").readNullableWithDefault(Some(WithDefault1())) (WithDefault2.apply _)
       }
 
       def functionalFormat: Format[WithDefault2] = {
         implicit val barReads: Format[WithDefault1] = {
-          (
-            (__ \ "a").formatWithDefault("a") and
-              (__ \ "b").formatNullableWithDefault(Some("b"))
-          )(WithDefault1.apply, x => (x.a, x.b))
+          (__ \ "a").formatWithDefault("a") and
+            (__ \ "b").formatNullableWithDefault(Some("b")) (WithDefault1.apply, x => (x.a, x.b))
         }
 
-        (
-          (__ \ "a").formatWithDefault("a") and
-            (__ \ "bar").formatNullableWithDefault(Some(WithDefault1()))
-        )(WithDefault2.apply, x => (x.a, x.bar))
+        (__ \ "a").formatWithDefault("a") and
+          (__ \ "bar").formatNullableWithDefault(Some(WithDefault1())) (WithDefault2.apply, x => (x.a, x.bar))
       }
 
       def macroReads: Reads[WithDefault2] = {
@@ -74,7 +66,7 @@ class JsonExtensionScala2Spec extends AnyWordSpec with Matchers {
           .mustEqual(JsSuccess(WithDefault2(a = "z", bar = Some(WithDefault1(b = Some("z"))))))
         fooReads
           .reads(Json.obj("a" -> 1))
-          .mustEqual(JsError(List((JsPath \ "a") -> List(JsonValidationError("error.expected.jsstring")))))
+          .mustEqual(JsError(List(JsPath \ "a" -> List(JsonValidationError("error.expected.jsstring")))))
       }
 
       "by functional reads" in validateReads(functionalReads)

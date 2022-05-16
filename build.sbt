@@ -18,7 +18,7 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq("core", "junit").map { n =>
-    ("org.specs2" %% s"specs2-$n" % "4.15.0") % Test
+    "org.specs2" %% s"specs2-$n" % "4.15.0" % Test
   }
 
 val jacksonVersion         = "2.13.2"
@@ -152,17 +152,17 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
       },
       libraryDependencies ++=
         (CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, 13)) => Seq.empty
-          case Some((3, _))  => Seq.empty
-          case _             => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
+          case Some(2, 13) => Seq.empty
+          case Some(3, _)  => Seq.empty
+          case _           => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
         }),
       Compile / unmanagedSourceDirectories += {
         // val sourceDir = (sourceDirectory in Compile).value
         // ^ gives jvm/src/main, for some reason
         val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
         CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, n)) if n < 13 => sourceDir / "scala-2.13-"
-          case _                      => sourceDir / "scala-2.13+"
+          case Some(2, n) if n < 13 => sourceDir / "scala-2.13-"
+          case _                    => sourceDir / "scala-2.13+"
         }
       },
       Compile / sourceGenerators += Def.task {
@@ -230,9 +230,8 @@ lazy val `play-jsonJVM` = `play-json`.jvm
           specs2(scalaVersion.value).map(_.exclude("org.scala-lang.modules", "scala-xml_2.13"))
         else
           specs2(scalaVersion.value)
-      } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.2.11" % Test
-      ),
+      } :+
+        "ch.qos.logback" % "logback-classic" % "1.2.11" % Test,
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
   .settings(enableJol)
