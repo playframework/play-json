@@ -22,7 +22,7 @@ def specs2(scalaVersion: String) =
   }
 
 val jacksonVersion         = "2.13.2"
-val jacksonDatabindVersion = "2.13.2.2"
+val jacksonDatabindVersion = "2.13.3"
 
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
