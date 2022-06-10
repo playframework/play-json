@@ -45,16 +45,14 @@ def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
     case _ if isScala3.value               => Set.empty // no releases for Scala 3 yet
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
-    case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
-    case _                                 => throw new Error("Unable to determine previous version")
+    case (_, Some(previousVersion)) =>
+      val stableVersion = if (previousVersion.startsWith("2.10.0-RC")) "2.9.2" else previousVersion
+      Set(organization.value %%% moduleName.value % stableVersion)
+    case _ => throw new Error("Unable to determine previous version")
   }),
   mimaBinaryIssueFilters ++= Seq(
     // MergedOWrites is private
     ProblemFilters.exclude[Problem]("play.api.libs.json.OWrites#MergedOWrites*"),
-    // [error]  *        method unapply(play.api.libs.json.JsBoolean)scala.Option in object play.api.libs.json.JsBoolean has a different result type in current version, where it is scala.Some rather than scala.Option
-    // [error]  * static method unapply(play.api.libs.json.JsBoolean)scala.Option in  class play.api.libs.json.JsBoolean has a different result type in current version, where it is scala.Some rather than scala.Option
-    // Some is a subtype, which is safe because return types are covariant.
-    ProblemFilters.exclude[IncompatibleResultTypeProblem]("play.api.libs.json.JsBoolean.unapply"),
     // [error]  * in current version, classes mixing play.api.libs.json.DefaultWrites need be recompiled to wire to the new static mixin forwarder method all super calls to method enumNameWrites()play.api.libs.json.Writes
     // Despite not being `sealed` or documented, I don't think DefaultWrites was intended to be extended by users.
     ProblemFilters.exclude[NewMixinForwarderProblem]("play.api.libs.json.DefaultWrites.enumNameWrites"),

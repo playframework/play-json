@@ -75,7 +75,7 @@ case object JsFalse extends JsBoolean(false)
 object JsBoolean extends (Boolean => JsBoolean) {
   def apply(value: Boolean): JsBoolean = if (value) JsTrue else JsFalse
 
-  def unapply(b: JsBoolean): Some[Boolean] = Some(b.value)
+  def unapply(b: JsBoolean): Option[Boolean] = Some(b.value)
 }
 
 /**
