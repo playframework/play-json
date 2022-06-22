@@ -1,7 +1,11 @@
-name: Pull Requests
+name: Check
 
 on:
   pull_request:
+
+  push:
+    branches:
+      - main # Check branch after merge
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
@@ -10,95 +14,36 @@ concurrency:
 
 jobs:
   check-code-style:
-    name: Check / Code Style
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
-
-      - name: Set up JDK 11
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.11
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: Code validations
-        run: sbt validateCode
+    name: Code Style
+    uses: playframework/.github/.github/workflows/cmd.yml@v2
+    with:
+      cmd: sbt validateCode
 
   check-binary-compatibility:
-    name: Check / Binary Compatibility
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
-
-      - name: Set up JDK 11
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.11
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: MiMa validations
-        run: sbt mimaReportBinaryIssues
+    name: Binary Compatibility
+    uses: playframework/.github/.github/workflows/binary-check.yml@v2
 
   check-docs:
-    name: Check / Docs
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
-
-      - name: Set up JDK 11
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.11
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: Docs validations
-        run: sbt docs/validateDocs
+    name: Docs
+    uses: playframework/.github/.github/workflows/cmd.yml@v2
+    with:
+      cmd: sbt docs/validateDocs
 
   tests:
-    runs-on: ubuntu-20.04
-    needs: # Waiting more lightweight checks
+    name: Tests
+    needs:
       - "check-code-style"
       - "check-binary-compatibility"
       - "check-docs"
-    strategy:
-      matrix:
-        jdk: [ 11, 8 ]
-        scala: [ 2.12.15, 2.13.8, 3.1.2-RC2 ] # Should be sync with Mergify conditions (.mergify.yml)
-    name: Check / Tests (Scala ${{ matrix.scala }} & JDK ${{ matrix.jdk }})
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
-          fetch-depth: 0
+    uses: playframework/.github/.github/workflows/cmd.yml@v2
+    with:
+      java: 11, 8
+      scala: 2.12.15, 2.13.8, 3.1.3-RC3
+      cmd: scripts/test-code.sh
 
-      - name: Set up JDK ${{ matrix.jdk }}
-        uses: olafurpg/setup-scala@v13
-        with:
-          java-version: adopt@1.${{ matrix.jdk }}
-
-      - name: Cache Coursier cache
-        uses: coursier/cache-action@v6.2
-
-      - name: Tests
-        run: scripts/test-code.sh
-        env:
-          SCALA_VERSION: ${{ matrix.scala }}
+  finish:
+    name: Finish
+    if: github.event_name == 'pull_request'
+    needs: # Should be last
+      - "tests"
+    uses: playframework/.github/.github/workflows/rtm.yml@v2

@@ -18,15 +18,15 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq("core", "junit").map { n =>
-    ("org.specs2" %% s"specs2-$n" % "4.14.1").cross(CrossVersion.for3Use2_13) % Test
+    ("org.specs2" %% s"specs2-$n" % "4.15.0") % Test
   }
 
-val jacksonVersion         = "2.11.4"
-val jacksonDatabindVersion = jacksonVersion
-
+val jacksonDatabindVersion = "2.13.3"
 val jacksonDatabind = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
+
+val jacksonVersion = "2.13.3"
 val jacksons = Seq(
   "com.fasterxml.jackson.core"     % "jackson-core",
   "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -35,7 +35,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.10.13"
+  "joda-time" % "joda-time" % "2.10.14"
 )
 
 // Common settings
@@ -45,16 +45,14 @@ def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
     case _ if isScala3.value               => Set.empty // no releases for Scala 3 yet
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
-    case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
-    case _                                 => throw new Error("Unable to determine previous version")
+    case (_, Some(previousVersion)) =>
+      val stableVersion = if (previousVersion.startsWith("2.10.0-RC")) "2.9.2" else previousVersion
+      Set(organization.value %%% moduleName.value % stableVersion)
+    case _ => throw new Error("Unable to determine previous version")
   }),
   mimaBinaryIssueFilters ++= Seq(
     // MergedOWrites is private
     ProblemFilters.exclude[Problem]("play.api.libs.json.OWrites#MergedOWrites*"),
-    // [error]  *        method unapply(play.api.libs.json.JsBoolean)scala.Option in object play.api.libs.json.JsBoolean has a different result type in current version, where it is scala.Some rather than scala.Option
-    // [error]  * static method unapply(play.api.libs.json.JsBoolean)scala.Option in  class play.api.libs.json.JsBoolean has a different result type in current version, where it is scala.Some rather than scala.Option
-    // Some is a subtype, which is safe because return types are covariant.
-    ProblemFilters.exclude[IncompatibleResultTypeProblem]("play.api.libs.json.JsBoolean.unapply"),
     // [error]  * in current version, classes mixing play.api.libs.json.DefaultWrites need be recompiled to wire to the new static mixin forwarder method all super calls to method enumNameWrites()play.api.libs.json.Writes
     // Despite not being `sealed` or documented, I don't think DefaultWrites was intended to be extended by users.
     ProblemFilters.exclude[NewMixinForwarderProblem]("play.api.libs.json.DefaultWrites.enumNameWrites"),
@@ -81,17 +79,10 @@ val scalacOpts = Seq(
 // Customise sbt-dynver's behaviour to make it work with tags which aren't v-prefixed
 ThisBuild / dynverVTagPrefix := false
 
-// We are publishing snapshots to Sonatype
-ThisBuild / dynverSonatypeSnapshots := true
-
 // Sanity-check: assert that version comes from a tag (e.g. not a too-shallow clone)
 // https://github.com/dwijnand/sbt-dynver/#sanity-checking-the-version
 Global / onLoad := (Global / onLoad).value.andThen { s =>
-  val v = version.value
-  if (dynverGitDescribeOutput.value.hasNoTags)
-    throw new MessageOnlyException(
-      s"Failed to derive version from git tags. Maybe run `git fetch --unshallow`? Version: $v"
-    )
+  dynverAssertTagVersion.value
   s
 }
 
@@ -145,10 +136,10 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
           Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
       ),
       libraryDependencies ++= Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.11"   % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.2.12"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.11.0" % Test,
-        "org.scalacheck"    %%% "scalacheck"      % "1.15.4"   % Test,
-        ("com.chuusai" %% "shapeless" % "2.3.7").cross(CrossVersion.for3Use2_13) % Test
+        "org.scalacheck"    %%% "scalacheck"      % "1.16.0"   % Test,
+        ("com.chuusai" %% "shapeless" % "2.3.9").cross(CrossVersion.for3Use2_13) % Test
       ),
       libraryDependencies += {
         if (isScala3.value) {
@@ -311,4 +302,11 @@ lazy val docs = project
   .settings(commonSettings)
   .dependsOn(`play-jsonJVM`)
 
-addCommandAlias("validateCode", ";headerCheck;Test/headerCheck;+scalafmtCheckAll;scalafmtSbtCheck")
+addCommandAlias(
+  "validateCode",
+  List(
+    "headerCheckAll",
+    "scalafmtSbtCheck",
+    "scalafmtCheckAll",
+  ).mkString(";")
+)
