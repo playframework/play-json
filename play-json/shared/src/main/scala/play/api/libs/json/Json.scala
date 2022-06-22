@@ -227,7 +227,8 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
     JsValueWrapperImpl(w.writes(field))
 
   def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map(f => (f._1, unwrap(f._2))))
-  def arr(items: JsValueWrapper*): JsArray             = JsArray(items.iterator.map(unwrap).toArray[JsValue])
+
+  def arr(items: JsValueWrapper*): JsArray = JsArray(items.iterator.map(unwrap).toArray[JsValue])
 
   // Passed nulls will typecheck without needing the implicit conversion, so they need to checked at runtime
   private def unwrap(wrapper: JsValueWrapper) = wrapper match {

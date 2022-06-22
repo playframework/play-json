@@ -673,8 +673,7 @@ object JsMacroImpl { // TODO: debug
           ${ f('{ ok }) }
         }
 
-      val (tupleTpe, withTupled) =
-        withTuple[T, P, JsObject](tpr, toProduct, types)
+      val (tupleTpe, withTupled) = withTuple[T, P, JsObject](tpr, toProduct)
 
       def writeFields(input: Expr[T]): Expr[JsObject] =
         withTupled(input) { tupled =>

@@ -70,21 +70,29 @@ final class QuotesSpec extends AnyWordSpec with Matchers with org.scalatestplus.
       "from Foo" in {
         testWithTuple(
           Foo("1", 2)
-        ).mustEqual("scala.Tuple2[scala.Predef.String, scala.Int]/Foo(1,2)")
+        ).mustEqual("play.api.libs.json.Foo/Foo(1,2)")
       }
 
       "from generic Bar" in {
         testWithTuple(
           Bar[Double]("bar1", None, Seq(1.2D, 34.5D))
         ).mustEqual(
-          "scala.Tuple3[scala.Predef.String, scala.Option[scala.Double], scala.collection.immutable.Seq[scala.Double]]/Bar(bar1,None,List(1.2, 34.5))"
+          "play.api.libs.json.Bar[scala.Double]/Bar(bar1,None,List(1.2, 34.5))"
         )
 
         testWithTuple(
           Bar[Int]("bar2", Some(2), Seq(3.45D))
         ).mustEqual(
-          "scala.Tuple3[scala.Predef.String, scala.Option[scala.Int], scala.collection.immutable.Seq[scala.Double]]/Bar(bar2,Some(2),List(3.45))"
+          "play.api.libs.json.Bar[scala.Int]/Bar(bar2,Some(2),List(3.45))"
         )
+      }
+
+      "from BigFat" in {
+        List(
+          "play.api.libs.json.BigFat/BigFat(1,2.0,3.0,d,List(1, 2, 3),6,7.0,8.0,i,List(4, 5),10,11.0,12.0,n,List(6, 7),13,14.0,15.0,s,List(8),16.0,v,List(9, 10, 11),12,List(13, 14),15.0)", // JVM: With .0 for Double & Float
+          "play.api.libs.json.BigFat/BigFat(1,2,3,d,List(1, 2, 3),6,7,8,i,List(4, 5),10,11,12,n,List(6, 7),13,14,15,s,List(8),16,v,List(9, 10, 11),12,List(13, 14),15)"
+        ).contains(testWithTuple[BigFat](BigFat.example)).mustEqual(true)
+
       }
 
       "from non-case class" when {
@@ -97,7 +105,7 @@ final class QuotesSpec extends AnyWordSpec with Matchers with org.scalatestplus.
 
           testWithTuple(
             new TestUnion.UC("name", 2)
-          ).mustEqual("scala.Tuple$package.EmptyTuple/(name,2)")
+          ).mustEqual("scala.Tuple2[scala.Predef.String, scala.Int]/(name,2)")
         }
 
         "be successful when conversion is provided" in {
@@ -121,6 +129,16 @@ final class QuotesSpec extends AnyWordSpec with Matchers with org.scalatestplus.
           Bar("bar3", Some("opt2"), Seq(3.1D, 4.5D))
         ).mustEqual("name=bar3,opt=Some(opt2),scores=List(3.1, 4.5)")
       }
+
+      "BigFat" in {
+        val jvmToStr =
+          "e=List(1, 2, 3),n=n,t=List(8),a=1,m=12.0,i=i,v=v,p=13,r=15.0,w=List(9, 10, 11),k=10,s=s,x=12,j=List(4, 5),y=List(13, 14),u=16.0,f=6,q=14.0,b=2.0,g=7.0,l=11.0,c=3.0,h=8.0,o=List(6, 7),z=15.0,d=d" // With .0 for decimal
+
+        val jsToStr =
+          "e=List(1, 2, 3),n=n,t=List(8),a=1,m=12,i=i,v=v,p=13,r=15,w=List(9, 10, 11),k=10,s=s,x=12,j=List(4, 5),y=List(13, 14),u=16,f=6,q=14,b=2,g=7,l=11,c=3,h=8,o=List(6, 7),z=15,d=d"
+
+        Seq(jvmToStr, jsToStr).contains(testWithFields(BigFat.example)).mustEqual(true)
+      }
     }
   }
 
@@ -142,6 +160,66 @@ end QuotesSpec
 case class Foo(bar: String, lorem: Int)
 
 case class Bar[T](name: String, opt: Option[T], scores: Seq[Double])
+
+case class BigFat(
+    a: Int,
+    b: Double,
+    c: Float,
+    d: String,
+    e: Seq[Int],
+    f: Int,
+    g: Double,
+    h: Float,
+    i: String,
+    j: Seq[Int],
+    k: Int,
+    l: Double,
+    m: Float,
+    n: String,
+    o: Seq[Int],
+    p: Int,
+    q: Double,
+    r: Float,
+    s: String,
+    t: Seq[Int],
+    u: Float,
+    v: String,
+    w: Seq[Int],
+    x: Int,
+    y: Seq[Int],
+    z: Double
+)
+
+object BigFat {
+  def example = BigFat(
+    a = 1,
+    b = 2D,
+    c = 3F,
+    d = "d",
+    e = Seq(1, 2, 3),
+    f = 6,
+    g = 7D,
+    h = 8F,
+    i = "i",
+    j = Seq(4, 5),
+    k = 10,
+    l = 11D,
+    m = 12F,
+    n = "n",
+    o = Seq(6, 7),
+    p = 13,
+    q = 14D,
+    r = 15F,
+    s = "s",
+    t = Seq(8),
+    u = 16F,
+    v = "v",
+    w = Seq(9, 10, 11),
+    x = 12,
+    y = Seq(13, 14),
+    z = 15D
+  )
+}
 
 object TestUnion:
   sealed trait UT
