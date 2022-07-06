@@ -14,7 +14,7 @@ object FunctionalCanBuild {
   implicit def functionalCanBuildApplicative[M[_]](implicit app: Applicative[M]): FunctionalCanBuild[M] =
     new FunctionalCanBuild[M] {
       def apply[A, B](a: M[A], b: M[B]): M[A ~ B] =
-        app.apply(app.map[A, B => A ~ B](a, a => ((b: B) => new ~(a, b))), b)
+        app.apply(app.map[A, B => A ~ B](a, a => (b: B) => new ~(a, b)), b)
     }
 }
 

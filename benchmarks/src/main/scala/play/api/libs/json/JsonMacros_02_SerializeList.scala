@@ -14,7 +14,7 @@ class JsonMacros_02_SerializeList {
 
   @Setup(Level.Iteration)
   def setup(): Unit = {
-    employees = (1.to(100)).map { id =>
+    employees = 1.to(100).map { id =>
       Employee(
         id,
         s"Foo$id",

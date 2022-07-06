@@ -14,7 +14,7 @@ class JsonDeserialize_01_List {
 
   @Setup(Level.Iteration)
   def setup(): Unit = {
-    val employees: Seq[Employee] = (1.to(100)).map { id =>
+    val employees: Seq[Employee] = 1.to(100).map { id =>
       Employee(
         id,
         s"Foo$id",

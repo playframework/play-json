@@ -265,7 +265,7 @@ private[json] trait QuotesHelper {
             TypeBounds(t2 @ TermRef(_, _), _)
           ) if {
             val emptyTupTpe = TypeRepr.of[EmptyTuple]
-            (Ref.term(t1).tpe <:< emptyTupTpe && Ref.term(t2).tpe <:< emptyTupTpe)
+            Ref.term(t1).tpe <:< emptyTupTpe && Ref.term(t2).tpe <:< emptyTupTpe
           } =>
         None
 

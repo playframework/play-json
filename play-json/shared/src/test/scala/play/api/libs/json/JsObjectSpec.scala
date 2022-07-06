@@ -267,7 +267,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
       val originalObj = Json.obj(
         "arrayWithNulls" -> Json.arr(
           null,
-          (null: String),
+          null: String,
           JsNull
         )
       )
