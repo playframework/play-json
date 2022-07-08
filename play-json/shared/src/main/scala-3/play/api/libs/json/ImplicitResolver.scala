@@ -45,7 +45,7 @@ private[json] trait ImplicitResolver[A] {
           refactor(
             ts,
             base,
-            (replacement :: out),
+            replacement :: out,
             tail,
             filter,
             replacement,
@@ -67,7 +67,7 @@ private[json] trait ImplicitResolver[A] {
           refactor(
             ts,
             base,
-            (t :: out),
+            t :: out,
             tail,
             filter,
             replacement,
@@ -83,7 +83,7 @@ private[json] trait ImplicitResolver[A] {
           refactor(
             x,
             y,
-            (tpe :: more),
+            tpe :: more,
             ts,
             filter,
             replacement,

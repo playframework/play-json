@@ -632,7 +632,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         .validate(jsonTransformer)
         .mustEqual(
           // JsError( (__ \ 'key3), "error.expected.jsarray" ) ++
-          JsError((__ \ Symbol("key2") \ Symbol("key22")), "error.path.missing")
+          JsError(__ \ Symbol("key2") \ Symbol("key22"), "error.path.missing")
         )
 
       js.validate(jsonTransformer).mustEqual(JsSuccess(res))
@@ -743,8 +743,8 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         .obj("id" -> 123L, "email" -> "john.doe@blibli.com", "age" -> 60)
         .validate[User]
         .mustEqual(
-          JsError((__ \ Symbol("age")), JsonValidationError("error.max", 55)) ++ JsError(
-            (__ \ Symbol("age")),
+          JsError(__ \ Symbol("age"), JsonValidationError("error.max", 55)) ++ JsError(
+            __ \ Symbol("age"),
             JsonValidationError("error.min", 65)
           )
         )
@@ -752,10 +752,10 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         .obj("id" -> 123L, "email" -> "john.doe", "age" -> 60)
         .validate[User]
         .mustEqual(
-          JsError((__ \ Symbol("email")), JsonValidationError("error.email")) ++ JsError(
-            (__ \ Symbol("age")),
+          JsError(__ \ Symbol("email"), JsonValidationError("error.email")) ++ JsError(
+            __ \ Symbol("age"),
             JsonValidationError("error.max", 55)
-          ) ++ JsError((__ \ Symbol("age")), JsonValidationError("error.min", 65))
+          ) ++ JsError(__ \ Symbol("age"), JsonValidationError("error.min", 65))
         )
     }
 
@@ -876,7 +876,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
     "single field case class" in {
       case class Test(field: String)
-      val myFormat = (__ \ Symbol("field")).format[String].inmap(Test.apply, (t: Test) => (t.field))
+      val myFormat = (__ \ Symbol("field")).format[String].inmap(Test.apply, (t: Test) => t.field)
 
       myFormat.reads(Json.obj("field" -> "blabla")).mustEqual(JsSuccess(Test("blabla"), __ \ Symbol("field")))
       myFormat.reads(Json.obj()).mustEqual(JsError(__ \ Symbol("field"), "error.path.missing"))
