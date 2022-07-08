@@ -129,6 +129,11 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .in(file("play-json"))
   .enablePlugins(Omnidoc, Playdoc)
   .configs(Docs)
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
+    )
+  )
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
       libraryDependencies ++= (
