@@ -172,6 +172,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
     val optTpeCtor  = typeOf[Option[_]].typeConstructor
     val forwardName = TermName(c.freshName("forward"))
+    val configName  = TermName(c.freshName("config"))
 
     // MacroOptions
     val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
@@ -608,18 +609,18 @@ class JsMacroImpl(val c: blackbox.Context) {
               )
             }
 
-            cq"name if name == $config.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)"
+            cq"name if name == $configName.typeNaming(${t.typeSymbol.fullName}) => $reader.reads(vjs)"
           } :+ cq"""_ => $json.JsError("error.invalid")"""
         )
 
         q"""(_: $json.JsValue) match {
-          case obj @ $json.JsObject(_) => obj.value.get($config.discriminator) match {
+          case obj @ $json.JsObject(_) => obj.value.get($configName.discriminator) match {
              case Some(tjs) => {
                val vjs = obj.value.get("_value").getOrElse(obj)
                tjs.validate[String].flatMap { dis => $cases }
              }
 
-             case _ => $json.JsError($JsPath \ $config.discriminator, "error.missing.path")
+             case _ => $json.JsError($JsPath \ $configName.discriminator, "error.missing.path")
           }
 
           case _ => $json.JsError("error.expected.jsobject")
@@ -657,7 +658,7 @@ class JsMacroImpl(val c: blackbox.Context) {
               case jsv => $json.JsObject(Seq("_value" -> jsv))
             }
 
-            $json.JsObject(Map($config.discriminator -> $json.JsString($config.typeNaming(${t.typeSymbol.fullName})))) ++ jso
+            $json.JsObject(Map($configName.discriminator -> $json.JsString($configName.typeNaming(${t.typeSymbol.fullName})))) ++ jso
           }"""
           }
         )
@@ -720,7 +721,7 @@ class JsMacroImpl(val c: blackbox.Context) {
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
           val cn = c.Expr[String](
-            q"$config.naming(${name.decodedName.toString})"
+            q"$configName.naming(${name.decodedName.toString})"
           )
           val jspathTree = q"$JsPath \ $cn"
           val isOption   = pt.typeConstructor <:< optTpeCtor
@@ -734,11 +735,11 @@ class JsMacroImpl(val c: blackbox.Context) {
           (isOption, defaultValue) match {
             case (true, Some(v)) =>
               val c = TermName(s"${methodName}HandlerWithDefault")
-              q"$config.optionHandlers.$c($jspathTree, $v)($impl)"
+              q"$configName.optionHandlers.$c($jspathTree, $v)($impl)"
 
             case (true, _) =>
               val c = TermName(s"${methodName}Handler")
-              q"$config.optionHandlers.$c($jspathTree)($impl)"
+              q"$configName.optionHandlers.$c($jspathTree)($impl)"
 
             case (false, Some(v)) =>
               val c = TermName(s"${methodName}WithDefault")
@@ -865,7 +866,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
     // ---
 
-    directKnownSubclasses match {
+    val impl = directKnownSubclasses match {
       case Some(subTypes) => macroSealedFamilyImpl(subTypes)
 
       case _ =>
@@ -879,6 +880,8 @@ class JsMacroImpl(val c: blackbox.Context) {
             )
         }
     }
+
+    c.Expr[M[A]](q"val ${configName} = $config; ${impl}")
   }
 
   private lazy val debugEnabled =

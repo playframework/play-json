@@ -463,12 +463,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         "_type" -> JsString("optional")
       )
 
-      Json.toJson[Family](simple) mustEqual jsSimple
-      Json.toJson[Family](optional) mustEqual jsOptional
-      jsSimple.validate[Family] mustEqual JsSuccess(simple)
-      jsOptional.validate[Family] mustEqual JsSuccess(optional)
-      jsSimple.validate(Json.reads[Simple]) mustEqual JsSuccess(simple)
-      jsOptional.validate(Json.reads[Optional]) mustEqual JsSuccess(optional)
+      Json.toJson[Family](simple).mustEqual(jsSimple)
+      Json.toJson[Family](optional).mustEqual(jsOptional)
+      jsSimple.validate[Family].mustEqual(JsSuccess(simple))
+      jsOptional.validate[Family].mustEqual(JsSuccess(optional))
+      jsSimple.validate(Json.reads[Simple]).mustEqual(JsSuccess(simple))
+      jsOptional.validate(Json.reads[Optional]).mustEqual(JsSuccess(optional))
     }
 
     "handle case objects as empty JsObject" in {
@@ -479,10 +479,10 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       val jsObj = Json.obj()
 
-      writer.writes(Obj) mustEqual jsObj
-      reader.reads(jsObj) mustEqual JsSuccess(Obj)
-      formatter.writes(Obj) mustEqual jsObj
-      formatter.reads(jsObj) mustEqual JsSuccess(Obj)
+      writer.writes(Obj).mustEqual(jsObj)
+      reader.reads(jsObj).mustEqual(JsSuccess(Obj))
+      formatter.writes(Obj).mustEqual(jsObj)
+      formatter.reads(jsObj).mustEqual(JsSuccess(Obj))
     }
 
     "handle refinement type as case class field" in {
@@ -492,30 +492,18 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val reader = Json.reads[Preference[Int]]
       val format = Json.format[Preference[String]]
 
-      val pref1 = Preference(
-        key = "foo",
-        kind = PrefKind.of[String]("ID"),
-        value = "unique")
+      val pref1 = Preference(key = "foo", kind = PrefKind.of[String]("ID"), value = "unique")
 
-      val jsPref1 = Json.obj(
-        "key" -> "foo",
-        "kind" -> Json.obj("name" -> "ID"),
-        "value" -> "unique")
+      val jsPref1 = Json.obj("key" -> "foo", "kind" -> Json.obj("name" -> "ID"), "value" -> "unique")
 
-      writer.writes(pref1) mustEqual jsPref1
-      format.reads(jsPref1) mustEqual JsSuccess(pref1)
+      writer.writes(pref1).mustEqual(jsPref1)
+      format.reads(jsPref1).mustEqual(JsSuccess(pref1))
 
-      val pref2 = Preference(
-        key = "bar",
-        kind = PrefKind.of[Int]("Expiry"),
-        value = 1234)
+      val pref2 = Preference(key = "bar", kind = PrefKind.of[Int]("Expiry"), value = 1234)
 
-      val jsPref2 = Json.obj(
-        "key" -> "bar",
-        "kind" -> Json.obj("name" -> "Expiry"),
-        "value" -> 1234)
+      val jsPref2 = Json.obj("key" -> "bar", "kind" -> Json.obj("name" -> "Expiry"), "value" -> 1234)
 
-      reader.reads(jsPref2) mustEqual JsSuccess(pref2)
+      reader.reads(jsPref2).mustEqual(JsSuccess(pref2))
     }
   }
 }
@@ -613,8 +601,5 @@ object MacroSpec {
       }
   }
 
-  case class Preference[V](
-    key: String,
-    kind: PrefKind.Aux[V],
-    value: V)
+  case class Preference[V](key: String, kind: PrefKind.Aux[V], value: V)
 }
