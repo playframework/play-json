@@ -264,7 +264,12 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       def createImplicit(subject: Type, ctag: Type)(ptype: Type): Implicit = {
-        val (isOpt, tpe) = ptype.dealias match {
+        val (isOpt, tpe) = ({
+          ptype.typeSymbol.name.toString match {
+            case "<refinement>" => ptype
+            case _              => ptype.dealias
+          }
+        }) match {
           case t @ TypeRef(_, _, targ :: _) if t.typeConstructor <:< optTpeCtor =>
             // Option[_] needs special treatment because we need to use XXXOpt
             true -> targ.dealias
@@ -375,7 +380,7 @@ class JsMacroImpl(val c: blackbox.Context) {
               false
             }
 
-          case Some((a, b)) if a.baseClasses != b.baseClasses => {
+          case Some((a, b)) if a.baseClasses.map(_.fullName) != b.baseClasses.map(_.fullName) => {
             debug(s"Generic types are not compatible: $a != $b")
             false
           }
