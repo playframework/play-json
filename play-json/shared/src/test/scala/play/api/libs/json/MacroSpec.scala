@@ -478,10 +478,32 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       val formatter = Json.format[Obj.type]
 
       val jsObj = Json.obj()
+
       writer.writes(Obj).mustEqual(jsObj)
       reader.reads(jsObj).mustEqual(JsSuccess(Obj))
       formatter.writes(Obj).mustEqual(jsObj)
       formatter.reads(jsObj).mustEqual(JsSuccess(Obj))
+    }
+
+    "handle refinement type as case class field" in {
+      import MacroSpec.{ Preference, PrefKind }
+
+      val writer = Json.writes[Preference[String]]
+      val reader = Json.reads[Preference[Int]]
+      val format = Json.format[Preference[String]]
+
+      val pref1 = Preference(key = "foo", kind = PrefKind.of[String]("ID"), value = "unique")
+
+      val jsPref1 = Json.obj("key" -> "foo", "kind" -> Json.obj("name" -> "ID"), "value" -> "unique")
+
+      writer.writes(pref1).mustEqual(jsPref1)
+      format.reads(jsPref1).mustEqual(JsSuccess(pref1))
+
+      val pref2 = Preference(key = "bar", kind = PrefKind.of[Int]("Expiry"), value = 1234)
+
+      val jsPref2 = Json.obj("key" -> "bar", "kind" -> Json.obj("name" -> "Expiry"), "value" -> 1234)
+
+      reader.reads(jsPref2).mustEqual(JsSuccess(pref2))
     }
   }
 }
@@ -555,4 +577,29 @@ object MacroSpec {
      as Writes instance this subtype Family2Member
      */
   }
+
+  // ---
+
+  case class PrefKind(name: String) {
+    type ValueType
+  }
+
+  object PrefKind {
+    type Aux[V] = PrefKind { type ValueType = V }
+
+    def of[V](name: String): PrefKind.Aux[V] =
+      PrefKind(name).asInstanceOf[PrefKind.Aux[V]]
+
+    private val underlying: Format[PrefKind] = Json.format
+
+    implicit def writes[V]: Writes[PrefKind.Aux[V]] =
+      Writes[PrefKind.Aux[V]](underlying.writes)
+
+    implicit def reads[V]: Reads[PrefKind.Aux[V]] =
+      Reads[PrefKind.Aux[V]] { js =>
+        underlying.reads(js).map(_.asInstanceOf[PrefKind.Aux[V]])
+      }
+  }
+
+  case class Preference[V](key: String, kind: PrefKind.Aux[V], value: V)
 }
