@@ -1,0 +1,49 @@
+name: Check
+
+on:
+  pull_request:
+
+  push:
+    branches:
+      - main # Check branch after merge
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-code-style:
+    name: Code Style
+    uses: playframework/.github/.github/workflows/cmd.yml@v2
+    with:
+      cmd: sbt validateCode
+
+  check-binary-compatibility:
+    name: Binary Compatibility
+    uses: playframework/.github/.github/workflows/binary-check.yml@v2
+
+  check-docs:
+    name: Docs
+    uses: playframework/.github/.github/workflows/cmd.yml@v2
+    with:
+      cmd: sbt docs/validateDocs
+
+  tests:
+    name: Tests
+    needs:
+      - "check-code-style"
+      - "check-binary-compatibility"
+      - "check-docs"
+    uses: playframework/.github/.github/workflows/cmd.yml@v2
+    with:
+      java: 11, 8
+      scala: 2.12.16, 2.13.8
+      cmd: scripts/test-code.sh
+
+  finish:
+    name: Finish
+    if: github.event_name == 'pull_request'
+    needs: # Should be last
+      - "tests"
+    uses: playframework/.github/.github/workflows/rtm.yml@v2
