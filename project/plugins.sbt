@@ -2,10 +2,6 @@
  * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
  */
 
-lazy val plugins = (project in file(".")).settings(
-  scalaVersion := "2.12.17", // TODO: remove when upgraded to sbt 1.8.0
-)
-
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 resolvers += Resolver.typesafeRepo("releases")
 
