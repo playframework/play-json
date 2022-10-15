@@ -146,7 +146,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
         "org.scalatest"     %%% "scalatest"       % "3.2.13"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-16" % "3.2.13.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.16.0"   % Test,
-        ("com.chuusai" %% "shapeless" % "2.3.9").cross(CrossVersion.for3Use2_13) % Test
+        ("com.chuusai" %% "shapeless" % "2.3.10").cross(CrossVersion.for3Use2_13) % Test
       ),
       libraryDependencies += {
         if (isScala3.value) {
