@@ -13,7 +13,7 @@ addSbtPlugin("com.typesafe.play" % "play-docs-sbt-plugin" % sys.props.getOrElse(
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
 
-addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.0")
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.1")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.7.0")
 
