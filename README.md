@@ -298,6 +298,10 @@ val json: JsValue = Json.obj(
 )
 ```
 
+## Releasing a new version
+
+See https://github.com/playframework/.github/blob/main/RELEASING.md
+
 ## License
 
 Play JSON is licensed under the Apache license, version 2. See the LICENSE file for more information.
