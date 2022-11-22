@@ -72,9 +72,12 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
   val preserveZeroDecimal: JacksonJson = {
     val defaultSerializerSettings = JsonParserSettings.settings.bigDecimalSerializerSettings
-    val defaultParserSettings = JsonParserSettings.settings.bigDecimalParseSettings
+    val defaultParserSettings     = JsonParserSettings.settings.bigDecimalParseSettings
     val serializerSettings = BigDecimalSerializerSettings(
-      defaultSerializerSettings.minPlain, defaultSerializerSettings.maxPlain, preserveZeroDecimal = true)
+      defaultSerializerSettings.minPlain,
+      defaultSerializerSettings.maxPlain,
+      preserveZeroDecimal = true
+    )
     JacksonJson(JsonParserSettings(defaultParserSettings, serializerSettings))
   }
 
