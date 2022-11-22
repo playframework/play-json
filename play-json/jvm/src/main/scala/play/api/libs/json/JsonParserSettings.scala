@@ -33,11 +33,6 @@ final case class BigDecimalSerializerSettings(
     preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
 )
 
-object BigDecimalSerializerSettings {
-  def apply(minPlain: BigDecimal, maxPlain: BigDecimal): BigDecimalSerializerSettings =
-    BigDecimalSerializerSettings(minPlain, maxPlain)
-}
-
 final case class JsonParserSettings(
     bigDecimalParseSettings: BigDecimalParseSettings,
     bigDecimalSerializerSettings: BigDecimalSerializerSettings
