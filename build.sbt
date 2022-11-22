@@ -45,6 +45,7 @@ def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
     case _ if isScala3.value               => Set.empty // no releases for Scala 3 yet
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
+    case (Some(NativePlatform), _)         => Set.empty // no release for Scala Native yet
     case (_, Some(previousVersion)) =>
       val stableVersion = if (previousVersion.startsWith("2.10.0-RC")) "2.9.2" else previousVersion
       Set(organization.value %%% moduleName.value % stableVersion)
@@ -128,14 +129,16 @@ lazy val root = project
   .aggregate(
     `play-jsonJS`,
     `play-jsonJVM`,
+    `play-jsonNative`,
     `play-functionalJS`,
     `play-functionalJVM`,
+    `play-functionalNative`,
     `play-json-joda`
   )
   .settings(commonSettings)
   .settings(publish / skip := true)
 
-lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
+lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(Omnidoc, Playdoc)
@@ -143,6 +146,11 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .jsSettings(
     libraryDependencies ++= Seq(
       ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
+    )
+  )
+  .nativeSettings(
+    libraryDependencies ++= Seq(
+      "com.github.lolgab" %%% "scala-native-crypto" % "0.0.4",
     )
   )
   .settings(
@@ -234,7 +242,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   )
   .dependsOn(`play-functional`)
 
-lazy val `play-jsonJS` = `play-json`.js
+lazy val `play-jsonJS`     = `play-json`.js
+lazy val `play-jsonNative` = `play-json`.native
 
 lazy val `play-jsonJVM` = `play-json`.jvm
   .settings(
@@ -267,7 +276,7 @@ lazy val `play-json-joda` = project
   )
   .dependsOn(`play-jsonJVM`)
 
-lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
+lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .in(file("play-functional"))
   .settings(
@@ -275,8 +284,9 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   )
   .enablePlugins(Omnidoc)
 
-lazy val `play-functionalJVM` = `play-functional`.jvm
-lazy val `play-functionalJS`  = `play-functional`.js
+lazy val `play-functionalJVM`    = `play-functional`.jvm
+lazy val `play-functionalJS`     = `play-functional`.js
+lazy val `play-functionalNative` = `play-functional`.native
 
 lazy val benchmarks = project
   .in(file("benchmarks"))
