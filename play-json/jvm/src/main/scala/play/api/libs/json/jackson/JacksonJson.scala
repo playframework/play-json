@@ -69,6 +69,16 @@ private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) ext
   import com.fasterxml.jackson.databind.node.BigIntegerNode
   import com.fasterxml.jackson.databind.node.DecimalNode
 
+  private def stripTrailingZeros(bigDec: JBigDec): JBigDec = {
+    val stripped = bigDec.stripTrailingZeros
+    if (parserSettings.bigDecimalSerializerSettings.preserveZeroDecimal && bigDec.scale > 0 && stripped.scale == 0) {
+      // restore .0 if rounded to a whole number
+      stripped.setScale(1)
+    } else {
+      stripped
+    }
+  }
+
   override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider): Unit = {
     value match {
       case JsNumber(v) => {
@@ -79,7 +89,7 @@ private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) ext
           val va = v.abs
           va < parserSettings.bigDecimalSerializerSettings.maxPlain && va > parserSettings.bigDecimalSerializerSettings.minPlain
         }
-        val stripped = v.bigDecimal.stripTrailingZeros
+        val stripped = stripTrailingZeros(v.bigDecimal)
         val raw      = if (shouldWritePlain) stripped.toPlainString else stripped.toString
 
         if (raw.indexOf('E') < 0 && raw.indexOf('.') < 0)
@@ -257,7 +267,16 @@ private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) exten
 }
 
 private[json] object JacksonJson {
-  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonModule(JsonParserSettings.settings))
+
+  /**
+   * Instance used to serialize and deserialize JSON. This is configured with system properties, but can be
+   * overridden for testing.
+   */
+  var instance: JacksonJson = JacksonJson(JsonParserSettings.settings)
+}
+
+private[json] case class JacksonJson(settings: JsonParserSettings) {
+  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonModule(settings))
 
   private lazy val jsonFactory = new JsonFactory(mapper)
 

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
+import play.api.libs.json.jackson.JacksonJson
 
 class JsonSpec extends org.specs2.mutable.Specification {
   "JSON".title
@@ -68,6 +69,24 @@ class JsonSpec extends org.specs2.mutable.Specification {
   )(Post.apply, p => (p.body, p.created_at))
 
   val mapper = new ObjectMapper()
+
+  val preserveZeroDecimal: JacksonJson = {
+    val defaultSerializerSettings = JsonParserSettings.settings.bigDecimalSerializerSettings
+    val defaultParserSettings = JsonParserSettings.settings.bigDecimalParseSettings
+    val serializerSettings = BigDecimalSerializerSettings(
+      defaultSerializerSettings.minPlain, defaultSerializerSettings.maxPlain, preserveZeroDecimal = true)
+    JacksonJson(JsonParserSettings(defaultParserSettings, serializerSettings))
+  }
+
+  def withJacksonJson[T](jacksonJson: JacksonJson)(f: () => T) = {
+    val oldInstance = JacksonJson.instance
+    try {
+      JacksonJson.instance = jacksonJson
+      f.apply()
+    } finally {
+      JacksonJson.instance = oldInstance
+    }
+  }
 
   "Complete JSON should create full object" >> {
     lazy val postDate: Date = dateParser.parse("2011-04-22T13:33:48Z")
@@ -276,6 +295,36 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
           // Without the last two "3" since they were truncated ("...1233" becomes "...12")
           numbers.bigDec.mustEqual(BigDecimal("10.12345678901234567890123456789012"))
+        }
+
+        "drop trailing zeros for non-zero decimal by default" in {
+          val s = stringify(toJson(BigDecimal("1.020300")))
+          s.mustEqual("1.0203")
+        }
+
+        "drop single trailing zero decimal by default" in {
+          val s = stringify(toJson(BigDecimal("1.0")))
+          s.mustEqual("1")
+        }
+
+        "drop multiple trailing zero decimals by default" in {
+          val s = stringify(toJson(BigDecimal("1.00")))
+          s.mustEqual("1")
+        }
+
+        "drop multiple trailing zeros for non-zero decimal with preserveZeroDecimal=true" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.020300"))))
+          s.mustEqual("1.0203")
+        }
+
+        "do not drop single trailing zero decimal with preserveZeroDecimal=true" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.0"))))
+          s.mustEqual("1.0")
+        }
+
+        "preserve a single trailing zero decimal with preserveZeroDecimal=true" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.00"))))
+          s.mustEqual("1.0")
         }
 
         "success when not exceeding the scale limit for positive numbers" in {

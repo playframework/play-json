@@ -4,8 +4,13 @@
 
 package play.api.libs.json
 
-import java.math.MathContext
+import play.api.libs.json.JsonParserSettings.MaxPlain
+import play.api.libs.json.JsonParserSettings.MinPlain
+import play.api.libs.json.JsonParserSettings.defaultDigitsLimit
+import play.api.libs.json.JsonParserSettings.defaultPreserveZeroDecimal
+import play.api.libs.json.JsonParserSettings.defaultScaleLimit
 
+import java.math.MathContext
 import scala.util.control.NonFatal
 
 /**
@@ -18,13 +23,14 @@ import scala.util.control.NonFatal
  */
 final case class BigDecimalParseSettings(
     mathContext: MathContext = MathContext.DECIMAL128,
-    scaleLimit: Int,
-    digitsLimit: Int
+    scaleLimit: Int = defaultScaleLimit,
+    digitsLimit: Int = defaultDigitsLimit
 )
 
 final case class BigDecimalSerializerSettings(
-    minPlain: BigDecimal,
-    maxPlain: BigDecimal
+    minPlain: BigDecimal = MinPlain,
+    maxPlain: BigDecimal = MaxPlain,
+    preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
 )
 
 final case class JsonParserSettings(
@@ -44,6 +50,9 @@ object JsonParserSettings {
   // Doubles max value has 309 digits, so we are using 310 here
   val defaultDigitsLimit: Int = 310
 
+  // Drop zero decimal by default.
+  val defaultPreserveZeroDecimal: Boolean = false
+
   // Maximum magnitude of BigDecimal to write out as a plain string
   val MaxPlain: BigDecimal = 1E20
 
@@ -52,11 +61,15 @@ object JsonParserSettings {
 
   def apply(): JsonParserSettings = JsonParserSettings(
     BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit),
-    BigDecimalSerializerSettings(minPlain = MinPlain, maxPlain = MaxPlain)
+    BigDecimalSerializerSettings(
+      minPlain = MinPlain,
+      maxPlain = MaxPlain,
+      preserveZeroDecimal = defaultPreserveZeroDecimal
+    )
   )
 
   /**
-   * Return the parse settings that are configured.
+   * Return the default settings that are configured from System properties.
    */
   val settings: JsonParserSettings = {
     // Initialize the parser settings from System properties. This way it is possible to users
@@ -67,6 +80,8 @@ object JsonParserSettings {
 
     val minPlain: BigDecimal = parseNum("play.json.serializer.minPlain", MinPlain)(BigDecimal.exact)
     val maxPlain: BigDecimal = parseNum("play.json.serializer.maxPlain", MaxPlain)(BigDecimal.exact)
+    val preserveZeroDecimal: Boolean =
+      parseNum("play.json.serializer.preserveZeroDecimal", defaultPreserveZeroDecimal)(_.toBoolean)
 
     JsonParserSettings(
       BigDecimalParseSettings(
@@ -76,7 +91,8 @@ object JsonParserSettings {
       ),
       BigDecimalSerializerSettings(
         minPlain,
-        maxPlain
+        maxPlain,
+        preserveZeroDecimal
       )
     )
   }
