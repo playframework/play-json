@@ -4,8 +4,6 @@
 
 package play.api.libs.json
 
-import play.api.libs.json.JsonParserSettings.defaultPreserveZeroDecimal
-
 import java.math.MathContext
 
 import scala.util.control.NonFatal
