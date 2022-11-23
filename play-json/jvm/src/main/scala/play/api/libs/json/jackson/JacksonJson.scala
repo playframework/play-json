@@ -6,13 +6,11 @@ package play.api.libs.json.jackson
 
 import java.io.InputStream
 import java.io.StringWriter
-
 import scala.annotation.switch
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
-
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -20,15 +18,15 @@ import com.fasterxml.jackson.core.JsonTokenId
 import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.core.json.JsonWriteFeature
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
-
 import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
-
 import play.api.libs.json._
+
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * The Play JSON module for Jackson.
@@ -267,12 +265,18 @@ private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) exten
 }
 
 private[json] object JacksonJson {
+  val defaultInstance: JacksonJson = JacksonJson(JsonParserSettings.settings)
+
+  private val ref: AtomicReference[JacksonJson] = new AtomicReference[JacksonJson](defaultInstance)
 
   /**
    * Instance used to serialize and deserialize JSON. This is configured with system properties, but can be
    * overridden for testing.
    */
-  var instance: JacksonJson = JacksonJson(JsonParserSettings.settings)
+  var get: JacksonJson = ref.get
+
+  /** Sets the instance for testing and returns the old value. */
+  def set(instance: JacksonJson): JacksonJson = ref.getAndSet(instance)
 }
 
 private[json] case class JacksonJson(settings: JsonParserSettings) {

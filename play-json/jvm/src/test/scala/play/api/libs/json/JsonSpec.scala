@@ -82,12 +82,12 @@ class JsonSpec extends org.specs2.mutable.Specification {
   }
 
   def withJacksonJson[T](jacksonJson: JacksonJson)(f: () => T) = {
-    val oldInstance = JacksonJson.instance
+    val oldInstance = JacksonJson.set(jacksonJson)
     try {
-      JacksonJson.instance = jacksonJson
+      JacksonJson.get = jacksonJson
       f.apply()
     } finally {
-      JacksonJson.instance = oldInstance
+      JacksonJson.set(oldInstance)
     }
   }
 

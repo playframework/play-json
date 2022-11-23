@@ -4,11 +4,7 @@
 
 package play.api.libs.json
 
-import play.api.libs.json.JsonParserSettings.MaxPlain
-import play.api.libs.json.JsonParserSettings.MinPlain
-import play.api.libs.json.JsonParserSettings.defaultDigitsLimit
 import play.api.libs.json.JsonParserSettings.defaultPreserveZeroDecimal
-import play.api.libs.json.JsonParserSettings.defaultScaleLimit
 
 import java.math.MathContext
 

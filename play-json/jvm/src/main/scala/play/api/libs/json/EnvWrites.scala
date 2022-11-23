@@ -26,14 +26,14 @@ trait EnvWrites {
 
   @deprecated("Use `jsonNodeWrites`", "2.8.0")
   object JsonNodeWrites extends Writes[JsonNode] {
-    def writes(o: JsonNode): JsValue = JacksonJson.instance.jsonNodeToJsValue(o)
+    def writes(o: JsonNode): JsValue = JacksonJson.get.jsonNodeToJsValue(o)
   }
 
   /**
    * Serializer for Jackson JsonNode
    */
   implicit def jsonNodeWrites[T <: JsonNode]: Writes[T] =
-    Writes[T](JacksonJson.instance.jsonNodeToJsValue)
+    Writes[T](JacksonJson.get.jsonNodeToJsValue)
 
   /** Typeclass to implement way of formatting of Java8 temporal types. */
   trait TemporalFormatter[T <: Temporal] {
