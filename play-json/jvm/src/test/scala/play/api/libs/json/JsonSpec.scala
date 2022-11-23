@@ -315,6 +315,11 @@ class JsonSpec extends org.specs2.mutable.Specification {
           s.mustEqual("1")
         }
 
+        "drop multiple trailing zero decimals from zero value by default" in {
+          val s = stringify(toJson(BigDecimal("0.00")))
+          s.mustEqual("0")
+        }
+
         "drop multiple trailing zeros for non-zero decimal with preserveZeroDecimal=true" in {
           val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.020300"))))
           s.mustEqual("1.0203")
@@ -328,6 +333,11 @@ class JsonSpec extends org.specs2.mutable.Specification {
         "preserve a single trailing zero decimal with preserveZeroDecimal=true" in {
           val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.00"))))
           s.mustEqual("1.0")
+        }
+
+        "preserve a single trailing zero decimal from zero value with preserveZeroDecimal=true" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0.00"))))
+          s.mustEqual("0.0")
         }
 
         "success when not exceeding the scale limit for positive numbers" in {

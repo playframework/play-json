@@ -11,6 +11,7 @@ import play.api.libs.json.JsonParserSettings.defaultPreserveZeroDecimal
 import play.api.libs.json.JsonParserSettings.defaultScaleLimit
 
 import java.math.MathContext
+
 import scala.util.control.NonFatal
 
 /**
@@ -23,13 +24,13 @@ import scala.util.control.NonFatal
  */
 final case class BigDecimalParseSettings(
     mathContext: MathContext = MathContext.DECIMAL128,
-    scaleLimit: Int = defaultScaleLimit,
-    digitsLimit: Int = defaultDigitsLimit
+    scaleLimit: Int,
+    digitsLimit: Int
 )
 
 final case class BigDecimalSerializerSettings(
-    minPlain: BigDecimal = MinPlain,
-    maxPlain: BigDecimal = MaxPlain,
+    minPlain: BigDecimal,
+    maxPlain: BigDecimal,
     preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
 )
 
