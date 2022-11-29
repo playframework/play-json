@@ -51,7 +51,7 @@ object StaticBinding {
       case '\"' => "\\\""
       case c => c.toString
     }
-    if (s == null) "null" else s"\"${s.flatMap(escaped)}\""
+    if (s == null) "null" else s""""${s.flatMap(escaped)}""""
   }
 
   @inline private[json] def fromString(s: String, escapeNonASCII: Boolean): String = {
