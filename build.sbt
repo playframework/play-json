@@ -150,7 +150,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   )
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "com.github.lolgab" %%% "scala-native-crypto" % "0.0.4",
+      "org.typelevel" %%% "jawn-parser" % "1.4.0"
     )
   )
   .settings(

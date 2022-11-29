@@ -11,12 +11,12 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class JsonSpec extends AnyWordSpec with Matchers {
   "Complete JSON should create full object" when {
-    "lose precision when parsing BigDecimals" in {
+    "maintain precision when parsing BigDecimals within precision limit" in {
       val n = BigDecimal("12345678901234567890.123456789")
 
       parse(stringify(toJson(n))).mustEqual(
         JsNumber(
-          BigDecimal("12345678901234567000")
+          n
         )
       )
     }
@@ -47,7 +47,7 @@ class JsonSpec extends AnyWordSpec with Matchers {
     }
 
     "parse from InputStream" in {
-      val orig = Json.obj(
+      val js = Json.obj(
         "key1" -> "value1",
         "key2" -> true,
         "key3" -> JsNull,
@@ -58,23 +58,10 @@ class JsonSpec extends AnyWordSpec with Matchers {
         )
       )
       def stream = new java.io.ByteArrayInputStream(
-        orig.toString.getBytes("UTF-8")
+        js.toString.getBytes("UTF-8")
       )
 
-      def expected = Json.obj(
-        "key1" -> "value1",
-        "key2" -> true,
-        "key3" -> JsNull,
-        "key4" -> Json.arr(1, 2.5, "value2", false, JsNull),
-        "key5" -> Json.obj(
-          "key6" -> "こんにちは",
-          "key7" -> BigDecimal( // JS loose precision on BigDec
-            "12345678901234567000"
-          )
-        )
-      )
-
-      Json.parse(stream).mustEqual(expected)
+      Json.parse(stream).mustEqual(js)
     }
   }
 }

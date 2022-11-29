@@ -307,10 +307,10 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
     "asciiStringify should escape ascii characters properly" in json { js =>
       def jo = Json.obj(
         "key1" -> "ab\n\tcd",
-        "key2" -> "\"\r"
+        "key2" -> "\"\r\f"
       )
 
-      js.asciiStringify(jo).mustEqual("""{"key1":"ab\n\tcd","key2":"\"\r"}""")
+      js.asciiStringify(jo).mustEqual("""{"key1":"ab\n\tcd","key2":"\"\r\f"}""")
     }
   }
 
