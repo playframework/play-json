@@ -49,7 +49,7 @@ object StaticBinding {
       case '\t' => "\\t"
       case '\\' => "\\\\"
       case '\"' => "\\\""
-      case c => c.toString
+      case c    => c.toString
     }
     if (s == null) "null" else s""""${s.flatMap(escaped)}""""
   }
