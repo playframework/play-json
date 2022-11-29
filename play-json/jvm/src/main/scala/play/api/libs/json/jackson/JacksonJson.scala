@@ -6,11 +6,13 @@ package play.api.libs.json.jackson
 
 import java.io.InputStream
 import java.io.StringWriter
+
 import scala.annotation.switch
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
+
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -18,12 +20,14 @@ import com.fasterxml.jackson.core.JsonTokenId
 import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.core.json.JsonWriteFeature
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+
 import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
+
 import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicReference
@@ -41,26 +45,30 @@ import java.util.concurrent.atomic.AtomicReference
  * import play.api.libs.json.jackson.PlayJsonModule
  * import play.api.libs.json.JsonParserSettings
  *
- * val jsonParseSettings = JsonParserSettings()
+ * val jsonSettings = JsonSettings.settings
  * val mapper = new ObjectMapper().registerModule(
- *   new PlayJsonModule(jsonParseSettings))
+ *   new PlayJsonMapperModule(jsonSettings))
  * val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
  * }}}
  */
-sealed class PlayJsonModule(parserSettings: JsonParserSettings)
-    extends SimpleModule("PlayJson", Version.unknownVersion()) {
-  override def setupModule(context: SetupContext): Unit = {
-    context.addDeserializers(new PlayDeserializers(parserSettings))
-    context.addSerializers(new PlaySerializers(parserSettings))
-  }
+@deprecated("Use PlayJsonMapperModule class instead", "2.10.0")
+sealed class PlayJsonModule(parserSettings: JsonParserSettings) extends PlayJsonMapperModule(parserSettings) {
+  override def setupModule(context: SetupContext): Unit = super.setupModule(context)
 }
 
 @deprecated("Use PlayJsonModule class instead", "2.6.11")
 object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
 
+sealed class PlayJsonMapperModule(jsonConfig: JsonConfig) extends SimpleModule("PlayJson", Version.unknownVersion()) {
+  override def setupModule(context: SetupContext): Unit = {
+    context.addDeserializers(new PlayDeserializers(jsonConfig))
+    context.addSerializers(new PlaySerializers(jsonConfig))
+  }
+}
+
 // -- Serializers.
 
-private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) extends JsonSerializer[JsValue] {
+private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSerializer[JsValue] {
   import java.math.BigInteger
   import java.math.{ BigDecimal => JBigDec }
 
@@ -69,7 +77,7 @@ private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) ext
 
   private def stripTrailingZeros(bigDec: JBigDec): JBigDec = {
     val stripped = bigDec.stripTrailingZeros
-    if (parserSettings.bigDecimalSerializerSettings.preserveZeroDecimal && bigDec.scale > 0 && stripped.scale == 0) {
+    if (jsonConfig.bigDecimalSerializerConfig.preserveZeroDecimal && bigDec.scale > 0 && stripped.scale == 0) {
       // restore .0 if rounded to a whole number
       stripped.setScale(1)
     } else {
@@ -85,7 +93,7 @@ private[jackson] class JsValueSerializer(parserSettings: JsonParserSettings) ext
         // configuration is ignored when called from ObjectMapper.valueToTree
         val shouldWritePlain = {
           val va = v.abs
-          va < parserSettings.bigDecimalSerializerSettings.maxPlain && va > parserSettings.bigDecimalSerializerSettings.minPlain
+          va < jsonConfig.bigDecimalSerializerConfig.maxPlain && va > jsonConfig.bigDecimalSerializerConfig.minPlain
         }
         val stripped = stripTrailingZeros(v.bigDecimal)
         val raw      = if (shouldWritePlain) stripped.toPlainString else stripped.toString
@@ -144,7 +152,7 @@ private[jackson] case class ReadingMap(content: ListBuffer[(String, JsValue)]) e
     throw new Exception("Cannot add a value on an object without a key, malformed JSON object!")
 }
 
-private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_], parserSettings: JsonParserSettings)
+private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_], jsonConfig: JsonConfig)
     extends JsonDeserializer[Object] {
   override def isCachable: Boolean = true
 
@@ -161,7 +169,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
       jp: JsonParser,
       parserContext: List[DeserializerContext]
   ): (Some[JsNumber], List[DeserializerContext]) = {
-    BigDecimalParser.parse(jp.getText, parserSettings) match {
+    BigDecimalParser.parse(jp.getText, jsonConfig) match {
       case JsSuccess(bigDecimal, _) =>
         (Some(JsNumber(bigDecimal)), parserContext)
 
@@ -244,19 +252,19 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
   override val getNullValue = JsNull
 }
 
-private[jackson] class PlayDeserializers(parserSettings: JsonParserSettings) extends Deserializers.Base {
+private[jackson] class PlayDeserializers(jsonSettings: JsonConfig) extends Deserializers.Base {
   override def findBeanDeserializer(javaType: JavaType, config: DeserializationConfig, beanDesc: BeanDescription) = {
     val klass = javaType.getRawClass
     if (classOf[JsValue].isAssignableFrom(klass) || klass == JsNull.getClass) {
-      new JsValueDeserializer(config.getTypeFactory, klass, parserSettings)
+      new JsValueDeserializer(config.getTypeFactory, klass, jsonSettings)
     } else null
   }
 }
 
-private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) extends Serializers.Base {
+private[jackson] class PlaySerializers(jsonSettings: JsonConfig) extends Serializers.Base {
   override def findSerializer(config: SerializationConfig, javaType: JavaType, beanDesc: BeanDescription) = {
     val ser: Object = if (classOf[JsValue].isAssignableFrom(beanDesc.getBeanClass)) {
-      new JsValueSerializer(parserSettings)
+      new JsValueSerializer(jsonSettings)
     } else {
       null
     }
@@ -265,7 +273,7 @@ private[jackson] class PlaySerializers(parserSettings: JsonParserSettings) exten
 }
 
 private[json] object JacksonJson {
-  val defaultInstance: JacksonJson = JacksonJson(JsonParserSettings.settings)
+  val defaultInstance: JacksonJson = JacksonJson(JsonConfig.settings)
 
   private val ref: AtomicReference[JacksonJson] = new AtomicReference[JacksonJson](defaultInstance)
 
@@ -273,14 +281,14 @@ private[json] object JacksonJson {
    * Instance used to serialize and deserialize JSON. This is configured with system properties, but can be
    * overridden for testing.
    */
-  var get: JacksonJson = ref.get
+  def get: JacksonJson = ref.get
 
   /** Sets the instance for testing and returns the old value. */
   def set(instance: JacksonJson): JacksonJson = ref.getAndSet(instance)
 }
 
-private[json] case class JacksonJson(settings: JsonParserSettings) {
-  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonModule(settings))
+private[json] case class JacksonJson(jsonSettings: JsonConfig) {
+  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonMapperModule(jsonSettings))
 
   private lazy val jsonFactory = new JsonFactory(mapper)
 

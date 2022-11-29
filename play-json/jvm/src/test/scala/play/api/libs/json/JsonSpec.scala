@@ -71,20 +71,21 @@ class JsonSpec extends org.specs2.mutable.Specification {
   val mapper = new ObjectMapper()
 
   val preserveZeroDecimal: JacksonJson = {
-    val defaultSerializerSettings = JsonParserSettings.settings.bigDecimalSerializerSettings
-    val defaultParserSettings     = JsonParserSettings.settings.bigDecimalParseSettings
-    val serializerSettings = BigDecimalSerializerSettings(
+    val defaultSerializerSettings = JsonConfig.settings.bigDecimalSerializerConfig
+    val defaultParserSettings     = JsonConfig.settings.bigDecimalParseConfig
+    val serializerSettings = BigDecimalSerializerConfig(
       defaultSerializerSettings.minPlain,
       defaultSerializerSettings.maxPlain,
       preserveZeroDecimal = true
     )
-    JacksonJson(JsonParserSettings(defaultParserSettings, serializerSettings))
+
+    JacksonJson(JsonConfig(defaultParserSettings, serializerSettings))
   }
 
   def withJacksonJson[T](jacksonJson: JacksonJson)(f: () => T) = {
     val oldInstance = JacksonJson.set(jacksonJson)
     try {
-      JacksonJson.get = jacksonJson
+      JacksonJson.set(jacksonJson)
       f.apply()
     } finally {
       JacksonJson.set(oldInstance)
