@@ -40,7 +40,7 @@ object StaticBinding {
 
   def toBytes(jsValue: JsValue): Array[Byte] = StaticBindingJsNative.toBytes(jsValue)
 
-  @inline private def stringify(s: String) = {
+  @inline private[json] def fromString(s: String, escapeNonASCII: Boolean): String = {
     def escaped(c: Char) = c match {
       case '\b' => "\\b"
       case '\f' => "\\f"
@@ -51,11 +51,8 @@ object StaticBinding {
       case '\"' => "\\\""
       case c    => c.toString
     }
-    if (s == null) "null" else s""""${s.flatMap(escaped)}""""
-  }
-
-  @inline private[json] def fromString(s: String, escapeNonASCII: Boolean): String = {
-    if (!escapeNonASCII) stringify(s) else StaticBindingJsNative.escapeStr(stringify(s))
+    val stringified = if (s == null) "null" else s""""${s.flatMap(escaped)}""""
+    if (!escapeNonASCII) stringified else StaticBindingJsNative.escapeStr(stringified)
   }
 
 }
