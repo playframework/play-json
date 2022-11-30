@@ -61,9 +61,9 @@ sealed trait BigDecimalSerializerConfig {
 
 object BigDecimalSerializerConfig {
   def apply(
-             minPlain: BigDecimal = defaultMinPlain,
-             maxPlain: BigDecimal = defaultMaxPlain,
-             preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
+      minPlain: BigDecimal = defaultMinPlain,
+      maxPlain: BigDecimal = defaultMaxPlain,
+      preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
   ): BigDecimalSerializerConfig =
     DecimalSerializerSettingsImpl(minPlain, maxPlain, preserveZeroDecimal)
 }
@@ -105,9 +105,11 @@ object JsonConfig {
 
   private[json] def loadMathContext: MathContext = parseMathContext("play.json.parser.mathContext")
 
-  private[json] def loadMinPlain: BigDecimal = parseNum("play.json.serializer.minPlain", defaultMinPlain)(BigDecimal.exact)
+  private[json] def loadMinPlain: BigDecimal =
+    parseNum("play.json.serializer.minPlain", defaultMinPlain)(BigDecimal.exact)
 
-  private[json] def loadMaxPlain: BigDecimal = parseNum("play.json.serializer.maxPlain", defaultMaxPlain)(BigDecimal.exact)
+  private[json] def loadMaxPlain: BigDecimal =
+    parseNum("play.json.serializer.maxPlain", defaultMaxPlain)(BigDecimal.exact)
 
   private[json] def loadPreserveZeroDecimal: Boolean =
     parseNum("play.json.serializer.preserveZeroDecimal", defaultPreserveZeroDecimal)(_.toBoolean)
