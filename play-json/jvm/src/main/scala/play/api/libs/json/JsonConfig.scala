@@ -4,8 +4,8 @@
 
 package play.api.libs.json
 
-import play.api.libs.json.JsonConfig.MaxPlain
-import play.api.libs.json.JsonConfig.MinPlain
+import play.api.libs.json.JsonConfig.defaultMaxPlain
+import play.api.libs.json.JsonConfig.defaultMinPlain
 import play.api.libs.json.JsonConfig.defaultDigitsLimit
 import play.api.libs.json.JsonConfig.defaultMathContext
 import play.api.libs.json.JsonConfig.defaultPreserveZeroDecimal
@@ -61,9 +61,9 @@ sealed trait BigDecimalSerializerConfig {
 
 object BigDecimalSerializerConfig {
   def apply(
-      minPlain: BigDecimal = MinPlain,
-      maxPlain: BigDecimal = MaxPlain,
-      preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
+             minPlain: BigDecimal = defaultMinPlain,
+             maxPlain: BigDecimal = defaultMaxPlain,
+             preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
   ): BigDecimalSerializerConfig =
     DecimalSerializerSettingsImpl(minPlain, maxPlain, preserveZeroDecimal)
 }
@@ -95,19 +95,19 @@ object JsonConfig {
   val defaultPreserveZeroDecimal: Boolean = false
 
   // Maximum magnitude of BigDecimal to write out as a plain string
-  val MaxPlain: BigDecimal = 1E20
+  val defaultMaxPlain: BigDecimal = 1E20
 
   // Minimum magnitude of BigDecimal to write out as a plain string
-  val MinPlain: BigDecimal = 1E-10
+  val defaultMinPlain: BigDecimal = 1E-10
 
   private[json] def loadScaleLimit: Int  = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
   private[json] def loadDigitsLimit: Int = parseNum("play.json.parser.digitsLimit", defaultDigitsLimit)(_.toInt)
 
   private[json] def loadMathContext: MathContext = parseMathContext("play.json.parser.mathContext")
 
-  private[json] def loadMinPlain: BigDecimal = parseNum("play.json.serializer.minPlain", MinPlain)(BigDecimal.exact)
+  private[json] def loadMinPlain: BigDecimal = parseNum("play.json.serializer.minPlain", defaultMinPlain)(BigDecimal.exact)
 
-  private[json] def loadMaxPlain: BigDecimal = parseNum("play.json.serializer.maxPlain", MaxPlain)(BigDecimal.exact)
+  private[json] def loadMaxPlain: BigDecimal = parseNum("play.json.serializer.maxPlain", defaultMaxPlain)(BigDecimal.exact)
 
   private[json] def loadPreserveZeroDecimal: Boolean =
     parseNum("play.json.serializer.preserveZeroDecimal", defaultPreserveZeroDecimal)(_.toBoolean)
@@ -185,10 +185,10 @@ object JsonParserSettings {
   val defaultDigitsLimit: Int = JsonConfig.defaultDigitsLimit
 
   // Maximum magnitude of BigDecimal to write out as a plain string
-  val MaxPlain: BigDecimal = JsonConfig.MaxPlain
+  val MaxPlain: BigDecimal = JsonConfig.defaultMaxPlain
 
   // Minimum magnitude of BigDecimal to write out as a plain string
-  val MinPlain: BigDecimal = JsonConfig.MinPlain
+  val MinPlain: BigDecimal = JsonConfig.defaultMinPlain
 
   def apply(): JsonParserSettings = JsonParserSettings(
     BigDecimalParseSettings(defaultMathContext, defaultScaleLimit, defaultDigitsLimit),
