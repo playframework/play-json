@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
 import play.api.libs.json._
 
-import java.math.BigDecimal.ONE
 import java.util.concurrent.atomic.AtomicReference
 
 /**

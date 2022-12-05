@@ -100,7 +100,7 @@ object JsonConfig {
   // Minimum magnitude of BigDecimal to write out as a plain string
   val defaultMinPlain: BigDecimal = 1E-10
 
-  private[json] def loadScaleLimit: Int  = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
+  private[json] def loadScaleLimit: Int = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
 
   private[json] def loadDigitsLimit: Int = parseNum("play.json.parser.digitsLimit", defaultDigitsLimit)(_.toInt)
 
