@@ -87,6 +87,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
     try {
       JacksonJson.set(jacksonJson)
       f.apply()
+    } catch {
+      case err: Throwable => throw err
     } finally {
       JacksonJson.set(oldInstance)
     }
