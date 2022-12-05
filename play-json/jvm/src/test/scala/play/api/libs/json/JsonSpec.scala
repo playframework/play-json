@@ -321,6 +321,21 @@ class JsonSpec extends org.specs2.mutable.Specification {
           s.mustEqual("0")
         }
 
+        "drop multiple trailing zero decimals from multiple of ten" in {
+          val s = stringify(toJson(BigDecimal("10.00")))
+          s.mustEqual("10")
+        }
+
+        "integer multiple of ten unchanged" in {
+          val s = stringify(toJson(BigDecimal("10")))
+          s.mustEqual("10")
+        }
+
+        "integer zero unchanged" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0"))))
+          s.mustEqual("0")
+        }
+
         "drop multiple trailing zeros for non-zero decimal with preserveZeroDecimal=true" in {
           val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.020300"))))
           s.mustEqual("1.0203")
@@ -336,9 +351,24 @@ class JsonSpec extends org.specs2.mutable.Specification {
           s.mustEqual("1.0")
         }
 
-        "preserve a single trailing zero decimal from zero value with preserveZeroDecimal=true" in {
+        "preserve a single trailing zero decimal from zero decimal with preserveZeroDecimal=true" in {
           val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0.00"))))
           s.mustEqual("0.0")
+        }
+
+        "preserve a single trailing zero decimal from multiple of ten with preserveZeroDecimal=true" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("10.00"))))
+          s.mustEqual("10.0")
+        }
+
+        "integer multiple of ten with preserveZeroDecimal=true" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("10"))))
+          s.mustEqual("10")
+        }
+
+        "integer zero with preserveZeroDecimal=true" in {
+          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0"))))
+          s.mustEqual("0")
         }
 
         "success when not exceeding the scale limit for positive numbers" in {

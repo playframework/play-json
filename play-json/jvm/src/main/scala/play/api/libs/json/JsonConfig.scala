@@ -101,6 +101,7 @@ object JsonConfig {
   val defaultMinPlain: BigDecimal = 1E-10
 
   private[json] def loadScaleLimit: Int  = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
+
   private[json] def loadDigitsLimit: Int = parseNum("play.json.parser.digitsLimit", defaultDigitsLimit)(_.toInt)
 
   private[json] def loadMathContext: MathContext = parseMathContext("play.json.parser.mathContext")

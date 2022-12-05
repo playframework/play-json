@@ -6,13 +6,11 @@ package play.api.libs.json.jackson
 
 import java.io.InputStream
 import java.io.StringWriter
-
 import scala.annotation.switch
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
-
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -20,16 +18,15 @@ import com.fasterxml.jackson.core.JsonTokenId
 import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.core.json.JsonWriteFeature
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
-
 import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
-
 import play.api.libs.json._
 
+import java.math.BigDecimal.ONE
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -77,7 +74,7 @@ private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSer
 
   private def stripTrailingZeros(bigDec: JBigDec): JBigDec = {
     val stripped = bigDec.stripTrailingZeros
-    if (jsonConfig.bigDecimalSerializerConfig.preserveZeroDecimal && bigDec.scale > 0 && stripped.scale == 0) {
+    if (jsonConfig.bigDecimalSerializerConfig.preserveZeroDecimal && bigDec.scale > 0 && stripped.scale <= 0) {
       // restore .0 if rounded to a whole number
       stripped.setScale(1)
     } else {
