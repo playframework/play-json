@@ -212,7 +212,7 @@ object JsonConfig {
     case _                  => defaultMathContext
   }
 
-  private[json] def parseNum[T](key: String, default: T)(f: String => T): T =
+  private[json] def numericProp[T](key: String, default: T)(f: String => T): T =
     try {
       sys.props.get(key).map(f).getOrElse(default)
     } catch {
