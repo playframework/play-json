@@ -70,7 +70,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
   val mapper = new ObjectMapper()
 
-  val preserveZeroDecimal: JacksonJson = {
+  val preserveZeroDecimal: JsonConfig = {
     val defaultSerializerSettings = JsonConfig.settings.bigDecimalSerializerConfig
     val defaultParserSettings     = JsonConfig.settings.bigDecimalParseConfig
     val serializerSettings = BigDecimalSerializerConfig(
@@ -79,18 +79,17 @@ class JsonSpec extends org.specs2.mutable.Specification {
       preserveZeroDecimal = true
     )
 
-    JacksonJson(JsonConfig(defaultParserSettings, serializerSettings))
+    JsonConfig(defaultParserSettings, serializerSettings)
   }
 
-  def withJacksonJson[T](jacksonJson: JacksonJson)(f: () => T) = {
-    val oldInstance = JacksonJson.set(jacksonJson)
+  def withJsonConfig[T](jsonConfig: JsonConfig)(f: () => T) = {
     try {
-      JacksonJson.set(jacksonJson)
+      JacksonJson.setConfig(jsonConfig)
       f.apply()
     } catch {
       case err: Throwable => throw err
     } finally {
-      JacksonJson.set(oldInstance)
+      JacksonJson.setConfig(JsonConfig.settings)
     }
   }
 
@@ -334,42 +333,42 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "integer zero unchanged" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0"))))
           s.mustEqual("0")
         }
 
         "drop multiple trailing zeros for non-zero decimal with preserveZeroDecimal=true" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.020300"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.020300"))))
           s.mustEqual("1.0203")
         }
 
         "do not drop single trailing zero decimal with preserveZeroDecimal=true" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.0"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.0"))))
           s.mustEqual("1.0")
         }
 
         "preserve a single trailing zero decimal with preserveZeroDecimal=true" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.00"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("1.00"))))
           s.mustEqual("1.0")
         }
 
         "preserve a single trailing zero decimal from zero decimal with preserveZeroDecimal=true" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0.00"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0.00"))))
           s.mustEqual("0.0")
         }
 
         "preserve a single trailing zero decimal from multiple of ten with preserveZeroDecimal=true" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("10.00"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("10.00"))))
           s.mustEqual("10.0")
         }
 
         "integer multiple of ten with preserveZeroDecimal=true" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("10"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("10"))))
           s.mustEqual("10")
         }
 
         "integer zero with preserveZeroDecimal=true" in {
-          val s = withJacksonJson(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0"))))
+          val s = withJsonConfig(preserveZeroDecimal)(() => stringify(toJson(BigDecimal("0"))))
           s.mustEqual("0")
         }
 

@@ -21,18 +21,30 @@ import java.math.MathContext
 import scala.util.control.NonFatal
 
 /**
- * Parse settings for BigDecimals. Defines limits that will be used when parsing the BigDecimals, like how many digits
- * are accepted.
+ * Parse and serialization settings for BigDecimals. Defines limits that will be used when parsing the BigDecimals,
+ * like how many digits are accepted.
  */
 sealed trait BigDecimalParseConfig {
 
-  /** The [[MathContext]] used when parsing. */
+  /**
+   * The [[MathContext]] used when parsing, which will be "decimal32", "decimal64", "decimal128" (default),
+   * or "unlimited".
+   * This can be set using the [[JsonConfig.mathContextProperty]] system property.
+   */
   def mathContext: MathContext
 
-  /** Limits the scale, and it is related to the math context used. */
+  /**
+   * Limits the scale, and it is related to the math context used.
+   * The default value is [[JsonConfig.defaultScaleLimit]].
+   * This can be set using the [[JsonConfig.scaleLimitProperty]] system property.
+   */
   def scaleLimit: Int
 
-  /** How many digits are accepted, also related to the math context used. */
+  /**
+   * How many digits are accepted, also related to the math context used.
+   * The default value is [[JsonConfig.defaultDigitsLimit]].
+   * This can be set using the [[JsonConfig.digitsLimitProperty]] system property.
+   */
   def digitsLimit: Int
 }
 
@@ -49,13 +61,27 @@ private final case class BigDecimalParseConfigImpl(mathContext: MathContext, sca
 
 sealed trait BigDecimalSerializerConfig {
 
-  /** Minimum magnitude of BigDecimal to write out as a plain string. */
+  /**
+   * Minimum magnitude of BigDecimal to write out as a plain string.
+   * Defaults to [[JsonConfig.defaultMinPlain]].
+   * This can be set using the [[JsonConfig.minPlainProperty]] system property.
+   */
   def minPlain: BigDecimal
 
-  /** Maximum magnitude of BigDecimal to write out as a plain string. */
+  /**
+   * Maximum magnitude of BigDecimal to write out as a plain string.
+   * Defaults to [[JsonConfig.defaultMaxPlain]].
+   * This can be set using the [[JsonConfig.maxPlainProperty]] system property.
+   */
   def maxPlain: BigDecimal
 
-  /** True to preserve zero decimals (false by default). */
+  /**
+   * True to preserve a zero decimal , or false to drop them (the default).
+   * For example, 1.00 will be serialized as 1 if false or 1.0 if true (only a single zero is preserved).
+   * Other trailing zeroes will be dropped regardless of this value.
+   * For example, 1.1000 will always be serialized as 1.1.
+   * This can be set using the [[JsonConfig.preserveZeroDecimalProperty]] system property.
+   */
   def preserveZeroDecimal: Boolean
 }
 
@@ -80,41 +106,90 @@ sealed trait JsonConfig {
 }
 
 object JsonConfig {
+
+  /**
+   * The default math context ("decimal128").
+   */
   val defaultMathContext: MathContext = MathContext.DECIMAL128
 
-  // Limit for the scale considering the MathContext of 128
-  // limit for scale for decimal128: BigDecimal("0." + "0" * 33 + "1e-6143", java.math.MathContext.DECIMAL128).scale + 1
+  /**
+   * The default limit for the scale considering the default MathContext of decimal128.
+   * limit for scale for decimal128: BigDecimal("0." + "0" * 33 + "1e-6143", java.math.MathContext.DECIMAL128).scale + 1
+   */
   val defaultScaleLimit: Int = 6178
 
-  // 307 digits should be the correct value for 128 bytes. But we are using 310
-  // because Play JSON uses BigDecimal to parse any number including Doubles and
-  // Doubles max value has 309 digits, so we are using 310 here
+  /**
+   * The default limit for digits considering the default MathContext of decimal128.
+   * 307 digits should be the correct value for 128 bytes. But we are using 310
+   * because Play JSON uses BigDecimal to parse any number including Doubles and
+   * Doubles max value has 309 digits, so we are using 310 here
+   */
   val defaultDigitsLimit: Int = 310
 
-  // Drop zero decimal by default.
+  /**
+   * Zero decimal values (e.g. .0 or .00) or dropped by default.
+   * For example, a value of 1.0 or 1.00 will be serialized as 1.
+   */
   val defaultPreserveZeroDecimal: Boolean = false
 
-  // Maximum magnitude of BigDecimal to write out as a plain string
+  /**
+   * The default maximum magnitude of BigDecimal to write out as a plain string.
+   */
   val defaultMaxPlain: BigDecimal = 1E20
 
-  // Minimum magnitude of BigDecimal to write out as a plain string
+  /**
+   * The default minimum magnitude of BigDecimal to write out as a plain string.
+   */
   val defaultMinPlain: BigDecimal = 1E-10
 
-  private[json] def loadScaleLimit: Int = parseNum("play.json.parser.scaleLimit", defaultScaleLimit)(_.toInt)
+  /**
+   * The system property to override the scale limit.
+   */
+  val scaleLimitProperty: String = "play.json.parser.scaleLimit"
 
-  private[json] def loadDigitsLimit: Int = parseNum("play.json.parser.digitsLimit", defaultDigitsLimit)(_.toInt)
+  /**
+   * The system property to override the digits limit
+   */
+  val digitsLimitProperty: String = "play.json.parser.digitsLimit"
 
-  private[json] def loadMathContext: MathContext = parseMathContext("play.json.parser.mathContext")
+  /**
+   * The system property to override the math context. This can be "decimal32", "decimal64", "decimal128" (the default),
+   * or "unlimited".
+   */
+  val mathContextProperty: String = "play.json.parser.mathContext"
+
+  /**
+   * The system property to override the minimum magnitude of BigDecimal to write out as a plain string
+   */
+  val minPlainProperty: String = "play.json.serializer.minPlain"
+
+  /**
+   * The system property to override the maximum magnitude of BigDecimal to write out as a plain string
+   */
+  val maxPlainProperty: String = "play.json.serializer.maxPlain"
+
+  /**
+   * The system property to override whether zero decimals (e.g. .0 or .00) are written by default. These are dropped by default.
+   */
+  val preserveZeroDecimalProperty: String = "play.json.serializer.preserveZeroDecimal"
+
+  private[json] def loadScaleLimit: Int = parseNum(scaleLimitProperty, defaultScaleLimit)(_.toInt)
+
+  private[json] def loadDigitsLimit: Int = parseNum(digitsLimitProperty, defaultDigitsLimit)(_.toInt)
+
+  private[json] def loadMathContext: MathContext = parseMathContext(mathContextProperty)
 
   private[json] def loadMinPlain: BigDecimal =
-    parseNum("play.json.serializer.minPlain", defaultMinPlain)(BigDecimal.exact)
+    parseNum(minPlainProperty, defaultMinPlain)(BigDecimal.exact)
 
   private[json] def loadMaxPlain: BigDecimal =
-    parseNum("play.json.serializer.maxPlain", defaultMaxPlain)(BigDecimal.exact)
+    parseNum(maxPlainProperty, defaultMaxPlain)(BigDecimal.exact)
 
   private[json] def loadPreserveZeroDecimal: Boolean =
-    parseNum("play.json.serializer.preserveZeroDecimal", defaultPreserveZeroDecimal)(_.toBoolean)
+    parseNum(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
 
+  // Default settings, which can be controlled with system properties.
+  // To override, call JacksonJson.setConfig()
   val settings: JsonConfig =
     JsonConfig(
       BigDecimalParseConfig(loadMathContext, loadScaleLimit, loadDigitsLimit),

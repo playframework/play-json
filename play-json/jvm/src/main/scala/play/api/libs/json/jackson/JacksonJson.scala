@@ -26,8 +26,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
 import play.api.libs.json._
 
-import java.util.concurrent.atomic.AtomicReference
-
 /**
  * The Play JSON module for Jackson.
  *
@@ -269,24 +267,20 @@ private[jackson] class PlaySerializers(jsonSettings: JsonConfig) extends Seriali
 }
 
 private[json] object JacksonJson {
-  val defaultInstance: JacksonJson = JacksonJson(JsonConfig.settings)
+  private var instance = JacksonJson(JsonConfig.settings)
 
-  private val ref: AtomicReference[JacksonJson] = new AtomicReference[JacksonJson](defaultInstance)
+  /** Overrides the config. */
+  private[json] def setConfig(jsonConfig: JsonConfig): Unit = {
+    instance = JacksonJson(jsonConfig)
+  }
 
-  /**
-   * Instance used to serialize and deserialize JSON. This is configured with system properties, but can be
-   * overridden for testing.
-   */
-  def get: JacksonJson = ref.get
-
-  /** Sets the instance for testing and returns the old value. */
-  def set(instance: JacksonJson): JacksonJson = ref.getAndSet(instance)
+  private[json] def get: JacksonJson = instance
 }
 
-private[json] case class JacksonJson(jsonSettings: JsonConfig) {
-  private lazy val mapper = (new ObjectMapper).registerModule(new PlayJsonMapperModule(jsonSettings))
+private[json] case class JacksonJson(jsonConfig: JsonConfig) {
+  private val mapper = (new ObjectMapper).registerModule(new PlayJsonMapperModule(jsonConfig))
 
-  private lazy val jsonFactory = new JsonFactory(mapper)
+  private val jsonFactory = new JsonFactory(mapper)
 
   private def stringJsonGenerator(out: java.io.StringWriter) =
     jsonFactory.createGenerator(out)
