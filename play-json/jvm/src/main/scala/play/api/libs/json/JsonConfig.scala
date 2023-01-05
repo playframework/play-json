@@ -173,20 +173,18 @@ object JsonConfig {
    */
   val preserveZeroDecimalProperty: String = "play.json.serializer.preserveZeroDecimal"
 
-  private[json] def loadScaleLimit: Int = parseNum(scaleLimitProperty, defaultScaleLimit)(_.toInt)
+  private[json] def loadScaleLimit: Int = prop(scaleLimitProperty, defaultScaleLimit)(_.toInt)
 
-  private[json] def loadDigitsLimit: Int = parseNum(digitsLimitProperty, defaultDigitsLimit)(_.toInt)
+  private[json] def loadDigitsLimit: Int = prop(digitsLimitProperty, defaultDigitsLimit)(_.toInt)
 
   private[json] def loadMathContext: MathContext = parseMathContext(mathContextProperty)
 
-  private[json] def loadMinPlain: BigDecimal =
-    parseNum(minPlainProperty, defaultMinPlain)(BigDecimal.exact)
+  private[json] def loadMinPlain: BigDecimal = prop(minPlainProperty, defaultMinPlain)(BigDecimal.exact)
 
-  private[json] def loadMaxPlain: BigDecimal =
-    parseNum(maxPlainProperty, defaultMaxPlain)(BigDecimal.exact)
+  private[json] def loadMaxPlain: BigDecimal = prop(maxPlainProperty, defaultMaxPlain)(BigDecimal.exact)
 
   private[json] def loadPreserveZeroDecimal: Boolean =
-    parseNum(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
+    prop(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
 
   // Default settings, which can be controlled with system properties.
   // To override, call JacksonJson.setConfig()
@@ -212,7 +210,7 @@ object JsonConfig {
     case _                  => defaultMathContext
   }
 
-  private[json] def numericProp[T](key: String, default: T)(f: String => T): T =
+  private[json] def prop[T](key: String, default: T)(f: String => T): T =
     try {
       sys.props.get(key).map(f).getOrElse(default)
     } catch {
