@@ -40,7 +40,7 @@ trait EnvReads {
    */
   implicit object JsonNodeReads extends Reads[JsonNode] {
     def reads(json: JsValue): JsResult[JsonNode] =
-      JsSuccess(JacksonJson.jsValueToJsonNode(json))
+      JsSuccess(JacksonJson.get.jsValueToJsonNode(json))
   }
 
   /**
@@ -48,7 +48,7 @@ trait EnvReads {
    */
   implicit object ObjectNodeReads extends Reads[ObjectNode] {
     def reads(json: JsValue): JsResult[ObjectNode] = {
-      json.validate[JsObject].map(jo => JacksonJson.jsValueToJsonNode(jo).asInstanceOf[ObjectNode])
+      json.validate[JsObject].map(jo => JacksonJson.get.jsValueToJsonNode(jo).asInstanceOf[ObjectNode])
     }
   }
 
@@ -57,7 +57,7 @@ trait EnvReads {
    */
   implicit object ArrayNodeReads extends Reads[ArrayNode] {
     def reads(json: JsValue): JsResult[ArrayNode] = {
-      json.validate[JsArray].map(ja => JacksonJson.jsValueToJsonNode(ja).asInstanceOf[ArrayNode])
+      json.validate[JsArray].map(ja => JacksonJson.get.jsValueToJsonNode(ja).asInstanceOf[ArrayNode])
     }
   }
 
