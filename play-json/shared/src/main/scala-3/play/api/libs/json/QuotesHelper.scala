@@ -169,14 +169,13 @@ private[json] trait QuotesHelper {
       tt: Type[T],
       ut: Type[U]
   ): Tuple2[TypeRepr, Expr[T] => (Expr[U] => Expr[R]) => Expr[R]] =
-    TypeRepr.of(using ut) -> {
-      (in: Expr[T]) =>
-        { (f: (Expr[U] => Expr[R])) =>
-          '{
-            val tuple: U = ${ toProduct }($in)
-            ${ f('{ tuple }) }
-          }
+    TypeRepr.of(using ut) -> { (in: Expr[T]) =>
+      { (f: (Expr[U] => Expr[R])) =>
+        '{
+          val tuple: U = ${ toProduct }($in)
+          ${ f('{ tuple }) }
         }
+      }
     }
 
   /**

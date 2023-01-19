@@ -381,9 +381,9 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       import play.api.libs.functional.syntax._
 
       implicit def genericFormat[A: Format]: Format[GenericCaseClass[A]] =
-        (
-          (__ \ "obj").format[A]
-        ).inmap(GenericCaseClass[A] _, x => x.obj)
+        (__ \ "obj")
+          .format[A]
+          .inmap(GenericCaseClass[A] _, x => x.obj)
 
       implicit val wrappedGenericIntFormat: OFormat[WrappedGenericInt] = Json.format[WrappedGenericInt]
 

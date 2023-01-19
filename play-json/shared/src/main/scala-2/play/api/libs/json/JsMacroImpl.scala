@@ -588,9 +588,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       def readLambda: Tree = {
-        val resolver = new ImplicitResolver({ orig: Type =>
+        val resolver = new ImplicitResolver { orig: Type =>
           orig
-        })
+        }
         val cases = Match(
           q"dis",
           subTypes.map { t =>
@@ -628,9 +628,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       }
 
       def writeLambda: Tree = {
-        val resolver = new ImplicitResolver({ orig: Type =>
+        val resolver = new ImplicitResolver { orig: Type =>
           orig
-        })
+        }
         val cases = Match(
           q"v",
           subTypes.map { t =>
@@ -699,13 +699,13 @@ class JsMacroImpl(val c: blackbox.Context) {
       // ---
 
       // combines all reads into CanBuildX
-      val resolver = new ImplicitResolver({
+      val resolver = new ImplicitResolver {
         import utility.boundTypes
 
         { orig: Type =>
           boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
         }
-      })
+      }
 
       val defaultValueMap: Map[Name, Tree] =
         if (!hasOption[Json.DefaultValues]) Map.empty
