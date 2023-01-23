@@ -5,6 +5,10 @@ import sbt._
 import sbt.util._
 import sbt.io.Path._
 
+import com.typesafe.tools.mima.core.DirectMissingMethodProblem
+import com.typesafe.tools.mima.core.IncompatibleMethTypeProblem
+import com.typesafe.tools.mima.core.ProblemFilters
+import com.typesafe.tools.mima.core.StaticVirtualMemberProblem
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
@@ -46,7 +50,27 @@ def playJsonMimaSettings = Seq(
     case (Some(JSPlatform), Some("2.8.1")) => Set.empty
     case (_, Some(previousVersion))        => Set(organization.value %%% moduleName.value % previousVersion)
     case _                                 => throw new Error("Unable to determine previous version")
-  })
+  }),
+  mimaBinaryIssueFilters ++= Seq(
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JacksonJson.generateFromJsValue"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JacksonJson.jsValueToBytes"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JacksonJson.jsValueToJsonNode"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JacksonJson.jsonNodeToJsValue"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JacksonJson.jsonNodeToJsValue"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JacksonJson.parseJsValue"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.jackson.JacksonJson.prettyPrint"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.BigDecimalParser.parse"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.jackson.JsValueDeserializer.this"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.jackson.JsValueSerializer.this"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.jackson.PlayDeserializers.this"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("play.api.libs.json.jackson.PlaySerializers.this"),
+    ProblemFilters.exclude[StaticVirtualMemberProblem]("play.api.libs.json.jackson.JacksonJson.generateFromJsValue"),
+    ProblemFilters.exclude[StaticVirtualMemberProblem]("play.api.libs.json.jackson.JacksonJson.jsValueToBytes"),
+    ProblemFilters.exclude[StaticVirtualMemberProblem]("play.api.libs.json.jackson.JacksonJson.jsValueToJsonNode"),
+    ProblemFilters.exclude[StaticVirtualMemberProblem]("play.api.libs.json.jackson.JacksonJson.jsonNodeToJsValue"),
+    ProblemFilters.exclude[StaticVirtualMemberProblem]("play.api.libs.json.jackson.JacksonJson.parseJsValue"),
+    ProblemFilters.exclude[StaticVirtualMemberProblem]("play.api.libs.json.jackson.JacksonJson.prettyPrint"),
+  )
 )
 
 // Workaround for https://github.com/scala-js/scala-js/issues/2378
