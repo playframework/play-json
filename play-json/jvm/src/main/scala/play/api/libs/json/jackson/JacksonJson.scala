@@ -48,7 +48,7 @@ import play.api.libs.json._
  * val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
  * }}}
  */
-@deprecated("Use PlayJsonMapperModule class instead", "2.9.4")
+@deprecated("Use PlayJsonMapperModule class instead", "2.8.3")
 sealed class PlayJsonModule(parserSettings: JsonParserSettings) extends PlayJsonMapperModule(parserSettings) {
   override def setupModule(context: SetupContext): Unit = super.setupModule(context)
 }

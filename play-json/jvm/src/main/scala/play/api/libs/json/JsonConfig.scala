@@ -223,14 +223,14 @@ private final case class JsonConfigImpl(
     bigDecimalSerializerConfig: BigDecimalSerializerConfig
 ) extends JsonConfig
 
-@deprecated("Use BigDecimalParseConfig instead", "2.9.4")
+@deprecated("Use BigDecimalParseConfig instead", "2.8.3")
 final case class BigDecimalParseSettings(
     mathContext: MathContext = MathContext.DECIMAL128,
     scaleLimit: Int,
     digitsLimit: Int
 ) extends BigDecimalParseConfig
 
-@deprecated("Use BigDecimalSerializerConfig instead", "2.9.4")
+@deprecated("Use BigDecimalSerializerConfig instead", "2.8.3")
 final case class BigDecimalSerializerSettings(
     minPlain: BigDecimal,
     maxPlain: BigDecimal
@@ -238,7 +238,7 @@ final case class BigDecimalSerializerSettings(
   override def preserveZeroDecimal: Boolean = defaultPreserveZeroDecimal
 }
 
-@deprecated("Use JsonConfig instead", "2.9.4")
+@deprecated("Use JsonConfig instead", "2.8.3")
 final case class JsonParserSettings(
     bigDecimalParseSettings: BigDecimalParseSettings,
     bigDecimalSerializerSettings: BigDecimalSerializerSettings
