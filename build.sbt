@@ -157,7 +157,7 @@ lazy val root = project
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("play-json"))
-  .enablePlugins(Omnidoc, Publish, Playdoc)
+  .enablePlugins(Omnidoc, Playdoc)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
@@ -249,7 +249,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm.settings(
 
 lazy val `play-json-joda` = project
   .in(file("play-json-joda"))
-  .enablePlugins(Omnidoc, Publish)
+  .enablePlugins(Omnidoc)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
       libraryDependencies ++= joda ++ specs2
@@ -263,7 +263,7 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform)
   .settings(
     commonSettings ++ playJsonMimaSettings
   )
-  .enablePlugins(Omnidoc, Publish)
+  .enablePlugins(Omnidoc)
 
 lazy val `play-functionalJVM` = `play-functional`.jvm
 lazy val `play-functionalJS`  = `play-functional`.js
