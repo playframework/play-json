@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsonConfig.setConfig
-import play.api.libs.json.jackson.JacksonJson
 
 class JsonSpec extends org.specs2.mutable.Specification {
   "JSON".title

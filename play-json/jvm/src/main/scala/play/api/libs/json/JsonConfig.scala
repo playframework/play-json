@@ -4,10 +4,10 @@
 
 package play.api.libs.json
 
-import play.api.libs.json.JsonConfig.defaultMaxPlain
-import play.api.libs.json.JsonConfig.defaultMinPlain
 import play.api.libs.json.JsonConfig.defaultDigitsLimit
 import play.api.libs.json.JsonConfig.defaultMathContext
+import play.api.libs.json.JsonConfig.defaultMaxPlain
+import play.api.libs.json.JsonConfig.defaultMinPlain
 import play.api.libs.json.JsonConfig.defaultPreserveZeroDecimal
 import play.api.libs.json.JsonConfig.defaultScaleLimit
 import play.api.libs.json.JsonConfig.loadDigitsLimit
