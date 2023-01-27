@@ -194,8 +194,9 @@ object JsonConfig {
   private[json] def loadPreserveZeroDecimal: Boolean =
     prop(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
 
-  // Default settings, which can be controlled with system properties.
-  // Can be configured with system properties or programmatically with setConfig()
+  /**
+   * Default settings, which can be controlled with system properties or set programmatically with [[setConfig]]
+   */
   val settings: JsonConfig =
     JsonConfig(
       BigDecimalParseConfig(loadMathContext, loadScaleLimit, loadDigitsLimit),
