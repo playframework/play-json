@@ -21,11 +21,10 @@ import java.math.MathContext
 import scala.util.control.NonFatal
 
 /**
- * Parse and serialization settings for BigDecimals. Defines limits that will be used when parsing the BigDecimals,
+ * Parse settings for BigDecimals. Defines limits that will be used when parsing the BigDecimals,
  * like how many digits are accepted.
  *
- * This can be configured with system properties, or programmatically with
- * [[setConfig]].
+ * This can be configured with system properties, or programmatically with [[JsonConfig.setConfig]].
  */
 sealed trait BigDecimalParseConfig {
 
@@ -62,6 +61,11 @@ object BigDecimalParseConfig {
 private final case class BigDecimalParseConfigImpl(mathContext: MathContext, scaleLimit: Int, digitsLimit: Int)
     extends BigDecimalParseConfig
 
+/**
+ * Serialization settings for BigDecimals.
+ *
+ * This can be configured with system properties, or programmatically with [[JsonConfig.setConfig]].
+ */
 sealed trait BigDecimalSerializerConfig {
 
   /**
@@ -109,11 +113,6 @@ sealed trait JsonConfig {
 }
 
 object JsonConfig {
-
-  /** Override configuration */
-  def setConfig(jsonConfig: JsonConfig): Unit = {
-    JacksonJson.initConfig(jsonConfig)
-  }
 
   /**
    * The default math context ("decimal128").
@@ -194,10 +193,13 @@ object JsonConfig {
   private[json] def loadPreserveZeroDecimal: Boolean =
     prop(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
 
-  /**
-   * Default settings, which can be controlled with system properties or set programmatically with [[setConfig]]
-   */
-  val settings: JsonConfig =
+  /** Override configuration */
+  def setConfig(jsonConfig: JsonConfig): Unit = JacksonJson.initConfig(jsonConfig)
+
+  /** Current configuration. */
+  def settings: JsonConfig = JacksonJson.get.jsonConfig
+
+  private[json] val defaultSettings: JsonConfig =
     JsonConfig(
       BigDecimalParseConfig(loadMathContext, loadScaleLimit, loadDigitsLimit),
       BigDecimalSerializerConfig(loadMinPlain, loadMaxPlain, loadPreserveZeroDecimal)

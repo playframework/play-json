@@ -271,7 +271,7 @@ private[jackson] class PlaySerializers(jsonSettings: JsonConfig) extends Seriali
 }
 
 private[json] object JacksonJson {
-  private var instance = JacksonJson(JsonConfig.settings)
+  private var instance = JacksonJson(JsonConfig.defaultSettings)
 
   /** Overrides the config. */
   private[json] def initConfig(jsonConfig: JsonConfig): Unit = {

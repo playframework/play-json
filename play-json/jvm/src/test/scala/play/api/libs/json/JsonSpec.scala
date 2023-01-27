@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
-import play.api.libs.json.JsonConfig.setConfig
 
 class JsonSpec extends org.specs2.mutable.Specification {
   "JSON".title
@@ -83,12 +82,12 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
   def withJsonConfig[T](jsonConfig: JsonConfig)(f: () => T) = {
     try {
-      setConfig(jsonConfig)
+      JsonConfig.setConfig(jsonConfig)
       f.apply()
     } catch {
       case err: Throwable => throw err
     } finally {
-      setConfig(JsonConfig.settings)
+      JsonConfig.setConfig(JsonConfig.defaultSettings)
     }
   }
 
