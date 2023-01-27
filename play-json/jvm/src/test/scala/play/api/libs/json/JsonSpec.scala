@@ -7,11 +7,11 @@ package play.api.libs.json
 import java.util.Calendar
 import java.util.Date
 import java.util.TimeZone
-
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
+import play.api.libs.json.JsonConfig.setConfig
 import play.api.libs.json.jackson.JacksonJson
 
 class JsonSpec extends org.specs2.mutable.Specification {
@@ -84,12 +84,12 @@ class JsonSpec extends org.specs2.mutable.Specification {
 
   def withJsonConfig[T](jsonConfig: JsonConfig)(f: () => T) = {
     try {
-      JacksonJson.setConfig(jsonConfig)
+      setConfig(jsonConfig)
       f.apply()
     } catch {
       case err: Throwable => throw err
     } finally {
-      JacksonJson.setConfig(JsonConfig.settings)
+      setConfig(JsonConfig.settings)
     }
   }
 

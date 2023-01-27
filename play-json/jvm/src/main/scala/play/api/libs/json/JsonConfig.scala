@@ -15,14 +15,17 @@ import play.api.libs.json.JsonConfig.loadMathContext
 import play.api.libs.json.JsonConfig.loadMaxPlain
 import play.api.libs.json.JsonConfig.loadMinPlain
 import play.api.libs.json.JsonConfig.loadScaleLimit
+import play.api.libs.json.jackson.JacksonJson
 
 import java.math.MathContext
-
 import scala.util.control.NonFatal
 
 /**
  * Parse and serialization settings for BigDecimals. Defines limits that will be used when parsing the BigDecimals,
  * like how many digits are accepted.
+ *
+ * This can be configured with system properties, or programmatically with
+ * [[setConfig]].
  */
 sealed trait BigDecimalParseConfig {
 
@@ -107,6 +110,11 @@ sealed trait JsonConfig {
 
 object JsonConfig {
 
+  /** Override configuration */
+  def setConfig(jsonConfig: JsonConfig): Unit = {
+    JacksonJson.initConfig(jsonConfig)
+  }
+
   /**
    * The default math context ("decimal128").
    */
@@ -187,7 +195,7 @@ object JsonConfig {
     prop(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
 
   // Default settings, which can be controlled with system properties.
-  // To override, call JacksonJson.setConfig()
+  // Can be configured with system properties or programmatically with setConfig()
   val settings: JsonConfig =
     JsonConfig(
       BigDecimalParseConfig(loadMathContext, loadScaleLimit, loadDigitsLimit),
