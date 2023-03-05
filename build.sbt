@@ -243,7 +243,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
   .settings(enableJol)
 
 def enableJol = Seq(
-  libraryDependencies += "org.openjdk.jol" % "jol-core" % "0.16" % Test,
+  libraryDependencies += "org.openjdk.jol" % "jol-core" % "0.17" % Test,
   Test / javaOptions += "-Djdk.attach.allowAttachSelf",
   compileOrder := CompileOrder.JavaThenScala,
 )
