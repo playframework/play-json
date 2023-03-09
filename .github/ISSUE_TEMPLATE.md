@@ -1,6 +1,6 @@
 ### Are you looking for help?
 
-This is an issue tracker, used to manage and track the development of Play JSON. It is not a support system and so it is not a place to ask questions or get help. If you're not sure if you have found a bug, the best place to start is with either the [users mailing list](https://discuss.lightbend.com/c/play/) or [Stack Overflow](http://stackoverflow.com/questions/ask?tags=play-json).
+This is an issue tracker, used to manage and track the development of Play JSON. It is not a support system and so it is not a place to ask questions or get help. If you're not sure if you have found a bug, the best place to start is with either the [Play Discussion Forum](https://github.com/playframework/playframework/discussions) or [Stack Overflow](http://stackoverflow.com/questions/ask?tags=play-json).
 
 If you want to discuss a feature request, the same tools are available.  
 
