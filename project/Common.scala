@@ -19,9 +19,9 @@ object Common extends AutoPlugin {
       scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-encoding", "utf8"),
       javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:-options"),
       developers += Developer(
-        "contributors",
-        "Contributors",
-        "https://gitter.im/playframework/contributors",
+        "playframework",
+        "Play Framework Team",
+        "contact@playframework.com",
         url("https://github.com/playframework")
       ),
       description := "Play JSON"
