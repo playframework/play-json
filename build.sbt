@@ -51,6 +51,16 @@ def playJsonMimaSettings = Seq(
     case _ => throw new Error("Unable to determine previous version")
   }),
   mimaBinaryIssueFilters ++= Seq(
+    // remove deprecated methods
+    // https://github.com/playframework/play-json/pull/861
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.productArity"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.productElement"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.copy"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.copy$default$1"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsFalse.copy$default$1"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsFalse.copy"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsTrue.copy$default$1"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsTrue.copy"),
     // MergedOWrites is private
     ProblemFilters.exclude[Problem]("play.api.libs.json.OWrites#MergedOWrites*"),
     // [error]  * in current version, classes mixing play.api.libs.json.DefaultWrites need be recompiled to wire to the new static mixin forwarder method all super calls to method enumNameWrites()play.api.libs.json.Writes
