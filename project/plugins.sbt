@@ -9,7 +9,7 @@ addSbtPlugin("com.typesafe.play" % "play-docs-sbt-plugin" % sys.props.getOrElse(
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.4")
 
-addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.1")
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.2")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.9.0")
 
