@@ -15,21 +15,21 @@ object StaticBinding {
 
   /** Parses a [[JsValue]] from a stream (assuming UTF-8). */
   def parseJsValue(stream: java.io.InputStream): JsValue =
-    StaticBindingJsNative.parseJsValue(stream)
+    StaticBindingNonJvm.parseJsValue(stream)
 
   /** Parses a [[JsValue]] from a string content. */
   def parseJsValue(input: String): JsValue =
     anyToJsValue(JSON.parse(input))
 
   def generateFromJsValue(jsValue: JsValue, escapeNonASCII: Boolean): String =
-    StaticBindingJsNative.generateFromJsValue(jsValue, escapeNonASCII)
+    StaticBindingNonJvm.generateFromJsValue(jsValue, escapeNonASCII)
 
-  def prettyPrint(jsValue: JsValue): String = StaticBindingJsNative.prettyPrint(jsValue)
+  def prettyPrint(jsValue: JsValue): String = StaticBindingNonJvm.prettyPrint(jsValue)
 
-  def toBytes(jsValue: JsValue): Array[Byte] = StaticBindingJsNative.toBytes(jsValue)
+  def toBytes(jsValue: JsValue): Array[Byte] = StaticBindingNonJvm.toBytes(jsValue)
 
   @inline private[json] def fromString(s: String, escapeNonASCII: Boolean): String =
-    if (!escapeNonASCII) JSON.stringify(s, null) else StaticBindingJsNative.escapeStr(JSON.stringify(s, null))
+    if (!escapeNonASCII) JSON.stringify(s, null) else StaticBindingNonJvm.escapeStr(JSON.stringify(s, null))
 
   private def anyToJsValue(raw: Any): JsValue = raw match {
     case null           => JsNull

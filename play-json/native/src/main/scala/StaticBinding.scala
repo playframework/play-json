@@ -31,14 +31,14 @@ object StaticBinding {
 
   /** Parses a [[JsValue]] from a stream (assuming UTF-8). */
   def parseJsValue(stream: java.io.InputStream): JsValue =
-    StaticBindingJsNative.parseJsValue(stream)
+    StaticBindingNonJvm.parseJsValue(stream)
 
   def generateFromJsValue(jsValue: JsValue, escapeNonASCII: Boolean): String =
-    StaticBindingJsNative.generateFromJsValue(jsValue, escapeNonASCII)
+    StaticBindingNonJvm.generateFromJsValue(jsValue, escapeNonASCII)
 
-  def prettyPrint(jsValue: JsValue): String = StaticBindingJsNative.prettyPrint(jsValue)
+  def prettyPrint(jsValue: JsValue): String = StaticBindingNonJvm.prettyPrint(jsValue)
 
-  def toBytes(jsValue: JsValue): Array[Byte] = StaticBindingJsNative.toBytes(jsValue)
+  def toBytes(jsValue: JsValue): Array[Byte] = StaticBindingNonJvm.toBytes(jsValue)
 
   @inline private[json] def fromString(s: String, escapeNonASCII: Boolean): String = {
     def escaped(c: Char) = c match {
@@ -52,7 +52,7 @@ object StaticBinding {
       case c    => c.toString
     }
     val stringified = if (s == null) "null" else s""""${s.flatMap(escaped)}""""
-    if (!escapeNonASCII) stringified else StaticBindingJsNative.escapeStr(stringified)
+    if (!escapeNonASCII) stringified else StaticBindingNonJvm.escapeStr(stringified)
   }
 
 }

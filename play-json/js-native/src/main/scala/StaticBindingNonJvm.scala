@@ -6,7 +6,7 @@ package play.api.libs.json
 
 import java.io.InputStreamReader
 
-private[json] object StaticBindingJsNative {
+private[json] object StaticBindingNonJvm {
 
   /** Parses a [[JsValue]] from a stream (assuming UTF-8). */
   def parseJsValue(stream: java.io.InputStream): JsValue = {
