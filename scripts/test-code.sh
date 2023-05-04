@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 echo MATRIX_SCALA=$MATRIX_SCALA
-sbt -DscalaJSStage=full ++$MATRIX_SCALA test publishLocal || exit 1
+sbt -DscalaJSStage=full \
+    -J-XX:MinRAMPercentage=90.0 \
+    -J-XX:MaxRAMPercentage=90.0 \
+    ++$MATRIX_SCALA test publishLocal || exit 1
 
 case "$MATRIX_SCALA" in
   3.* | 2.12.*) echo "SKIPPING docs/test" ;;
