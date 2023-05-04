@@ -15,7 +15,7 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     "obj1" in assertSizes("""{"1":true}""", 152, 168)
     "obj4" in assertSizes("""{"1":true,"2":true,"3":true,"4":true}""", 296, 312)
 
-    "arr0" in assertSizes("""[]""", 120, 120)
+    "arr0" in assertSizes("""[]""", 40, 40)
     "arr1" in assertSizes("""[true]""", 120, 120)
     "arr4" in assertSizes("""[true,true,true,true]""", 120, 120)
 
@@ -46,7 +46,7 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     "obj0" in assertSizes(arr1KB("{}"), 7432, 7432)
     "obj1" in assertSizes(arr1KB("""{"a":6}"""), 29568, 31568)
     "nums" in assertSizes(arr1KB("6"), 42104, 42104)
-    "arr0" in assertSizes(arr1KB("[]"), 42064, 42064)
+    "arr0" in assertSizes(arr1KB("[]"), 15424, 15424)
     "arr1" in assertSizes(arr1KB("[6]"), 51080, 51080)
   }
 
