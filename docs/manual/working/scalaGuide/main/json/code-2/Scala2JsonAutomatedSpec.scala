@@ -4,7 +4,6 @@
 
 package scalaguide.json
 
-import play.api.libs.json.Json
 import org.specs2.mutable.Specification
 
 //#valueClass

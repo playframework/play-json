@@ -135,6 +135,22 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       "js.toJsObject(peach)(writes)".mustNot(typeCheck)
     }
 
+    "create object using builder" in {
+      val builder = Json.newBuilder
+
+      builder += ("name" -> "John Doe")
+      builder += ("age"  -> 25)
+
+      val result: JsObject = builder.result()
+
+      result.mustEqual(
+        Json.obj(
+          "name" -> "John Doe",
+          "age"  -> 25
+        )
+      )
+    }
+
     "convert to a byte array containing the UTF-8 representation" in json { js =>
       val json = js.parse("""
                             |{

@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import scala.collection.mutable.{ Builder => MBuilder }
+
 import java.io.InputStream
 
 /**
@@ -226,12 +228,52 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
   implicit def toJsFieldJsValueWrapper[T](field: T)(implicit w: Writes[T]): JsValueWrapper =
     JsValueWrapperImpl(w.writes(field))
 
-  def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map(f => (f._1, unwrap(f._2))))
+  def obj(fields: (String, JsValueWrapper)*): JsObject = JsObject(fields.map { case (name, wrapped) =>
+    name -> unwrap(wrapped)
+  })
+
+  /**
+   * Returns a JSON object builder.
+   *
+   * {{{
+   *   import play.api.libs.json.{ Json, JsObject }
+   *
+   *   // Create a new builder
+   *   val builder: JsObjectBuilder = JsObject.newBuilder
+   *
+   *   // Add key-value pairs to the builder
+   *   builder += ("name" -> "John Doe")
+   *   builder += ("age" -> 25)
+   *
+   *   // Clear the builder
+   *   builder.clear()
+   *
+   *   // Add more key-value pairs
+   *   builder += ("email" -> "john.doe@example.com")
+   *   builder += ("address" -> "123 Street")
+   *
+   *   // Build the final JsObject
+   *   val result: JsObject = builder.result()
+   *
+   *   // Print the resulting JsObject
+   *   println(result)
+   * }}}
+   *
+   * This will output:
+   * {{{
+   *   {"email":"john.doe@example.com","address":"123 Street"}
+   * }}}
+   */
+  def newBuilder: MBuilder[(String, Json.JsValueWrapper), JsObject] =
+    new JsObjectBuilder()
 
   def arr(items: JsValueWrapper*): JsArray = JsArray(items.iterator.map(unwrap).toArray[JsValue])
 
-  // Passed nulls will typecheck without needing the implicit conversion, so they need to checked at runtime
-  private def unwrap(wrapper: JsValueWrapper) = wrapper match {
+  /*
+   * Passed nulls will typecheck without needing the implicit conversion,
+   * so they need to checked at runtime.
+   */
+  private[json] def unwrap(wrapper: JsValueWrapper) = wrapper match {
     case null                      => JsNull
     case JsValueWrapperImpl(value) => value
   }
