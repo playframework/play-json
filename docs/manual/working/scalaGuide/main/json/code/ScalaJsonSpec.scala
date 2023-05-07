@@ -45,8 +45,9 @@ class ScalaJsonSpec extends Specification {
     "parse json" in {
       import play.api.libs.json._
       val json = sampleJson
-      (json \ "name").get.must_==(JsString("Watership Down"))
-      (json \ "location" \ "lat").get.must_==(JsNumber(51.235685))
+
+      (json \ "name").toOption mustEqual Some(JsString("Watership Down"))
+      (json \ "location" \ "lat").toOption mustEqual Some(JsNumber(51.235685))
     }
 
     "allow constructing json using case classes" in {
@@ -78,17 +79,15 @@ class ScalaJsonSpec extends Specification {
         )
       )
       //#convert-from-classes
-      (json \ "name").get.must_==(JsString("Watership Down"))
+
+      (json \ "name").toOption mustEqual Some(JsString("Watership Down"))
     }
 
     "allow constructing json using factory methods" in {
       //#convert-from-factory
-      import play.api.libs.json.JsNull
-      import play.api.libs.json.Json
-      import play.api.libs.json.JsString
-      import play.api.libs.json.JsValue
+      import play.api.libs.json.{JsNull,Json,JsString,JsObject}
 
-      val json: JsValue = Json.obj(
+      val json: JsObject = Json.obj(
         "name"     -> "Watership Down",
         "location" -> Json.obj("lat" -> 51.235685, "long" -> -1.309197),
         "residents" -> Json.arr(
@@ -105,7 +104,44 @@ class ScalaJsonSpec extends Specification {
         )
       )
       //#convert-from-factory
-      (json \ "name").get.must_==(JsString("Watership Down"))
+
+      (json \ "name").toOption mustEqual Some(JsString("Watership Down"))
+    }
+
+    "allow constructing json using builder" in {
+      //#object-builder
+      import play.api.libs.json.{ JsNull, Json, JsString, JsObject }
+
+      def asJson(active: Boolean): JsObject = {
+        val builder = Json.newBuilder
+
+        builder ++= Seq(
+          "name" -> "Watership Down",
+          "location" -> Json.obj(
+            "lat" -> 51.235685D, "long" -> -1.309197D))
+
+        if (active) {
+          builder += "active" -> true
+        }
+
+        builder += "residents" -> Seq(
+          Json.obj(
+            "name" -> "Fiver",
+            "age"  -> 4,
+            "role" -> JsNull
+          ),
+          Json.obj(
+            "name" -> "Bigwig",
+            "age"  -> 6,
+            "role" -> "Owsla"
+          ))
+
+        builder.result()
+      }
+      //#object-builder
+
+      (asJson(true) \ "name").
+        toOption mustEqual Some(JsString("Watership Down"))
     }
 
     "allow converting simple types" in {
@@ -171,7 +207,7 @@ class ScalaJsonSpec extends Specification {
       val json = Json.toJson(place)
       //#convert-from-model
 
-      (json \ "name").get === JsString("Watership Down")
+      (json \ "name").toOption === Some(JsString("Watership Down"))
     }
 
     "allow converting models preferred" in {
@@ -211,7 +247,7 @@ class ScalaJsonSpec extends Specification {
       val json = Json.toJson(place)
       //#convert-from-model
 
-      (json \ "name").get === JsString("Watership Down")
+      (json \ "name").toOption === Some(JsString("Watership Down"))
     }
 
     "allow traversing JsValue tree" in {
@@ -219,19 +255,20 @@ class ScalaJsonSpec extends Specification {
       val json = sampleJson
 
       //#traverse-simple-path
-      val lat = (json \ "location" \ "lat").get
-      // returns JsNumber(51.235685)
-      val bigwig = (json \ "residents" \ 1).get
-      // returns {"name":"Bigwig","age":6,"role":"Owsla"}
+      val lat = (json \ "location" \ "lat").toOption
+      // returns some JsNumber(51.235685)
+      val bigwig = (json \ "residents" \ 1).toOption
+      // returns some {"name":"Bigwig","age":6,"role":"Owsla"}
 
       //#traverse-simple-path
 
       val expected = Json.parse(
         """{"name":"Bigwig","age":6,"role":"Owsla"}"""
       )
-      bigwig.mustEqual(expected)
 
-      lat === JsNumber(51.235685)
+      bigwig mustEqual Some(expected)
+
+      lat === Some(JsNumber(51.235685))
 
       //#traverse-recursive-path
       val names = json \\ "name"
@@ -282,7 +319,8 @@ class ScalaJsonSpec extends Specification {
         case _: NoSuchElementException =>
       }
 
-      (bigwig \ "name").get === JsString("Bigwig")
+      bigwig.flatMap(
+        obj => (obj \ "name").toOption) === Some(JsString("Bigwig"))
     }
 
     "allow converting JsValue to String" in {
