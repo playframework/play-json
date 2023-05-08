@@ -1,4 +1,4 @@
-<!--- Copyright (C) Lightbend Inc. <https://www.lightbend.com> -->
+<!--- Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com> -->
 # JSON Reads/Writes/Format Combinators
 
 [[JSON basics|ScalaJson]] introduced [`Reads`](api/scala/play/api/libs/json/Reads.html) and [`Writes`](api/scala/play/api/libs/json/Writes.html) converters which are used to convert between [`JsValue`](api/scala/play/api/libs/json/JsValue.html) structures and other data types. This page covers in greater detail how to build these converters and how to use validation during conversion.

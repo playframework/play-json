@@ -1,4 +1,4 @@
-<!--- Copyright (C) Lightbend Inc. <https://www.lightbend.com> -->
+<!--- Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com> -->
 # JSON basics
 
 Modern web applications often need to parse and generate data in the JSON (JavaScript Object Notation) format. Play supports this via its [JSON library](api/scala/play/api/libs/json/index.html).
