@@ -165,7 +165,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
           Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
       ),
       libraryDependencies ++= Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.15"   % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.2.16"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-16" % "3.2.14.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.17.0"   % Test,
       ),
