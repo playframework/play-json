@@ -73,6 +73,10 @@ Represents a path into a `JsValue` structure, analogous to XPath for XML. This i
 
 @[convert-from-factory](code/ScalaJsonSpec.scala)
 
+You also can use `Json.newBuilder` to create `JsObject`:
+
+@[object-builder](code/ScalaJsonSpec.scala)
+
 ### Using Writes converters
 
 Scala to `JsValue` conversion is performed by the utility method `Json.toJson[T](T)(implicit writes: Writes[T])`. This functionality depends on a converter of type [`Writes[T]`](api/scala/play/api/libs/json/Writes.html) which can convert a `T` to a `JsValue`.
