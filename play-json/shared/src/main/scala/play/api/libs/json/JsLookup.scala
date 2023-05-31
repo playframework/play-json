@@ -104,7 +104,9 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
       obj.underlying
         .get(fieldName)
         .map(JsDefined.apply)
-        .getOrElse(JsUndefined(s"'$fieldName' is undefined on object: $obj"))
+        .getOrElse(
+          JsUndefined(s"'$fieldName' is undefined on object. Available keys are ${obj.keys.mkString("'", "', '", "'")}")
+        )
     case JsDefined(o) =>
       JsUndefined(s"$o is not an object")
     case undef => undef
