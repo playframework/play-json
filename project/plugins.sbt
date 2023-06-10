@@ -11,7 +11,7 @@ addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.4")
 
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.2")
 
-addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.9.0")
+addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.10.0")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.13.1")
 
