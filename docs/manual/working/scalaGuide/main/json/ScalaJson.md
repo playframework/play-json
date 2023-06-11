@@ -195,3 +195,9 @@ To convert from JsValue to a model, you must define implicit `Reads[T]` where `T
 @[sample-model](code/ScalaJsonSpec.scala)
 
 @[convert-to-model](code/ScalaJsonSpec.scala)
+
+### Using simple tuples
+
+Simple JSON object can be reads as and writes from simple tuples.
+
+@[handle-simple-tuples](code/ScalaJsonSpec.scala)

@@ -118,6 +118,29 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     }
   }
 
+  "Tuples" should {
+    "be written with custom field names" when {
+      "tuple2" in {
+        val w = OWrites.tuple2[String, Double]("name", "score")
+
+        w.writes("Foo" -> 23.4D).mustEqual(Json.obj("name" -> "Foo", "score" -> 23.4D))
+      }
+
+      "tuple3" in {
+        val w = OWrites.tuple3[String, Int, Boolean]("name", "age", "isStudent")
+
+        w.writes(("Alice", 25, true)).mustEqual(Json.obj("name" -> "Alice", "age" -> 25, "isStudent" -> true))
+      }
+
+      "tuple4" in {
+        val w = OWrites.tuple4[String, Int, Boolean, Double]("name", "age", "isStudent", "score")
+
+        w.writes(("Bob", 30, false, 78.9D))
+          .mustEqual(Json.obj("name" -> "Bob", "age" -> 30, "isStudent" -> false, "score" -> 78.9D))
+      }
+    }
+  }
+
   "Identity writes" should {
     import scala.reflect.ClassTag
     import scala.language.higherKinds
