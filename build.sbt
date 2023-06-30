@@ -154,7 +154,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   )
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "jawn-parser" % "1.5.0"
+      "org.typelevel" %%% "jawn-parser" % "1.5.1"
     )
   )
   .settings(
