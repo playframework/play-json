@@ -394,7 +394,7 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       val req = """{"name":"foo", "zip":"foo", "city":"foo"}"""
 
       test.toString.mustEqual(js.parse(req).toString)
-    // must be(equalIgnoringSpace(Json.parse(req).toString))
+      // must be(equalIgnoringSpace(Json.parse(req).toString))
     }
 
     "keep insertion order on large ListMap".taggedAs(UnstableInScala213) in json { js =>
