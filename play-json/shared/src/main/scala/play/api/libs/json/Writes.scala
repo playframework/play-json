@@ -161,6 +161,77 @@ object OWrites extends PathWrites with ConstraintWrites {
     OWrites[A] { a =>
       f(a, w.writes(a))
     }
+
+  /**
+   * Writes a tuple of two values to a JSON object, with custom field names.
+   *
+   * @param name1 the name of the first field
+   * @param name2 the name of the second field
+   * @tparam A the type of the first value
+   * @tparam B the type of the second value
+   *
+   * {{{
+   * val tuple2Writes: OWrites[(String, Int)] =
+   *   OWrites.tuple2[String, Int]("name", "age")
+   *
+   * tuple2Writes.writes("Bob" -> 30) // {"name":"Bob","age":30}
+   * }}}
+   */
+  def tuple2[A: Writes, B: Writes](name1: String, name2: String): OWrites[(A, B)] = OWrites[(A, B)] { case (a, b) =>
+    Json.obj(name1 -> a, name2 -> b)
+  }
+
+  /**
+   * Writes a tuple of three values to a JSON object, with custom field names.
+   *
+   * @param name1 the name of the first field
+   * @param name2 the name of the second field
+   * @param name3 the name of the third field
+   * @tparam A the type of the first value
+   * @tparam B the type of the second value
+   * @tparam C the type of the third value
+   *
+   * {{{
+   * val tuple3Writes: OWrites[(String, Int, Boolean)] =
+   *   OWrites.tuple3[String, Int, Boolean]("name", "age", "isStudent")
+   *
+   * tuple3Writes.writes(("Bob", 30, false))
+   * // {"name":"Bob","age":30,"isStudent":false}
+   * }}}
+   */
+  def tuple3[A: Writes, B: Writes, C: Writes](name1: String, name2: String, name3: String): OWrites[(A, B, C)] =
+    OWrites[(A, B, C)] { case (a, b, c) =>
+      Json.obj(name1 -> a, name2 -> b, name3 -> c)
+    }
+
+  /**
+   * Writes a tuple of four values to a JSON object, with custom field names.
+   *
+   * @param name1 the name of the first field
+   * @param name2 the name of the second field
+   * @param name3 the name of the third field
+   * @param name4 the name of the fourth field
+   * @tparam A the type of the first value
+   * @tparam B the type of the second value
+   * @tparam C the type of the third value
+   * @tparam D the type of the fourth value
+   *
+   * {{{
+   * val tuple4Writes: OWrites[(String, Int, Boolean, Double)] =
+   *   OWrites.tuple4[String, Int, Boolean, Double]("name", "age", "isStudent", "score")
+   *
+   * tuple4Writes.writes(("Bob", 30, false, 91.2))
+   * // {"name":"Bob","age":30,"isStudent":false,"score":91.2}
+   * }}}
+   */
+  def tuple4[A: Writes, B: Writes, C: Writes, D: Writes](
+      name1: String,
+      name2: String,
+      name3: String,
+      name4: String
+  ): OWrites[(A, B, C, D)] = OWrites[(A, B, C, D)] { case (a, b, c, d) =>
+    Json.obj(name1 -> a, name2 -> b, name3 -> c, name4 -> d)
+  }
 }
 
 /**

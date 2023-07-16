@@ -301,6 +301,34 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     }
   }
 
+  "Tuple" should {
+    "be read with custom element names" when {
+      "tuple2" in {
+        val reads = Reads.tuple2[String, Float]("name", "score")
+
+        Json.obj("name" -> "Foo", "score" -> 1.23F).validate(reads).mustEqual(JsSuccess("Foo" -> 1.23F))
+      }
+
+      "tuple3" in {
+        val reads = Reads.tuple3[String, Float, Int]("name", "score", "age")
+
+        Json
+          .obj("name" -> "Foo", "age" -> 10, "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(JsSuccess(Tuple3("Foo", 1.23F, 10)))
+      }
+
+      "tuple4" in {
+        val reads = Reads.tuple4[String, Float, Int, Seq[String]]("name", "score", "age", "aliases")
+
+        Json
+          .obj("name" -> "Foo", "aliases" -> Seq("Bar"), "age" -> 10, "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(JsSuccess(Tuple4("Foo", 1.23F, 10, Seq("Bar"))))
+      }
+    }
+  }
+
   "Identity reads" should {
     def success[T <: JsValue](fixture: T)(implicit r: Reads[T], ct: scala.reflect.ClassTag[T]) =
       s"be resolved for $fixture as ${ct.runtimeClass.getSimpleName}" in {

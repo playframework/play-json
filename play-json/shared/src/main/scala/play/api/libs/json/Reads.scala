@@ -623,4 +623,102 @@ trait DefaultReads extends LowPriorityDefaultReads {
   }
 
   implicit val uuidReads: Reads[java.util.UUID] = new UUIDReader(false)
+
+  /**
+   * Reads a JSON object and constructs a tuple of two values,
+   * with custom names for the element fields.
+   *
+   * @param name1 the name of the first element `_1`
+   * @param name2 the name of the second element `_2`
+   * @tparam A the type for the first element
+   * @tparam B the type for the second element
+   *
+   * {{{
+   * val tuple2Reads: Reads[(String, Int)] = Reads.tuple2[String, Int]("name", "age")
+   *
+   * val tuple2ExampleJson = Json.obj("name" -> "Alice", "age" -> 25)
+   * val tuple2Result: JsResult[(String, Int)] = tuple2Reads.reads(tuple2ExampleJson)
+   * // JsSuccess(("Alice", 25))
+   * }}}
+   */
+  def tuple2[A: Reads, B: Reads](name1: String, name2: String): Reads[(A, B)] =
+    Reads[(A, B)] { js =>
+      for {
+        _1 <- (js \ name1).validate[A]
+        _2 <- (js \ name2).validate[B]
+      } yield _1 -> _2
+    }
+
+  /**
+   * Reads a JSON object and constructs a tuple of three values,
+   * with custom names for the element fields.
+   *
+   * @param name1 the name of the first element `_1`
+   * @param name2 the name of the second element `_2`
+   * @param name3 the name of the third element `_3`
+   * @tparam A the type for the first element
+   * @tparam B the type for the second element
+   * @tparam C the type for the third element
+   *
+   * {{{
+   * val tuple3Reads: Reads[(String, Int, Boolean)] =
+   *   Reads.tuple3[String, Int, Boolean]("name", "age", "isStudent")
+   *
+   * val tuple3ExampleJson: JsValue =
+   *   Json.obj("name" -> "Alice", "age" -> 25, "isStudent" -> true)
+   *
+   * val tuple3Result: JsResult[(String, Int, Boolean)] =
+   *   tuple3Reads.reads(tuple3ExampleJson)
+   * // JsSuccess(("Alice", 25, true))
+   * }}}
+   */
+  def tuple3[A: Reads, B: Reads, C: Reads](name1: String, name2: String, name3: String): Reads[(A, B, C)] =
+    Reads[(A, B, C)] { js =>
+      for {
+        _1 <- (js \ name1).validate[A]
+        _2 <- (js \ name2).validate[B]
+        _3 <- (js \ name3).validate[C]
+      } yield Tuple3(_1, _2, _3)
+    }
+
+  /**
+   * Reads a JSON object and constructs a tuple of four values,
+   * with custom names for the element fields.
+   *
+   * @param name1 the name of the first element `_1`
+   * @param name2 the name of the second element `_2`
+   * @param name3 the name of the third element `_3`
+   * @param name4 the name of the fourth element `_4`
+   * @tparam A the type for the first element
+   * @tparam B the type for the second element
+   * @tparam C the type for the third element
+   * @tparam D the type for the fourth element
+   *
+   * {{{
+   * val tuple4Reads: Reads[(String, Int, Boolean, Double)] =
+   *   Reads.tuple4[String, Int, Boolean, Double](
+   *     "name", "age", "isStudent", "score")
+   *
+   * val tuple4ExampleJson: JsValue = Json.obj(
+   *   "name" -> "Alice", "age" -> 25, "isStudent" -> true, "score" -> 78.9)
+   *
+   * val tuple4Result: JsResult[(String, Int, Boolean, Double)] =
+   *   tuple4Reads.reads(tuple4ExampleJson)
+   *   // JsSuccess(("Alice", 25, true, 78.9))
+   * }}}
+   */
+  def tuple4[A: Reads, B: Reads, C: Reads, D: Reads](
+      name1: String,
+      name2: String,
+      name3: String,
+      name4: String
+  ): Reads[(A, B, C, D)] =
+    Reads[(A, B, C, D)] { js =>
+      for {
+        _1 <- (js \ name1).validate[A]
+        _2 <- (js \ name2).validate[B]
+        _3 <- (js \ name3).validate[C]
+        _4 <- (js \ name4).validate[D]
+      } yield Tuple4(_1, _2, _3, _4)
+    }
 }

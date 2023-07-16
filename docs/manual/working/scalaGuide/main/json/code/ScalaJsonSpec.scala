@@ -452,5 +452,26 @@ class ScalaJsonSpec extends Specification {
       placeResult.must(beLike { case JsSuccess(Place(name, _, _), _)       => name === "Watership Down" })
       residentResult.must(beLike { case JsSuccess(Resident(name, _, _), _) => name === "Bigwig" })
     }
+
+    "handle simple tuples" in {
+      //#handle-simple-tuples
+      import play.api.libs.json._
+
+      val tuple3Reads: Reads[(String, Int, Boolean)] =
+        Reads.tuple3[String, Int, Boolean]("name", "age", "isStudent")
+
+      val tuple3Writes: OWrites[(String, Int, Boolean)] =
+        OWrites.tuple3[String, Int, Boolean]("name", "age", "isStudent")
+
+      val tuple3ExampleJson: JsObject =
+        Json.obj("name" -> "Bob", "age" -> 30, "isStudent" -> false)
+
+      val tuple3Example = Tuple3("Bob", 30, false)
+
+      tuple3Writes.writes(tuple3Example) mustEqual tuple3ExampleJson
+
+      tuple3Reads.reads(tuple3ExampleJson) mustEqual JsSuccess(tuple3Example)
+      //#handle-simple-tuples
+    }
   }
 }
