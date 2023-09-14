@@ -41,7 +41,7 @@ To get started, you can add play-json as a dependency in your project:
 
 See [GitHub releases](https://github.com/playframework/play-json/releases) for the correct version.
  
-Play JSON supports Scala 2.12 and 2.13. Choosing the right JAR is automatically managed in sbt. If you're using Gradle or Maven then you need to use the correct version in the `artifactId`.
+Play JSON supports Scala 2.12, 2.13 and Scala 3.3+. Choosing the right JAR is automatically managed in sbt. If you're using Gradle or Maven then you need to use the correct version in the `artifactId`.
 
 ## JSON AST
 
