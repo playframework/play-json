@@ -42,31 +42,11 @@ val joda = Seq(
 
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
-  mimaPreviousArtifacts := ((crossProjectPlatform.?.value, previousStableVersion.value) match {
-    case _ if isScala3.value               => Set.empty // no releases for Scala 3 yet
-    case (Some(JSPlatform), Some("2.8.1")) => Set.empty
-    case (Some(NativePlatform), _)         => Set.empty // no release for Scala Native yet
-    case (_, Some(previousVersion)) =>
-      val stableVersion = if (previousVersion.startsWith("2.10.0-RC")) "2.9.2" else previousVersion
-      Set(organization.value %%% moduleName.value % stableVersion)
-    case _ => throw new Error("Unable to determine previous version")
-  }),
+  mimaPreviousArtifacts := Set(
+    organization.value %%% name.value % previousStableVersion.value
+      .getOrElse(throw new Error("Unable to determine previous version"))
+  ),
   mimaBinaryIssueFilters ++= Seq(
-    // remove deprecated methods
-    // https://github.com/playframework/play-json/pull/861
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.productArity"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.productElement"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.copy"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsBoolean.copy$default$1"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsFalse.copy$default$1"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsFalse.copy"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsTrue.copy$default$1"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.libs.json.JsTrue.copy"),
-    // MergedOWrites is private
-    ProblemFilters.exclude[Problem]("play.api.libs.json.OWrites#MergedOWrites*"),
-    // [error]  * in current version, classes mixing play.api.libs.json.DefaultWrites need be recompiled to wire to the new static mixin forwarder method all super calls to method enumNameWrites()play.api.libs.json.Writes
-    // Despite not being `sealed` or documented, I don't think DefaultWrites was intended to be extended by users.
-    ProblemFilters.exclude[NewMixinForwarderProblem]("play.api.libs.json.DefaultWrites.enumNameWrites"),
   ),
 )
 
