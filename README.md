@@ -9,7 +9,7 @@
 [![OpenCollective](https://img.shields.io/opencollective/all/playframework?label=financial%20contributors&logo=open-collective)](https://opencollective.com/playframework)
 
 [![Build Status](https://github.com/playframework/play-json/actions/workflows/build-test.yml/badge.svg)](https://github.com/playframework/play-json/actions/workflows/build-test.yml)
-[![Maven](https://img.shields.io/maven-central/v/com.typesafe.play/play-json_2.13.svg?logo=apache-maven)](https://mvnrepository.com/artifact/com.typesafe.play/play-json_2.13)
+[![Maven](https://img.shields.io/maven-central/v/org.playframework/play-json_2.13.svg?logo=apache-maven)](https://mvnrepository.com/artifact/org.playframework/play-json_2.13)
 [![Repository size](https://img.shields.io/github/repo-size/playframework/play-json.svg?logo=git)](https://github.com/playframework/play-json)
 [![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=)](https://scala-steward.org)
 [![Mergify Status](https://img.shields.io/endpoint.svg?url=https://api.mergify.com/v1/badges/playframework/play-json&style=flat)](https://mergify.com)
@@ -24,16 +24,16 @@ To get started, you can add play-json as a dependency in your project:
 
 * sbt
   ```scala
-  libraryDependencies += "com.typesafe.play" %% "play-json" % -version-
+  libraryDependencies += "org.playframework" %% "play-json" % -version-
   ```
 * Gradle
   ```
-  compile group: 'com.typesafe.play', name: 'play-json_2.13', version: -version-
+  compile group: 'org.playframework', name: 'play-json_2.13', version: -version-
   ```
 * Maven
   ```xml
   <dependency>
-    <groupId>com.typesafe.play</groupId>
+    <groupId>org.playframework</groupId>
     <artifactId>play-json_2.13</artifactId>
     <version>-version-</version>
   </dependency>

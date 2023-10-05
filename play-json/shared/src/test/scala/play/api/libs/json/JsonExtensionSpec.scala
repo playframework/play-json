@@ -19,9 +19,9 @@ object UserProfile {
   def json1 = Json.obj("first_name" -> "Christian", "last_name" -> "Schmitt", "home_city" -> "Kenzingen")
   def json2 =
     Json.obj(
-      "lightbend_firstName" -> "Christian",
-      "lightbend_lastName"  -> "Schmitt",
-      "lightbend__homeCity" -> "Kenzingen"
+      "opencollective_firstName" -> "Christian",
+      "opencollective_lastName"  -> "Schmitt",
+      "opencollective__homeCity" -> "Kenzingen"
     )
   def json3 = Json.obj("FirstName" -> "Christian", "LastName" -> "Schmitt", "_homeCity" -> "Kenzingen")
 }
@@ -682,11 +682,11 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a writes[UserProfile] with CustomNaming" in {
       import play.api.libs.json.Json
 
-      object LightbendJsonNaming extends JsonNaming {
-        override def apply(property: String): String = s"lightbend_$property"
+      object OpenCollectiveJsonNaming extends JsonNaming {
+        override def apply(property: String): String = s"opencollective_$property"
       }
 
-      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(LightbendJsonNaming)
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(OpenCollectiveJsonNaming)
       implicit val writes: OWrites[UserProfile]         = Json.writes[UserProfile]
 
       Json.toJson(UserProfile.obj1).mustEqual(UserProfile.json2)
@@ -695,11 +695,11 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a reads[UserProfile] with CustomNaming" in {
       import play.api.libs.json.Json
 
-      object LightbendJsonNaming extends JsonNaming {
-        override def apply(property: String): String = s"lightbend_$property"
+      object OpenCollectiveJsonNaming extends JsonNaming {
+        override def apply(property: String): String = s"opencollective_$property"
       }
 
-      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(LightbendJsonNaming)
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(OpenCollectiveJsonNaming)
       implicit val reads: Reads[UserProfile]            = Json.reads[UserProfile]
 
       Json.fromJson(UserProfile.json2).mustEqual(JsSuccess(UserProfile.obj1))
@@ -708,11 +708,11 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
     "create a format[UserProfile] with CustomNaming" in {
       import play.api.libs.json.Json
 
-      object LightbendJsonNaming extends JsonNaming {
-        override def apply(property: String): String = s"lightbend_$property"
+      object OpenCollectiveJsonNaming extends JsonNaming {
+        override def apply(property: String): String = s"opencollective_$property"
       }
 
-      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(LightbendJsonNaming)
+      implicit val jsonConfiguration: JsonConfiguration = JsonConfiguration(OpenCollectiveJsonNaming)
       implicit val format: OFormat[UserProfile]         = Json.format[UserProfile]
 
       Json.fromJson(UserProfile.json2).mustEqual(JsSuccess(UserProfile.obj1))

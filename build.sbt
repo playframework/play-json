@@ -42,10 +42,7 @@ val joda = Seq(
 
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
-  mimaPreviousArtifacts := Set(
-    organization.value %%% name.value % previousStableVersion.value
-      .getOrElse(throw new Error("Unable to determine previous version"))
-  ),
+  mimaPreviousArtifacts := Set(), // TODO: revert
   mimaBinaryIssueFilters ++= Seq(
   ),
 )
