@@ -40,9 +40,9 @@ object ScalaJsonAutomatedSpec {
   )
   val sampleJson3 = Json.parse(
     """{
-      "lightbend_name": "Schmitt",
-      "lightbend_firstName": "Christian",
-      "lightbend_userAge": 26
+      "opencollective_name": "Schmitt",
+      "opencollective_firstName": "Christian",
+      "opencollective_userAge": 26
     }"""
   )
   val sampleData2 = PlayUser("Schmitt", "Christian", 26)
@@ -150,11 +150,11 @@ class ScalaJsonAutomatedSpec extends Specification {
         //#auto-custom-naming-format
         import play.api.libs.json._
 
-        object Lightbend extends JsonNaming {
-          override def apply(property: String): String = s"lightbend_$property"
+        object OpenCollective extends JsonNaming {
+          override def apply(property: String): String = s"opencollective_$property"
         }
 
-        implicit val config: JsonConfiguration = JsonConfiguration(Lightbend)
+        implicit val config: JsonConfiguration = JsonConfiguration(OpenCollective)
 
         implicit val customWrites: OFormat[PlayUser] = Json.format[PlayUser]
         //#auto-custom-naming-format
