@@ -11,7 +11,7 @@ object Common extends AutoPlugin {
 
   override def globalSettings =
     Seq(
-      organization         := "com.typesafe.play",
+      organization         := "org.playframework",
       organizationName     := "The Play Framework Project",
       organizationHomepage := Some(url("https://playframework.com/")),
       homepage             := Some(url(s"https://github.com/playframework/${repoName}")),
