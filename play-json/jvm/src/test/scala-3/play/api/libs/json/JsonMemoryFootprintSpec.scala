@@ -6,14 +6,28 @@ package play.api.libs.json
 
 import org.openjdk.jol.info.GraphLayout
 import org.scalatest.freespec.AnyFreeSpec
+import scala.util.Properties
 import scala.util.chaining._
 
 class JsonMemoryFootprintSpec extends AnyFreeSpec {
 
+  private def pendingIfJdk21() = {
+    if (Properties.isJavaAtLeast("21")) {
+      // https://github.com/playframework/play-json/pull/929
+      pending
+    }
+  }
+
   "Json.parse" - {
     "obj0" in assertSizes("""{}""", 16, 16)
-    "obj1" in assertSizes("""{"1":true}""", 152, 168)
-    "obj4" in assertSizes("""{"1":true,"2":true,"3":true,"4":true}""", 296, 312)
+    "obj1" in {
+      pendingIfJdk21()
+      assertSizes("""{"1":true}""", 152, 168)
+    }
+    "obj4" in {
+      pendingIfJdk21()
+      assertSizes("""{"1":true,"2":true,"3":true,"4":true}""", 296, 312)
+    }
 
     "arr0" in assertSizes("""[]""", 40, 40)
     "arr1" in assertSizes("""[true]""", 120, 120)
@@ -33,10 +47,19 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
   "JsObject" - {
     def obj(json: String) = Json.parse(json).as[JsObject]
     "obj0 ++ obj0" in assertSize(obj("{}") ++ obj("{}"), 16)
-    "obj0 ++ obj1" in assertSize(obj("{}") ++ obj("""{"1":true}"""), 152)
-    "obj1 ++ obj0" in assertSize(obj("""{"1":true}""") ++ obj("""{}"""), 152)
+    "obj0 ++ obj1" in {
+      pendingIfJdk21()
+      assertSize(obj("{}") ++ obj("""{"1":true}"""), 152)
+    }
+    "obj1 ++ obj0" in {
+      pendingIfJdk21()
+      assertSize(obj("""{"1":true}""") ++ obj("""{}"""), 152)
+    }
 
-    "obj1.value" in assertSize(obj("""{"1":true}""").tap(_.value), 152)
+    "obj1.value" in {
+      pendingIfJdk21()
+      assertSize(obj("""{"1":true}""").tap(_.value), 152)
+    }
   }
 
   "malicious" - {
@@ -44,7 +67,10 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     def arr1KB(elem: String, targetSize: Int = 1000): String =
       Iterator.continually(elem).take(targetSize / (elem.length + 1)).mkString("[", ",", "]")
     "obj0" in assertSizes(arr1KB("{}"), 7432, 7432)
-    "obj1" in assertSizes(arr1KB("""{"a":6}"""), 29568, 31568)
+    "obj1" in {
+      pendingIfJdk21()
+      assertSizes(arr1KB("""{"a":6}"""), 29568, 31568)
+    }
     "nums" in assertSizes(arr1KB("6"), 42104, 42104)
     "arr0" in assertSizes(arr1KB("[]"), 15424, 15424)
     "arr1" in assertSizes(arr1KB("[6]"), 51080, 51080)
