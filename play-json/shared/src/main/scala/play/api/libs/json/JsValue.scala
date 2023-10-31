@@ -33,6 +33,7 @@ object JsValue {
  * Represents a Json null value.
  */
 case object JsNull extends JsValue {
+  @transient
   implicit val reads: Reads[JsNull.type] = Reads[JsNull.type] {
     case JsNull => JsSuccess(JsNull)
     case _      => JsError("error.expected.null")

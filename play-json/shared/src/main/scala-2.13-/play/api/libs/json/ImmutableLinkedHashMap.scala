@@ -17,10 +17,11 @@ import scala.collection.mutable.ArrayBuffer
 /**
  * Wraps a Java LinkedHashMap as a Scala immutable.Map.
  */
+@SerialVersionUID(-2338626292552177485L)
 private[json] class ImmutableLinkedHashMap[A, +B](underlying: JLinkedHashMap[A, B])
     extends AbstractMap[A, B]
     with Map[A, B]
-    with MapLike[A, B, ImmutableLinkedHashMap[A, B]] {
+    with MapLike[A, B, ImmutableLinkedHashMap[A, B]] with Serializable {
 
   override def get(key: A): Option[B] = Option(underlying.get(key))
 
