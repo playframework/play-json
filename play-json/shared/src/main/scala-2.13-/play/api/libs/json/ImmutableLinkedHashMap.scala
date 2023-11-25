@@ -21,7 +21,8 @@ import scala.collection.mutable.ArrayBuffer
 private[json] class ImmutableLinkedHashMap[A, +B](underlying: JLinkedHashMap[A, B])
     extends AbstractMap[A, B]
     with Map[A, B]
-    with MapLike[A, B, ImmutableLinkedHashMap[A, B]] with Serializable {
+    with MapLike[A, B, ImmutableLinkedHashMap[A, B]]
+    with Serializable {
 
   override def get(key: A): Option[B] = Option(underlying.get(key))
 
