@@ -319,7 +319,6 @@ object JsMacroImpl { // TODO: debug
       val types   = tprElements.map(_._2)
       val resolve = resolver[Reads, T](forwardExpr, debug)(readsTpe)
       val compCls = tpr.typeSymbol.companionClass
-      val compMod = Ref(tpr.typeSymbol.companionModule)
 
       val (optional, required) = tprElements.zipWithIndex
         .map { case ((sym, rpt), i) =>
@@ -330,7 +329,7 @@ object JsMacroImpl { // TODO: debug
               val default: Option[Expr[t]] =
                 compCls.declaredMethod(f"$$lessinit$$greater$$default$$" + (i + 1)).headOption.collect {
                   case defaultSym if sym.flags.is(Flags.HasDefault) =>
-                    compMod.select(defaultSym).asExprOf[t]
+                    Ref(tpr.typeSymbol.companionModule).select(defaultSym).asExprOf[t]
                 }
 
               ReadableField(sym, i, pt, default)

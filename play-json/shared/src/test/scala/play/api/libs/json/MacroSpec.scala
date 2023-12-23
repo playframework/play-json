@@ -505,6 +505,19 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       reader.reads(jsPref2).mustEqual(JsSuccess(pref2))
     }
+
+    "handle nesting class" in {
+      implicit val textIdFormat: Format[TextId] = Json.valueFormat[TextId]
+
+      val nesting = new NestingClass
+
+      val expected     = nesting.Test(Some(new TextId("foo")))
+      val expectedJson = Json.obj("underlying" -> "foo")
+
+      Json.toJson(expected).mustEqual(expectedJson)
+
+      nesting.Test.format.reads(expectedJson).mustEqual(JsSuccess(expected))
+    }
   }
 }
 
@@ -602,4 +615,13 @@ object MacroSpec {
   }
 
   case class Preference[V](key: String, kind: PrefKind.Aux[V], value: V)
+
+  class NestingClass {
+    case class Test(underlying: Option[TextId])
+
+    object Test {
+      implicit def format(implicit textIdFormat: Format[TextId]): Format[Test] =
+        Json.format[Test]
+    }
+  }
 }
