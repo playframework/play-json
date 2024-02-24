@@ -18,7 +18,7 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq("core", "junit").map { n =>
-    ("org.specs2" %% s"specs2-$n" % "4.20.3") % Test
+    ("org.specs2" %% s"specs2-$n" % "4.20.5") % Test
   }
 
 val jacksonDatabindVersion = "2.14.3"
@@ -35,7 +35,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.12.6"
+  "joda-time" % "joda-time" % "2.12.7"
 )
 
 // Common settings
@@ -144,7 +144,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
           Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
       ),
       libraryDependencies ++= Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.17"   % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.2.18"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-16" % "3.2.14.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.17.0"   % Test,
       ),
