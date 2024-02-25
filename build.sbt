@@ -45,8 +45,22 @@ val previousVersion: Option[String] = Some("3.0.0")
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
   mimaPreviousArtifacts := previousVersion.map(organization.value %%% moduleName.value % _).toSet,
-  mimaBinaryIssueFilters ++= Seq(
-  ),
+  mimaBinaryIssueFilters ++= {
+    val missingMethodInOld: ProblemFilter = {
+      case ReversedAbstractMethodProblem(_) | ReversedMissingMethodProblem(_) =>
+        false
+
+      case DirectMissingMethodProblem(old)         => old.nonAccessible
+      case InheritedNewAbstractMethodProblem(_, _) => false
+      case IncompatibleResultTypeProblem(old, _)   => old.nonAccessible
+      case IncompatibleMethTypeProblem(old, _)     => old.nonAccessible
+      case MissingClassProblem(old)                => !old.isPublic
+      case AbstractClassProblem(old)               => !old.isPublic
+      case _                                       => true
+    }
+
+    Seq(missingMethodInOld)
+  }
 )
 
 val javacSettings = Seq(
