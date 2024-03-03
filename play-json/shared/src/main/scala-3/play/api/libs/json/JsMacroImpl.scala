@@ -329,7 +329,13 @@ object JsMacroImpl { // TODO: debug
               val default: Option[Expr[t]] =
                 compCls.declaredMethod(f"$$lessinit$$greater$$default$$" + (i + 1)).headOption.collect {
                   case defaultSym if sym.flags.is(Flags.HasDefault) =>
-                    Ref(tpr.typeSymbol.companionModule).select(defaultSym).asExprOf[t]
+                    val select = Ref(tpr.typeSymbol.companionModule).select(defaultSym)
+                    val tree =
+                      TypeRepr.of[T].typeArgs match {
+                        case Nil      => select
+                        case typeArgs => select.appliedToTypes(typeArgs)
+                      }
+                    tree.asExprOf[t]
                 }
 
               ReadableField(sym, i, pt, default)
