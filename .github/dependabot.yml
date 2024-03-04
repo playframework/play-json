@@ -9,3 +9,5 @@ updates:
     schedule:
       interval: "weekly"
     target-branch: "2.10.x"
+    commit-message:
+      prefix: "[2.10.x] "
