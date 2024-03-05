@@ -366,7 +366,7 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
    * Serializer for Map[String,V] types.
    */
   @deprecated("Use `genericMapWrites`", "2.8.0")
-  implicit def mapWrites[V: Writes]: OWrites[MapWrites.Map[String, V]] = MapWrites.mapWrites
+  def mapWrites[V: Writes]: OWrites[MapWrites.Map[String, V]] = MapWrites.mapWrites
 
   implicit def keyMapWrites[K: KeyWrites, V: Writes, M[K, V] <: MapWrites.Map[K, V]]: OWrites[M[K, V]] = {
     val kw = implicitly[KeyWrites[K]]
