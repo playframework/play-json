@@ -146,7 +146,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       libraryDependencies ++= Seq(
         "org.scalatest"     %%% "scalatest"       % "3.2.18"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-16" % "3.2.14.0" % Test,
-        "org.scalacheck"    %%% "scalacheck"      % "1.17.0"   % Test,
+        "org.scalacheck"    %%% "scalacheck"      % "1.17.1"   % Test,
       ),
       libraryDependencies += {
         if (isScala3.value) {
@@ -237,7 +237,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
         else
           specs2(scalaVersion.value)
       } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.5.3" % Test
+        "ch.qos.logback" % "logback-classic" % "1.5.6" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
