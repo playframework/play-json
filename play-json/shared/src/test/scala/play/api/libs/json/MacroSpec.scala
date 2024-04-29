@@ -518,6 +518,26 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
       nesting.Test.format.reads(expectedJson).mustEqual(JsSuccess(expected))
     }
+
+    "handle case class with generic type and default field" in {
+      implicit val format: Format[GenericCaseClassWithDefault[Int]] = Json.format[GenericCaseClassWithDefault[Int]]
+
+      val expected     = GenericCaseClassWithDefault(3)
+      val expectedJson = Json.obj("data" -> 3, "descr" -> "something")
+
+      Json.toJson(GenericCaseClassWithDefault(3)).mustEqual(expectedJson)
+      Json.fromJson(expectedJson).mustEqual(JsSuccess(expected))
+    }
+
+    "handle case class with generic type and overridden default field" in {
+      implicit val format: Format[GenericCaseClassWithDefault[Int]] = Json.format[GenericCaseClassWithDefault[Int]]
+
+      val expected     = GenericCaseClassWithDefault(3, "foo")
+      val expectedJson = Json.obj("data" -> 3, "descr" -> "foo")
+
+      Json.toJson(GenericCaseClassWithDefault(3, "foo")).mustEqual(expectedJson)
+      Json.fromJson(expectedJson).mustEqual(JsSuccess(expected))
+    }
   }
 }
 
@@ -624,4 +644,9 @@ object MacroSpec {
         Json.format[Test]
     }
   }
+
+  case class GenericCaseClassWithDefault[A](
+      data: A,
+      descr: String = "something"
+  )
 }
