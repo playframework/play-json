@@ -84,6 +84,10 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     "write lazy maps" in {
       Json.toJson(Map("a" -> 1).map(kv => kv._1 -> (kv._2 + 1))).mustEqual(Json.obj("a" -> 2))
     }
+
+    "write a map nested in a seq" in {
+      Json.toJson(Seq(Map("a" -> 1))).mustEqual(Json.arr(Json.obj("a" -> 1)))
+    }
   }
 
   "Iterable writes" should {
