@@ -21,6 +21,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
-      - uses: scalacenter/sbt-dependency-submission@v2
+      - uses: scalacenter/sbt-dependency-submission@v3
         with:
           modules-ignore: docs_2.12 play-functional_2.12 play-json-joda_2.12 play-json_2.12 play-functional_sjs1_2.12 play-json_sjs1_2.12
