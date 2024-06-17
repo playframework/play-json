@@ -5,6 +5,7 @@
 package play.api.libs.json
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.reflect.macros.blackbox
 
 /**
@@ -555,25 +556,26 @@ class JsMacroImpl(val c: blackbox.Context) {
       val tpeSym = atag.tpe.typeSymbol.asClass
 
       @tailrec
-      def allSubclasses(path: List[Symbol], subclasses: Set[Type]): Set[Type] = path match {
-        case (cls: ClassSymbol) :: tail if tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym) => {
-          if (cls.typeParams.nonEmpty)
-            c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: type parameter not supported")
-          val newSub = if (cls.typeParams.isEmpty) Set(cls.selfType) else Set.empty
-          allSubclasses(tail, subclasses ++ newSub)
+      def allSubclasses(path: List[Symbol], subclasses: mutable.LinkedHashSet[Type]): mutable.LinkedHashSet[Type] =
+        path match {
+          case (cls: ClassSymbol) :: tail if tpeSym != cls && cls.selfType.baseClasses.contains(tpeSym) => {
+            if (cls.typeParams.nonEmpty)
+              c.warning(c.enclosingPosition, s"cannot handle class ${cls.fullName}: type parameter not supported")
+            val newSub = if (cls.typeParams.isEmpty) Set(cls.selfType) else Set.empty
+            allSubclasses(tail, subclasses ++ newSub)
+          }
+
+          case (o: ModuleSymbol) :: tail
+              if o.companion == NoSymbol // not a companion object
+                && o.typeSignature.baseClasses.contains(tpeSym) =>
+            allSubclasses(tail, subclasses ++ Set(o.typeSignature))
+
+          case _ :: tail => allSubclasses(tail, subclasses)
+          case _         => subclasses
         }
 
-        case (o: ModuleSymbol) :: tail
-            if o.companion == NoSymbol // not a companion object
-              && o.typeSignature.baseClasses.contains(tpeSym) =>
-          allSubclasses(tail, subclasses ++ Set(o.typeSignature))
-
-        case _ :: tail => allSubclasses(tail, subclasses)
-        case _         => subclasses
-      }
-
       if (tpeSym.isSealed && tpeSym.isAbstract) {
-        Some(allSubclasses(tpeSym.owner.typeSignature.decls.sorted, Set.empty).toList)
+        Some(allSubclasses(tpeSym.owner.typeSignature.decls.sorted, mutable.LinkedHashSet[Type]()).toList)
       } else None
     }
 
