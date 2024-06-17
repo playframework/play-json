@@ -9,10 +9,16 @@ import play.api.libs.functional.syntax._
 import scala.collection.immutable.ListMap
 
 import org.scalacheck.Gen
+
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+class JsonSharedSpec
+    extends AnyWordSpec
+    with Matchers
+    with org.scalatest.TryValues
+    with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+
   case class User(id: Long, name: String, friends: List[User])
 
   implicit val UserFormat: Format[User] = (
@@ -159,12 +165,18 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
                             |  "price": "2.5 €"
                             |}
         """.stripMargin)
+
       val bytes      = js.toBytes(json)
       val string     = new String(bytes, "UTF-8")
-      val parsedJson = js.parse(string)
+      val parsedJson = js.tryParse(string)
 
-      (parsedJson \ "symbol").mustEqual(JsDefined(JsString("☕")))
-      (parsedJson \ "price").mustEqual(JsDefined(JsString("2.5 €")))
+      parsedJson.isSuccess.mustEqual(true)
+
+      val success = parsedJson.success.value
+
+      (success \ "symbol").mustEqual(JsDefined(JsString("☕")))
+
+      (success \ "price").mustEqual(JsDefined(JsString("2.5 €")))
     }
   }
 
@@ -175,6 +187,7 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       val jsonM = js.toJson(m)
 
       (jsonM \ "timestamp").as[Long].mustEqual(t)
+
       jsonM.toString.mustEqual("""{"timestamp":1330950829160}""")
     }
 
