@@ -40,7 +40,7 @@ val joda = Seq(
 
 // Common settings
 
-val previousVersion: Option[String] = Some("3.0.0")
+val previousVersion: Option[String] = Some("3.1.0-M1")
 
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
