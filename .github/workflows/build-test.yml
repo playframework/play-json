@@ -22,14 +22,11 @@ jobs:
   check-binary-compatibility:
     name: Binary Compatibility
     uses: playframework/.github/.github/workflows/binary-check.yml@v4
-    with:
-      java: 11
 
   check-docs:
     name: Docs
     uses: playframework/.github/.github/workflows/cmd.yml@v4
     with:
-      java: 11
       cmd: sbt docs/validateDocs
 
   tests:
@@ -40,7 +37,7 @@ jobs:
       - "check-docs"
     uses: playframework/.github/.github/workflows/cmd.yml@v4
     with:
-      java: 21, 17, 11
+      java: 21, 17
       scala: 2.12.x, 2.13.x, 3.x
       cmd: scripts/test-code.sh
 
