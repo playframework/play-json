@@ -223,9 +223,6 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       }.taskValue
     )
   )
-  .nativeSettings(
-    mimaPreviousArtifacts := Set.empty // remove once version with Scala Native 0.5 is released
-  )
   .dependsOn(`play-functional`)
 
 lazy val `play-jsonJS`     = `play-json`.js
@@ -267,9 +264,6 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform, NativePlatfor
   .in(file("play-functional"))
   .settings(
     commonSettings ++ playJsonMimaSettings
-  )
-  .nativeSettings(
-    mimaPreviousArtifacts := Set.empty // remove once version with Scala Native 0.5 is released
   )
   .enablePlugins(Omnidoc)
 
