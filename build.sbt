@@ -40,7 +40,7 @@ val joda = Seq(
 
 // Common settings
 
-val previousVersion: Option[String] = Some("3.0.0")
+val previousVersion: Option[String] = Some("3.1.0-M1")
 
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
@@ -223,9 +223,6 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       }.taskValue
     )
   )
-  .nativeSettings(
-    mimaPreviousArtifacts := Set.empty // remove once version with Scala Native 0.5 is released
-  )
   .dependsOn(`play-functional`)
 
 lazy val `play-jsonJS`     = `play-json`.js
@@ -267,9 +264,6 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform, NativePlatfor
   .in(file("play-functional"))
   .settings(
     commonSettings ++ playJsonMimaSettings
-  )
-  .nativeSettings(
-    mimaPreviousArtifacts := Set.empty // remove once version with Scala Native 0.5 is released
   )
   .enablePlugins(Omnidoc)
 
