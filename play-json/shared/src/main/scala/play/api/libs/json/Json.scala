@@ -4,33 +4,46 @@
 
 package play.api.libs.json
 
+import java.io.InputStream
+
 import scala.collection.mutable.{ Builder => MBuilder }
 
-import java.io.InputStream
+import scala.util.Try
 
 /**
  * @define jsonParam @param json the JsValue to convert
- * @define returnStringRepr A String with the json representation
+ * @define parseDescription Parses the input JSON, and returns it as a [[JsValue]]
+ * @define stringRepr String with the json representation
  */
 sealed trait JsonFacade {
 
   /**
-   * Parses a String representing a JSON input, and returns it as a [[JsValue]].
+   * $parseDescription (use `tryParse` to be safe).
    *
-   * @param input the String to parse
+   * @param input the $stringRepr
    */
   def parse(input: String): JsValue
 
   /**
-   * Parses a stream representing a JSON input, and returns it as a [[JsValue]].
+   * $parseDescription.
+   * @param input the $stringRepr
+   */
+  def tryParse(input: String): Try[JsValue]
+
+  /**
+   * $parseDescription (use `tryParse` to be safe).
    *
    * @param input the InputStream to parse
    */
   def parse(input: InputStream): JsValue
 
   /**
-   * Parses some bytes representing a JSON input,
-   * and returns it as a [[JsValue]].
+   * $parseDescription.
+   */
+  def tryParse(input: InputStream): Try[JsValue]
+
+  /**
+   * $parseDescription (use `tryParse` to be safe).
    *
    * The character encoding used will be automatically detected as UTF-8,
    * UTF-16 or UTF-32, as per the heuristics in RFC-4627.
@@ -38,6 +51,11 @@ sealed trait JsonFacade {
    * @param input the byte array to parse
    */
   def parse(input: Array[Byte]): JsValue
+
+  /**
+   * $parseDescription.
+   */
+  def tryParse(input: Array[Byte]): Try[JsValue]
 
   /**
    * Converts a [[JsValue]] to its string representation.
@@ -88,7 +106,7 @@ sealed trait JsonFacade {
    * }}}
    *
    * $jsonParam
-   * $returnStringRepr with all non-ascii characters escaped.
+   * @return A $stringRepr with all non-ascii characters escaped.
    */
   def asciiStringify(json: JsValue): String
 
@@ -118,7 +136,7 @@ sealed trait JsonFacade {
    * }}}
    *
    * $jsonParam
-   * $returnStringRepr.
+   * @return A $stringRepr.
    */
   def prettyPrint(json: JsValue): String
 
@@ -174,9 +192,15 @@ sealed trait JsonFacade {
 object Json extends JsonFacade with JsMacros with JsValueMacros {
   def parse(input: String): JsValue = StaticBinding.parseJsValue(input)
 
+  def tryParse(input: String): Try[JsValue] = Try(StaticBinding.parseJsValue(input))
+
   def parse(input: InputStream): JsValue = StaticBinding.parseJsValue(input)
 
+  def tryParse(input: InputStream): Try[JsValue] = Try(StaticBinding.parseJsValue(input))
+
   def parse(input: Array[Byte]): JsValue = StaticBinding.parseJsValue(input)
+
+  def tryParse(input: Array[Byte]): Try[JsValue] = Try(StaticBinding.parseJsValue(input))
 
   def stringify(json: JsValue): String =
     StaticBinding.generateFromJsValue(json, false)
@@ -321,10 +345,20 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
 
     def this() = this(JsonConfiguration.default)
 
-    @inline def parse(input: String): JsValue       = Json.parse(input)
-    @inline def parse(input: InputStream): JsValue  = Json.parse(input)
-    @inline def parse(input: Array[Byte]): JsValue  = Json.parse(input)
-    @inline def stringify(json: JsValue): String    = Json.stringify(json)
+    @inline def parse(input: String): JsValue = Json.parse(input)
+
+    @inline def tryParse(input: String): Try[JsValue] = Json.tryParse(input)
+
+    @inline def parse(input: InputStream): JsValue = Json.parse(input)
+
+    @inline def tryParse(input: InputStream): Try[JsValue] = Json.tryParse(input)
+
+    @inline def parse(input: Array[Byte]): JsValue = Json.parse(input)
+
+    @inline def tryParse(input: Array[Byte]): Try[JsValue] = Json.tryParse(input)
+
+    @inline def stringify(json: JsValue): String = Json.stringify(json)
+
     @inline def toBytes(json: JsValue): Array[Byte] = Json.toBytes(json)
 
     @inline def asciiStringify(json: JsValue): String =
