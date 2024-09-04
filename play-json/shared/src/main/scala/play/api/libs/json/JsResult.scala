@@ -12,8 +12,8 @@ import scala.collection.Seq
 case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
   def get: T = value
 
-  val isSuccess = true
-  val isError   = false
+  def isSuccess = true
+  def isError   = false
 
   def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: T => U): U = valid(value)
 
@@ -60,8 +60,8 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
   def +:(error: (JsPath, JsonValidationError)): JsError      = JsError.merge(JsError(error), this)
   def prepend(error: (JsPath, JsonValidationError)): JsError = this.+:(error)
 
-  val isSuccess = false
-  val isError   = true
+  def isSuccess = false
+  def isError   = true
 
   def fold[U](invalid: Seq[(JsPath, Seq[JsonValidationError])] => U, valid: Nothing => U): U = invalid(errors)
 
@@ -84,7 +84,7 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
 
   def orElse[U >: Nothing](t: => JsResult[U]): JsResult[U] = t
 
-  val asOpt = None
+  def asOpt = None
 
   def asEither: Either[Seq[(JsPath, Seq[JsonValidationError])], Nothing] = Left(errors)
 
