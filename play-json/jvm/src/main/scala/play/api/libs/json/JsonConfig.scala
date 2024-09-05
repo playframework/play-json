@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import com.fasterxml.jackson.core.StreamReadConstraints
+
 import play.api.libs.json.JsonConfig.defaultMaxPlain
 import play.api.libs.json.JsonConfig.defaultMinPlain
 import play.api.libs.json.JsonConfig.defaultDigitsLimit
@@ -103,6 +105,7 @@ private final case class DecimalSerializerSettingsImpl(
 sealed trait JsonConfig {
   def bigDecimalParseConfig: BigDecimalParseConfig
   def bigDecimalSerializerConfig: BigDecimalSerializerConfig
+  def streamReadConstraints: StreamReadConstraints
 }
 
 object JsonConfig {
@@ -169,6 +172,11 @@ object JsonConfig {
   val maxPlainProperty: String = "play.json.serializer.maxPlain"
 
   /**
+   * The system property to override the max nesting depth for JSON parsing.
+   */
+  val maxNestingDepth: String = "play.json.parser.maxNestingDepth"
+
+  /**
    * The system property to override whether zero decimals (e.g. .0 or .00) are written by default. These are dropped by default.
    */
   val preserveZeroDecimalProperty: String = "play.json.serializer.preserveZeroDecimal"
@@ -183,15 +191,26 @@ object JsonConfig {
 
   private[json] def loadMaxPlain: BigDecimal = prop(maxPlainProperty, defaultMaxPlain)(BigDecimal.exact)
 
+  private[json] def loadMaxNestingDepth: Int =
+    prop(maxNestingDepth, StreamReadConstraints.DEFAULT_MAX_DEPTH)(Integer.parseInt)
+
   private[json] def loadPreserveZeroDecimal: Boolean =
     prop(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
+
+  private[json] val defaultStreamReadConstraints: StreamReadConstraints =
+    StreamReadConstraints
+      .builder()
+      .maxNestingDepth(loadMaxNestingDepth)
+      .maxNumberLength(Int.MaxValue) // play-json has its own support for limiting number length
+      .build()
 
   // Default settings, which can be controlled with system properties.
   // To override, call JacksonJson.setConfig()
   val settings: JsonConfig =
     JsonConfig(
       BigDecimalParseConfig(loadMathContext, loadScaleLimit, loadDigitsLimit),
-      BigDecimalSerializerConfig(loadMinPlain, loadMaxPlain, loadPreserveZeroDecimal)
+      BigDecimalSerializerConfig(loadMinPlain, loadMaxPlain, loadPreserveZeroDecimal),
+      defaultStreamReadConstraints
     )
 
   def apply(): JsonConfig = apply(BigDecimalParseConfig(), BigDecimalSerializerConfig())
@@ -200,7 +219,14 @@ object JsonConfig {
       bigDecimalParseConfig: BigDecimalParseConfig,
       bigDecimalSerializerConfig: BigDecimalSerializerConfig
   ): JsonConfig =
-    JsonConfigImpl(bigDecimalParseConfig, bigDecimalSerializerConfig)
+    JsonConfigImpl(bigDecimalParseConfig, bigDecimalSerializerConfig, defaultStreamReadConstraints)
+
+  def apply(
+      bigDecimalParseConfig: BigDecimalParseConfig,
+      bigDecimalSerializerConfig: BigDecimalSerializerConfig,
+      streamReadConstraints: StreamReadConstraints
+  ): JsonConfig =
+    JsonConfigImpl(bigDecimalParseConfig, bigDecimalSerializerConfig, streamReadConstraints)
 
   private[json] def parseMathContext(key: String): MathContext = sys.props.get(key).map(_.toLowerCase) match {
     case Some("decimal128") => MathContext.DECIMAL128
@@ -220,7 +246,8 @@ object JsonConfig {
 
 private final case class JsonConfigImpl(
     bigDecimalParseConfig: BigDecimalParseConfig,
-    bigDecimalSerializerConfig: BigDecimalSerializerConfig
+    bigDecimalSerializerConfig: BigDecimalSerializerConfig,
+    streamReadConstraints: StreamReadConstraints
 ) extends JsonConfig
 
 @deprecated("Use BigDecimalParseConfig instead", "2.9.4")
@@ -241,7 +268,8 @@ final case class BigDecimalSerializerSettings(
 @deprecated("Use JsonConfig instead", "2.9.4")
 final case class JsonParserSettings(
     bigDecimalParseSettings: BigDecimalParseSettings,
-    bigDecimalSerializerSettings: BigDecimalSerializerSettings
+    bigDecimalSerializerSettings: BigDecimalSerializerSettings,
+    streamReadConstraints: StreamReadConstraints = JsonConfig.defaultStreamReadConstraints
 ) extends JsonConfig {
   override def bigDecimalParseConfig: BigDecimalParseConfig = bigDecimalParseSettings
 
