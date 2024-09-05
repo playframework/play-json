@@ -1,0 +1,2 @@
+# private final class JsonConfigImpl has changed
+ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.JsonConfigImpl$")

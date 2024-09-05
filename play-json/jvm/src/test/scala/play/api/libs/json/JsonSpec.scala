@@ -8,6 +8,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.TimeZone
 
+import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import play.api.libs.functional.syntax._
@@ -52,8 +53,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
         .formatNullable[Option[Date]](
           Format(
             Reads.optionWithNull(Reads.dateReads(dateFormat)),
-            Writes.optionWithNull(Writes.dateWrites(dateFormat))
-          )
+            Writes.optionWithNull(Writes.dateWrites(dateFormat)),
+          ),
         )
         .inmap(optopt => optopt.flatten, (opt: Option[Date]) => Some(opt))
   )(Post.apply, p => (p.body, p.created_at))
@@ -63,8 +64,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
       (__ \ Symbol("created_at")).formatNullable[Date](
         Format(
           Reads.IsoDateReads,
-          Writes.dateWrites(dateFormat)
-        )
+          Writes.dateWrites(dateFormat),
+        ),
       )
   )(Post.apply, p => (p.body, p.created_at))
 
@@ -76,10 +77,22 @@ class JsonSpec extends org.specs2.mutable.Specification {
     val serializerSettings = BigDecimalSerializerConfig(
       defaultSerializerSettings.minPlain,
       defaultSerializerSettings.maxPlain,
-      preserveZeroDecimal = true
+      preserveZeroDecimal = true,
     )
 
     JsonConfig(defaultParserSettings, serializerSettings)
+  }
+
+  def allowLargeStrings: JsonConfig = {
+    val streamReadConstraints = StreamReadConstraints
+      .builder()
+      .maxStringLength(500000000)
+      .build()
+    JsonConfig(
+      JsonConfig.settings.bigDecimalParseConfig,
+      JsonConfig.settings.bigDecimalSerializerConfig,
+      streamReadConstraints,
+    )
   }
 
   def withJsonConfig[T](jsonConfig: JsonConfig)(f: () => T) = {
@@ -485,14 +498,26 @@ class JsonSpec extends org.specs2.mutable.Specification {
         "key4" -> Json.arr(1, 2.5, "value2", false, JsNull),
         "key5" -> Json.obj(
           "key6" -> "こんにちは",
-          "key7" -> BigDecimal("12345678901234567890.123456789")
-        )
+          "key7" -> BigDecimal("12345678901234567890.123456789"),
+        ),
       )
       def stream = new java.io.ByteArrayInputStream(
-        js.toString.getBytes("UTF-8")
+        js.toString.getBytes("UTF-8"),
       )
 
       Json.parse(stream).mustEqual(js)
+    }
+
+    "parse large strings with higher constraint" in withJsonConfig(allowLargeStrings) { () =>
+      val builder = new StringBuilder()
+      1.to(30000000).foreach { _ => builder += 'a' }
+      val original = Json.obj(
+        "key" -> builder.result(),
+      )
+
+      val str = Json.stringify(original)
+
+      Json.parse(str).mustEqual(original)
     }
 
     "keep isomorphism between serialized and deserialized data" in {
@@ -503,8 +528,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
         "key4" -> Json.arr(1, 2.5, "value2", false, JsNull),
         "key5" -> Json.obj(
           "key6" -> "こんにちは",
-          "key7" -> BigDecimal("12345678901234567890.123456789")
-        )
+          "key7" -> BigDecimal("12345678901234567890.123456789"),
+        ),
       )
       val originalString = Json.stringify(original)
       val parsed         = Json.parse(originalString)
