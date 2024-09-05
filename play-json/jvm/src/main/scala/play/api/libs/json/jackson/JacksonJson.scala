@@ -98,8 +98,10 @@ private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSer
 
         if (raw.indexOf('E') < 0 && raw.indexOf('.') < 0)
           json.writeTree(new BigIntegerNode(new BigInteger(raw)))
-        else
+        else if (shouldWritePlain)
           json.writeTree(new DecimalNode(new JBigDec(raw)))
+        else
+          json.writeTree(new DecimalNode(stripped))
       }
 
       case JsString(v)  => json.writeString(v)
