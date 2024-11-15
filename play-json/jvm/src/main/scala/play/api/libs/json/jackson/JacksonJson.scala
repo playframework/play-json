@@ -6,6 +6,7 @@ package play.api.libs.json.jackson
 
 import java.io.InputStream
 import java.io.StringWriter
+import java.math.BigInteger
 
 import scala.annotation.switch
 import scala.annotation.tailrec
@@ -26,7 +27,9 @@ import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.node.BigIntegerNode
 import com.fasterxml.jackson.databind.ser.Serializers
+import com.fasterxml.jackson.databind.util.TokenBuffer
 
 import play.api.libs.json._
 
@@ -67,11 +70,7 @@ sealed class PlayJsonMapperModule(jsonConfig: JsonConfig) extends SimpleModule("
 // -- Serializers.
 
 private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSerializer[JsValue] {
-  import java.math.BigInteger
   import java.math.{ BigDecimal => JBigDec }
-
-  import com.fasterxml.jackson.databind.node.BigIntegerNode
-  import com.fasterxml.jackson.databind.node.DecimalNode
 
   private def stripTrailingZeros(bigDec: JBigDec): JBigDec = {
     val stripped = bigDec.stripTrailingZeros
@@ -96,10 +95,15 @@ private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSer
         val stripped = stripTrailingZeros(v.bigDecimal)
         val raw      = if (shouldWritePlain) stripped.toPlainString else stripped.toString
 
-        if (raw.indexOf('E') < 0 && raw.indexOf('.') < 0)
-          json.writeTree(new BigIntegerNode(new BigInteger(raw)))
+        if (raw.exists(c => c == 'E' || c == '.'))
+          json.writeNumber(raw)
         else
-          json.writeTree(new DecimalNode(new JBigDec(raw)))
+          json match {
+            case _: TokenBuffer =>
+              json.writeTree(new BigIntegerNode(new BigInteger(raw)))
+            case _ =>
+              json.writeNumber(raw)
+          }
       }
 
       case JsString(v)  => json.writeString(v)
