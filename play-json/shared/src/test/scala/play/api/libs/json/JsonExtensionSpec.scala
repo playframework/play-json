@@ -115,6 +115,8 @@ object CustomApply {
 
 case class Optional(props: Option[String])
 
+case class UserId(id: Long) extends AnyVal
+
 class JsonExtensionSpec extends AnyWordSpec with Matchers {
   "JsonExtension" should {
     "create a reads[User]" in {
@@ -748,6 +750,20 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
       formatter.reads(Json.obj()).mustEqual(JsSuccess(Optional(None)))
       formatter.reads(Json.obj("props" -> JsNull)).mustEqual(JsSuccess(Optional(None)))
       formatter.reads(Json.obj("props" -> Some("foo"))).mustEqual(JsSuccess(Optional(Some("foo"))))
+    }
+    "format value classes" in {
+      implicit val userIdFmt: Format[UserId] = Json.format[UserId]
+      val userId                             = UserId(12345)
+      val serialized                         = Json.stringify(Json.toJson(userId))
+      serialized.mustEqual("""{"id":12345}""")
+      Json.fromJson[UserId](Json.parse(serialized)).mustEqual(JsSuccess(userId))
+    }
+    "format value classes with value format" in {
+      implicit val userIdFmt: Format[UserId] = Json.valueFormat[UserId]
+      val userId                             = UserId(12345)
+      val serialized                         = Json.stringify(Json.toJson(userId))
+      serialized.mustEqual("""12345""")
+      Json.fromJson[UserId](Json.parse(serialized)).mustEqual(JsSuccess(userId))
     }
   }
 }
