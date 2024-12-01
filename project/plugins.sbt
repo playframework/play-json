@@ -4,7 +4,7 @@
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-addSbtPlugin("com.typesafe.play" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "2.9.5"))
+addSbtPlugin("com.typesafe.play" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "2.9.6"))
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.7")
 
