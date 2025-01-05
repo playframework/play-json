@@ -12,7 +12,7 @@ object Common extends AutoPlugin {
   override def globalSettings =
     Seq(
       organization         := "com.github.pjfanning",
-      organizationName     := "The Play Framework Project",
+      organizationName     := "com.github.pjfanning",
       organizationHomepage := Some(url("https://github.com/pjfanning")),
       homepage             := Some(url(s"https://github.com/pjfanning/${repoName}")),
       licenses             := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
