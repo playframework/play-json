@@ -34,8 +34,8 @@ jobs:
     name: Tests
     needs:
       - "check-code-style"
-      - "check-binary-compatibility"
       - "check-docs"
+      # - "check-binary-compatibility"
     uses: playframework/.github/.github/workflows/cmd.yml@v4
     with:
       java: 21, 17
