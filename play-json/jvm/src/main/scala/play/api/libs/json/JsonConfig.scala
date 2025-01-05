@@ -177,6 +177,12 @@ object JsonConfig {
   val maxNestingDepth: String = "play.json.parser.maxNestingDepth"
 
   /**
+   * The system property to override the max string length for JSON parsing.
+   * This is used to limit the length of individual strings in JSON documents.
+   */
+  val maxStringLength: String = "play.json.parser.maxStringLength"
+
+  /**
    * The system property to override whether zero decimals (e.g. .0 or .00) are written by default. These are dropped by default.
    */
   val preserveZeroDecimalProperty: String = "play.json.serializer.preserveZeroDecimal"
@@ -194,6 +200,9 @@ object JsonConfig {
   private[json] def loadMaxNestingDepth: Int =
     prop(maxNestingDepth, StreamReadConstraints.DEFAULT_MAX_DEPTH)(Integer.parseInt)
 
+  private[json] def loadMaxStringLength: Int =
+    prop(maxStringLength, StreamReadConstraints.DEFAULT_MAX_STRING_LEN)(Integer.parseInt)
+
   private[json] def loadPreserveZeroDecimal: Boolean =
     prop(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)
 
@@ -201,6 +210,7 @@ object JsonConfig {
     StreamReadConstraints
       .builder()
       .maxNestingDepth(loadMaxNestingDepth)
+      .maxStringLength(loadMaxStringLength)
       .maxNumberLength(Int.MaxValue) // play-json has its own support for limiting number length
       .build()
 
