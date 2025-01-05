@@ -65,7 +65,7 @@ def playJsonMimaSettings = Seq(
 
 val javacSettings = Seq(
   "-source",
-  "17",
+  "11",
   "-Xlint:deprecation",
   "-Xlint:unchecked",
 )
@@ -73,7 +73,7 @@ val javacSettings = Seq(
 val scalacOpts = Seq(
   "-language:higherKinds",
   "-release",
-  "17",
+  "11",
   "-Ywarn-unused:imports",
   "-Xlint:nullary-unit",
   "-Xlint",
@@ -110,7 +110,7 @@ lazy val commonSettings = Def.settings(
   crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213, Dependencies.Scala3),
   Compile / javacOptions ++= javacSettings,
   Test / javacOptions ++= javacSettings,
-  Compile / compile / javacOptions ++= Seq("--release", "17"), // sbt #1785, avoids passing to javadoc
+  Compile / compile / javacOptions ++= Seq("--release", "11"), // sbt #1785, avoids passing to javadoc
   scalacOptions ++= (if (isScala3.value) Nil else scalacOpts),
   Compile / doc / scalacOptions ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
