@@ -18,19 +18,17 @@ object Common extends AutoPlugin {
       licenses             := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-encoding", "utf8"),
       javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:-options"),
-      developers ++= Seq(
-        Developer(
-          "playframework",
-          "The Play Framework Contributors",
-          "contact@playframework.com",
-          url("https://github.com/playframework")
-        ),
-        Developer(
-          "pjfanning",
-          "PJ Fanning",
-          "",
-          url("https://github.com/pjfanning")
-        )
+      developers += Developer(
+        "playframework",
+        "The Play Framework Contributors",
+        "contact@playframework.com",
+        url("https://github.com/playframework")
+      ),
+      developers += Developer(
+        "pjfanning",
+        "PJ Fanning",
+        "",
+        url("https://github.com/pjfanning")
       ),
       description := "Play JSON (fork)"
     )
