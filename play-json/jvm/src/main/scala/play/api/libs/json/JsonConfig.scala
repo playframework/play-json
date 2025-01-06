@@ -5,6 +5,7 @@
 package play.api.libs.json
 
 import com.fasterxml.jackson.core.StreamReadConstraints
+import com.typesafe.config.ConfigFactory
 
 import play.api.libs.json.JsonConfig.defaultMaxPlain
 import play.api.libs.json.JsonConfig.defaultMinPlain
@@ -187,6 +188,10 @@ object JsonConfig {
    */
   val preserveZeroDecimalProperty: String = "play.json.serializer.preserveZeroDecimal"
 
+  private val playJsonConfig = ConfigFactory
+    .load()
+    .getConfig("play.json.jackson")
+
   private[json] def loadScaleLimit: Int = prop(scaleLimitProperty, defaultScaleLimit)(_.toInt)
 
   private[json] def loadDigitsLimit: Int = prop(digitsLimitProperty, defaultDigitsLimit)(_.toInt)
@@ -198,10 +203,10 @@ object JsonConfig {
   private[json] def loadMaxPlain: BigDecimal = prop(maxPlainProperty, defaultMaxPlain)(BigDecimal.exact)
 
   private[json] def loadMaxNestingDepth: Int =
-    prop(maxNestingDepth, StreamReadConstraints.DEFAULT_MAX_DEPTH)(Integer.parseInt)
+    prop(maxNestingDepth, playJsonConfig.getInt("read.max-nesting-depth"))(Integer.parseInt)
 
   private[json] def loadMaxStringLength: Int =
-    prop(maxStringLength, StreamReadConstraints.DEFAULT_MAX_STRING_LEN)(Integer.parseInt)
+    prop(maxStringLength, playJsonConfig.getInt("read.max-string-length"))(Integer.parseInt)
 
   private[json] def loadPreserveZeroDecimal: Boolean =
     prop(preserveZeroDecimalProperty, defaultPreserveZeroDecimal)(_.toBoolean)

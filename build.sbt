@@ -250,7 +250,8 @@ lazy val `play-jsonJVM` = `play-json`.jvm
           specs2(scalaVersion.value).map(_.exclude("org.scala-lang.modules", "scala-xml_2.13"))
         else
           specs2(scalaVersion.value)
-      } :+ (
+      } ++ Seq(
+        "com.typesafe"   % "config"          % "1.4.3",
         "ch.qos.logback" % "logback-classic" % "1.3.15" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
