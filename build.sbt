@@ -124,22 +124,17 @@ lazy val root = project
   .enablePlugins(ScalaJSPlugin)
   .disablePlugins(MimaPlugin)
   .aggregate(
-    `play-jsonJS`,
-    `play-jsonJVM`,
-    `play-jsonNative`,
-    `play-functionalJS`,
-    `play-functionalJVM`,
-    `play-functionalNative`,
-    `play-json-joda`
+    `play-jsonJVM`
   )
   .settings(commonSettings)
   .settings(publish / skip := true)
 
-lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+lazy val `play-json` = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("play-json"))
   .enablePlugins(Omnidoc, Playdoc)
   .configs(Docs)
+  /*
   .jsSettings(
     libraryDependencies ++= Seq(
       ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
@@ -150,6 +145,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "org.typelevel" %%% "jawn-parser" % "1.6.0"
     )
   )
+   */
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
       libraryDependencies ++= (
@@ -237,10 +233,10 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       }.taskValue
     )
   )
-  .dependsOn(`play-functional`)
+//.dependsOn(`play-functional`)
 
-lazy val `play-jsonJS`     = `play-json`.js
-lazy val `play-jsonNative` = `play-json`.native
+// lazy val `play-jsonJS`     = `play-json`.js
+// lazy val `play-jsonNative` = `play-json`.native
 
 lazy val `play-jsonJVM` = `play-json`.jvm
   .settings(
@@ -251,8 +247,9 @@ lazy val `play-jsonJVM` = `play-json`.jvm
         else
           specs2(scalaVersion.value)
       } ++ Seq(
-        "com.typesafe"   % "config"          % "1.4.3",
-        "ch.qos.logback" % "logback-classic" % "1.3.15" % Test
+        "org.playframework" %% "play-functional" % "3.0.4",
+        "com.typesafe"       % "config"          % "1.4.3",
+        "ch.qos.logback"     % "logback-classic" % "1.3.15" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
@@ -264,6 +261,7 @@ def enableJol = Seq(
   compileOrder := CompileOrder.JavaThenScala,
 )
 
+/*
 lazy val `play-json-joda` = project
   .in(file("play-json-joda"))
   .enablePlugins(Omnidoc)
@@ -285,6 +283,7 @@ lazy val `play-functional` = crossProject(JVMPlatform, JSPlatform, NativePlatfor
 lazy val `play-functionalJVM`    = `play-functional`.jvm
 lazy val `play-functionalJS`     = `play-functional`.js
 lazy val `play-functionalNative` = `play-functional`.native
+ */
 
 lazy val benchmarks = project
   .in(file("benchmarks"))
