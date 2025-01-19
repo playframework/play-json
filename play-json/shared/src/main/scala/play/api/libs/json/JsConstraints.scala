@@ -138,10 +138,10 @@ trait ConstraintReads {
   def filter[A](otherwise: JsonValidationError)(p: A => Boolean)(implicit reads: Reads[A]) =
     Reads[A](js => reads.reads(js).filter(JsError(otherwise))(p))
 
-  def minLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
+  def minLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[?]) =
     filterNot[M](JsonValidationError("error.minLength", m))(p(_).size < m)
 
-  def maxLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[_]) =
+  def maxLength[M](m: Int)(implicit reads: Reads[M], p: M => scala.collection.Iterable[?]) =
     filterNot[M](JsonValidationError("error.maxLength", m))(p(_).size > m)
 
   /**
@@ -163,7 +163,7 @@ trait ConstraintReads {
   def verifying[A](cond: A => Boolean)(implicit rds: Reads[A]) =
     filter[A](JsonValidationError("error.invalid"))(cond)(rds)
 
-  def verifyingIf[A](cond: A => Boolean)(subreads: Reads[_])(implicit rds: Reads[A]) =
+  def verifyingIf[A](cond: A => Boolean)(subreads: Reads[?])(implicit rds: Reads[A]) =
     Reads[A] { js =>
       rds.reads(js).flatMap { t =>
         scala.util.control.Exception

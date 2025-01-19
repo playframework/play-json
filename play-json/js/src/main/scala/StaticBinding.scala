@@ -40,7 +40,7 @@ object StaticBinding {
     case l: Long        => JsNumber(l)
     case true           => JsTrue
     case false          => JsFalse
-    case a: js.Array[_] => JsArray(a.map(anyToJsValue).toArray[JsValue])
+    case a: js.Array[?] => JsArray(a.map(anyToJsValue).toArray[JsValue])
 
     case o: js.Object => {
       JsObject((for {
