@@ -171,7 +171,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         selfRef: Boolean
     )
 
-    val optTpeCtor  = typeOf[Option[_]].typeConstructor
+    val optTpeCtor  = typeOf[Option[?]].typeConstructor
     val forwardName = TermName(c.freshName("forward"))
     val configName  = TermName(c.freshName("config"))
 
@@ -581,8 +581,8 @@ class JsMacroImpl(val c: blackbox.Context) {
 
     // --- Sub implementations
 
-    val readsType  = c.typeOf[Reads[_]]
-    val writesType = c.typeOf[Writes[_]]
+    val readsType  = c.typeOf[Reads[?]]
+    val writesType = c.typeOf[Writes[?]]
 
     def macroSealedFamilyImpl(subTypes: List[Type]): c.Expr[M[A]] = {
       if (subTypes.isEmpty) {

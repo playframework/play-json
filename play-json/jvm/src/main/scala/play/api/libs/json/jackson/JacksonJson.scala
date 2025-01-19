@@ -150,7 +150,7 @@ private[jackson] case class ReadingMap(content: ListBuffer[(String, JsValue)]) e
     throw new Exception("Cannot add a value on an object without a key, malformed JSON object!")
 }
 
-private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_], jsonConfig: JsonConfig)
+private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[?], jsonConfig: JsonConfig)
     extends JsonDeserializer[Object] {
   override def isCachable: Boolean = true
 

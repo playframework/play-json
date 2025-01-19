@@ -288,9 +288,9 @@ trait LowPriorityDefaultReads extends EnvReads {
           }: JsResult[Builder[A, F[A]]]) { case (acc, (elem, idx)) =>
             (acc, ra.reads(elem)) match {
               case (JsSuccess(vs, _), JsSuccess(v, _)) => JsSuccess(vs += v)
-              case (_: JsSuccess[_], jsError: JsError) => jsError.repath(JsPath(idx))
+              case (_: JsSuccess[?], jsError: JsError) => jsError.repath(JsPath(idx))
               case (JsError(errors0), JsError(errors)) => JsError(errors0 ++ JsResult.repath(errors, JsPath(idx)))
-              case (jsError: JsError, _: JsSuccess[_]) => jsError
+              case (jsError: JsError, _: JsSuccess[?]) => jsError
             }
           }
           .map(_.result())
@@ -557,7 +557,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
         (acc, result) match {
           case (Right(vs), JsSuccess(v, _)) => Right(vs + v)
           case (Right(_), JsError(e))       => Left(locate(e, key))
-          case (Left(e), _: JsSuccess[_])   => Left(e)
+          case (Left(e), _: JsSuccess[?])   => Left(e)
           case (Left(e1), JsError(e2))      => Left(e1 ++ locate(e2, key))
         }
       }.fold(JsError.apply, res => JsSuccess(res))
