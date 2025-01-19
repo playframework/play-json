@@ -14,12 +14,15 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 
 import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.JsonFactoryBuilder
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonTokenId
+import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.core.json.JsonWriteFeature
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+import com.fasterxml.jackson.core.util.JsonRecyclerPools
 
 import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind._
@@ -282,9 +285,17 @@ private[json] object JacksonJson {
 }
 
 private[json] case class JacksonJson(jsonConfig: JsonConfig) {
-  private val mapper = (new ObjectMapper).registerModule(new PlayJsonMapperModule(jsonConfig))
-
-  private val jsonFactory = new JsonFactory(mapper)
+  private val streamReadConstraints = StreamReadConstraints
+    .builder()
+    .maxNumberLength(Integer.MAX_VALUE)
+    .build()
+  private val jsonFactory = JsonFactory
+    .builder()
+    .asInstanceOf[JsonFactoryBuilder]
+    .streamReadConstraints(streamReadConstraints)
+    .recyclerPool(JsonRecyclerPools.threadLocalPool())
+    .build()
+  private val mapper = new ObjectMapper(jsonFactory).registerModule(new PlayJsonMapperModule(jsonConfig))
 
   private def stringJsonGenerator(out: java.io.StringWriter) =
     jsonFactory.createGenerator(out)
