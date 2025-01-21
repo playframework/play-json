@@ -21,7 +21,7 @@ class JsLookupSpec extends AnyWordSpec with Matchers {
     }
 
     "return None when calling asOpt on JsUndefined" in {
-      result.asOpt[Int] mustEqual None
+      result.asOpt[Int].mustEqual(None)
     }
   }
 }
