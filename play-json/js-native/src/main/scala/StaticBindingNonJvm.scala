@@ -54,8 +54,16 @@ private[json] object StaticBindingNonJvm {
       arraySep = ("[ ", ", ", " ]")
     )
 
+  // TODO: Write to the stream when traversing JsValue without buffering the whole string.
+  def prettyPrintToStream(jsValue: JsValue, stream: java.io.OutputStream): Unit =
+    stream.write(prettyPrint(jsValue).getBytes("UTF-8"))
+
   def toBytes(jsValue: JsValue): Array[Byte] =
     generateFromJsValue(jsValue, false).getBytes("UTF-8")
+
+  // TODO: Write to the stream when traversing JsValue without buffering the whole string.
+  def writeToStream(jsValue: JsValue, stream: java.io.OutputStream): Unit =
+    stream.write(toBytes(jsValue))
 
   def fromJs(
       jsValue: JsValue,

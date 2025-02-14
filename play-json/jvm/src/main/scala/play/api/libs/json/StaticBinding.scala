@@ -6,6 +6,8 @@ package play.api.libs.json
 
 import play.api.libs.json.jackson.JacksonJson
 
+import java.io.OutputStream
+
 object StaticBinding {
 
   /** Parses a [[JsValue]] from raw data. */
@@ -25,6 +27,12 @@ object StaticBinding {
 
   def prettyPrint(jsValue: JsValue): String = JacksonJson.get.prettyPrint(jsValue)
 
+  def prettyPrintToStream(jsValue: JsValue, stream: OutputStream): Unit =
+    JacksonJson.get.prettyPrintToStream(jsValue, stream)
+
   def toBytes(jsValue: JsValue): Array[Byte] =
     JacksonJson.get.jsValueToBytes(jsValue)
+
+  def writeToStream(jsValue: JsValue, stream: OutputStream): Unit =
+    JacksonJson.get.writeJsValueToStream(jsValue, stream)
 }

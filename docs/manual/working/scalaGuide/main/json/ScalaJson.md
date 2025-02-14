@@ -163,6 +163,18 @@ Readable:
 }
 ```
 
+### Using OutputStream utilities
+
+As with the String utilities, but writing to an `OutputStream` to avoid building the full string in memory. These examples use a `ByteArrayOutputStream` for illustration, though other stream types such as `FileOutputStream` will be more common.
+
+Minified:
+
+@[convert-to-stream](code/ScalaJsonSpec.scala)
+
+Readable:
+
+@[convert-to-stream-pretty](code/ScalaJsonSpec.scala)
+
 ### Using JsValue.as/asOpt
 
 The simplest way to convert a `JsValue` to another type is using `JsValue.as[T](implicit fjs: Reads[T]): T`. This requires an implicit converter of type [`Reads[T]`](api/scala/play/api/libs/json/Reads.html) to convert a `JsValue` to `T` (the inverse of `Writes[T]`). As with `Writes`, the JSON API provides `Reads` for basic types.

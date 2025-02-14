@@ -13,6 +13,8 @@ import org.scalacheck.Gen
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.io.ByteArrayOutputStream
+
 class JsonSharedSpec
     extends AnyWordSpec
     with Matchers
@@ -182,6 +184,29 @@ class JsonSharedSpec
 
       (success \ "price").mustEqual(JsDefined(JsString("2.5 €")))
     }
+
+    "write to output stream the UTF-8 representation" in json { js =>
+      val json = js.parse("""
+                            |{
+                            |  "name": "coffee",
+                            |  "symbol": "☕",
+                            |  "price": "2.5 €"
+                            |}
+        """.stripMargin)
+
+      val stream = new ByteArrayOutputStream()
+      js.writeToStream(json, stream)
+      val string     = stream.toString("UTF-8")
+      val parsedJson = js.tryParse(string)
+
+      parsedJson.isSuccess.mustEqual(true)
+
+      val success = parsedJson.success.value
+
+      (success \ "symbol").mustEqual(JsDefined(JsString("☕")))
+
+      (success \ "price").mustEqual(JsDefined(JsString("2.5 €")))
+    }
   }
 
   "Complete JSON should create full object" when {
@@ -309,7 +334,27 @@ class JsonSharedSpec
       )
 
       js.prettyPrint(jo)
-        .replace("\r\n", "\n")
+        .mustEqual("""{
+  "key1" : "toto",
+  "key2" : {
+    "key21" : "tata",
+    "key22" : 123
+  },
+  "key3" : [ 1, "tutu" ]
+}""")
+    }
+
+    "JSON pretty print to stream" in json { js =>
+      def jo = js.obj(
+        "key1" -> "toto",
+        "key2" -> js.obj("key21" -> "tata", "key22" -> 123),
+        "key3" -> js.arr(1, "tutu")
+      )
+
+      val stream = new ByteArrayOutputStream()
+      js.prettyPrintToStream(jo, stream)
+      stream
+        .toString("UTF-8")
         .mustEqual("""{
   "key1" : "toto",
   "key2" : {
