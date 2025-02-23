@@ -185,7 +185,7 @@ private[json] trait ImplicitResolver[A] {
 
     val neededGiven: Option[Term] = Implicits.search(neededGivenType) match {
       case suc: ImplicitSearchSuccess => {
-        if (!selfRef) {
+        if !selfRef then {
           Some(suc.tree)
         } else {
           tx.transformTree(suc.tree)(suc.tree.symbol) match {
@@ -251,7 +251,7 @@ private[json] trait ImplicitResolver[A] {
     case _ => {
       val sym = t.typeSymbol
 
-      if (sym.isTypeParam) {
+      if sym.isTypeParam then {
         sym.name
       } else {
         typeName(sym)

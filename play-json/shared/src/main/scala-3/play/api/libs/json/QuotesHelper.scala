@@ -66,13 +66,12 @@ private[json] trait QuotesHelper {
           case Some(child) => {
             val tpeSym = child.typeSymbol
 
-            if (
-              (tpeSym.flags.is(Flags.Abstract) &&
-                tpeSym.flags.is(Flags.Sealed) &&
-                !(child <:< anyValTpe)) ||
-              (tpeSym.flags.is(Flags.Sealed) &&
-                tpeSym.flags.is(Flags.Trait))
-            ) {
+            if (tpeSym.flags.is(Flags.Abstract) &&
+              tpeSym.flags.is(Flags.Sealed) &&
+              !(child <:< anyValTpe)) ||
+            (tpeSym.flags.is(Flags.Sealed) &&
+              tpeSym.flags.is(Flags.Trait))
+            then {
               // Ignore sub-trait itself, but check the sub-sub-classes
               subclasses(tpeSym.children.map(_.tree) ::: children.tail, out)
             } else {
@@ -87,7 +86,7 @@ private[json] trait QuotesHelper {
 
       val types = subclasses(cls.children.map(_.tree), Nil)
 
-      if (types.isEmpty) None else Some(types)
+      if types.isEmpty then None else Some(types)
     }
 
   @annotation.tailrec
@@ -132,7 +131,7 @@ private[json] trait QuotesHelper {
       val resolve: Term => Term = {
         val field = tupleTpeSym.declaredField(fieldNme)
 
-        if (field == Symbol.noSymbol) {
+        if field == Symbol.noSymbol then {
           tupleTpeSym.declaredMethod(fieldNme) match {
             case meth :: Nil =>
               (_: Term).select(meth)
