@@ -35,7 +35,7 @@ val jacksons = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.13.0"
+  "joda-time" % "joda-time" % "2.13.1"
 )
 
 // Common settings
@@ -251,7 +251,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
         else
           specs2(scalaVersion.value)
       } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.5.12" % Test
+        "ch.qos.logback" % "logback-classic" % "1.5.16" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
