@@ -246,19 +246,28 @@ import play.api.libs.functional.syntax._
 implicit val locationWrites: Writes[Location] = (
   (JsPath \ "lat").write[Double] and
   (JsPath \ "long").write[Double]
-)(unlift(Location.unapply))
+)(location => {
+  val Location(lat, long) = location
+  (lat, long)
+})
 
 implicit val residentWrites: Writes[Resident] = (
   (JsPath \ "name").write[String] and
   (JsPath \ "age").write[Int] and
   (JsPath \ "role").writeNullable[String]
-)(unlift(Resident.unapply))
+)(resident => {
+  val Resident(name, age, role) = resident
+  (name, age, role)
+})
 
 implicit val placeWrites: Writes[Place] = (
   (JsPath \ "name").write[String] and
   (JsPath \ "location").write[Location] and
   (JsPath \ "residents").write[Seq[Resident]]
-)(unlift(Place.unapply))
+)(place => {
+  val Place(name, location, residents) = place
+  (name, location, residents)
+})
 
 
 val place = Place(
