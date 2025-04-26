@@ -4,12 +4,12 @@
 
 package play.api.libs.json
 
-import scala.util.{ Failure => TryFailure, Success => TrySuccess }
-import scala.collection.mutable.{ Builder => MBuilder }
+import scala.util.{ Failure as TryFailure, Success as TrySuccess }
+import scala.collection.mutable.Builder as MBuilder
 
 import scala.deriving.Mirror.ProductOf
 
-import scala.quoted._
+import scala.quoted.*
 
 import play.api.libs.functional.ContravariantFunctor
 

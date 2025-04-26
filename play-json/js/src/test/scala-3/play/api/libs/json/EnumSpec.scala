@@ -9,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 final class EnumSpec extends AnyWordSpec with Matchers {
   "EnumFormat" should {
-    import TestEnums.EnumWithDefaultNames._
+    import TestEnums.EnumWithDefaultNames.*
 
     "serialize correctly enum with default names" in {
       Json.toJson(defaultEnum1).mustEqual(JsString("defaultEnum1"))

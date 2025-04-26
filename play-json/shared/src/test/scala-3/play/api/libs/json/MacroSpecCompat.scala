@@ -6,7 +6,7 @@ package play.api.libs.json
 
 import scala.deriving.Mirror
 
-import MacroSpec._
+import MacroSpec.*
 
 private[json] trait MacroSpecCompat {
   object UsingAliasImplicits: // Required to support non-case class

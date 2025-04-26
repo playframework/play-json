@@ -4,7 +4,7 @@
 
 package play.api.libs.json
 
-import scala.deriving._
+import scala.deriving.*
 
 private[json] trait JsMacros {
 

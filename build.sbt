@@ -328,8 +328,8 @@ lazy val docs = project
 addCommandAlias(
   "validateCode",
   List(
-    "headerCheckAll",
+    "+ headerCheckAll",
     "scalafmtSbtCheck",
-    "scalafmtCheckAll",
+    "+ scalafmtCheckAll",
   ).mkString(";")
 )

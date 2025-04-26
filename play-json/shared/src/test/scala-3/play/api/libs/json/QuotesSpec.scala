@@ -10,7 +10,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 final class QuotesSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks:
-  import TestMacros._
+  import TestMacros.*
 
   "Product" should {
     "be inspected for elements" when {
