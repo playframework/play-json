@@ -7,7 +7,7 @@ package play.api.libs.json
 import org.openjdk.jol.info.GraphLayout
 import org.scalatest.freespec.AnyFreeSpec
 import scala.util.Properties
-import scala.util.chaining._
+import scala.util.chaining.*
 
 class JsonMemoryFootprintSpec extends AnyFreeSpec {
 

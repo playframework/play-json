@@ -4,9 +4,9 @@
 
 package play.api.libs.json
 
-import scala.util.{ Try => TryResult }
-import scala.util.{ Success => TrySuccess }
-import scala.util.{ Failure => TryFailure }
+import scala.util.Try as TryResult
+import scala.util.Success as TrySuccess
+import scala.util.Failure as TryFailure
 
 import scala.deriving.Mirror.ProductOf
 
@@ -67,10 +67,10 @@ private[json] trait QuotesHelper {
             val tpeSym = child.typeSymbol
 
             if (tpeSym.flags.is(Flags.Abstract) &&
-              tpeSym.flags.is(Flags.Sealed) &&
-              !(child <:< anyValTpe)) ||
-            (tpeSym.flags.is(Flags.Sealed) &&
-              tpeSym.flags.is(Flags.Trait))
+                tpeSym.flags.is(Flags.Sealed) &&
+                !(child <:< anyValTpe)) ||
+              (tpeSym.flags.is(Flags.Sealed) &&
+                tpeSym.flags.is(Flags.Trait))
             then {
               // Ignore sub-trait itself, but check the sub-sub-classes
               subclasses(tpeSym.children.map(_.tree) ::: children.tail, out)

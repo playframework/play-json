@@ -4,9 +4,9 @@
 
 package play.api.libs.json
 
-import scala.deriving._
+import scala.deriving.*
 
-import scala.quoted._
+import scala.quoted.*
 
 private[json] trait MacroHelpers { self: OptionSupport =>
   type Q <: Quotes
