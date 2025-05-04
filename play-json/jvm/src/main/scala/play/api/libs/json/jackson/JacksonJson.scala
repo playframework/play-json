@@ -5,6 +5,7 @@
 package play.api.libs.json.jackson
 
 import java.io.InputStream
+import java.io.OutputStream
 import java.io.StringWriter
 
 import scala.annotation.switch
@@ -286,7 +287,10 @@ private[json] case class JacksonJson(jsonConfig: JsonConfig) {
 
   private val jsonFactory = new JsonFactory(mapper)
 
-  private def stringJsonGenerator(out: java.io.StringWriter) =
+  private def stringJsonGenerator(out: StringWriter) =
+    jsonFactory.createGenerator(out)
+
+  private def stringJsonGenerator(out: OutputStream) =
     jsonFactory.createGenerator(out)
 
   def parseJsValue(data: Array[Byte]): JsValue =
@@ -338,8 +342,20 @@ private[json] case class JacksonJson(jsonConfig: JsonConfig) {
     sw.getBuffer.toString
   }
 
+  def prettyPrintToStream(jsValue: JsValue, stream: OutputStream): Unit = {
+    val gen = stringJsonGenerator(stream).setPrettyPrinter(
+      new DefaultPrettyPrinter()
+    )
+    val writer: ObjectWriter = mapper.writerWithDefaultPrettyPrinter()
+
+    writer.writeValue(gen, jsValue)
+  }
+
   def jsValueToBytes(jsValue: JsValue): Array[Byte] =
     mapper.writeValueAsBytes(jsValue)
+
+  def writeJsValueToStream(jsValue: JsValue, stream: OutputStream): Unit =
+    mapper.writeValue(stream, jsValue)
 
   def jsValueToJsonNode(jsValue: JsValue): JsonNode =
     mapper.valueToTree(jsValue)
