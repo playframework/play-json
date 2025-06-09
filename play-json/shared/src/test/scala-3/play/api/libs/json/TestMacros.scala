@@ -83,7 +83,7 @@ object TestMacros:
       val quotes = q
     }
 
-    val tpe = TypeRepr.of[T]
+    val tpe                    = TypeRepr.of[T]
     val (tupleTpe, withTupled) =
       helper.withTuple[T, P, String](tpe, toProduct)
 
@@ -111,7 +111,7 @@ object TestMacros:
       val quotes = q
     }
 
-    val tpe = TypeRepr.of[T]
+    val tpe         = TypeRepr.of[T]
     val tpeElements = Expr
       .summon[ProductOf[T]]
       .map {

@@ -22,12 +22,12 @@ def specs2(scalaVersion: String) =
   }
 
 val jacksonDatabindVersion = "2.14.3"
-val jacksonDatabind = Seq(
+val jacksonDatabind        = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
 
 val jacksonVersion = "2.14.3"
-val jacksons = Seq(
+val jacksons       = Seq(
   "com.fasterxml.jackson.core"     % "jackson-core",
   "com.fasterxml.jackson.core"     % "jackson-annotations",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8",
@@ -173,7 +173,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       Compile / sourceGenerators += Def.task {
         val dir = (Compile / sourceManaged).value
 
-        val file = dir / "Generated.scala"
+        val file            = dir / "Generated.scala"
         val (writes, reads) = 1
           .to(22)
           .map { i =>
@@ -279,7 +279,7 @@ lazy val benchmarks = project
   .settings(publish / skip := true)
   .dependsOn(`play-jsonJVM`)
 
-val docsP = LocalProject("docs")
+val docsP     = LocalProject("docs")
 lazy val docs = project
   .in(file("docs"))
   .enablePlugins(PlayDocsPlugin)
@@ -288,7 +288,7 @@ lazy val docs = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= specs2(scalaVersion.value),
-    PlayDocsKeys.validateDocs := (if (isScala3.value) () else PlayDocsKeys.validateDocs.value),
+    PlayDocsKeys.validateDocs                 := (if (isScala3.value) () else PlayDocsKeys.validateDocs.value),
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
       val code = (base ** "code").get

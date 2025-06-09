@@ -380,7 +380,7 @@ object JsResult {
 
   implicit def alternativeJsResult(implicit a: Applicative[JsResult]): Alternative[JsResult] =
     new Alternative[JsResult] {
-      val app = a
+      val app                                                             = a
       def |[A, B >: A](alt1: JsResult[A], alt2: JsResult[B]): JsResult[B] = (alt1, alt2) match {
         case (JsError(e), JsSuccess(t, p)) => JsSuccess(t, p)
         case (JsSuccess(t, p), _)          => JsSuccess(t, p)

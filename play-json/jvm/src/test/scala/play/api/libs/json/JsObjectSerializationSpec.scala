@@ -17,7 +17,7 @@ class JsObjectSerializationSpec extends Specification {
         "field2" -> "abc",
         "field3" -> JsNull,
         "obj"    -> Json.obj("field1" -> 234),
-        "arr" -> JsArray(
+        "arr"    -> JsArray(
           Seq(
             JsString("abc"),
             JsNumber(123),
