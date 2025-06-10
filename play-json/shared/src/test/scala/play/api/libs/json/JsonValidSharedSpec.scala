@@ -651,7 +651,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       Json
         .obj(
-          "name" -> "john",
+          "name"   -> "john",
           "coords" -> Json.obj(
             "email" -> "john@xxx.yyy",
             "phone" -> "0123456789"
@@ -662,7 +662,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       Json
         .obj(
-          "name" -> "john",
+          "name"   -> "john",
           "coords" -> Json.obj(
             "email"  -> "john@xxx.yyy",
             "phone2" -> "0123456789"
@@ -673,7 +673,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       Json
         .obj(
-          "name" -> "john",
+          "name"   -> "john",
           "coords" -> Json.obj(
             "email" -> "john@xxx.yyy"
           )
@@ -683,7 +683,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       Json
         .obj(
-          "name" -> "john",
+          "name"   -> "john",
           "coords" -> Json.obj(
             "email" -> "john@xxx.yyy",
             "phone" -> JsNull
@@ -694,7 +694,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
 
       Json
         .obj(
-          "name" -> "john",
+          "name"    -> "john",
           "coords2" -> Json.obj(
             "email" -> "john@xxx.yyy",
             "phone" -> "0123456789"
@@ -1087,7 +1087,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
   "JsResult" should {
     "be usable in for-comprehensions" in {
       val res = JsSuccess("foo")
-      def x =
+      def x   =
         for {
           s <- res
           if s.size < 5

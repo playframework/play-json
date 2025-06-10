@@ -254,7 +254,7 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
 
     "can parse recursive object" in json { js =>
       val recursiveJson = """{"foo": {"foo":["bar"]}, "bar": {"foo":["bar"]}}"""
-      val expectedJson = JsObject(
+      val expectedJson  = JsObject(
         List(
           "foo" -> JsObject(
             List(
@@ -367,7 +367,7 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       case class TestCase(id: String, attr1: String, attr2: String)
 
       def jo = Json.obj(
-        "id" -> "my-id",
+        "id"   -> "my-id",
         "data" -> Json.obj(
           "attr1" -> "foo",
           "attr2" -> "bar"
