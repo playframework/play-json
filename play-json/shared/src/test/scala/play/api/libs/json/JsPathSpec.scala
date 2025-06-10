@@ -146,7 +146,7 @@ class JsPathSpec extends AnyWordSpec with Matchers {
     "retrieve recursive in jsobject and jsarray #2" in {
       val obj = Json.obj(
         "nothing" -> "really",
-        "array" -> Json.arr(
+        "array"   -> Json.arr(
           Json.obj("field" -> Json.obj("alpha" -> "v11", "beta" -> "v12", "gamma" -> "v13")),
           Json.obj("field" -> Json.obj("alpha" -> "v21", "gamma" -> "v23", "beta" -> "v22")),
           Json.obj("field" -> Json.obj("beta" -> "v32", "alpha" -> "v31", "gamma" -> "v33"))

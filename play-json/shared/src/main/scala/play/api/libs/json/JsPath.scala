@@ -240,7 +240,7 @@ case class JsPath(path: List[PathNode] = List()) {
   def applyTillLast(json: JsValue): Either[JsError, JsResult[JsValue]] = {
     @annotation.tailrec
     def step(path: List[PathNode], json: JsValue): Either[JsError, JsResult[JsValue]] = path match {
-      case Nil => Right(JsSuccess(json))
+      case Nil        => Right(JsSuccess(json))
       case List(node) =>
         node(json) match {
           case Nil      => Right(PathMissingError)
@@ -284,11 +284,11 @@ case class JsPath(path: List[PathNode] = List()) {
 
     def step(json: JsObject, lpath: JsPath): JsResult[JsObject] = {
       lpath.path match {
-        case Nil     => JsSuccess(json)
-        case List(p) => stepNode(json, p).repath(lpath)
+        case Nil          => JsSuccess(json)
+        case List(p)      => stepNode(json, p).repath(lpath)
         case head :: tail =>
           head(json) match {
-            case Nil => JsError(lpath, JsonValidationError("error.path.missing"))
+            case Nil      => JsError(lpath, JsonValidationError("error.path.missing"))
             case List(js) =>
               js match {
                 case o: JsObject =>

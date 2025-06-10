@@ -10,7 +10,7 @@ import org.scalatest.wordspec.AnyWordSpec
 final class FormatSharedSpec extends AnyWordSpec with Matchers {
   "Format" should {
     "be bimap'ed" in {
-      val strFormat = implicitly[Format[String]]
+      val strFormat              = implicitly[Format[String]]
       val intFormat: Format[Int] =
         strFormat.bimap(_.size, List.fill(_: Int)('X').mkString)
 

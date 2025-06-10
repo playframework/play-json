@@ -382,12 +382,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
       implicit val familyFormat: OFormat[Family]     = Json.format[Family]
 
-      val simple = Simple("foo")
+      val simple   = Simple("foo")
       val jsSimple = simpleWrites.writes(simple) + (
         "_type" -> JsString("play.api.libs.json.MacroSpec.Simple")
       )
 
-      val optional = Optional(None)
+      val optional   = Optional(None)
       val jsOptional = optionalFormat.writes(optional) + (
         "_type" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
@@ -401,7 +401,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     }
 
     "handle sealed family with custom discriminator name" in {
-      implicit val cfg: JsonConfiguration = JsonConfiguration(discriminator = "_discriminator")
+      implicit val cfg: JsonConfiguration        = JsonConfiguration(discriminator = "_discriminator")
       implicit val simpleWrites: OWrites[Simple] = OWrites[Simple] { simple =>
         Json.obj("bar" -> simple.bar)
       }
@@ -414,12 +414,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val optionalFormat: OFormat[Optional] = Json.format[Optional]
       implicit val familyFormat: OFormat[Family]     = Json.format[Family]
 
-      val simple = Simple("foo")
+      val simple   = Simple("foo")
       val jsSimple = simpleWrites.writes(simple) + (
         "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Simple")
       )
 
-      val optional = Optional(None)
+      val optional   = Optional(None)
       val jsOptional = optionalFormat.writes(optional) + (
         "_discriminator" -> JsString("play.api.libs.json.MacroSpec.Optional")
       )
@@ -453,12 +453,12 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       implicit val loremWrites: OWrites[Lorem[Any]] = LoremCodec.loremWrites
       implicit val familyFormat: OFormat[Family]    = Json.format[Family]
 
-      val simple = Simple("foo")
+      val simple   = Simple("foo")
       val jsSimple = simpleWrites.writes(simple) + (
         "_type" -> JsString("simple")
       )
 
-      val optional = Optional(None)
+      val optional   = Optional(None)
       val jsOptional = optionalFormat.writes(optional) + (
         "_type" -> JsString("optional")
       )

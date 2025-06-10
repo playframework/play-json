@@ -82,7 +82,7 @@ private[json] object StaticBindingNonJvm {
       }
 
       case JsObject(fields) => {
-        val il = ilevel + 1
+        val il              = ilevel + 1
         val (before, after) = if (newline) {
           s"\n${indent(il)}" -> s"\n${indent(ilevel)}}"
         } else indent(il) -> "}"
