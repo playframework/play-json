@@ -4,10 +4,8 @@
 
 package play.api.libs.json
 
-private[json] trait ScalaCompatFormat { self: Format.type =>
+/* Scala compatibility trait for the `Format` companion */
+private[json] trait ScalaCompatFormat { self: Format.type => }
 
-}
-
-private[json] trait ScalaCompatOFormat { self: OFormat.type =>
-
-}
+/* Scala compatibility trait for the `OFormat` companion */
+private[json] trait ScalaCompatOFormat { self: OFormat.type => }

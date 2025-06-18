@@ -4,6 +4,7 @@
 
 package play.api.libs.json
 
+/* Scala compatibility trait for the `Format` companion */
 private[json] trait ScalaCompatFormat { self: Format.type =>
 
   /**
@@ -45,6 +46,7 @@ private[json] object ScalaCompatFormat {
   }
 }
 
+/* Scala compatibility trait for the `OFormat` companion */
 private[json] trait ScalaCompatOFormat { self: OFormat.type =>
 
   /**
@@ -63,6 +65,19 @@ private[json] trait ScalaCompatOFormat { self: OFormat.type =>
     lazy val res: OFormat[A] = f(using ScalaCompatOFormat.DeferredOFormat(() => res))
     res
   }
+
+  /**
+   * Constructs an `OFormat` for a type using its derived JSON format.
+   *
+   * This method delegates to `Json.format` to derive an `OFormat[T]`
+   * for the specified type.
+   *
+   * This method is available only in Scala 3.
+   *
+   * @tparam T the type read from and written as JSON
+   * @return a derived format for T
+   */
+  inline def derived[T]: OFormat[T] = Json.format[T]
 }
 
 private[json] object ScalaCompatOFormat {

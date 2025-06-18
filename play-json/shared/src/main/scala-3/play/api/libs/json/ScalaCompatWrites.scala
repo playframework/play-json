@@ -4,6 +4,7 @@
 
 package play.api.libs.json
 
+/* Scala compatibility trait for the `Writes` companion */
 private[json] trait ScalaCompatWrites { self: Writes.type =>
 
   /**
@@ -42,6 +43,7 @@ private[json] object ScalaCompatWrites {
   }
 }
 
+/* Scala compatibility trait for the `OWrites` companion */
 private[json] trait ScalaCompatOWrites { self: OWrites.type =>
 
   /**
@@ -60,6 +62,19 @@ private[json] trait ScalaCompatOWrites { self: OWrites.type =>
     lazy val res: OWrites[A] = f(using ScalaCompatOWrites.DeferredOWrites(() => res))
     res
   }
+
+  /**
+   * Constructs an `OWrites` for a type using its derived JSON writer.
+   *
+   * This method delegates to `Json.writes` to derive an `OWrites[T]`
+   * for the specified type.
+   *
+   * This method is available only in Scala 3.
+   *
+   * @tparam T the type written as JSON
+   * @return a derived writer for T
+   */
+  inline def derived[T]: OWrites[T] = Json.writes[T]
 }
 
 private[json] object ScalaCompatOWrites {

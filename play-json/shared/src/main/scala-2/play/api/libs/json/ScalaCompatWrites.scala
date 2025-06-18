@@ -4,10 +4,8 @@
 
 package play.api.libs.json
 
-private[json] trait ScalaCompatWrites { self: Writes.type =>
+/* Scala compatibility trait for the `Writes` companion */
+private[json] trait ScalaCompatWrites { self: Writes.type => }
 
-}
-
-private[json] trait ScalaCompatOWrites { self: OWrites.type =>
-
-}
+/* Scala compatibility trait for the `OWrites` companion */
+private[json] trait ScalaCompatOWrites { self: OWrites.type => }

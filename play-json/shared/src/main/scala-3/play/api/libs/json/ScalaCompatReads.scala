@@ -4,6 +4,7 @@
 
 package play.api.libs.json
 
+/* Scala compatibility trait for the `Reads` companion */
 private[json] trait ScalaCompatReads { self: Reads.type =>
 
   /**
@@ -22,6 +23,18 @@ private[json] trait ScalaCompatReads { self: Reads.type =>
     lazy val res: Reads[A] = f(using ScalaCompatReads.DeferredReads(() => res))
     res
   }
+
+  /**
+   * Constructs a `Reads` for a type using its derived JSON reader.
+   *
+   * This method delegates to `Json.reads` to derive a `Reads[T]` for the specified type.
+   *
+   * This method is available only in Scala 3.
+   *
+   * @tparam T the type read from JSON
+   * @return a derived reader for T
+   */
+  inline def derived[T]: Reads[T] = Json.reads[T]
 }
 
 private[json] object ScalaCompatReads {
