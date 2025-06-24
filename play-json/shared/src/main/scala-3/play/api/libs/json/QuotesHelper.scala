@@ -4,12 +4,11 @@
 
 package play.api.libs.json
 
+import scala.deriving.Mirror
 import scala.util.Try as TryResult
 import scala.util.Success as TrySuccess
 import scala.util.Failure as TryFailure
-
 import scala.deriving.Mirror.ProductOf
-
 import scala.quoted.Expr
 import scala.quoted.Quotes
 import scala.quoted.Type
@@ -43,51 +42,27 @@ private[json] trait QuotesHelper {
    * Class `Lorem` is listed through `SubFoo`,
    * but `SubFoo` itself is not returned.
    */
-  final def knownSubclasses(tpr: TypeRepr): Option[List[TypeRepr]] =
-    tpr.classSymbol.flatMap { cls =>
-      @annotation.tailrec
-      def subclasses(
-          children: List[Tree],
-          out: List[TypeRepr]
-      ): List[TypeRepr] = {
-        val childTpr = children.headOption.collect {
-          case tpd: Typed =>
-            tpd.tpt.tpe
-
-          case vd: ValDef =>
-            vd.tpt.tpe
-
-          case cd: ClassDef =>
-            cd.constructor.returnTpt.tpe
-
-        }
-
-        childTpr match {
-          case Some(child) => {
-            val tpeSym = child.typeSymbol
-
-            if (tpeSym.flags.is(Flags.Abstract) &&
-                tpeSym.flags.is(Flags.Sealed) &&
-                !(child <:< anyValTpe)) ||
-              (tpeSym.flags.is(Flags.Sealed) &&
-                tpeSym.flags.is(Flags.Trait))
-            then {
-              // Ignore sub-trait itself, but check the sub-sub-classes
-              subclasses(tpeSym.children.map(_.tree) ::: children.tail, out)
-            } else {
-              subclasses(children.tail, child :: out)
-            }
+  final def knownSubclasses(tpr: TypeRepr): Option[List[TypeRepr]] = {
+    def gatherNestedSubtypes[Parent: Type, Elems: Type](using Quotes): List[TypeRepr] =
+      Type.of[Elems] match {
+        case '[elem *: elems] =>
+          Expr.summon[Mirror.Of[elem]] match {
+            case Some('{ $sum: Mirror.SumOf[elem] { type MirroredElemTypes = elementTypes } }) =>
+              gatherNestedSubtypes[elem, elementTypes] ++ gatherNestedSubtypes[Parent, elems]
+            case _ =>
+              TypeRepr.of[elem] :: gatherNestedSubtypes[Parent, elems]
           }
-
-          case _ =>
-            out.reverse
-        }
+        case '[EmptyTuple] => Nil
       }
 
-      val types = subclasses(cls.children.map(_.tree), Nil)
-
-      if types.isEmpty then None else Some(types)
+    tpr.asType match {
+      case '[t] =>
+        Expr.summon[Mirror.Of[t]].collect {
+          case '{ $sum: Mirror.SumOf[t] { type MirroredElemTypes = elementTypes } } =>
+            gatherNestedSubtypes[t, elementTypes]
+        }
     }
+  }
 
   @annotation.tailrec
   private def withElems[U <: Product](
