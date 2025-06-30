@@ -82,7 +82,7 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     val layout1  = GraphLayout.parseInstance(a)
     val layout2  = GraphLayout.parseInstance(a)
     val distinct = layout1.subtract(layout2) // shared singletons don't count.
-    val clue =
+    val clue     =
       s"""$a:
          |${distinct.toFootprint}
          |${distinct.toPrintable}""".stripMargin

@@ -412,7 +412,7 @@ class JsonExtensionSpec extends AnyWordSpec with Matchers {
 
       val genericIntString = GenericCaseClass2(obj1 = 1, obj2 = "hello")
       val genericHolder    = WrappedGenericIntString(intString = genericIntString)
-      val expectedJsObj = Json.obj(
+      val expectedJsObj    = Json.obj(
         "intString" -> Json.obj("obj1" -> 1, "obj2" -> "hello")
       )
       Json.toJson(genericHolder).mustEqual(expectedJsObj)

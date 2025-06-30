@@ -295,7 +295,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         // infers implicit
         val neededImplicitType = appliedType(ctag.typeConstructor, ptpe)
         val tx                 = new ImplicitTransformer(subject)
-        val neededImplicit = if (!selfRef) {
+        val neededImplicit     = if (!selfRef) {
           c.inferImplicitValue(neededImplicitType)
         } else
           c.untypecheck(
@@ -346,7 +346,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
           case TypeRef(_, _, args) =>
             args.head match {
-              case t @ TypeRef(_, _, Nil) => Some(List(t))
+              case t @ TypeRef(_, _, Nil)  => Some(List(t))
               case t @ TypeRef(_, _, args) =>
                 import c.universe.definitions.TupleClass
                 if (!TupleClass.seq.exists(t.baseType(_).ne(NoType))) Some(List(t))
@@ -436,7 +436,7 @@ class JsMacroImpl(val c: blackbox.Context) {
               val someInitUnapply = unapplyReturnTypes.map(_.init)
               val someUnapplyLast = unapplyReturnTypes.map(_.last)
               val initsMatch      = someInitApply == someInitUnapply
-              val lastMatch = (for {
+              val lastMatch       = (for {
                 lastApply   <- someApplyLast
                 lastUnapply <- someUnapplyLast
               } yield lastApply <:< lastUnapply).getOrElse(false)
@@ -596,7 +596,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         val cases = Match(
           q"dis",
           subTypes.map { t =>
-            val rtpe = appliedType(readsType, List(t))
+            val rtpe   = appliedType(readsType, List(t))
             val reader = resolver
               .createImplicit(
                 atpe,
@@ -636,7 +636,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         val cases = Match(
           q"v",
           subTypes.map { t =>
-            val wtpe = appliedType(writesType, List(t))
+            val wtpe   = appliedType(writesType, List(t))
             val writer = resolver
               .createImplicit(
                 atpe,
@@ -718,7 +718,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         }
 
       val resolvedImplicits = utility.implicits(resolver)
-      val canBuild = resolvedImplicits
+      val canBuild          = resolvedImplicits
         .map { case (name, Implicit(pt, impl, _, _)) =>
           // Equivalent to __ \ "name", but uses a naming scheme
           // of (String) => (String) to find the correct "name"
@@ -768,7 +768,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
       val syntaxImport      = if (!multiParam && !writes) q"" else q"import $syntax._"
       @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
-      def readResult =
+      def readResult        =
         if (multiParam) q"underlying.reads(obj)"
         else q"underlying.flatMap[${atpe}] { v: ${atpe} => $json.Reads.pure(f = v) }.reads(obj)"
 
@@ -875,7 +875,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         atpe match {
           case _: SingletonType    => caseObjectImpl
           case TypeRef(_, _, args) => macroCaseImpl(args)
-          case _ =>
+          case _                   =>
             c.abort(
               c.enclosingPosition,
               s"Type ${atpe.typeSymbol.fullName} is not a valid case class or an object"
