@@ -669,11 +669,11 @@ object JsMacroImpl { // TODO: debug
         .toSeq
         .partition { case WritableField(_, _, t) => isOptionalType(t) }
 
-      type ElementAcc = MBuilder[(String, JsValue), Map[String, JsValue]]
+      type ElementAcc = MBuilder[(String, JsValue), List[(String, JsValue)]]
 
       def withIdents[U: Type](f: Expr[ElementAcc] => Expr[U]): Expr[U] =
         '{
-          val ok = Map.newBuilder[String, JsValue]
+          val ok = List.newBuilder[(String, JsValue)]
 
           ${ f('{ ok }) }
         }
@@ -685,7 +685,7 @@ object JsMacroImpl { // TODO: debug
           val fieldMap = withFields(tupled, tupleTpe, tprElements, debug)
 
           withIdents[JsObject] { bufOk =>
-            val values: Seq[Expr[Unit]] = required.map { case WritableField(param, i, pt) =>
+            val values: Seq[(Expr[Unit], Int)] = required.map { case WritableField(param, i, pt) =>
               val pname = param.name
 
               val withField = fieldMap.get(pname) match {
@@ -697,7 +697,7 @@ object JsMacroImpl { // TODO: debug
                   )
               }
 
-              pt.asType match {
+              val expr = pt.asType match {
                 case pTpe @ '[p] =>
                   val writes: Expr[Writes[p]] = resolve(pt) match {
                     case Some((givenWrites, _)) =>
@@ -715,9 +715,10 @@ object JsMacroImpl { // TODO: debug
                     }).asTerm
                   }.asExprOf[Unit]
               }
+              expr -> i
             } // end of required.map
 
-            val extra: Seq[Expr[Unit]] = optional.map {
+            val extra: Seq[(Expr[Unit], Int)] = optional.map {
               case WritableField(param, i, optType @ OptionTypeParameter(pt)) =>
                 val pname = param.name
 
@@ -730,7 +731,7 @@ object JsMacroImpl { // TODO: debug
                     )
                 }
 
-                pt.asType match {
+                val expr = pt.asType match {
                   case pTpe @ '[p] =>
                     val writes: Expr[Writes[p]] = resolve(pt) match {
                       case Some((givenWrites, _)) =>
@@ -757,6 +758,7 @@ object JsMacroImpl { // TODO: debug
                       }).asTerm
                     }.asExprOf[Unit]
                 }
+                expr -> i
             } // end of extra.collect
 
             if (values.isEmpty && extra.isEmpty) {
@@ -766,7 +768,7 @@ object JsMacroImpl { // TODO: debug
 
               '{ JsObject(Map.empty) }
             } else {
-              val fields = values ++ extra
+              val fields = (values ++ extra).sortBy(_._2).map(_._1)
 
               val resExpr = '{ JsObject(${ bufOk }.result()) }
 
