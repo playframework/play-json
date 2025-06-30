@@ -28,6 +28,10 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
       (__ \ Symbol("models")).format[Map[String, String]]
   )(Car.apply, c => (c.id, c.models))
 
+  case class Model(m1: Option[String], c: String, z: Option[Double], a: Int, b: Option[String])
+
+  implicit val modelFormat: Format[Model] = Json.format[Model]
+
   def json[T](f: JsonFacade => T) = forAll(Gen.oneOf(Json, Json.configured, Json.using[Json.MacroOptions]))(f)
 
   "JSON" should {
@@ -442,6 +446,12 @@ class JsonSharedSpec extends AnyWordSpec with Matchers with org.scalatestplus.sc
         """{"name": "a", "zip": "foo", "city": "foo", "address": "foo", "phone": "foo", "latitude": "foo", "longitude": "foo", "hny": "foo", "hz": "foo", "hek": "foo", "hev": "foo", "kny": "foo", "kz": "foo", "kek": "foo", "kev": "foo", "szeny": "foo", "szez": "foo", "szeek": "foo", "szeev": "foo", "csny": "foo", "csz": "foo", "csek": "foo", "csev": "foo", "pny": "foo", "pz": "foo", "pek": "foo", "pev": "foo", "szony": "foo", "szoz": "foo", "szoek": "foo", "szoev": "foo", "vny": "foo", "vz": "foo", "vek": "foo", "vev": "foo"}"""
 
       test.toString.mustEqual(js.parse(req).toString) // ).ignoreSpace
+    }
+
+    "preserve field ordering" in {
+      val model      = Model(Some("foo"), "bar", Some(1.2), 42, Some("baz"))
+      val serialized = Json.stringify(Json.toJson(model))
+      serialized.mustEqual("""{"m1":"foo","c":"bar","z":1.2,"a":42,"b":"baz"}""")
     }
   }
 
