@@ -538,10 +538,41 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       Json.toJson(GenericCaseClassWithDefault(3, "foo")).mustEqual(expectedJson)
       Json.fromJson(expectedJson).mustEqual(JsSuccess(expected))
     }
+
+    "field ordering" in {
+      // https://github.com/playframework/play-json/issues/1038
+      val instance: OWrites[FieldOrderTest] = Json.writes[FieldOrderTest]
+
+      val value = FieldOrderTest(1, 2, 3, Some(4), 5, 6)
+
+      instance
+        .writes(value)
+        .fields
+        .mustEqual(
+          Seq(
+            "x1" -> 1,
+            "x2" -> 2,
+            "x3" -> 3,
+            "x4" -> 4,
+            "x5" -> 5,
+            "x6" -> 6,
+          ).map { case (k, v) => k -> JsNumber(v) }
+        )
+      assert(instance.writes(value).value.isInstanceOf[ImmutableLinkedHashMap[?, ?]])
+    }
   }
 }
 
 object MacroSpec {
+  case class FieldOrderTest(
+      x1: Int,
+      x2: Int,
+      x3: Int,
+      x4: Option[Int],
+      x5: Int,
+      x6: Int,
+  )
+
   sealed trait Family
   case class Simple(bar: String)            extends Family
   case class Lorem[T](ipsum: T, age: Int)   extends Family
