@@ -73,7 +73,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
   val preserveZeroDecimal: JsonConfig = {
     val defaultSerializerSettings = JsonConfig.settings.bigDecimalSerializerConfig
     val defaultParserSettings     = JsonConfig.settings.bigDecimalParseConfig
-    val serializerSettings = BigDecimalSerializerConfig(
+    val serializerSettings        = BigDecimalSerializerConfig(
       defaultSerializerSettings.minPlain,
       defaultSerializerSettings.maxPlain,
       preserveZeroDecimal = true

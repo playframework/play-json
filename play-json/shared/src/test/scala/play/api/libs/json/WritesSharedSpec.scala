@@ -28,7 +28,7 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     }
 
     "be contramap'ed" in {
-      val w = implicitly[Writes[String]]
+      val w  = implicitly[Writes[String]]
       val ow = OWrites[String] { str =>
         Json.obj("string" -> str)
       }

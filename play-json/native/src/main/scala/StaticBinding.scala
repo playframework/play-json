@@ -9,8 +9,8 @@ import org.typelevel.jawn
 object StaticBinding {
 
   private implicit object JsValueFacade extends jawn.Facade.SimpleFacade[JsValue] {
-    final def jfalse: JsValue = JsFalse
-    final def jnull: JsValue  = JsNull
+    final def jfalse: JsValue                                              = JsFalse
+    final def jnull: JsValue                                               = JsNull
     final def jnum(s: CharSequence, decIndex: Int, expIndex: Int): JsValue = JsNumber(
       new java.math.BigDecimal(s.toString)
     )

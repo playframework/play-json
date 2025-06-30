@@ -74,7 +74,7 @@ trait EnvReads {
         case JsString(s) =>
           parseJDate(pattern, corrector(s)) match {
             case Some(d) => JsSuccess(d)
-            case None =>
+            case None    =>
               JsError(
                 Seq(
                   JsPath ->
@@ -137,7 +137,7 @@ trait EnvReads {
           case _                 => mini        -> parseJDate(mini, s)
         }) match {
           case (_, Some(d)) => JsSuccess(d)
-          case (p, None) =>
+          case (p, None)    =>
             JsError(
               Seq(
                 JsPath ->
@@ -284,7 +284,7 @@ trait EnvReads {
       case JsString(s) =>
         p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
-          case None =>
+          case None    =>
             JsError(
               Seq(
                 JsPath ->
@@ -371,7 +371,7 @@ trait EnvReads {
       case JsString(s) =>
         p(parsing).parse(corrector(s)) match {
           case Some(d) => JsSuccess(d)
-          case None =>
+          case None    =>
             JsError(
               Seq(
                 JsPath ->
@@ -463,7 +463,7 @@ trait EnvReads {
         case JsString(s) =>
           p(parsing).parse(corrector(s)) match {
             case Some(d) => JsSuccess(d)
-            case _ =>
+            case _       =>
               JsError(
                 Seq(
                   JsPath ->
@@ -552,7 +552,7 @@ trait EnvReads {
         case JsString(s) =>
           p(parsing).parse(corrector(s)) match {
             case Some(d) => JsSuccess(d)
-            case _ =>
+            case _       =>
               JsError(
                 Seq(
                   JsPath ->

@@ -221,11 +221,11 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
     }
 
   implicit def alternative(implicit a: Applicative[Reads]): Alternative[Reads] = new Alternative[Reads] {
-    val app = a
+    val app                                                    = a
     def |[A, B >: A](alt1: Reads[A], alt2: Reads[B]): Reads[B] = new Reads[B] {
       def reads(js: JsValue) = alt1.reads(js) match {
         case r @ JsSuccess(_, _) => r
-        case JsError(es1) =>
+        case JsError(es1)        =>
           alt2.reads(js) match {
             case r2 @ JsSuccess(_, _) => r2
             case JsError(es2)         => JsError(JsError.merge(es1, es2))
