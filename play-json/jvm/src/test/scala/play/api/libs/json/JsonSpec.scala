@@ -4,6 +4,7 @@
 
 package play.api.libs.json
 
+import java.math.BigInteger
 import java.util.Calendar
 import java.util.Date
 import java.util.TimeZone
@@ -475,6 +476,55 @@ class JsonSpec extends org.specs2.mutable.Specification {
     "Deserialize float JsNumber as Jackson number node" in {
       val jsNum = JsNumber(new java.math.BigDecimal("12.345"))
       fromJson[JsonNode](jsNum).map(_.toString).must_==(JsSuccess("12.345"))
+    }
+
+    "Serialize JsNumbers with integers correctly" in {
+      val numStrings = Seq(
+        "0",
+        "1",
+        "-1",
+        Int.MaxValue.toString,
+        Int.MinValue.toString,
+        Long.MaxValue.toString,
+        Long.MinValue.toString,
+        BigInteger.valueOf(Long.MaxValue).add(BigInteger.ONE).toString,
+        BigInteger.valueOf(Long.MinValue).add(BigInteger.valueOf(-1)).toString
+      )
+      numStrings.map { numString =>
+        val bigDec = new java.math.BigDecimal(numString)
+        Json.stringify(JsNumber(bigDec)).must_==(bigDec.toString)
+      }
+    }
+
+    "Serialize JsNumbers with decimal points correctly" in {
+      val numStrings = Seq(
+        "0.123",
+        "1.23456789",
+        "-1.23456789",
+        Float.MaxValue.toString,
+        Float.MinValue.toString,
+        Double.MaxValue.toString,
+        Double.MinValue.toString,
+        java.math.BigDecimal.valueOf(Double.MaxValue).add(java.math.BigDecimal.valueOf(1)).toString,
+        java.math.BigDecimal.valueOf(Double.MinValue).add(java.math.BigDecimal.valueOf(-1)).toString
+      )
+      numStrings.map { numString =>
+        val bigDec = new java.math.BigDecimal(numString)
+        Json.stringify(JsNumber(bigDec)).must_==(bigDec.toString)
+      }
+    }
+
+    "Serialize JsNumbers with e notation correctly" in {
+      val numStrings = Seq(
+        "1.23456789012345679012345679e999",
+        "-1.23456789012345679012345679e999",
+        "1.23456789012345679012345679e-999",
+        "-1.23456789012345679012345679e-999"
+      )
+      numStrings.map { numString =>
+        val bigDec = new java.math.BigDecimal(numString)
+        Json.stringify(JsNumber(bigDec)).must_==(bigDec.toString)
+      }
     }
 
     "parse from InputStream" in {
