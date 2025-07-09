@@ -100,8 +100,8 @@ private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSer
           json.writeNumber(raw)
         else
           json match {
-            case _: TokenBuffer =>
-              json.writeTree(new BigIntegerNode(new BigInteger(raw)))
+            case tb: TokenBuffer =>
+              tb.writeNumber(raw, true)
             case _ =>
               json.writeNumber(raw)
           }
