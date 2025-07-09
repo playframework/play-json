@@ -6,7 +6,6 @@ package play.api.libs.json.jackson
 
 import java.io.InputStream
 import java.io.StringWriter
-import java.math.BigInteger
 
 import scala.annotation.switch
 import scala.annotation.tailrec
@@ -28,7 +27,6 @@ import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.databind.node.BigIntegerNode
 import com.fasterxml.jackson.databind.ser.Serializers
 import com.fasterxml.jackson.databind.util.TokenBuffer
 
