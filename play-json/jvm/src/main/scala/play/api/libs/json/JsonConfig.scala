@@ -238,7 +238,12 @@ object JsonConfig {
       bigDecimalParseConfig: BigDecimalParseConfig,
       bigDecimalSerializerConfig: BigDecimalSerializerConfig
   ): JsonConfig =
-    JsonConfigImpl(bigDecimalParseConfig, bigDecimalSerializerConfig, defaultStreamReadConstraints)
+    JsonConfigImpl(
+      bigDecimalParseConfig,
+      bigDecimalSerializerConfig,
+      defaultStreamReadConstraints,
+      defaultStreamWriteConstraints
+    )
 
   def apply(
       bigDecimalParseConfig: BigDecimalParseConfig,
