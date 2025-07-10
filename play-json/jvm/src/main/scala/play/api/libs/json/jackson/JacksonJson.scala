@@ -279,6 +279,7 @@ private[json] object JacksonJson {
 private[play] case class JacksonJson(jsonConfig: JsonConfig) {
   private val jsonFactory = new JsonFactoryBuilder()
     .streamReadConstraints(jsonConfig.streamReadConstraints)
+    .streamWriteConstraints(jsonConfig.streamWriteConstraints)
     .build()
   private val mapper = JsonMapper
     .builder(jsonFactory)
