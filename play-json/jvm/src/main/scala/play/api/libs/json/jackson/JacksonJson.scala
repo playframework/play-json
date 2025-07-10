@@ -284,7 +284,7 @@ private[json] object JacksonJson {
   private[json] def get: JacksonJson = instance
 }
 
-private[json] case class JacksonJson(jsonConfig: JsonConfig) {
+private[play] case class JacksonJson(jsonConfig: JsonConfig) {
   private val jsonFactory = new JsonFactoryBuilder()
     .streamReadConstraints(jsonConfig.streamReadConstraints)
     .build()
