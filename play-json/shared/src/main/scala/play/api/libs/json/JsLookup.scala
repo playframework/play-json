@@ -195,9 +195,10 @@ case class JsDefined(value: JsValue) extends AnyVal with JsLookupResult
  * Represent a missing Json value.
  */
 final class JsUndefined(err: => String) extends JsLookupResult {
-  def error             = err
-  def validationError   = JsonValidationError(error)
-  override def toString = s"JsUndefined($err)"
+  def error                                                = err
+  def validationError                                      = JsonValidationError(error)
+  override def toString                                    = s"JsUndefined($err)"
+  override def asOpt[T](implicit fjs: Reads[T]): Option[T] = None
 }
 
 object JsUndefined {
