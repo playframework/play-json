@@ -174,6 +174,31 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     success[JsValue, Writes](JsString("foo"))
   }
 
+  "Constructing Writes" should {
+    "support case class" in {
+      import play.api.libs.functional.syntax._
+
+      implicit val locationReads: Reads[Location] = (
+        (JsPath \ "lat").read[Double] and
+          (JsPath \ "long").read[Double]
+      )(Location.apply _)
+
+      implicit val locationWrites: Writes[Location] = (
+        (JsPath \ "lat").write[Double] and
+          (JsPath \ "long").write[Double]
+      )(location => {
+        val Location(lat, long) = location
+        (lat, long)
+      })
+
+      val location = Location(1.1, 2.2)
+
+      val serialized = Json.stringify(Json.toJson(location))
+      serialized.mustEqual("""{"lat":1.1,"long":2.2}""")
+      Json.fromJson[Location](Json.parse(serialized)).mustEqual(JsSuccess(location))
+    }
+  }
+
   // ---
 
   case class Location(lat: Double, long: Double)
