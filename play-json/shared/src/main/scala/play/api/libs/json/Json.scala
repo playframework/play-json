@@ -4,7 +4,7 @@
 
 package play.api.libs.json
 
-import java.io.InputStream
+import java.io.{ InputStream, OutputStream }
 
 import scala.collection.mutable.{ Builder => MBuilder }
 
@@ -88,6 +88,14 @@ sealed trait JsonFacade {
   def toBytes(json: JsValue): Array[Byte]
 
   /**
+   * Writes a [[JsValue]] to an output stream.
+   *
+   * $jsonParam
+   * @param stream the stream to write to.
+   */
+  def writeToStream(json: JsValue, stream: OutputStream): Unit
+
+  /**
    * Converts a [[JsValue]] to its string representation,
    * escaping all non-ascii characters using `\u005CuXXXX` syntax.
    *
@@ -141,6 +149,16 @@ sealed trait JsonFacade {
   def prettyPrint(json: JsValue): String
 
   /**
+   * Converts a [[JsValue]] to its pretty string representation using default
+   * pretty printer (line feeds after each fields and 2-spaces indentation) and
+   * writes the result to an output stream.
+   *
+   * $jsonParam
+   * @param stream the stream to write to.
+   */
+  def prettyPrintToStream(json: JsValue, stream: OutputStream): Unit
+
+  /**
    * Converts any writeable value to a [[JsValue]].
    *
    * A value is writeable if a [[Writes]] implicit is available for its type.
@@ -186,7 +204,7 @@ sealed trait JsonFacade {
  * Helper functions to handle JsValues.
  *
  * @define macroOptions @tparam Opts the compile-time options
- * @define macroTypeParam @tparam A the type for which the handler must be materialized
+ * @define macroTypeParam @tparam The type for which the handler must be materialized
  * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
  */
 object Json extends JsonFacade with JsMacros with JsValueMacros {
@@ -207,12 +225,16 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
 
   def toBytes(json: JsValue): Array[Byte] = StaticBinding.toBytes(json)
 
+  def writeToStream(json: JsValue, stream: OutputStream): Unit = StaticBinding.writeToStream(json, stream)
+
   // We use unicode \u005C for a backlash in comments, because Scala will replace unicode escapes during lexing
   // anywhere in the program.
   def asciiStringify(json: JsValue): String =
     StaticBinding.generateFromJsValue(json, true)
 
   def prettyPrint(json: JsValue): String = StaticBinding.prettyPrint(json)
+
+  def prettyPrintToStream(json: JsValue, stream: OutputStream): Unit = StaticBinding.prettyPrintToStream(json, stream)
 
   def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue = tjs.writes(o)
 
@@ -361,10 +383,14 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
 
     @inline def toBytes(json: JsValue): Array[Byte] = Json.toBytes(json)
 
+    @inline def writeToStream(json: JsValue, stream: OutputStream): Unit = Json.writeToStream(json, stream)
+
     @inline def asciiStringify(json: JsValue): String =
       Json.asciiStringify(json)
 
     @inline def prettyPrint(json: JsValue): String = Json.prettyPrint(json)
+
+    @inline def prettyPrintToStream(json: JsValue, stream: OutputStream): Unit = Json.prettyPrintToStream(json, stream)
 
     @inline def toJson[T](o: T)(implicit tjs: Writes[T]): JsValue =
       Json.toJson[T](o)
