@@ -18,6 +18,9 @@ import play.api.libs.json.Json._
 import play.api.libs.json.jackson.JacksonJson
 
 class JsonSpec extends org.specs2.mutable.Specification {
+
+  sequential
+
   "JSON".title
 
   import java.text.SimpleDateFormat
