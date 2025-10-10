@@ -4,6 +4,8 @@
 
 package play.api.libs.json
 
+import com.fasterxml.jackson.core.exc.StreamConstraintsException
+
 import java.math.BigInteger
 import java.util.Calendar
 import java.util.Date
@@ -561,5 +563,70 @@ class JsonSpec extends org.specs2.mutable.Specification {
       parsed.asInstanceOf[JsObject].fields.mustEqual(original.fields)
       Json.stringify(parsed).mustEqual(originalString)
     }
+
+    "allow parsing objects nested up to max depth" in {
+      try {
+        val depth = 1000
+        Json.parse(("{\"obj\":" * depth) + "1" + ("}" * depth))
+      } catch {
+        case _: StackOverflowError =>
+          ko("StackOverflowError thrown")
+        case _: OutOfMemoryError =>
+          ko("OutOfMemoryError thrown")
+      }
+      ok
+    }
+
+    "disallow parsing nested objects exceeding max depth" in {
+      val depth = 1001
+      Json
+        .parse(("{\"obj\":" * depth) + "1" + ("}" * depth))
+        .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+          e.getMessage.must(
+            equalTo(
+              "Document nesting depth (1001) exceeds the maximum allowed (1000, from `StreamReadConstraints.getMaxNestingDepth()`)"
+            )
+          )
+        })
+    }
+
+    "allow parsing heavily nested mixed arrays and objects" in {
+      try {
+        val depth = 1000 - 2 // in the string two open objects { are hardcoded
+        Json.parse("{\"foo\":  {\"arr\":" + ("[" * depth) + "1" + ("]" * depth) + "}}")
+      } catch {
+        case _: StackOverflowError =>
+          ko("StackOverflowError thrown")
+        case _: OutOfMemoryError =>
+          ko("OutOfMemoryError thrown")
+      }
+      ok
+    }
+
+    "disallow parsing heavily nested mixed arrays and objects" in {
+      val depth = 1001 - 2 // in the string two open objects { are hardcoded
+      Json
+        .parse("{\"foo\":  {\"arr\":" + ("[" * depth) + "1" + ("]" * depth) + "}}")
+        .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+          e.getMessage.must(
+            equalTo(
+              "Document nesting depth (1001) exceeds the maximum allowed (1000, from `StreamReadConstraints.getMaxNestingDepth()`)"
+            )
+          )
+        })
+    }
+  }
+
+  "allow parsing many non-nested arrays and objects, not relevant for depth check" in {
+    try {
+      val repeat = 9999 // 10 thousand in total
+      Json.parse("{\"foo\": [" + ("{\"arr\":[1]}," * repeat) + "{\"arr\":[1]}]}")
+    } catch {
+      case _: StackOverflowError =>
+        ko("StackOverflowError thrown")
+      case _: OutOfMemoryError =>
+        ko("OutOfMemoryError thrown")
+    }
+    ok
   }
 }
