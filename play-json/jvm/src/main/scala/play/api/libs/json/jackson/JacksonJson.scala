@@ -30,6 +30,8 @@ import com.fasterxml.jackson.databind.ser.Serializers
 
 import play.api.libs.json._
 
+import scala.util.control.NonFatal
+
 /**
  * The Play JSON module for Jackson.
  *
@@ -155,7 +157,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
   override def isCachable: Boolean = true
 
   override def deserialize(jp: JsonParser, ctxt: DeserializationContext): JsValue = {
-    val value = deserialize(jp, ctxt, List())
+    val value = deserialize(jp = jp, ctxt = ctxt, parserContext = List())
 
     if (!klass.isAssignableFrom(value.getClass)) {
       ctxt.handleUnexpectedToken(klass, jp)
@@ -190,8 +192,11 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
   final def deserialize(
       jp: JsonParser,
       ctxt: DeserializationContext,
-      parserContext: List[DeserializerContext]
+      parserContext: List[DeserializerContext],
+      unclosedArraysOrObjects: Long = 0,
   ): JsValue = {
+    var currentUnclosedArraysOrObjects = unclosedArraysOrObjects
+
     if (jp.getCurrentToken == null) {
       jp.nextToken() // happens when using treeToValue (we're not parsing tokens)
     }
@@ -207,15 +212,20 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
 
       case JsonTokenId.ID_NULL => (Some(JsNull), parserContext)
 
-      case JsonTokenId.ID_START_ARRAY => (None, ReadingList(ArrayBuffer()) +: parserContext)
+      case JsonTokenId.ID_START_ARRAY =>
+        currentUnclosedArraysOrObjects += 1
+        (None, ReadingList(ArrayBuffer()) +: parserContext)
 
       case JsonTokenId.ID_END_ARRAY =>
+        currentUnclosedArraysOrObjects -= 1
         parserContext match {
           case ReadingList(content) :: stack => (Some(JsArray(content)), stack)
           case _ => throw new RuntimeException("We should have been reading list, something got wrong")
         }
 
-      case JsonTokenId.ID_START_OBJECT => (None, ReadingMap(ListBuffer()) +: parserContext)
+      case JsonTokenId.ID_START_OBJECT =>
+        currentUnclosedArraysOrObjects += 1
+        (None, ReadingMap(ListBuffer()) +: parserContext)
 
       case JsonTokenId.ID_FIELD_NAME =>
         parserContext match {
@@ -224,6 +234,7 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
         }
 
       case JsonTokenId.ID_END_OBJECT =>
+        currentUnclosedArraysOrObjects -= 1
         parserContext match {
           case ReadingMap(content) :: stack => (Some(JsObject(content)), stack)
           case _ => throw new RuntimeException("We should have been reading an object, something got wrong")
@@ -236,13 +247,28 @@ private[jackson] class JsValueDeserializer(factory: TypeFactory, klass: Class[_]
         throw new RuntimeException("We should have been reading an object, something got wrong")
     }
 
+    val defaultMaxDepth = 1000 // Same as Jackson's 2.15+ StreamReadConstraints.DEFAULT_MAX_DEPTH
+    // system property to override the max nesting depth for JSON parsing.
+    val maxNestingDepth: String = "play.json.parser.maxNestingDepth"
+    val maxDepth                =
+      try {
+        sys.props.get(maxNestingDepth).map(Integer.parseInt).getOrElse(defaultMaxDepth)
+      } catch {
+        case NonFatal(_) => defaultMaxDepth
+      }
+
+    if (currentUnclosedArraysOrObjects > maxDepth) {
+      throw new IllegalArgumentException(s"Document nesting depth exceeds the maximum allowed (${maxDepth}).")
+    }
+
     // Read ahead
     jp.nextToken()
 
     valueAndCtx match {
       case (Some(v), Nil)               => v // done, no more tokens and got a value!
-      case (Some(v), previous :: stack) => deserialize(jp, ctxt, previous.addValue(v) :: stack)
-      case (None, nextContext)          => deserialize(jp, ctxt, nextContext)
+      case (Some(v), previous :: stack) =>
+        deserialize(jp, ctxt, previous.addValue(v) :: stack, currentUnclosedArraysOrObjects)
+      case (None, nextContext) => deserialize(jp, ctxt, nextContext, currentUnclosedArraysOrObjects)
     }
   }
 
