@@ -174,9 +174,14 @@ object JsonConfig {
   val maxPlainProperty: String = "play.json.serializer.maxPlain"
 
   /**
-   * The system property to override the max nesting depth for JSON parsing and serialization.
+   * The system property to override the max nesting depth for JSON parsing.
    */
-  val maxNestingDepth: String = "play.json.maxNestingDepth"
+  val maxNestingDepth: String = "play.json.parser.maxNestingDepth"
+
+  /**
+   * The system property to override the max nesting depth for JSON serialization.
+   */
+  val maxSerializerNestingDepth: String = "play.json.serializer.maxNestingDepth"
 
   /**
    * The system property to override the max string length for JSON parsing.
@@ -202,6 +207,9 @@ object JsonConfig {
   private[json] def loadMaxNestingDepth: Int =
     prop(maxNestingDepth, StreamReadConstraints.DEFAULT_MAX_DEPTH)(Integer.parseInt)
 
+  private[json] def loadMaxSerializerNestingDepth: Int =
+    prop(maxSerializerNestingDepth, StreamWriteConstraints.DEFAULT_MAX_DEPTH)(Integer.parseInt)
+
   private[json] def loadMaxStringLength: Int =
     prop(maxStringLength, StreamReadConstraints.DEFAULT_MAX_STRING_LEN)(Integer.parseInt)
 
@@ -219,7 +227,7 @@ object JsonConfig {
   private[json] val defaultStreamWriteConstraints: StreamWriteConstraints =
     StreamWriteConstraints
       .builder()
-      .maxNestingDepth(loadMaxNestingDepth)
+      .maxNestingDepth(loadMaxSerializerNestingDepth)
       .build()
 
   // Default settings, which can be controlled with system properties.
