@@ -11,15 +11,15 @@ import org.scalatest.wordspec.AnyWordSpec
 class JsonConfigSpec extends AnyWordSpec with Matchers {
   "JsonConfig" should {
     "fetch default nesting depth (parsing)" in {
-      JsonConfig.defaultStreamReadConstraints.getMaxNestingDepth mustEqual StreamReadConstraints.DEFAULT_MAX_DEPTH
+      JsonConfig.defaultStreamReadConstraints.getMaxNestingDepth.mustEqual(StreamReadConstraints.DEFAULT_MAX_DEPTH)
     }
     "fetch default nesting depth (serializer)" in {
-      JsonConfig.defaultStreamWriteConstraints.getMaxNestingDepth mustEqual StreamWriteConstraints.DEFAULT_MAX_DEPTH
+      JsonConfig.defaultStreamWriteConstraints.getMaxNestingDepth.mustEqual(StreamWriteConstraints.DEFAULT_MAX_DEPTH)
     }
     "override nesting depth (parsing)" in {
       System.setProperty(JsonConfig.maxNestingDepth, "200")
       try {
-        JsonConfig.loadMaxNestingDepth mustEqual 200
+        JsonConfig.loadMaxNestingDepth.mustEqual(200)
       } finally {
         System.clearProperty(JsonConfig.maxNestingDepth)
       }
@@ -27,7 +27,7 @@ class JsonConfigSpec extends AnyWordSpec with Matchers {
     "override nesting depth (serializer)" in {
       System.setProperty(JsonConfig.maxSerializerNestingDepth, "300")
       try {
-        JsonConfig.loadMaxSerializerNestingDepth mustEqual 300
+        JsonConfig.loadMaxSerializerNestingDepth.mustEqual(300)
       } finally {
         System.clearProperty(JsonConfig.maxSerializerNestingDepth)
       }
