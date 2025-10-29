@@ -724,10 +724,10 @@ trait EnvReads {
   }
 
   protected def parseBigDecimal(input: String): JsResult[java.math.BigDecimal] =
-    BigDecimalParser.parse(input, JsonParserSettings.settings)
+    BigDecimalParser.parse(input, JsonConfig.settings)
 
   protected def parseBigInteger(input: String): JsResult[java.math.BigInteger] = {
-    if (input.length > JsonParserSettings.settings.bigDecimalParseSettings.digitsLimit) {
+    if (input.length > JsonConfig.settings.bigDecimalParseConfig.digitsLimit) {
       JsError("error.expected.numberdigitlimit")
     } else {
       try {
