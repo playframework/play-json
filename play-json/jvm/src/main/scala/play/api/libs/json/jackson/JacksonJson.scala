@@ -42,23 +42,15 @@ import play.api.libs.json._
  * import com.fasterxml.jackson.databind.ObjectMapper
  *
  * import play.api.libs.json.JsValue
- * import play.api.libs.json.jackson.PlayJsonModule
- * import play.api.libs.json.JsonParserSettings
+ * import play.api.libs.json.jackson.PlayJsonMapperModule
+ * import play.api.libs.json.JsonConfig
  *
- * val jsonSettings = JsonSettings.settings
+ * val jsonSettings = JsonConfig.settings
  * val mapper = new ObjectMapper().registerModule(
  *   new PlayJsonMapperModule(jsonSettings))
  * val jsValue = mapper.readValue("""{"foo":"bar"}""", classOf[JsValue])
  * }}}
  */
-@deprecated("Use PlayJsonMapperModule class instead", "2.9.4")
-sealed class PlayJsonModule(parserSettings: JsonParserSettings) extends PlayJsonMapperModule(parserSettings) {
-  override def setupModule(context: SetupContext): Unit = super.setupModule(context)
-}
-
-@deprecated("Use PlayJsonModule class instead", "2.6.11")
-object PlayJsonModule extends PlayJsonModule(JsonParserSettings())
-
 sealed class PlayJsonMapperModule(jsonConfig: JsonConfig) extends SimpleModule("PlayJson", Version.unknownVersion()) {
   override def setupModule(context: SetupContext): Unit = {
     context.addDeserializers(new PlayDeserializers(jsonConfig))

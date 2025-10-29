@@ -706,7 +706,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     val DefaultReads = implicitly[Reads[BigDecimal]]
     import DefaultReads.reads
 
-    val settings = JsonParserSettings.settings.bigDecimalParseSettings
+    val settings = JsonConfig.settings.bigDecimalParseConfig
 
     val longNumberString =
       Iterator
@@ -738,7 +738,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     val DefaultReads = implicitly[Reads[BigInt]]
     import DefaultReads.reads
 
-    val settings = JsonParserSettings.settings.bigDecimalParseSettings
+    val settings = JsonConfig.settings.bigDecimalParseConfig
 
     val longNumberString =
       Iterator
