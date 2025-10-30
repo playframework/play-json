@@ -13,11 +13,6 @@ import play.api.libs.json.JsonConfig.defaultDigitsLimit
 import play.api.libs.json.JsonConfig.defaultMathContext
 import play.api.libs.json.JsonConfig.defaultPreserveZeroDecimal
 import play.api.libs.json.JsonConfig.defaultScaleLimit
-import play.api.libs.json.JsonConfig.loadDigitsLimit
-import play.api.libs.json.JsonConfig.loadMathContext
-import play.api.libs.json.JsonConfig.loadMaxPlain
-import play.api.libs.json.JsonConfig.loadMinPlain
-import play.api.libs.json.JsonConfig.loadScaleLimit
 
 import java.math.MathContext
 
