@@ -265,7 +265,7 @@ private[jackson] class PlaySerializers(jsonSettings: JsonConfig) extends Seriali
   }
 }
 
-private[json] object JacksonJson {
+private[play] object JacksonJson {
   private var instance = JacksonJson(JsonConfig.settings)
 
   /** Overrides the config. */
@@ -273,7 +273,7 @@ private[json] object JacksonJson {
     instance = JacksonJson(jsonConfig)
   }
 
-  private[json] def get: JacksonJson = instance
+  private[play] def get: JacksonJson = instance
 }
 
 private[play] case class JacksonJson(jsonConfig: JsonConfig) {
