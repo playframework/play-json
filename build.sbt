@@ -28,9 +28,7 @@ val jacksonDatabind        = Seq(
 
 val jacksonVersion = jacksonDatabindVersion
 val jacksons       = Seq(
-  "com.fasterxml.jackson.core"     % "jackson-core",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310"
+  "com.fasterxml.jackson.core" % "jackson-core",
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
