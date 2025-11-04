@@ -295,6 +295,10 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
       new DefaultScalaModule(),
       new PlayJsonMapperModule(jsonConfig),
     )
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
     .build()
 
   private[play] def setObjectMapper(mapper: ObjectMapper): Unit = {
