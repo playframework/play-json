@@ -29,6 +29,10 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
 import com.fasterxml.jackson.databind.util.TokenBuffer
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 import play.api.libs.json._
 
@@ -284,7 +288,13 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
     .build()
   private[play] var mapper: ObjectMapper = JsonMapper
     .builder(jsonFactory)
-    .addModule(new PlayJsonMapperModule(jsonConfig))
+    .addModules(
+      new ParameterNamesModule(),
+      new Jdk8Module(),
+      new JavaTimeModule(),
+      new DefaultScalaModule(),
+      new PlayJsonMapperModule(jsonConfig),
+    )
     .build()
 
   private[play] def setObjectMapper(mapper: ObjectMapper): Unit = {
