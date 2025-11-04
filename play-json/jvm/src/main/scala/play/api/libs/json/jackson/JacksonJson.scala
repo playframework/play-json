@@ -281,10 +281,14 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
     .streamReadConstraints(jsonConfig.streamReadConstraints)
     .streamWriteConstraints(jsonConfig.streamWriteConstraints)
     .build()
-  private[play] val mapper = JsonMapper
+  private[play] var mapper: ObjectMapper = JsonMapper
     .builder(jsonFactory)
     .addModule(new PlayJsonMapperModule(jsonConfig))
     .build()
+
+  private[play] def setObjectMapper(mapper: ObjectMapper): Unit = {
+    this.mapper = mapper
+  }
 
   private def stringJsonGenerator(out: java.io.StringWriter) =
     jsonFactory.createGenerator(out)
