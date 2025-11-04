@@ -52,6 +52,7 @@ import play.api.libs.json._
  * }}}
  */
 sealed class PlayJsonMapperModule(jsonConfig: JsonConfig) extends SimpleModule("PlayJson", Version.unknownVersion()) {
+  def this() = this(JsonConfig.settings)
   override def setupModule(context: SetupContext): Unit = {
     context.addDeserializers(new PlayDeserializers(jsonConfig))
     context.addSerializers(new PlaySerializers(jsonConfig))
