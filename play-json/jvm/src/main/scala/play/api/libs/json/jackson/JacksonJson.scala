@@ -286,7 +286,8 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
     .streamReadConstraints(jsonConfig.streamReadConstraints)
     .streamWriteConstraints(jsonConfig.streamWriteConstraints)
     .build()
-  private[play] var mapper: ObjectMapper = JsonMapper
+  private var currentMapper: ObjectMapper = null
+  private val defaultMapper: ObjectMapper = JsonMapper
     .builder(jsonFactory)
     .addModules(
       new ParameterNamesModule(),
@@ -301,21 +302,27 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
     .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
     .build()
 
+  private[play] def mapper(): ObjectMapper = if (currentMapper == null) {
+    defaultMapper
+  } else {
+    currentMapper
+  }
+
   private[play] def setObjectMapper(mapper: ObjectMapper): Unit = {
-    this.mapper = mapper
+    this.currentMapper = mapper
   }
 
   private def stringJsonGenerator(out: java.io.StringWriter) =
     jsonFactory.createGenerator(out)
 
   def parseJsValue(data: Array[Byte]): JsValue =
-    mapper.readValue(jsonFactory.createParser(data), classOf[JsValue])
+    mapper().readValue(jsonFactory.createParser(data), classOf[JsValue])
 
   def parseJsValue(input: String): JsValue =
-    mapper.readValue(jsonFactory.createParser(input), classOf[JsValue])
+    mapper().readValue(jsonFactory.createParser(input), classOf[JsValue])
 
   def parseJsValue(stream: InputStream): JsValue =
-    mapper.readValue(jsonFactory.createParser(stream), classOf[JsValue])
+    mapper().readValue(jsonFactory.createParser(stream), classOf[JsValue])
 
   private def withStringWriter[T](f: StringWriter => T): T = {
     val sw = new StringWriter()
@@ -341,7 +348,7 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
         gen.enable(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature)
       }
 
-      mapper.writeValue(gen, jsValue)
+      mapper().writeValue(gen, jsValue)
       sw.flush()
       sw.getBuffer.toString
     }
@@ -350,7 +357,7 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
     val gen = stringJsonGenerator(sw).setPrettyPrinter(
       new DefaultPrettyPrinter()
     )
-    val writer: ObjectWriter = mapper.writerWithDefaultPrettyPrinter()
+    val writer: ObjectWriter = mapper().writerWithDefaultPrettyPrinter()
 
     writer.writeValue(gen, jsValue)
     sw.flush()
@@ -358,11 +365,11 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
   }
 
   def jsValueToBytes(jsValue: JsValue): Array[Byte] =
-    mapper.writeValueAsBytes(jsValue)
+    mapper().writeValueAsBytes(jsValue)
 
   def jsValueToJsonNode(jsValue: JsValue): JsonNode =
-    mapper.valueToTree(jsValue)
+    mapper().valueToTree(jsValue)
 
   def jsonNodeToJsValue(jsonNode: JsonNode): JsValue =
-    mapper.treeToValue(jsonNode, classOf[JsValue])
+    mapper().treeToValue(jsonNode, classOf[JsValue])
 }
