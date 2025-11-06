@@ -86,7 +86,7 @@ private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSer
         // configuration is ignored when called from ObjectMapper.valueToTree
         val shouldWritePlain = {
           val va = v.abs
-          va < jsonConfig.bigDecimalSerializerConfig.maxPlain && va > jsonConfig.bigDecimalSerializerConfig.minPlain
+          va <= jsonConfig.bigDecimalSerializerConfig.maxPlain && va >= jsonConfig.bigDecimalSerializerConfig.minPlain
         }
         val stripped = stripTrailingZeros(v.bigDecimal)
         val raw      = if (shouldWritePlain) stripped.toPlainString else stripped.toString
