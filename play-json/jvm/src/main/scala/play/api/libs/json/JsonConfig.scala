@@ -256,7 +256,9 @@ object JsonConfig {
   ): JsonConfig =
     JsonConfigImpl(bigDecimalParseConfig, bigDecimalSerializerConfig, streamReadConstraints, streamWriteConstraints)
 
-  private[json] def parseMathContext(key: String): MathContext = sys.props.get(key).map(_.toLowerCase) match {
+  private[json] def parseMathContext(key: String): MathContext = parseMathContextValue(sys.props.get(key))
+
+  private[play] def parseMathContextValue(value: Option[String]): MathContext = value.map(_.toLowerCase) match {
     case Some("decimal128") => MathContext.DECIMAL128
     case Some("decimal64")  => MathContext.DECIMAL64
     case Some("decimal32")  => MathContext.DECIMAL32
