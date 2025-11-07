@@ -216,7 +216,7 @@ object JsonConfig {
       .builder()
       .maxNestingDepth(loadMaxNestingDepth)
       .maxStringLength(loadMaxStringLength)
-      .maxNumberLength(Int.MaxValue) // play-json has its own support for limiting number length
+      .maxNumberLength(loadDigitsLimit) // play-json has its own support for limiting number length
       .build()
 
   private[json] val defaultStreamWriteConstraints: StreamWriteConstraints =

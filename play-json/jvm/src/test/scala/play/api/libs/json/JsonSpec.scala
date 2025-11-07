@@ -429,11 +429,29 @@ class JsonSpec extends org.specs2.mutable.Specification {
         }
 
         "fail when exceeding the number of digits limit for positive numbers" in {
-          Json.parse(invalidJsonExceedingNumberOfDigits).as[BigNumbers].must(throwA[IllegalArgumentException])
+          Json
+            .parse(invalidJsonExceedingNumberOfDigits)
+            .as[BigNumbers]
+            .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+              e.getMessage.must(
+                equalTo(
+                  "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+                )
+              )
+            })
         }
 
         "fail when exceeding the number of digits limit for negative numbers" in {
-          Json.parse(invalidJsonExceedingNumberOfDigitsNegative).as[BigNumbers].must(throwA[IllegalArgumentException])
+          Json
+            .parse(invalidJsonExceedingNumberOfDigitsNegative)
+            .as[BigNumbers]
+            .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+              e.getMessage.must(
+                equalTo(
+                  "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+                )
+              )
+            })
         }
       }
     }
