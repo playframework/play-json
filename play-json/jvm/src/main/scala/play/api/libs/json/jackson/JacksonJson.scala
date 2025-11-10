@@ -274,7 +274,7 @@ private[play] object JacksonJson {
   private var instance = JacksonJson(JsonConfig.settings)
 
   /** Overrides the config. */
-  private[json] def setConfig(jsonConfig: JsonConfig): Unit = {
+  private[play] def setConfig(jsonConfig: JsonConfig): Unit = {
     instance = JacksonJson(jsonConfig)
   }
 
