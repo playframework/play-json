@@ -281,20 +281,21 @@ private[play] object JacksonJson {
   private[play] def get: JacksonJson = instance
 }
 
-private[play] case class JacksonJson(jsonConfig: JsonConfig) {
-  private val jsonFactory = new JsonFactoryBuilder()
-    .streamReadConstraints(jsonConfig.streamReadConstraints)
-    .streamWriteConstraints(jsonConfig.streamWriteConstraints)
-    .build()
+private[play] case class JacksonJson(defaultMapperJsonConfig: JsonConfig) {
   private var currentMapper: ObjectMapper = null
   private val defaultMapper: ObjectMapper = JsonMapper
-    .builder(jsonFactory)
+    .builder(
+      new JsonFactoryBuilder()
+        .streamReadConstraints(defaultMapperJsonConfig.streamReadConstraints)
+        .streamWriteConstraints(defaultMapperJsonConfig.streamWriteConstraints)
+        .build()
+    )
     .addModules(
       new ParameterNamesModule(),
       new Jdk8Module(),
       new JavaTimeModule(),
       new DefaultScalaModule(),
-      new PlayJsonMapperModule(jsonConfig),
+      new PlayJsonMapperModule(defaultMapperJsonConfig),
     )
     .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -313,16 +314,16 @@ private[play] case class JacksonJson(jsonConfig: JsonConfig) {
   }
 
   private def stringJsonGenerator(out: java.io.StringWriter) =
-    jsonFactory.createGenerator(out)
+    mapper().getFactory.createGenerator(out)
 
   def parseJsValue(data: Array[Byte]): JsValue =
-    mapper().readValue(jsonFactory.createParser(data), classOf[JsValue])
+    mapper().readValue(mapper().getFactory.createParser(data), classOf[JsValue])
 
   def parseJsValue(input: String): JsValue =
-    mapper().readValue(jsonFactory.createParser(input), classOf[JsValue])
+    mapper().readValue(mapper().getFactory.createParser(input), classOf[JsValue])
 
   def parseJsValue(stream: InputStream): JsValue =
-    mapper().readValue(jsonFactory.createParser(stream), classOf[JsValue])
+    mapper().readValue(mapper().getFactory.createParser(stream), classOf[JsValue])
 
   private def withStringWriter[T](f: StringWriter => T): T = {
     val sw = new StringWriter()
