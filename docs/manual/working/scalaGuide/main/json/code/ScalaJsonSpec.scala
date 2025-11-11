@@ -6,6 +6,8 @@ package scalaguide.json
 
 import org.specs2.mutable.Specification
 
+import java.io.ByteArrayOutputStream
+
 class ScalaJsonSpec extends Specification {
   val sampleJson = {
     //#convert-from-string
@@ -336,6 +338,26 @@ class ScalaJsonSpec extends Specification {
       //#convert-to-string-pretty
 
       minifiedString.must(contain("Fiver"))
+      readableString.must(contain("Bigwig"))
+    }
+
+    "allow writing JsValue to OutputStream" in {
+      import play.api.libs.json._
+      val json = sampleJson
+
+      //#convert-to-stream
+      val minifiedStream = new ByteArrayOutputStream()
+      Json.writeToStream(json, minifiedStream)
+      //#convert-to-stream
+
+      //#convert-to-stream-pretty
+      val readableStream = new ByteArrayOutputStream()
+      Json.prettyPrintToStream(json, readableStream)
+      //#convert-to-stream-pretty
+
+      val minifiedString: String = minifiedStream.toString("UTF-8")
+      minifiedString.must(contain("Fiver"))
+      val readableString: String = readableStream.toString("UTF-8")
       readableString.must(contain("Bigwig"))
     }
 

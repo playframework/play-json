@@ -26,7 +26,13 @@ object StaticBinding {
 
   def prettyPrint(jsValue: JsValue): String = StaticBindingNonJvm.prettyPrint(jsValue)
 
+  def prettyPrintToStream(jsValue: JsValue, stream: java.io.OutputStream): Unit =
+    StaticBindingNonJvm.prettyPrintToStream(jsValue, stream)
+
   def toBytes(jsValue: JsValue): Array[Byte] = StaticBindingNonJvm.toBytes(jsValue)
+
+  def writeToStream(jsValue: JsValue, stream: java.io.OutputStream): Unit =
+    StaticBindingNonJvm.writeToStream(jsValue, stream)
 
   @inline private[json] def fromString(s: String, escapeNonASCII: Boolean): String =
     if (!escapeNonASCII) JSON.stringify(s, null) else StaticBindingNonJvm.escapeStr(JSON.stringify(s, null))
