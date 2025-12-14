@@ -4,7 +4,7 @@
 
 package play.api.libs.json
 
-import com.fasterxml.jackson.core.{ StreamReadConstraints, StreamWriteConstraints }
+import tools.jackson.core.{ StreamReadConstraints, StreamWriteConstraints }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
