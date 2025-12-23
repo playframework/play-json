@@ -21,19 +21,12 @@ def specs2(scalaVersion: String) =
     ("org.specs2" %% s"specs2-$n" % "4.23.0") % Test
   }
 
-val jacksonDatabindVersion = "2.20.1"
-val jacksonDatabind        = Seq(
-  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
-)
-
-val jacksonVersion = jacksonDatabindVersion
+val jacksonVersion = "3.0.3"
 val jacksons       = Seq(
-  "com.fasterxml.jackson.core"     % "jackson-core",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310",
-  "com.fasterxml.jackson.module"   % "jackson-module-parameter-names",
-  "com.fasterxml.jackson.module"  %% "jackson-module-scala",
-).map(_ % jacksonVersion) ++ jacksonDatabind
+  "tools.jackson.core"    % "jackson-core",
+  "tools.jackson.core"    % "jackson-databind",
+  "tools.jackson.module" %% "jackson-module-scala",
+).map(_ % jacksonVersion)
 
 val joda = Seq(
   "joda-time" % "joda-time" % "2.14.0"
