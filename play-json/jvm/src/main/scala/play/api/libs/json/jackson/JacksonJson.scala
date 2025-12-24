@@ -7,6 +7,7 @@ package play.api.libs.json.jackson
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.StringWriter
+import java.math.{ BigDecimal => JBigDec }
 
 import scala.annotation.switch
 import scala.annotation.tailrec
@@ -20,8 +21,7 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonTokenId
 import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.core.json.JsonWriteFeature
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
-
+import com.fasterxml.jackson.core.util.{ DefaultPrettyPrinter, JsonGeneratorDelegate }
 import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.`type`.TypeFactory
@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.deser.Deserializers
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.Serializers
-import com.fasterxml.jackson.databind.util.TokenBuffer
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
@@ -67,42 +66,9 @@ sealed class PlayJsonMapperModule(jsonConfig: JsonConfig) extends SimpleModule("
 // -- Serializers.
 
 private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends JsonSerializer[JsValue] {
-  import java.math.{ BigDecimal => JBigDec }
-
-  private def stripTrailingZeros(bigDec: JBigDec): JBigDec = {
-    val stripped = bigDec.stripTrailingZeros
-    if (jsonConfig.bigDecimalSerializerConfig.preserveZeroDecimal && bigDec.scale > 0 && stripped.scale <= 0) {
-      // restore .0 if rounded to a whole number
-      stripped.setScale(1)
-    } else {
-      stripped
-    }
-  }
-
   override def serialize(value: JsValue, json: JsonGenerator, provider: SerializerProvider): Unit = {
     value match {
-      case JsNumber(v) => {
-        // Workaround #3784: Same behaviour as if JsonGenerator were
-        // configured with WRITE_BIGDECIMAL_AS_PLAIN, but forced as this
-        // configuration is ignored when called from ObjectMapper.valueToTree
-        val shouldWritePlain = {
-          val va = v.abs
-          va <= jsonConfig.bigDecimalSerializerConfig.maxPlain && va >= jsonConfig.bigDecimalSerializerConfig.minPlain
-        }
-        val stripped = stripTrailingZeros(v.bigDecimal)
-        val raw      = if (shouldWritePlain) stripped.toPlainString else stripped.toString
-
-        if (raw.exists(c => c == 'E' || c == '.'))
-          json.writeNumber(raw)
-        else
-          json match {
-            case tb: TokenBuffer =>
-              tb.writeNumber(raw, true)
-            case _ =>
-              json.writeNumber(raw)
-          }
-      }
-
+      case JsNumber(v)  => json.writeNumber(v.bigDecimal)
       case JsString(v)  => json.writeString(v)
       case JsBoolean(v) => json.writeBoolean(v)
 
@@ -280,6 +246,30 @@ private[play] object JacksonJson {
   }
 
   private[play] def get: JacksonJson = instance
+
+  private def stripTrailingZeros(jsonConfig: JsonConfig, bigDec: JBigDec): JBigDec = {
+    val stripped = bigDec.stripTrailingZeros
+    if (jsonConfig.bigDecimalSerializerConfig.preserveZeroDecimal && bigDec.scale > 0 && stripped.scale <= 0) {
+      // restore .0 if rounded to a whole number
+      stripped.setScale(1)
+    } else {
+      stripped
+    }
+  }
+
+  private[jackson] def formatNumber(jsonConfig: JsonConfig, bigDec: JBigDec): String = {
+    // Workaround #3784: Same behaviour as if JsonGenerator were
+    // configured with WRITE_BIGDECIMAL_AS_PLAIN, but forced as this
+    // configuration is ignored when called from ObjectMapper.valueToTree
+    val shouldWritePlain = {
+      val va = bigDec.abs
+      va.compareTo(jsonConfig.bigDecimalSerializerConfig.maxPlain.bigDecimal) <= 0 &&
+      va.compareTo(jsonConfig.bigDecimalSerializerConfig.minPlain.bigDecimal) >= 0
+    }
+    val stripped = stripTrailingZeros(jsonConfig, bigDec)
+    if (shouldWritePlain) stripped.toPlainString else stripped.toString
+  }
+
 }
 
 private[play] case class JacksonJson(defaultMapperJsonConfig: JsonConfig) {
@@ -314,11 +304,23 @@ private[play] case class JacksonJson(defaultMapperJsonConfig: JsonConfig) {
     this.currentMapper = mapper
   }
 
-  private def stringJsonGenerator(out: StringWriter) =
-    mapper().getFactory.createGenerator(out)
+  private def stringJsonGenerator(out: StringWriter) = {
+    new JsonGeneratorDelegate(mapper().getFactory.createGenerator(out)) {
+      override def writeNumber(bd: JBigDec): Unit = {
+        val numString = JacksonJson.formatNumber(defaultMapperJsonConfig, bd)
+        writeRaw(numString)
+      }
+    }
+  }
 
-  private def stringJsonGenerator(out: OutputStream) =
-    mapper().getFactory.createGenerator(out)
+  private def stringJsonGenerator(out: OutputStream) = {
+    new JsonGeneratorDelegate(mapper().getFactory.createGenerator(out)) {
+      override def writeNumber(bd: JBigDec): Unit = {
+        val numString = JacksonJson.formatNumber(defaultMapperJsonConfig, bd)
+        writeRaw(numString)
+      }
+    }
+  }
 
   def parseJsValue(data: Array[Byte]): JsValue =
     mapper().readValue(mapper().getFactory.createParser(data), classOf[JsValue])
