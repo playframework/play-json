@@ -321,13 +321,13 @@ private[play] case class JacksonJson(defaultMapperJsonConfig: JsonConfig) {
     mapper().getFactory.createGenerator(out)
 
   def parseJsValue(data: Array[Byte]): JsValue =
-    mapper().readValue(mapper().getFactory.createParser(data), classOf[JsValue])
+    mapper().readValue(data, classOf[JsValue])
 
   def parseJsValue(input: String): JsValue =
-    mapper().readValue(mapper().getFactory.createParser(input), classOf[JsValue])
+    mapper().readValue(input, classOf[JsValue])
 
   def parseJsValue(stream: InputStream): JsValue =
-    mapper().readValue(mapper().getFactory.createParser(stream), classOf[JsValue])
+    mapper().readValue(stream, classOf[JsValue])
 
   private def withStringWriter[T](f: StringWriter => T): T = {
     val sw = new StringWriter()
