@@ -13,6 +13,7 @@ import java.util.TimeZone
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.{ ArrayNode, NumericNode, ObjectNode }
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
 import play.api.libs.json.jackson.JacksonJson
@@ -469,36 +470,51 @@ class JsonSpec extends org.specs2.mutable.Specification {
     }
 
     "Serialize and deserialize Jackson ObjectNodes" in {
-      val on = mapper
+      val on: ObjectNode = mapper
         .createObjectNode()
         .put("foo", 1)
         .put("bar", "two")
-      val json = Json.obj("foo" -> 1, "bar" -> "two")
+      val json                             = Json.obj("foo" -> 1, "bar" -> "two")
+      val deserialized: JsResult[JsonNode] = fromJson[JsonNode](json)
 
       toJson(on).must_==(json) and (
-        fromJson[JsonNode](json).map(_.toString).must_==(JsSuccess(on.toString))
+        deserialized.map(_.isInstanceOf[ObjectNode]).must_==(JsSuccess(true))
+      ) and (
+        deserialized.map(_.toString).must_==(JsSuccess(on.toString))
       )
     }
 
     "Serialize and deserialize Jackson ArrayNodes" in {
-      val an = mapper
+      val an: ArrayNode = mapper
         .createArrayNode()
         .add("one")
         .add(2)
-      val json = Json.arr("one", 2)
+      val json                             = Json.arr("one", 2)
+      val deserialized: JsResult[JsonNode] = fromJson[JsonNode](json)
+
       toJson(an).must(equalTo(json)) and (
-        fromJson[JsonNode](json).map(_.toString).must_==(JsSuccess(an.toString))
+        deserialized.map(_.isInstanceOf[ArrayNode]).must_==(JsSuccess(true))
+      ) and (
+        deserialized.map(_.toString).must_==(JsSuccess(an.toString))
       )
     }
 
     "Deserialize integer JsNumber as Jackson number node" in {
-      val jsNum = JsNumber(new java.math.BigDecimal("50"))
-      fromJson[JsonNode](jsNum).map(_.toString).must_==(JsSuccess("50"))
+      val jsNum                            = JsNumber(new java.math.BigDecimal("50"))
+      val deserialized: JsResult[JsonNode] = fromJson[JsonNode](jsNum)
+
+      deserialized.map(_.isInstanceOf[NumericNode]).must_==(JsSuccess(true)) and (
+        deserialized.map(_.toString).must_==(JsSuccess("50"))
+      )
     }
 
     "Deserialize float JsNumber as Jackson number node" in {
-      val jsNum = JsNumber(new java.math.BigDecimal("12.345"))
-      fromJson[JsonNode](jsNum).map(_.toString).must_==(JsSuccess("12.345"))
+      val jsNum                            = JsNumber(new java.math.BigDecimal("12.345"))
+      val deserialized: JsResult[JsonNode] = fromJson[JsonNode](jsNum)
+
+      deserialized.map(_.isInstanceOf[NumericNode]).must_==(JsSuccess(true)) and (
+        deserialized.map(_.toString).must_==(JsSuccess("12.345"))
+      )
     }
 
     "Serialize JsNumbers with integers correctly" in {
