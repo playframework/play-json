@@ -187,6 +187,12 @@ I can also define a `Format` that does both:
 implicit val residentFormat = Json.format[Resident]
 ```
 
+Alternatively, on Scala 3.x, I can declare that my class `derives Reads`, `derives Writes` or `derives Format`:
+
+```scala
+case class Resident(name: String, age: Int, role: Option[String]) derives Format
+```
+
 With the `Reads` and/or `Writes` in scope, I can then easily convert my class using `toJson` and `fromJson`
 
 ### Constructing `Reads` and `Writes`

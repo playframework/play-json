@@ -74,6 +74,22 @@ Then the macros are able generate `Reads[T]`, `OWrites[T]` or `OFormat[T]`.
 
 @[auto-JSON-sealed-trait](code/ScalaJsonAutomatedSpec.scala)
 
+## Type Class Derivation
+
+When using Scala 3, you can use [Type Class Derivation](https://docs.scala-lang.org/scala3/reference/contextual/derivation.html) to derive `Reads[T]`, `Writes[T]` and `Format[T]`.
+
+This support has exactly the same requirements and limitations as the macros described above.
+
+For example, the following case class automatically derives `Reads[Resident]`:
+
+@[reads-model](code-3/Scala3JsonAutomatedSpec.scala)
+
+You can also use `derives Writes` or `derives Format`.
+
+When deriving `Reads[T]`, `Writes[T]` and `Format[T]` for traits, you must declare that each subclass `derives` the appropriate trait:
+
+@[reads-trait](code-3/Scala3JsonAutomatedSpec.scala)
+
 ## Custom Naming Strategies
 
 To use a custom Naming Strategy you need to define a implicit `JsonConfiguration` object and a `JsonNaming`.
