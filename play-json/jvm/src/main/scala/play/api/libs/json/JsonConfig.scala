@@ -4,8 +4,8 @@
 
 package play.api.libs.json
 
-import com.fasterxml.jackson.core.StreamReadConstraints
-import com.fasterxml.jackson.core.StreamWriteConstraints
+import tools.jackson.core.StreamReadConstraints
+import tools.jackson.core.StreamWriteConstraints
 
 import play.api.libs.json.JsonConfig.defaultMaxPlain
 import play.api.libs.json.JsonConfig.defaultMinPlain
