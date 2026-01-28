@@ -241,8 +241,12 @@ object JsMacroImpl { // TODO: debug
                   TypeRepr.of[String]
                 )
 
+                val termSym = tpr.termSymbol
+                val typeSym = tpr.typeSymbol
+                val isCase = termSym.flags.is(Flags.Case)
+
                 val tpeCaseName: Expr[String] = '{
-                  ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
+                  ${ config }.typeNaming(${ Expr(typeName(if isCase then termSym else typeSym)) })
                 }
 
                 val resolve = resolver[Reads, sub](
@@ -595,8 +599,12 @@ object JsMacroImpl { // TODO: debug
                   subTpr
                 )
 
+                val termSym = tpr.termSymbol
+                val typeSym = tpr.typeSymbol
+                val isCase = termSym.flags.is(Flags.Case)
+
                 val tpeCaseName: Expr[String] = '{
-                  ${ config }.typeNaming(${ Expr(typeName(tpr.typeSymbol)) })
+                  ${ config }.typeNaming(${ Expr(typeName(if isCase then termSym else typeSym)) })
                 }
 
                 val resolve = resolver[Writes, sub](
