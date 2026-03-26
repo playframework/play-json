@@ -18,7 +18,7 @@ import java.time.ZonedDateTime
 import java.time.{ Duration => JDuration }
 import java.util.Locale
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import play.api.libs.json.jackson.JacksonJson
 
 trait EnvWrites {
