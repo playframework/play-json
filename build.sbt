@@ -21,7 +21,7 @@ def specs2(scalaVersion: String) =
     ("org.specs2" %% s"specs2-$n" % "4.23.0") % Test
   }
 
-val jacksonDatabindVersion = "2.20.1"
+val jacksonDatabindVersion = "2.21.2"
 val jacksonDatabind        = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
@@ -36,7 +36,7 @@ val jacksons       = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.14.0"
+  "joda-time" % "joda-time" % "2.14.1"
 )
 
 // Common settings
@@ -159,7 +159,7 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
           Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
       ),
       libraryDependencies ++= Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.19"   % Test,
+        "org.scalatest"     %%% "scalatest"       % "3.2.20"   % Test,
         "org.scalatestplus" %%% "scalacheck-1-18" % "3.2.19.0" % Test,
         "org.scalacheck"    %%% "scalacheck"      % "1.19.0"   % Test,
       ),
@@ -252,7 +252,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
         else
           specs2(scalaVersion.value)
       } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.5.23" % Test
+        "ch.qos.logback" % "logback-classic" % "1.5.32" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
