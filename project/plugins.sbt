@@ -8,7 +8,7 @@ addSbtPlugin("org.playframework" % "play-docs-sbt-plugin" % sys.props.getOrElse(
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.8")
 
-addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.4")
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.5")
 
 addSbtPlugin("com.github.sbt" % "sbt-header" % "5.11.0")
 

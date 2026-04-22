@@ -427,7 +427,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
       // Find an apply method that matches the unapply
       private val maybeApply: Option[MethodSymbol] = applies.collectFirst {
-        case (apply: MethodSymbol) if hasVarArgs && {
+        case apply: MethodSymbol if hasVarArgs && {
               // Option[List[c.universe.Type]]
               val someApplyTypes = apply.paramLists.headOption.map(_.map(_.asTerm.typeSignature))
 
@@ -445,7 +445,7 @@ class JsMacroImpl(val c: blackbox.Context) {
             } =>
           apply
 
-        case (apply: MethodSymbol) if {
+        case apply: MethodSymbol if {
               val applyParams   = apply.paramLists.headOption.toList.flatMap(identity).map(_.typeSignature)
               val unapplyParams = unapplyReturnTypes.toList.flatMap(identity)
 
