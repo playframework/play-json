@@ -78,7 +78,7 @@ trait OWrites[A] extends Writes[A] {
   override def narrow[B <: A]: OWrites[B] = this.asInstanceOf[OWrites[B]]
 }
 
-object OWrites extends PathWrites with ConstraintWrites {
+object OWrites extends PathWrites with ConstraintWrites with RecursiveOWrites {
   import play.api.libs.functional._
 
   def of[A](implicit w: OWrites[A]): OWrites[A] = w
@@ -237,7 +237,7 @@ object OWrites extends PathWrites with ConstraintWrites {
 /**
  * Default Serializers.
  */
-object Writes extends PathWrites with ConstraintWrites with DefaultWrites with GeneratedWrites {
+object Writes extends PathWrites with ConstraintWrites with DefaultWrites with GeneratedWrites with RecursiveWrites {
   val constraints: ConstraintWrites = this
   val path: PathWrites              = this
 
