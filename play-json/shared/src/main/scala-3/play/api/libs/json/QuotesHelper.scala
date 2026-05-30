@@ -274,6 +274,12 @@ private[json] trait QuotesHelper {
               .collect {
                 case TypeDef(
                       n @ ("MirroredElemTypes" | "MirroredElemLabels"),
+                      tt: TypeBoundsTree
+                    ) if tt.tpe <:< TypeRepr.of[Product] =>
+                  n -> tt.tpe
+
+                case TypeDef(
+                      n @ ("MirroredElemTypes" | "MirroredElemLabels"),
                       tt: TypeTree
                     ) if tt.tpe <:< TypeRepr.of[Product] =>
                   n -> tt.tpe
