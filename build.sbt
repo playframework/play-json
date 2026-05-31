@@ -21,7 +21,7 @@ def specs2(scalaVersion: String) =
     ("org.specs2" %% s"specs2-$n" % "4.23.0") % Test
   }
 
-val jacksonDatabindVersion = "2.21.3"
+val jacksonDatabindVersion = "2.21.4"
 val jacksonDatabind        = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
@@ -252,7 +252,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
         else
           specs2(scalaVersion.value)
       } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.5.32" % Test
+        "ch.qos.logback" % "logback-classic" % "1.5.33" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
