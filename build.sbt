@@ -73,8 +73,6 @@ val javacSettings = Seq(
 
 val scalacOpts = Seq(
   "-language:higherKinds",
-  "-release",
-  "17",
   "-Ywarn-unused:imports",
   "-Xlint:nullary-unit",
   "-Xlint",
@@ -112,7 +110,20 @@ lazy val commonSettings = Def.settings(
   Compile / javacOptions ++= javacSettings,
   Test / javacOptions ++= javacSettings,
   Compile / compile / javacOptions ++= Seq("--release", "17"), // sbt #1785, avoids passing to javadoc
+  scalacOptions ++= Seq(
+    "-release",
+    "17",
+  ),
   scalacOptions ++= (if (isScala3.value) Nil else scalacOpts),
+  scalacOptions ++= {
+    if (crossProjectPlatform.?.value.forall(_ == JVMPlatform) && scalaVersion.value.startsWith("3.3.")) {
+      Seq(
+        "-Yfuture-lazy-vals"
+      )
+    } else {
+      Nil
+    }
+  },
   Compile / doc / scalacOptions ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
