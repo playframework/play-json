@@ -166,7 +166,7 @@ trait Reads[A] { self =>
 /**
  * Default deserializer type classes.
  */
-object Reads extends ConstraintReads with PathReads with DefaultReads with GeneratedReads {
+object Reads extends ConstraintReads with PathReads with DefaultReads with GeneratedReads with DerivedReads {
   val constraints: ConstraintReads = this
 
   val path: PathReads = this
