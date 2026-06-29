@@ -64,7 +64,7 @@ object OFormat {
 /**
  * Default Json formatters.
  */
-object Format extends PathFormat with ConstraintFormat with DefaultFormat {
+object Format extends PathFormat with ConstraintFormat with DefaultFormat with DerivedFormat {
   val constraints: ConstraintFormat = this
   val path: PathFormat              = this
 
