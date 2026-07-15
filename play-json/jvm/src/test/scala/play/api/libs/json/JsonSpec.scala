@@ -6,6 +6,7 @@ package play.api.libs.json
 
 import com.fasterxml.jackson.core.exc.StreamConstraintsException
 
+import java.io.ByteArrayInputStream
 import java.math.BigInteger
 import java.util.Calendar
 import java.util.Date
@@ -32,6 +33,17 @@ class JsonSpec extends org.specs2.mutable.Specification {
   case class BigNumbers(bigInt: BigInt, bigDec: BigDecimal)
   case class IntNumbers(long: Long, integer: Int)
   case class FloatNumbers(float: Float, double: Double)
+
+  private class CloseTrackingInputStream(data: Array[Byte]) extends ByteArrayInputStream(data) {
+    private var closed = false
+
+    def isClosed: Boolean = closed
+
+    override def close(): Unit = {
+      closed = true
+      super.close()
+    }
+  }
 
   val exceedsDigitsLimit: BigDecimal         = BigDecimal("9" * 1000000)
   val exceedsDigitsLimitNegative: BigDecimal = exceedsDigitsLimit.unary_-
@@ -550,7 +562,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
       }
     }
 
-    "parse from InputStream" in {
+    "parse from InputStream and close it" in {
       val js = Json.obj(
         "key1" -> "value1",
         "key2" -> true,
@@ -561,11 +573,21 @@ class JsonSpec extends org.specs2.mutable.Specification {
           "key7" -> BigDecimal("12345678901234567890.123456789")
         )
       )
-      def stream = new java.io.ByteArrayInputStream(
+      val stream = new CloseTrackingInputStream(
         js.toString.getBytes("UTF-8")
       )
 
       Json.parse(stream).mustEqual(js)
+      stream.isClosed.mustEqual(true)
+    }
+
+    "close an InputStream when parsing fails" in {
+      val stream = new CloseTrackingInputStream(
+        """{"key": @, "remaining": true}""".getBytes("UTF-8")
+      )
+
+      Json.tryParse(stream).isFailure.mustEqual(true)
+      stream.isClosed.mustEqual(true)
     }
 
     "keep isomorphism between serialized and deserialized data" in {
