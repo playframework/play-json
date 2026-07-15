@@ -281,54 +281,35 @@ private[play] object JacksonJson {
 }
 
 private[play] case class JacksonJson(defaultMapperJsonConfig: JsonConfig) {
-  private var currentMapper: ObjectMapper                   = null
-  private var currentMapperWithEscapeNonAscii: ObjectMapper = null
+  private var currentMapper: ObjectMapper = null
+  private val defaultMapper: ObjectMapper = JsonMapper
+    .builder(
+      new JsonFactoryBuilder()
+        .streamReadConstraints(defaultMapperJsonConfig.streamReadConstraints)
+        .streamWriteConstraints(defaultMapperJsonConfig.streamWriteConstraints)
+        .build()
+    )
+    .addModules(
+      new ParameterNamesModule(),
+      new Jdk8Module(),
+      new JavaTimeModule(),
+      new DefaultScalaModule(),
+      new PlayJsonMapperModule(defaultMapperJsonConfig),
+    )
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+    .build()
 
-  private val defaultMapper: ObjectMapper                   = buildMapper(false)
-  private val defaultMapperWithEscapeNonAscii: ObjectMapper = buildMapper(true)
-
-  private def buildMapper(escapeNonAscii: Boolean): ObjectMapper = {
-    JsonMapper
-      .builder(
-        new JsonFactoryBuilder()
-          .streamReadConstraints(defaultMapperJsonConfig.streamReadConstraints)
-          .streamWriteConstraints(defaultMapperJsonConfig.streamWriteConstraints)
-          .build()
-      )
-      .addModules(
-        new ParameterNamesModule(),
-        new Jdk8Module(),
-        new JavaTimeModule(),
-        new DefaultScalaModule(),
-        new PlayJsonMapperModule(defaultMapperJsonConfig),
-      )
-      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-      .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-      .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
-      .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-      .configure(JsonWriteFeature.ESCAPE_NON_ASCII, escapeNonAscii)
-      .build()
-  }
-
-  private[play] def mapper(escapeNonAscii: Boolean = false): ObjectMapper = {
-    if (escapeNonAscii) {
-      if (currentMapperWithEscapeNonAscii == null) {
-        defaultMapperWithEscapeNonAscii
-      } else {
-        currentMapperWithEscapeNonAscii
-      }
-    } else {
-      if (currentMapper == null) {
-        defaultMapper
-      } else {
-        currentMapper
-      }
-    }
+  private[play] def mapper(): ObjectMapper = if (currentMapper == null) {
+    defaultMapper
+  } else {
+    currentMapper
   }
 
   private[play] def setObjectMapper(mapper: ObjectMapper): Unit = {
     this.currentMapper = mapper
-    this.currentMapperWithEscapeNonAscii = mapper.copy().enable(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature)
   }
 
   def parseJsValue(data: Array[Byte]): JsValue =
@@ -340,8 +321,16 @@ private[play] case class JacksonJson(defaultMapperJsonConfig: JsonConfig) {
   def parseJsValue(stream: InputStream): JsValue =
     mapper().readValue(stream, classOf[JsValue])
 
-  def generateFromJsValue(jsValue: JsValue, escapeNonASCII: Boolean): String =
-    mapper(escapeNonASCII).writeValueAsString(jsValue)
+  def generateFromJsValue(jsValue: JsValue, escapeNonASCII: Boolean): String = {
+    val writer           = mapper().writer()
+    val configuredWriter = if (escapeNonASCII) {
+      writer.`with`(JsonWriteFeature.ESCAPE_NON_ASCII)
+    } else {
+      writer
+    }
+
+    configuredWriter.writeValueAsString(jsValue)
+  }
 
   def prettyPrint(jsValue: JsValue): String = {
     val writer: ObjectWriter = mapper().writerWithDefaultPrettyPrinter()

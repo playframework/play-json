@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.{ ArrayNode, NumericNode, ObjectNode }
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
-import play.api.libs.json.jackson.JacksonJson
+import play.api.libs.json.jackson.{ JacksonJson, PlayJsonMapperModule }
 
 class JsonSpec extends org.specs2.mutable.Specification {
 
@@ -527,6 +527,21 @@ class JsonSpec extends org.specs2.mutable.Specification {
       deserialized.map(_.isInstanceOf[NumericNode]).must_==(JsSuccess(true)) and (
         deserialized.map(_.toString).must_==(JsSuccess("12.345"))
       )
+    }
+
+    "Use a custom ObjectMapper subclass for ASCII serialization" in {
+      val jacksonJson  = JacksonJson(JsonConfig.settings)
+      val customMapper = new ObjectMapper() {}
+
+      jacksonJson.setObjectMapper(customMapper)
+      customMapper.registerModule(new PlayJsonMapperModule())
+
+      jacksonJson
+        .generateFromJsValue(JsString("é"), escapeNonASCII = true)
+        .mustEqual("\"\\u00E9\"")
+
+      jacksonJson.setObjectMapper(null)
+      jacksonJson.mapper().eq(customMapper).mustEqual(false)
     }
 
     "Serialize JsNumbers with integers correctly" in {
