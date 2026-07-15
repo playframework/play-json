@@ -136,6 +136,29 @@ One special case that our example model doesn't demonstrate is how to handle `Re
 
 @[reads-writes-recursive](code/ScalaJsonCombinatorsSpec.scala)
 
+When defining a recursive codec with a Scala 3 `given`, use the Scala 3-only
+`recursive` method instead. It supplies the codec being constructed as a
+deferred contextual value, so codecs for recursive fields can be derived
+without referring directly to the `given` during its initialization:
+
+```scala
+final case class User(name: String, friends: List[User])
+
+given OFormat[User] = OFormat.recursive {
+  (
+    (__ \ "name").format[String] and
+      (__ \ "friends").format[List[User]]
+  )(User.apply, user => (user.name, user.friends))
+}
+```
+
+Equivalent methods are available on the `Reads`, `Writes`, `OWrites`, and
+`Format` companion objects. The deferred codec can also be accessed within
+the block using `summon[OFormat[User]]`. These methods defer codec
+initialization; they do not make reading or writing deeply recursive values
+stack-safe. Scala 2 code should continue to use the `lazyRead`, `lazyWrite`,
+and `lazyFormat` methods.
+
 ## Format
 
 [`Format[T]`](api/scala/play/api/libs/json/Format.html) is just a mix of the `Reads` and `Writes` traits and can be used for implicit conversion in place of its components.

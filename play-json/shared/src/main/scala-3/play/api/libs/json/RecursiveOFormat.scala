@@ -7,6 +7,19 @@ package play.api.libs.json
 import scala.annotation.tailrec
 
 trait RecursiveOFormat { self: OFormat.type =>
+
+  /**
+   * Constructs an `OFormat` for a recursive type.
+   *
+   * While `f` is evaluated, a deferred `OFormat[A]` is available as a
+   * contextual value. This lets object formats derived inside `f` refer to
+   * the resulting format without forcing it during initialization.
+   *
+   * This method is available only in Scala 3.
+   *
+   * @tparam A the type read from and written as a JSON object
+   * @param f function that constructs the recursive object format
+   */
   final def recursive[A](f: OFormat[A] ?=> OFormat[A]): OFormat[A] = {
     lazy val res: OFormat[A] = f(using RecursiveOFormat.DeferredOFormat(() => res))
     res

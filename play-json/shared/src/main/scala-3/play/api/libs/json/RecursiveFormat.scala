@@ -7,6 +7,19 @@ package play.api.libs.json
 import scala.annotation.tailrec
 
 trait RecursiveFormat { self: Format.type =>
+
+  /**
+   * Constructs a `Format` for a recursive type.
+   *
+   * While `f` is evaluated, a deferred `Format[A]` is available as a
+   * contextual value. This lets formats derived inside `f` refer to the
+   * resulting format without forcing it during initialization.
+   *
+   * This method is available only in Scala 3.
+   *
+   * @tparam A the type read from and written as JSON
+   * @param f function that constructs the recursive format
+   */
   final def recursive[A](f: Format[A] ?=> Format[A]): Format[A] = {
     lazy val res: Format[A] = f(using RecursiveFormat.DeferredFormat(() => res))
     res
