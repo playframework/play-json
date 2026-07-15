@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonFactoryBuilder
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonTokenId
+import com.fasterxml.jackson.core.StreamWriteFeature
 import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.core.json.JsonWriteFeature
 
@@ -338,7 +339,9 @@ private[play] case class JacksonJson(defaultMapperJsonConfig: JsonConfig) {
   }
 
   def prettyPrintToStream(jsValue: JsValue, stream: OutputStream): Unit = {
-    val writer: ObjectWriter = mapper().writerWithDefaultPrettyPrinter()
+    val writer: ObjectWriter = mapper()
+      .writerWithDefaultPrettyPrinter()
+      .without(StreamWriteFeature.AUTO_CLOSE_TARGET)
     writer.writeValue(stream, jsValue)
   }
 

@@ -160,7 +160,7 @@ sealed trait JsonFacade {
    * writes the result to an output stream.
    *
    * $jsonParam
-   * @param stream the stream to write to.
+   * @param stream the stream to write to; it is not closed by this method.
    */
   def prettyPrintToStream(json: JsValue, stream: OutputStream): Unit
 

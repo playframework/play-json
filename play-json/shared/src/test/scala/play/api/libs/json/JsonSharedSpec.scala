@@ -21,6 +21,17 @@ class JsonSharedSpec
     with org.scalatest.TryValues
     with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
 
+  private class CloseTrackingOutputStream extends ByteArrayOutputStream {
+    private var closed = false
+
+    def isClosed: Boolean = closed
+
+    override def close(): Unit = {
+      closed = true
+      super.close()
+    }
+  }
+
   case class User(id: Long, name: String, friends: List[User])
 
   implicit val UserFormat: Format[User] = (
@@ -344,15 +355,16 @@ class JsonSharedSpec
 }""")
     }
 
-    "JSON pretty print to stream" in json { js =>
+    "JSON pretty print to stream without closing it" in json { js =>
       def jo = js.obj(
         "key1" -> "toto",
         "key2" -> js.obj("key21" -> "tata", "key22" -> 123),
         "key3" -> js.arr(1, "tutu")
       )
 
-      val stream = new ByteArrayOutputStream()
+      val stream = new CloseTrackingOutputStream()
       js.prettyPrintToStream(jo, stream)
+      stream.isClosed.mustEqual(false)
       stream
         .toString("UTF-8")
         .mustEqual("""{
