@@ -36,7 +36,7 @@ val jacksons       = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.14.2"
+  "joda-time" % "joda-time" % "2.14.3"
 )
 
 // Common settings
