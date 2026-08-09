@@ -4,7 +4,11 @@
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-addSbtPlugin("org.playframework" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "3.0.11"))
+resolvers += "Maven Snapshots".at("https://central.sonatype.com/repository/maven-snapshots/")
+
+addSbtPlugin(
+  "org.playframework" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "3.1.0-M10-173b8802-SNAPSHOT")
+)
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.8")
 
@@ -14,11 +18,11 @@ addSbtPlugin("com.github.sbt" % "sbt-header" % "5.11.0")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.22.0")
 
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.4.0")
 
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.12")
 
-addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.3.2")
+addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.4.0")
 
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.2")
 
