@@ -769,6 +769,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         }
 
         val missing = fields.collect { case (_, tpe, Implicit(_, EmptyTree /* not found */, _, _), _) => tpe }
+
         if (missing.nonEmpty) {
           abortMissingImplicits(natag.tpe.typeSymbol.fullName, missing.map(prettyType(identity)))
         }
