@@ -7,7 +7,7 @@ import sbt.io.Path._
 
 import com.typesafe.tools.mima.core._
 
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
+import sbtcrossproject.CrossPlugin.autoImport._
 import sbtcrossproject.CrossType
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
@@ -44,7 +44,7 @@ val previousVersion: Option[String] = Some("3.0.0")
 
 // Do not check for previous JS artifacts for upgrade to Scala.js 1.0 because no sjs1 artifacts exist
 def playJsonMimaSettings = Seq(
-  mimaPreviousArtifacts := previousVersion.map(organization.value %%% moduleName.value % _).toSet,
+  mimaPreviousArtifacts := previousVersion.map(organization.value %% moduleName.value % _).toSet,
   mimaBinaryIssueFilters ++= Seq(
   ),
 )
@@ -102,7 +102,7 @@ lazy val commonSettings = Def.settings(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
     "-no-java-comments",
   ),
-  apiURL := Some(url("https://www.playframework.com/documentation/latest/api/scala/"))
+  apiURL := Some(uri("https://www.playframework.com/documentation/latest/api/scala/"))
 )
 
 lazy val root = project
@@ -128,29 +128,29 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .configs(Docs)
   .jsSettings(
     libraryDependencies ++= Seq(
-      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
+      ("org.scala-js" %% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
     )
   )
   .nativeSettings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %%% "jawn-parser" % "1.5.1"
-    )
+    libraryDependencies += "org.typelevel" %% "jawn-parser" % "1.7.0"
   )
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Def.settings(
       libraryDependencies ++= (
-        if (isScala3.value) Seq.empty
-        else
+        if (isScala3.value) {
+          Seq.empty
+        } else {
           Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
+        }
       ),
       libraryDependencies ++= Seq(
-        "org.scalatest"     %%% "scalatest"       % "3.2.18"   % Test,
-        "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.18.0" % Test,
-        "org.scalacheck"    %%% "scalacheck"      % "1.17.0"   % Test,
-      ),
+        "org.scalatest"     %% "scalatest"       % "3.2.20"   % Test,
+        "org.scalatestplus" %% "scalacheck-1-19" % "3.2.20.0" % Test,
+        "org.scalacheck"    %% "scalacheck"      % "1.19.0"   % Test,
+      ).map(_.exclude("org.scala-native", "*")),
       libraryDependencies += {
         if (isScala3.value) {
-          "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
+          "org.scala-lang" % s"scala3-compiler_${scalaBinaryVersion.value}" % scalaVersion.value % Provided
         } else {
           "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided
         }
@@ -164,7 +164,8 @@ lazy val `play-json` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       Compile / unmanagedSourceDirectories += {
         // val sourceDir = (sourceDirectory in Compile).value
         // ^ gives jvm/src/main, for some reason
-        val sourceDir = baseDirectory.value.getParentFile / "shared/src/main"
+        val sourceDir = baseDirectory.value.getParentFile / "shared" / "src" / "main"
+
         CrossVersion.partialVersion(scalaVersion.value) match {
           case Some((2, n)) if n < 13 => sourceDir / "scala-2.13-"
           case _                      => sourceDir / "scala-2.13+"
@@ -232,10 +233,11 @@ lazy val `play-jsonJVM` = `play-json`.jvm
   .settings(
     libraryDependencies ++=
       jacksons ++ {
-        if (isScala3.value)
+        if (isScala3.value) {
           specs2(scalaVersion.value).map(_.exclude("org.scala-lang.modules", "scala-xml_2.13"))
-        else
+        } else {
           specs2(scalaVersion.value)
+        }
       } :+ (
         "ch.qos.logback" % "logback-classic" % "1.5.35" % Test
       ),
@@ -288,22 +290,38 @@ lazy val docs = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= specs2(scalaVersion.value),
-    PlayDocsKeys.validateDocs                 := (if (isScala3.value) () else PlayDocsKeys.validateDocs.value),
+    libraryDependencies := {
+      val rev = sys.props.getOrElse("play.version", "3.0.11")
+
+      libraryDependencies.value.map { dep =>
+        if (dep.name.startsWith("play-docs")) {
+          dep.withRevision(rev).exclude("org.scala-lang.modules", "*")
+        } else {
+          dep
+        }
+      }
+    },
+    PlayDocsKeys.validateDocs := {
+      if (isScala3.value) () else PlayDocsKeys.validateDocs.value
+    },
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
-      val code = (base ** "code").get
+      val code = (base ** "code").get()
+
       if (isScala3.value) code
-      else code ++ (base ** "code-2").get
+      else code ++ (base ** "code-2").get()
     },
-    PlayDocsKeys.resources += {
+    PlayDocsKeys.resources += Def.uncached {
       val apiDocs = (`play-jsonJVM` / Compile / doc).value
       // Copy the docs to a place so they have the correct api/scala prefix
       val apiDocsStage = target.value / "api-docs-stage"
       val cacheFile    = streams.value.cacheDirectory / "api-docs-stage"
-      val mappings = apiDocs.allPaths.filter(!_.isDirectory).get.pair(relativeTo(apiDocs)).map { case (file, path) =>
+      val mappings = apiDocs.allPaths.filter(!_.isDirectory).get().pair(relativeTo(apiDocs)).map { case (file, path) =>
         file -> apiDocsStage / "api" / "scala" / path
       }
+
       Sync.sync(CacheStore(cacheFile))(mappings)
+
       PlayDocsDirectoryResource(apiDocsStage)
     },
     SettingKey[Seq[File]]("migrationManualSources") := Nil
