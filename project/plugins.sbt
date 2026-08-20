@@ -4,7 +4,11 @@
 
 resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
-addSbtPlugin("org.playframework" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "3.0.11"))
+resolvers += "Maven Snapshots".at("https://central.sonatype.com/repository/maven-snapshots/")
+
+addSbtPlugin(
+  "org.playframework" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "3.1.0-M10-173b8802-SNAPSHOT")
+)
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.8")
 
