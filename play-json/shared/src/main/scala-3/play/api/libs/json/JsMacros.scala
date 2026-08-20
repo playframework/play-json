@@ -80,7 +80,7 @@ private[json] trait JsMacros extends EnumHandler {
   inline def format[A]: OFormat[A] = ${ JsMacroImpl.format[A] }
 }
 
-private[json] trait JsValueMacros {
+private[json] trait JsValueMacros extends EnvValueMacros {
 
   /**
    * Creates a `Reads[A]`, if `A` is a ValueClass,

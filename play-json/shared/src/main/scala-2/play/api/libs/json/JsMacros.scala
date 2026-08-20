@@ -79,7 +79,7 @@ private[json] trait JsMacros {
 
 }
 
-private[json] trait JsValueMacros {
+private[json] trait JsValueMacros extends EnvValueMacros {
 
   /**
    * Creates a `Reads[A]`, if `A` is a ValueClass,
