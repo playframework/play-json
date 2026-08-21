@@ -537,7 +537,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
       // To print the implicit types in the compiler messages
       private def prettyType(t: Type): String =
-        JsMacroImpl.this.prettyType(bt => boundTypes.getOrElse(bt.typeSymbol.fullName, bt))(t)
+        JsMacroImpl.this.prettyType(bt => boundTypes.getOrElse(bt.typeSymbol.fullName, bt).dealias)(t)
     }
 
     // ---
@@ -771,7 +771,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         val missing = fields.collect { case (_, tpe, Implicit(_, EmptyTree /* not found */, _, _), _) => tpe }
 
         if (missing.nonEmpty) {
-          abortMissingImplicits(natag.tpe.typeSymbol.fullName, missing.map(prettyType(identity)))
+          abortMissingImplicits(natag.tpe.typeSymbol.fullName, missing.map(prettyType(_.dealias)))
         }
 
         val fieldHandlers = fields.map { case (name, _, helper, default) =>
@@ -963,7 +963,7 @@ class JsMacroImpl(val c: blackbox.Context) {
    * parameters via `resolve` (use `identity` when the type is already concrete).
    */
   private def prettyType(resolve: Type => Type)(t: Type): String =
-    resolve(t).dealias match {
+    resolve(t) match {
       case TypeRef(_, base, args) if args.nonEmpty =>
         s"""${base.asType.fullName}[${args.map(prettyType(resolve)).mkString(", ")}]"""
 
@@ -984,17 +984,16 @@ class JsMacroImpl(val c: blackbox.Context) {
   private def primaryConstructor(tpe: Type): MethodSymbol =
     tpe.decls
       .collectFirst {
-        case m: MethodSymbol if m.isPrimaryConstructor =>
-          if (!m.isPublic)
-            c.abort(c.enclosingPosition, s"Only classes with public primary constructor are supported. Found: $tpe")
-          m
+        case m: MethodSymbol if m.isPrimaryConstructor && m.isPublic => m
       }
-      .getOrElse(c.abort(c.enclosingPosition, s"No primary constructor found for $tpe"))
+      .getOrElse(c.abort(c.enclosingPosition, s"No public primary constructor found for $tpe"))
 
   private def constructorParams(tpe: Type): List[Symbol] = {
     val paramLists = primaryConstructor(tpe).paramLists
+
     if (paramLists.size > 1)
       c.abort(c.enclosingPosition, s"Only one parameter list classes are supported. Found: $tpe")
+
     paramLists.headOption.getOrElse(Nil)
   }
 
