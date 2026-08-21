@@ -618,9 +618,7 @@ object MacroScala2Spec {
 
   object BigFoo {
     type Id = String
-    def id(value: String): Id = value.asInstanceOf[Id]
-
-    implicit val idReads: Reads[Id] = implicitly[Reads[String]].asInstanceOf[Reads[Id]]
+    def id(value: String): Id = value
   }
   case class BigFoo(
       id: BigFoo.Id,
@@ -781,7 +779,7 @@ object MacroScala2Spec {
     )
 
     object Test {
-      implicit def format(implicit textIdFormat: Format[TextId]): Format[Test] =
+      implicit def format(implicit textIdFormat: Format[TextId]): OFormat[Test] =
         Json.format[Test]
     }
   }
