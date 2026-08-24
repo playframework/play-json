@@ -18,7 +18,7 @@ val isScala3 = Def.setting {
 
 def specs2(scalaVersion: String) =
   Seq("core", "junit").map { n =>
-    ("org.specs2" %% s"specs2-$n" % "4.20.9") % Test
+    ("org.specs2" %% s"specs2-$n" % "4.23.0") % Test
   }
 
 val jacksonDatabindVersion = "2.22"
@@ -35,7 +35,7 @@ val jacksons       = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.12.7"
+  "joda-time" % "joda-time" % "2.14.3"
 )
 
 // Common settings
@@ -237,7 +237,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
         else
           specs2(scalaVersion.value)
       } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.5.35" % Test
+        "ch.qos.logback" % "logback-classic" % "1.6.3" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
