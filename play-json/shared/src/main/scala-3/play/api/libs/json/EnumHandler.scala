@@ -59,7 +59,7 @@ private[json] trait EnumHandler {
   inline def enumReads[E <: Enum: Mirror.SumOf](
       insensitive: Boolean = false
   ): Reads[E] = {
-    if (insensitive) {
+    if insensitive then {
       collect[E](EnumHelper.insensitiveValueOf[E])
     } else {
       collect[E](EnumHelper.strictValueOf[E])
@@ -80,7 +80,7 @@ private[json] trait EnumHandler {
   inline def keyEnumReads[E <: Enum: Mirror.SumOf](
       insensitive: Boolean = false
   ): KeyReads[E] = {
-    if (insensitive) {
+    if insensitive then {
       collectKey[E](EnumHelper.insensitiveValueOf[E])
     } else {
       collectKey[E](EnumHelper.strictValueOf[E])

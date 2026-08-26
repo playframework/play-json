@@ -288,13 +288,15 @@ case class JsPath(path: List[PathNode] = List()) {
         case List(p)      => stepNode(json, p).repath(lpath)
         case head :: tail =>
           head(json) match {
-            case Nil      => JsError(lpath, JsonValidationError("error.path.missing"))
-            case List(js) =>
-              js match {
+            case Nil => JsError(lpath, JsonValidationError("error.path.missing"))
+
+            case List(v) =>
+              v match {
                 case o: JsObject =>
                   step(o, JsPath(tail)).repath(lpath).flatMap(value => filterPathNode(json, head, value))
                 case _ => JsError(lpath, JsonValidationError("error.expected.jsobject"))
               }
+
             case h :: t => JsError(lpath, JsonValidationError("error.path.result.multiple"))
           }
       }
