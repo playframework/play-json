@@ -425,8 +425,9 @@ class JsMacroImpl(val c: blackbox.Context) {
       @inline def validCaseClass: (Symbol, Boolean) =
         companioned -> !applies.isEmpty
 
-      // Find an apply method that matches the unapply
-      private val maybeApply: Option[MethodSymbol] = applies.collectFirst {
+      // Find an apply method that matches the unapply.
+      // Only evaluated when an unapply method exists
+      private lazy val maybeApply: Option[MethodSymbol] = applies.collectFirst {
         case apply: MethodSymbol if hasVarArgs && {
               // Option[List[c.universe.Type]]
               val someApplyTypes = apply.paramLists.headOption.map(_.map(_.asTerm.typeSignature))
@@ -460,11 +461,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         maybeApply.flatMap { app =>
           app.paramLists.headOption.map { params =>
             val defaultValues = params.map(_.asTerm).zipWithIndex.map { case (p, i) =>
-              if (!p.isParamWithDefault) None
-              else {
-                val getter = TermName("apply$default$" + (i + 1))
-                Some(q"$companionObject.$getter")
-              }
+              defaultValue(companionObject, p, i)
             }
 
             val tree = if (hasVarArgs) {
@@ -488,6 +485,8 @@ class JsMacroImpl(val c: blackbox.Context) {
       lazy val unapplyFunction: Tree = if (tpeArgs.isEmpty) {
         q"$unlift($companionObject.$effectiveUnapply)"
       } else q"$unlift($companionObject.$effectiveUnapply[..$tpeArgs])"
+
+      def hasUnapply: Boolean = unapply != NoSymbol || unapplySeq != NoSymbol
 
       @inline private def params: List[(Name, Type)] = applyFunction match {
         case Some((_, _, ps, _)) => {
@@ -520,10 +519,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         }
 
         if (missingImplicits.nonEmpty) {
-          c.abort(
-            c.enclosingPosition,
-            s"No instance of ${natag.tpe.typeSymbol.fullName} is available for ${missingImplicits.map(prettyType(_)).mkString(", ")} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
-          )
+          abortMissingImplicits(natag.tpe.typeSymbol.fullName, missingImplicits.map(prettyType))
         }
 
         effectiveImplicits
@@ -541,12 +537,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
       // To print the implicit types in the compiler messages
       private def prettyType(t: Type): String =
-        boundTypes.getOrElse(t.typeSymbol.fullName, t).dealias match {
-          case TypeRef(_, base, args) if args.nonEmpty =>
-            s"""${base.asType.fullName}[${args.map(prettyType(_)).mkString(", ")}]"""
-
-          case t => t.typeSymbol.fullName
-        }
+        JsMacroImpl.this.prettyType(bt => boundTypes.getOrElse(bt.typeSymbol.fullName, bt).dealias)(t)
     }
 
     // ---
@@ -688,144 +679,57 @@ class JsMacroImpl(val c: blackbox.Context) {
         )
       }
 
-      val (applyFunction, tparams, params, defaultValues) = utility.applyFunction match {
-        case Some(info) => info
+      def fieldHandler(name: Name, impl: Tree, paramType: Type, default: Option[Tree]): Tree = {
+        // Equivalent to __ \ "name", but uses a naming scheme
+        // of (String) => (String) to find the correct "name"
+        val cn         = c.Expr[String](q"$configName.naming(${name.decodedName.toString})")
+        val jspathTree = q"$JsPath \ $cn"
+        val isOption   = paramType.typeConstructor <:< optTpeCtor
 
-        case _ =>
-          c.abort(
-            c.enclosingPosition,
-            s"No apply function found matching unapply parameters"
-          )
+        val defaultValue = // not applicable for 'write' only
+          default.filter(_ => methodName != "write")
+
+        // - If we're a default value, invoke the withDefault version
+        // - If we're an option with default value,
+        //   invoke the WithDefault version
+        (isOption, defaultValue) match {
+          case (true, Some(v)) =>
+            val c = TermName(s"${methodName}HandlerWithDefault")
+            q"$configName.optionHandlers.$c($jspathTree, $v)($impl)"
+
+          case (true, _) =>
+            val c = TermName(s"${methodName}Handler")
+            q"$configName.optionHandlers.$c($jspathTree)($impl)"
+
+          case (false, Some(v)) =>
+            val c = TermName(s"${methodName}WithDefault")
+            q"$jspathTree.$c($v)($impl)"
+
+          case _ =>
+            q"$jspathTree.${TermName(methodName)}($impl)"
+        }
       }
 
-      // ---
-
-      // combines all reads into CanBuildX
-      val resolver = new ImplicitResolver({
-        import utility.boundTypes
-
-        { orig: Type =>
-          boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
-        }
-      })
-
-      val defaultValueMap: Map[Name, Tree] =
-        if (!hasOption[Json.DefaultValues]) Map.empty
-        else {
-          (params, defaultValues).zipped.collect { case (p, Some(dv)) =>
-            p.name.encodedName -> dv
-          }.toMap
-        }
-
-      val resolvedImplicits = utility.implicits(resolver)
-      val canBuild          = resolvedImplicits
-        .map { case (name, Implicit(pt, impl, _, _)) =>
-          // Equivalent to __ \ "name", but uses a naming scheme
-          // of (String) => (String) to find the correct "name"
-          val cn = c.Expr[String](
-            q"$configName.naming(${name.decodedName.toString})"
-          )
-          val jspathTree = q"$JsPath \ $cn"
-          val isOption   = pt.typeConstructor <:< optTpeCtor
-
-          val defaultValue = // not applicable for 'write' only
-            defaultValueMap.get(name).filter(_ => methodName != "write")
-
-          // - If we're an default value, invoke the withDefault version
-          // - If we're an option with default value,
-          //   invoke the WithDefault version
-          (isOption, defaultValue) match {
-            case (true, Some(v)) =>
-              val c = TermName(s"${methodName}HandlerWithDefault")
-              q"$configName.optionHandlers.$c($jspathTree, $v)($impl)"
-
-            case (true, _) =>
-              val c = TermName(s"${methodName}Handler")
-              q"$configName.optionHandlers.$c($jspathTree)($impl)"
-
-            case (false, Some(v)) =>
-              val c = TermName(s"${methodName}WithDefault")
-              q"$jspathTree.$c($v)($impl)"
-
-            case _ =>
-              q"$jspathTree.${TermName(methodName)}($impl)"
-          }
-        }
-        .reduceLeft[Tree] { (acc, r) =>
-          q"$acc.and($r)"
-        }
-
-      val multiParam = params.length > 1
-      // if case class has one single field, needs to use map/contramap/inmap on the Reads/Writes/Format instead of
-      // canbuild.apply
-      val applyOrMap = TermName(if (multiParam) "apply" else mapLikeMethod)
-
-      // Helper function to create parameter lists for function invocations
-      // based on whether this is a reads, writes or both.
-      def conditionalList[T](ifReads: T, ifWrites: T): List[T] =
-        (if (reads) List(ifReads) else Nil) :::
-          (if (writes) List(ifWrites) else Nil)
-
-      val syntaxImport      = if (!multiParam && !writes) q"" else q"import $syntax._"
-      @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
-      def readResult        =
-        if (multiParam) q"underlying.reads(obj)"
-        else q"underlying.flatMap[${atpe}] { v: ${atpe} => $json.Reads.pure(f = v) }.reads(obj)"
-
-      val canBuildCall = methodName match {
-        case "read" => {
-          q"""{
-          val underlying = $buildCall
-
-          $json.Reads[${atpe}] {
-            case obj @ $json.JsObject(_) => $readResult
-            case _ => $json.JsError("error.expected.jsobject")
-          }
-        }"""
-        }
-
-        case "format" => {
-          q"""{
-          val underlying = $buildCall
-          val rfn: $json.JsValue => $json.JsResult[${atpe}] = {
-            case obj @ $json.JsObject(_) => $readResult
-            case _ => $json.JsError("error.expected.jsobject")
-          }
-
-          $json.OFormat[${atpe}](rfn, underlying.writes _)
-        }"""
-        }
-
-        case _ => buildCall
-      }
-
-      val finalTree =
-        if (!resolvedImplicits.exists(_._2.selfRef)) {
-          // there is no self reference
-          q"""
+      def wrap(canBuildCall: Tree, hasSelfRef: Boolean, syntaxImport: Tree): c.Expr[M[A]] = {
+        val finalTree =
+          if (!hasSelfRef) {
+            // there is no self reference
+            q"""
         $syntaxImport
 
         $canBuildCall
         """
-        } else {
-          // Has nested reference to the same type
+          } else {
+            // Has nested reference to the same type
+            val forward: Tree = methodName match {
+              case "read"  => q"$json.Reads[${atpe}](instance.reads(_))"
+              case "write" => q"$json.OWrites[${atpe}](instance.writes(_))"
+              case _       => q"$json.OFormat[${atpe}](instance.reads(_), instance.writes(_))"
+            }
+            val forwardCall = q"private val $forwardName = $forward"
+            val generated   = TypeName(c.freshName("Generated"))
 
-          val forward: Tree = methodName match {
-            case "read" =>
-              q"$json.Reads[${atpe}](instance.reads(_))"
-
-            case "write" =>
-              q"$json.OWrites[${atpe}](instance.writes(_))"
-
-            case _ =>
-              q"$json.OFormat[${atpe}](instance.reads(_), instance.writes(_))"
-          }
-          val forwardCall =
-            q"private val $forwardName = $forward"
-
-          val generated = TypeName(c.freshName("Generated"))
-
-          q"""
+            q"""
         final class $generated() {
           // wrap there for self reference
 
@@ -838,11 +742,171 @@ class JsMacroImpl(val c: blackbox.Context) {
 
         new $generated().instance
         """
+          }
+
+        debug(showCode(finalTree))
+
+        c.Expr[M[A]](finalTree)
+      }
+
+      if (!utility.hasUnapply) {
+        // Case classes with more than 22 fields have no `unapply`,
+        // so the functional builder can't be used.
+        // Uses the primary constructor for field discovery.
+        val resolver       = new ImplicitResolver({ orig: Type => orig })
+        val createImplicit = resolver.createImplicit(atpe, natag.tpe) _
+        val companion      = atpe.typeSymbol.companion
+
+        val fields = constructorParams(atpe).zipWithIndex.map { case (param, i) =>
+          val name    = param.name
+          val tpe     = param.typeSignature.asSeenFrom(atpe, atpe.typeSymbol)
+          val helper  = createImplicit(tpe)
+          val default =
+            if (hasOption[Json.DefaultValues]) defaultValue(companion, param.asTerm, i)
+            else None
+
+          (name, tpe, helper, default)
         }
 
-      debug(showCode(finalTree))
+        val missing = fields.collect { case (_, tpe, Implicit(_, EmptyTree /* not found */, _, _), _) => tpe }
 
-      c.Expr[M[A]](finalTree)
+        if (missing.nonEmpty) {
+          abortMissingImplicits(natag.tpe.typeSymbol.fullName, missing.map(prettyType(_.dealias)))
+        }
+
+        val fieldHandlers = fields.map { case (name, _, helper, default) =>
+          name -> fieldHandler(name, helper.neededImplicit, helper.paramType, default)
+        }
+        val hasSelfRef = fields.exists(_._3.selfRef)
+
+        def readObject: Tree = {
+          val (vals, refs) = fieldHandlers.map { case (_, handler) =>
+            val vn = TermName(c.freshName("field"))
+            q"val $vn = $handler.reads(obj)" -> vn
+          }.unzip
+
+          q"""
+            ..$vals
+            val errors = _root_.scala.collection.immutable.List[$json.JsResult[_]](..$refs).collect {
+              case e: $json.JsError => e
+            }
+            if (errors.isEmpty) $json.JsSuccess(new $atpe(..${refs.map(r => q"$r.get")}))
+            else errors.reduceLeft(_ ++ _)
+          """
+        }
+
+        def writeObject: Tree =
+          fieldHandlers
+            .map { case (name, handler) => q"$handler.writes(obj.${name.toTermName})" }
+            .reduceLeft[Tree] { (acc, w) => q"$acc.deepMerge($w)" }
+
+        val canBuildCall = methodName match {
+          case "read" =>
+            q"""$json.Reads[$atpe] {
+              case obj @ $json.JsObject(_) => $readObject
+              case _                       => $json.JsError("error.expected.jsobject")
+            }"""
+
+          case "write" =>
+            q"$json.OWrites[$atpe] { (obj: $atpe) => $writeObject }"
+
+          case _ =>
+            q"""{
+              val rfn: $json.JsValue => $json.JsResult[$atpe] = {
+                case obj @ $json.JsObject(_) => $readObject
+                case _                       => $json.JsError("error.expected.jsobject")
+              }
+              val wfn: $atpe => $json.JsObject = { (obj: $atpe) => $writeObject }
+              $json.OFormat[$atpe](rfn, wfn)
+            }"""
+        }
+
+        wrap(canBuildCall, hasSelfRef, q"")
+      } else {
+        val (applyFunction, tparams, params, defaultValues) = utility.applyFunction match {
+          case Some(info) => info
+
+          case _ =>
+            c.abort(
+              c.enclosingPosition,
+              s"No apply function found matching unapply parameters"
+            )
+        }
+
+        // ---
+
+        // combines all reads into CanBuildX
+        val resolver = new ImplicitResolver({
+          import utility.boundTypes
+
+          { orig: Type =>
+            boundTypes.getOrElse(orig.typeSymbol.fullName, orig)
+          }
+        })
+
+        val defaultValueMap: Map[Name, Tree] =
+          if (!hasOption[Json.DefaultValues]) Map.empty
+          else {
+            (params, defaultValues).zipped.collect { case (p, Some(dv)) =>
+              p.name.encodedName -> dv
+            }.toMap
+          }
+
+        val resolvedImplicits = utility.implicits(resolver)
+        val canBuild          = resolvedImplicits
+          .map { case (name, Implicit(pt, impl, _, _)) =>
+            fieldHandler(name, impl, pt, defaultValueMap.get(name))
+          }
+          .reduceLeft[Tree] { (acc, r) =>
+            q"$acc.and($r)"
+          }
+
+        val multiParam = params.length > 1
+        // if case class has one single field, needs to use map/contramap/inmap on the Reads/Writes/Format instead of
+        // canbuild.apply
+        val applyOrMap = TermName(if (multiParam) "apply" else mapLikeMethod)
+
+        // Helper function to create parameter lists for function invocations
+        // based on whether this is a reads, writes or both.
+        def conditionalList[T](ifReads: T, ifWrites: T): List[T] =
+          (if (reads) List(ifReads) else Nil) :::
+            (if (writes) List(ifWrites) else Nil)
+
+        val syntaxImport      = if (!multiParam && !writes) q"" else q"import $syntax._"
+        @inline def buildCall = q"$canBuild.$applyOrMap(..${conditionalList(applyFunction, utility.unapplyFunction)})"
+        def readResult        =
+          if (multiParam) q"underlying.reads(obj)"
+          else q"underlying.flatMap[${atpe}] { v: ${atpe} => $json.Reads.pure(f = v) }.reads(obj)"
+
+        val canBuildCall = methodName match {
+          case "read" => {
+            q"""{
+            val underlying = $buildCall
+
+            $json.Reads[${atpe}] {
+              case obj @ $json.JsObject(_) => $readResult
+              case _ => $json.JsError("error.expected.jsobject")
+            }
+          }"""
+          }
+
+          case "format" => {
+            q"""{
+            val underlying = $buildCall
+            val rfn: $json.JsValue => $json.JsResult[${atpe}] = {
+              case obj @ $json.JsObject(_) => $readResult
+              case _ => $json.JsError("error.expected.jsobject")
+            }
+
+            $json.OFormat[${atpe}](rfn, underlying.writes _)
+          }"""
+          }
+
+          case _ => buildCall
+        }
+
+        wrap(canBuildCall, resolvedImplicits.exists(_._2.selfRef), syntaxImport)
+      }
     }
 
     def caseObjectImpl: c.Expr[M[A]] = {
@@ -884,6 +948,53 @@ class JsMacroImpl(val c: blackbox.Context) {
     }
 
     c.Expr[M[A]](q"val ${configName} = $config; ${impl}")
+  }
+
+  /**
+   * The default value of the i-th (0-based) constructor/apply parameter, if it
+   * has one, obtained from the companion's synthetic `apply$default$N` accessor.
+   */
+  private def defaultValue(companion: Symbol, param: TermSymbol, i: Int): Option[Tree] =
+    if (!param.isParamWithDefault) None
+    else Some(q"$companion.${TermName("apply$default$" + (i + 1))}")
+
+  /**
+   * Pretty-prints a type for the implicit-not-found error, resolving type
+   * parameters via `resolve` (use `identity` when the type is already concrete).
+   */
+  private def prettyType(resolve: Type => Type)(t: Type): String =
+    resolve(t) match {
+      case TypeRef(_, base, args) if args.nonEmpty =>
+        s"""${base.asType.fullName}[${args.map(prettyType(resolve)).mkString(", ")}]"""
+
+      case other => other.typeSymbol.fullName
+    }
+
+  /**
+   * Aborts compilation, reporting the (already pretty-printed) field types for
+   * which no type class instance could be resolved.
+   */
+  private def abortMissingImplicits(instanceTypeName: String, missing: List[String]): Nothing =
+    c.abort(
+      c.enclosingPosition,
+      s"No instance of $instanceTypeName is available for ${missing
+          .mkString(", ")} in the implicit scope (Hint: if declared in the same file, make sure it's declared before)"
+    )
+
+  private def primaryConstructor(tpe: Type): MethodSymbol =
+    tpe.decls
+      .collectFirst {
+        case m: MethodSymbol if m.isPrimaryConstructor && m.isPublic => m
+      }
+      .getOrElse(c.abort(c.enclosingPosition, s"No public primary constructor found for $tpe"))
+
+  private def constructorParams(tpe: Type): List[Symbol] = {
+    val paramLists = primaryConstructor(tpe).paramLists
+
+    if (paramLists.size > 1)
+      c.abort(c.enclosingPosition, s"Only one parameter list classes are supported. Found: $tpe")
+
+    paramLists.headOption.getOrElse(Nil)
   }
 
   private lazy val debugEnabled =
