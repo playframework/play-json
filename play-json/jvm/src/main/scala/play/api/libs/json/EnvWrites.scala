@@ -351,6 +351,12 @@ trait EnvWrites {
     Writes[Period] { d =>
       JsString(d.toString)
     }
+
+  /**
+   * Serializer of Java enum.
+   */
+  implicit def javaEnumWrites[E <: java.lang.Enum[?]]: Writes[E] =
+    Writes.StringWrites.contramap[E](_.name)
 }
 
 trait EnvKeyWrites {

@@ -358,6 +358,7 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
    */
   def formatEnum[E <: Enumeration](`enum`: E): Format[`enum`.Value] =
     Format(Reads.enumNameReads(`enum`), Writes.enumNameWrites[`enum`.type])
+  // TODO: Refactor
 
   /**
    * JSON facade with some macro options.
