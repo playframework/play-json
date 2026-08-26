@@ -11,6 +11,7 @@ final class MacroScala3Spec
     extends AnyWordSpec
     with Matchers
     with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+
   "Case class" should {
     "not be handled" when {
       "no custom ProductOf" in {
@@ -57,6 +58,137 @@ final class MacroScala3Spec
       }
     }
   }
+
+  "Enum" should {
+    "be supported with default string representation" when {
+      def readsSpecs(r: Reads[Color]) = {
+        r.reads(JsString("Red")).mustEqual(JsSuccess(Color.Red))
+        r.reads(JsString("Green")).mustEqual(JsSuccess(Color.Green))
+        r.reads(JsString("Blue")).mustEqual(JsSuccess(Color.Blue))
+
+        r.reads(JsString("red")).mustEqual(JsError("error.expected.enum"))
+        r.reads(JsString("GREEN")).mustEqual(JsError("error.expected.enum"))
+        r.reads(JsString("BluE")).mustEqual(JsError("error.expected.enum"))
+      }
+
+      "read" in {
+        readsSpecs(Json.enumReads[Color])
+        readsSpecs(Json.enumReads(insensitive = false))
+      }
+
+      def writesSpecs(w: Writes[Color]) = {
+        w.writes(Color.Red).mustEqual(JsString("Red"))
+        w.writes(Color.Green).mustEqual(JsString("Green"))
+        w.writes(Color.Blue).mustEqual(JsString("Blue"))
+      }
+
+      "write" in {
+        writesSpecs(Json.enumWrites[Color])
+      }
+
+      "format" in {
+        val f: Format[Color] = Json.enumFormat
+
+        readsSpecs(f)
+        readsSpecs(Json.enumFormat(insensitive = false))
+
+        writesSpecs(f)
+      }
+    }
+
+    "be supported with lower case representation" when {
+      def readsSpecs(r: Reads[Color]) = {
+        r.reads(JsString("red")).mustEqual(JsSuccess(Color.Red))
+        r.reads(JsString("green")).mustEqual(JsSuccess(Color.Green))
+        r.reads(JsString("blue")).mustEqual(JsSuccess(Color.Blue))
+
+        r.reads(JsString("Red")).mustEqual(JsError("error.expected.enum"))
+        r.reads(JsString("GREEN")).mustEqual(JsError("error.expected.enum"))
+        r.reads(JsString("BluE")).mustEqual(JsError("error.expected.enum"))
+      }
+
+      "read" in {
+        readsSpecs(Json.enumReadsLowercaseOnly[Color])
+      }
+
+      def writesSpecs(w: Writes[Color]) = {
+        w.writes(Color.Red).mustEqual(JsString("red"))
+        w.writes(Color.Green).mustEqual(JsString("green"))
+        w.writes(Color.Blue).mustEqual(JsString("blue"))
+      }
+
+      "write" in {
+        writesSpecs(Json.enumWritesLowercase[Color])
+      }
+
+      "format" in {
+        val f: Format[Color] = Json.enumFormatLowercaseOnly
+
+        readsSpecs(f)
+        writesSpecs(f)
+      }
+    }
+
+    "be supported with upper case representation" when {
+      def readsSpecs(r: Reads[Color]) = {
+        r.reads(JsString("RED")).mustEqual(JsSuccess(Color.Red))
+        r.reads(JsString("GREEN")).mustEqual(JsSuccess(Color.Green))
+        r.reads(JsString("BLUE")).mustEqual(JsSuccess(Color.Blue))
+
+        r.reads(JsString("Red")).mustEqual(JsError("error.expected.enum"))
+        r.reads(JsString("green")).mustEqual(JsError("error.expected.enum"))
+        r.reads(JsString("BluE")).mustEqual(JsError("error.expected.enum"))
+      }
+
+      "read" in {
+        readsSpecs(Json.enumReadsUppercaseOnly[Color])
+      }
+
+      def writesSpecs(w: Writes[Color]) = {
+        w.writes(Color.Red).mustEqual(JsString("RED"))
+        w.writes(Color.Green).mustEqual(JsString("GREEN"))
+        w.writes(Color.Blue).mustEqual(JsString("BLUE"))
+      }
+
+      "write" in {
+        writesSpecs(Json.enumWritesUppercase[Color])
+      }
+
+      "format" in {
+        val f: Format[Color] = Json.enumFormatUppercaseOnly
+
+        readsSpecs(f)
+        writesSpecs(f)
+      }
+    }
+
+    "ignore case" when {
+      def readsSpecs(r: Reads[Color]) = {
+        r.reads(JsString("Red")).mustEqual(JsSuccess(Color.Red))
+        r.reads(JsString("red")).mustEqual(JsSuccess(Color.Red))
+        r.reads(JsString("RED")).mustEqual(JsSuccess(Color.Red))
+        r.reads(JsString("ReD")).mustEqual(JsSuccess(Color.Red))
+
+        r.reads(JsString("Green")).mustEqual(JsSuccess(Color.Green))
+        r.reads(JsString("green")).mustEqual(JsSuccess(Color.Green))
+        r.reads(JsString("GREEN")).mustEqual(JsSuccess(Color.Green))
+        r.reads(JsString("GrEeN")).mustEqual(JsSuccess(Color.Green))
+
+        r.reads(JsString("Blue")).mustEqual(JsSuccess(Color.Blue))
+        r.reads(JsString("blue")).mustEqual(JsSuccess(Color.Blue))
+        r.reads(JsString("BLUE")).mustEqual(JsSuccess(Color.Blue))
+        r.reads(JsString("BlUE")).mustEqual(JsSuccess(Color.Blue))
+      }
+
+      "read" in {
+        readsSpecs(Json.enumReads(insensitive = true))
+      }
+
+      "format" in {
+        readsSpecs(Json.enumFormat(insensitive = true))
+      }
+    }
+  }
 }
 
 final class CustomNoProductOf(val name: String, val age: Int)
@@ -66,3 +198,6 @@ object CustomNoProductOf {
   given Conversion[CustomNoProductOf, Tuple2[String, Int]] =
     (v: CustomNoProductOf) => v.name -> v.age
 }
+
+enum Color:
+  case Red, Green, Blue

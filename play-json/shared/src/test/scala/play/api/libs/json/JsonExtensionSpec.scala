@@ -6,14 +6,15 @@ package play.api.libs.json
 
 import play.api.libs.json.JsonNaming.SnakeCase
 
-import play.api.libs.json.Json._
-
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 case class User(age: Int, name: String)
+
 case class Dog(name: String, master: User)
+
 case class UserProfile(firstName: String, lastName: String, zip: Option[String], _homeCity: String)
+
 object UserProfile {
   def obj1  = UserProfile("Christian", "Schmitt", None, "Kenzingen")
   def json1 = Json.obj("first_name" -> "Christian", "last_name" -> "Schmitt", "home_city" -> "Kenzingen")
@@ -25,7 +26,9 @@ object UserProfile {
     )
   def json3 = Json.obj("FirstName" -> "Christian", "LastName" -> "Schmitt", "_homeCity" -> "Kenzingen")
 }
+
 case class UserProfileHolder(holder: String, profile: UserProfile)
+
 case class Cat(name: String)
 
 case class RecUser(
@@ -115,11 +118,9 @@ object CustomApply {
 
 case class Optional(props: Option[String])
 
-class JsonExtensionSpec extends AnyWordSpec with Matchers {
+final class JsonExtensionSpec extends AnyWordSpec with Matchers {
   "JsonExtension" should {
     "create a reads[User]" in {
-      import play.api.libs.json.Json
-
       // object User {def apply(age:Int):User = User(age,"")}
       implicit val userReads: Reads[User] = Json.reads[User]
 

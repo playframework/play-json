@@ -7,7 +7,7 @@ package play.api.libs.json
 import scala.util.{ Failure as TryFailure, Success as TrySuccess }
 import scala.collection.mutable.Builder as MBuilder
 
-import scala.deriving.Mirror.ProductOf
+import scala.deriving.Mirror.{ ProductOf, SumOf }
 
 import scala.quoted.*
 

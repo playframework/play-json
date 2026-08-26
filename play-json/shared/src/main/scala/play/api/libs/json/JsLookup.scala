@@ -45,16 +45,18 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    * @param index Element index.
    */
   def apply(index: Int): JsValue = result match {
-    case JsDefined(x) =>
-      x match {
+    case JsDefined(defined) =>
+      defined match {
         case arr: JsArray =>
           arr.value.lift(index) match {
-            case Some(x) => x
+            case Some(v) => v
             case None    => throw new IndexOutOfBoundsException(String.valueOf(index))
           }
+
         case _ =>
-          throw new Exception(s"$x is not a JsArray")
+          throw new Exception(s"$defined is not a JsArray")
       }
+
     case x: JsUndefined =>
       throw new Exception(String.valueOf(x.error))
   }
@@ -65,16 +67,18 @@ case class JsLookup(result: JsLookupResult) extends AnyVal {
    * @param fieldName Element index.
    */
   def apply(fieldName: String): JsValue = result match {
-    case JsDefined(x) =>
-      x match {
+    case JsDefined(defined) =>
+      defined match {
         case arr: JsObject =>
           arr.underlying.get(fieldName) match {
-            case Some(x) => x
+            case Some(v) => v
             case None    => throw new NoSuchElementException(String.valueOf(fieldName))
           }
+
         case _ =>
-          throw new Exception(s"$x is not a JsObject")
+          throw new Exception(s"$defined is not a JsObject")
       }
+
     case x: JsUndefined =>
       throw new Exception(String.valueOf(x.error))
   }

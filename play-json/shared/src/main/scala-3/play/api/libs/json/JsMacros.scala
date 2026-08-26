@@ -6,7 +6,9 @@ package play.api.libs.json
 
 import scala.deriving.*
 
-private[json] trait JsMacros {
+import scala.reflect.Enum
+
+private[json] trait JsMacros extends EnumHandler {
 
   /**
    * Creates a `Reads[T]` by resolving, at compile-time,

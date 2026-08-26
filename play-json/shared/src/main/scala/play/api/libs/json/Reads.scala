@@ -523,23 +523,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
     }
   }
 
-  @scala.annotation.tailrec
-  private def mapObj[K, V](
-      key: String => JsResult[K],
-      in: List[(String, JsValue)],
-      out: Builder[(K, V), Map[K, V]]
-  )(implicit vr: Reads[V]): JsResult[Map[K, V]] = in match {
-    case (k, v) :: entries =>
-      key(k).flatMap(vk => v.validate[V].map(vk -> _)) match {
-        case JsError(details) => JsError(details)
-
-        case JsSuccess((vk, value), _) =>
-          mapObj[K, V](key, entries, out += (vk -> value))
-      }
-
-    case _ => JsSuccess(out.result())
-  }
-
   /** Deserializer for a `Map[K,V]` */
   implicit def mapReads[K, V](k: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
     case JsObject(m) => {
