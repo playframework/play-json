@@ -519,24 +519,45 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       nesting.Test.format.reads(expectedJson).mustEqual(JsSuccess(expected))
     }
 
-    "handle case class with generic type and default field" in {
-      implicit val format: Format[GenericCaseClassWithDefault[Int]] = Json.format[GenericCaseClassWithDefault[Int]]
+    "handle case class with generic type" when {
+      lazy val format1 = Json.format[GenericCaseClassWithDefault[Int]]
 
-      val expected     = GenericCaseClassWithDefault(3)
-      val expectedJson = Json.obj("data" -> 3, "descr" -> "something")
+      lazy val format2 = Json.using[Json.MacroOptions with Json.DefaultValues].format[GenericCaseClassWithDefault[Int]]
 
-      Json.toJson(GenericCaseClassWithDefault(3)).mustEqual(expectedJson)
-      Json.fromJson(expectedJson).mustEqual(JsSuccess(expected))
-    }
+      "field with default value" in {
+        val expected     = GenericCaseClassWithDefault(3)
+        val expectedJson = Json.obj("data" -> 3, "descr" -> "something")
 
-    "handle case class with generic type and overridden default field" in {
-      implicit val format: Format[GenericCaseClassWithDefault[Int]] = Json.format[GenericCaseClassWithDefault[Int]]
+        {
+          implicit def format: Format[GenericCaseClassWithDefault[Int]] = format1
 
-      val expected     = GenericCaseClassWithDefault(3, "foo")
-      val expectedJson = Json.obj("data" -> 3, "descr" -> "foo")
+          Json.toJson(GenericCaseClassWithDefault(3)).mustEqual(expectedJson)
+          Json.fromJson(expectedJson).mustEqual(JsSuccess(expected))
 
-      Json.toJson(GenericCaseClassWithDefault(3, "foo")).mustEqual(expectedJson)
-      Json.fromJson(expectedJson).mustEqual(JsSuccess(expected))
+          // By default the macro doesn't resolve the default field value
+          // if missing from the input JSON
+          Json
+            .fromJson(Json.obj("data" -> 3))
+            .mustEqual(JsError(JsPath \ "descr", JsonValidationError("error.path.missing")))
+        }
+
+        {
+          implicit def format: Format[GenericCaseClassWithDefault[Int]] = format2
+
+          // Fallback if value corresponding to field with default value is missing
+          Json.fromJson(Json.obj("data" -> 3)).mustEqual(JsSuccess(expected))
+        }
+      }
+
+      "explicit value is given" in {
+        implicit def format: Format[GenericCaseClassWithDefault[Int]] = format1
+
+        val expected     = GenericCaseClassWithDefault(3, "foo")
+        val expectedJson = Json.obj("data" -> 3, "descr" -> "foo")
+
+        Json.toJson(GenericCaseClassWithDefault(3, "foo")).mustEqual(expectedJson)
+        Json.fromJson(expectedJson).mustEqual(JsSuccess(expected))
+      }
     }
 
     "field ordering" in {

@@ -326,17 +326,23 @@ object JsMacroImpl { // TODO: debug
 
           pt.asType match {
             case '[t] =>
-              val default: Option[Expr[t]] =
-                compCls.declaredMethod(f"$$lessinit$$greater$$default$$" + (i + 1)).headOption.collect {
-                  case defaultSym if sym.flags.is(Flags.HasDefault) =>
-                    val select = Ref(tpr.typeSymbol.companionModule).select(defaultSym)
-                    val tree =
-                      TypeRepr.of[T].typeArgs match {
-                        case Nil      => select
-                        case typeArgs => select.appliedToTypes(typeArgs)
-                      }
-                    tree.asExprOf[t]
+              val default: Option[Expr[t]] = {
+                if (!sym.flags.is(Flags.HasDefault) || !hasOption[Json.DefaultValues]) {
+                  None
+                } else {
+                  compCls.declaredMethod(f"$$lessinit$$greater$$default$$" + (i + 1)).headOption.map {
+                    case defaultSym  =>
+                      val select = Ref(tpr.typeSymbol.companionModule).select(defaultSym)
+                      val tree =
+                        TypeRepr.of[T].typeArgs match {
+                          case Nil      => select
+                          case typeArgs => select.appliedToTypes(typeArgs)
+                        }
+
+                      tree.asExprOf[t]
+                  }
                 }
+              }
 
               ReadableField(sym, i, pt, default)
           }
