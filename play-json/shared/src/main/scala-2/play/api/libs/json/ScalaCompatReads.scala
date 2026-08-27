@@ -4,6 +4,5 @@
 
 package play.api.libs.json
 
-trait RecursiveOFormat { self: OFormat.type =>
-
-}
+/* Scala compatibility trait for the `Reads` companion */
+private[json] trait ScalaCompatReads { self: Reads.type => }

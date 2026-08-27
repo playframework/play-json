@@ -4,9 +4,8 @@
 
 package play.api.libs.json
 
-import scala.annotation.tailrec
-
-trait RecursiveReads { self: Reads.type =>
+/* Scala compatibility trait for the `Reads` companion */
+private[json] trait ScalaCompatReads { self: Reads.type =>
 
   /**
    * Constructs a `Reads` for a recursive type.
@@ -21,16 +20,28 @@ trait RecursiveReads { self: Reads.type =>
    * @param f function that constructs the recursive reader
    */
   final def recursive[A](f: Reads[A] ?=> Reads[A]): Reads[A] = {
-    lazy val res: Reads[A] = f(using RecursiveReads.DeferredReads(() => res))
+    lazy val res: Reads[A] = f(using ScalaCompatReads.DeferredReads(() => res))
     res
   }
+
+  /**
+   * Constructs a `Reads` for a type using its derived JSON reader.
+   *
+   * This method delegates to `Json.reads` to derive a `Reads[T]` for the specified type.
+   *
+   * This method is available only in Scala 3.
+   *
+   * @tparam T the type read from JSON
+   * @return a derived reader for T
+   */
+  inline def derived[T]: Reads[T] = Json.reads[T]
 }
 
-private[json] object RecursiveReads {
+private[json] object ScalaCompatReads {
   private final case class DeferredReads[A](value: () => Reads[A]) extends Reads[A] {
     private lazy val resolved: Reads[A] = resolve(value)
 
-    @tailrec
+    @annotation.tailrec
     private def resolve(f: () => Reads[A]): Reads[A] =
       f() match {
         case DeferredReads(f) =>
