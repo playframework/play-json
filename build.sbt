@@ -334,7 +334,7 @@ lazy val docs = project
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
       val code = (base ** "code").get()
 
-      if (isScala3.value) code
+      if (isScala3.value) code ++ (base ** "code-3").get()
       else code ++ (base ** "code-2").get()
     },
     PlayDocsKeys.resources += Def.uncached {
