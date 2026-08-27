@@ -4,31 +4,33 @@
 
 package play.api.libs.json
 
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalUnit
-import java.time.temporal.UnsupportedTemporalTypeException
-import java.time.temporal.{ Temporal => JTemporal }
-import java.time.Clock
-import java.time.DateTimeException
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.Period
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.{ Duration => JDuration }
+import java.time.{
+  Clock,
+  DateTimeException,
+  Instant,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  OffsetDateTime,
+  Period,
+  ZoneId,
+  ZoneOffset,
+  ZonedDateTime,
+  Duration => JDuration
+}
+
+import java.time.format.{ DateTimeFormatter, DateTimeParseException }
+import java.time.temporal.{ ChronoUnit, TemporalUnit, UnsupportedTemporalTypeException, Temporal => JTemporal }
+
 import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 
 import scala.util.control.NonFatal
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
 
 import play.api.libs.json.jackson.JacksonJson
 
@@ -59,6 +61,44 @@ trait EnvReads {
     def reads(json: JsValue): JsResult[ArrayNode] = {
       json.validate[JsArray].map(ja => JacksonJson.get.jsValueToJsonNode(ja).asInstanceOf[ArrayNode])
     }
+  }
+
+  /**
+   * Deserializer of finite duration from an integer (long) number,
+   * using the specified temporal unit.
+   */
+  def finiteDurationNumberReads(unit: TimeUnit): Reads[FiniteDuration] =
+    Reads[FiniteDuration] {
+      case n: JsNumber => n.validate[Long].map(l => Duration.create(l, unit))
+      case _           => JsError("error.expected.longDuration")
+    }
+
+  /** Deserializer of finite duration from a number of milliseconds. */
+  val finiteDurationMillisReads: Reads[FiniteDuration] =
+    finiteDurationNumberReads(TimeUnit.MILLISECONDS)
+
+  /** Deserializer of finite duration using string representation (e.g. "1 second"). */
+  val finiteDurationStringReads: Reads[FiniteDuration] =
+    Reads.StringReads.flatMapResult {
+      Duration.unapply(_) match {
+        case Some((len, unit)) =>
+          JsSuccess(Duration.create(len, unit))
+
+        case _ =>
+          JsError("error.invalid.duration")
+      }
+    }
+
+  /**
+   * Deserializer of finite duration, from either a time-based amount of time
+   * (string representation such as '34.5 seconds'),
+   * or from a number of milliseconds (see [[finiteDurationMillisReads]]).
+   */
+  implicit val DefaultFiniteDurationReads: Reads[FiniteDuration] = Reads[FiniteDuration] {
+    case str @ JsString(_) =>
+      finiteDurationStringReads.reads(str)
+
+    case js => finiteDurationMillisReads.reads(js)
   }
 
   /**

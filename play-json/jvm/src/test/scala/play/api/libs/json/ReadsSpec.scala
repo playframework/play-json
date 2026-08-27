@@ -5,26 +5,34 @@
 package play.api.libs.json
 
 import java.math.{ BigDecimal => JBigDec }
-import java.util.Locale
-import java.time.{ Duration => JDuration }
-import java.time.Instant
-import java.time.Period
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.ZoneOffset
+
+import java.time.{
+  Instant,
+  Period,
+  LocalDate,
+  LocalTime,
+  LocalDateTime,
+  OffsetDateTime,
+  ZoneId,
+  ZonedDateTime,
+  ZoneOffset,
+  Duration => JDuration
+}
+
 import java.time.temporal.ChronoUnit
 import java.time.format.DateTimeFormatter
 
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+import scala.concurrent.duration.{ Duration, FiniteDuration }
+
 import org.specs2.specification.core.Fragment
 
-class ReadsSpec extends org.specs2.mutable.Specification {
-  val veryLargeNumber = BigDecimal("9" * 1000000)
-
+final class ReadsSpec extends org.specs2.mutable.Specification {
   "JSON Reads".title
+
+  import JsonSpec.{ exceedsDigitsLimit => veryLargeNumber }
 
   "Local date/time" should {
     val DefaultReads = implicitly[Reads[LocalDateTime]]
@@ -602,19 +610,54 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     Fragment.foreach(locales.zip(objs)) { case (locale, obj) =>
       s"be ${locale.toLanguageTag} and be read as JSON object" in {
-        Json.fromJson[Locale](obj)(Reads.localeObjectReads).mustEqual(JsSuccess(locale))
+        Json.fromJson[Locale](obj)(Reads.localeObjectReads) must_=== JsSuccess(locale)
       }
     }
 
     Fragment.foreach(locales.zip(tags)) { case (locale, tag) =>
       s"be ${locale.toLanguageTag} and be read from JSON string (tag)" in {
-        Json.fromJson[Locale](JsString(tag)).must_==(JsSuccess(locale))
+        Json.fromJson[Locale](JsString(tag)) must_=== JsSuccess(locale)
+      }
+    }
+  }
+
+  "Finite duration" should {
+    lazy val oneSec     = Duration.create(1L, TimeUnit.SECONDS)
+    lazy val twelveDays = Duration.create(12L, TimeUnit.DAYS)
+
+    Fragment.foreach[(JsValue, JsResult[FiniteDuration])](
+      Seq(
+        JsString("1 second")         -> JsSuccess(oneSec),
+        JsString("foo")              -> JsError("error.invalid.duration"),
+        JsNumber(BigDecimal(1000L))  -> JsSuccess(oneSec),
+        JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.long")
+      )
+    ) { case (input, result) =>
+      s"be parsed from ${Json.stringify(input)} as $result" in {
+        Json.fromJson[FiniteDuration](input) must_=== result
+      }
+    }
+
+    "be parsed from number" in {
+      val reads1 = Reads.finiteDurationMillisReads
+      val reads2 = Reads.finiteDurationNumberReads(TimeUnit.DAYS)
+
+      Json.fromJson(JsNumber(BigDecimal(1000L)))(reads1) must_=== JsSuccess(oneSec) and {
+        Json.fromJson(JsNumber(BigDecimal(12L)))(reads2) must_=== JsSuccess(twelveDays)
+      }
+    }
+
+    "be parsed from string" in {
+      import Reads.{ finiteDurationStringReads => reads }
+
+      Json.fromJson(JsString("1 second"))(reads) must_=== JsSuccess(oneSec) and {
+        Json.fromJson(JsString("12 days"))(reads) must_=== JsSuccess(twelveDays)
       }
     }
   }
 
   "Java Duration" should {
-    val oneSec = JDuration.of(1L, ChronoUnit.SECONDS)
+    lazy val oneSec = JDuration.of(1L, ChronoUnit.SECONDS)
 
     Fragment.foreach[(JsValue, JsResult[JDuration])](
       Seq(
