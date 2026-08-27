@@ -4,6 +4,6 @@
 
 package play.api.libs.json
 
-trait RecursiveOFormat { self: OFormat.type =>
+private[json] trait ScalaCompatReads { self: Reads.type =>
 
 }

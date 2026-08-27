@@ -4,6 +4,10 @@
 
 package play.api.libs.json
 
-trait RecursiveWrites { self: Writes.type =>
+private[json] trait ScalaCompatWrites { self: Writes.type =>
+
+}
+
+private[json] trait ScalaCompatOWrites { self: OWrites.type =>
 
 }

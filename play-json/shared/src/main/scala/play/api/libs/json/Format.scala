@@ -29,7 +29,7 @@ trait OFormat[A] extends OWrites[A] with Reads[A] with Format[A] {
 
 }
 
-object OFormat extends RecursiveOFormat {
+object OFormat extends ScalaCompatOFormat {
   implicit def functionalCanBuildFormats(implicit
       rcb: FunctionalCanBuild[Reads],
       wcb: FunctionalCanBuild[OWrites]
@@ -64,7 +64,7 @@ object OFormat extends RecursiveOFormat {
 /**
  * Default Json formatters.
  */
-object Format extends PathFormat with ConstraintFormat with DefaultFormat with RecursiveFormat {
+object Format extends PathFormat with ConstraintFormat with DefaultFormat with ScalaCompatFormat {
   val constraints: ConstraintFormat = this
   val path: PathFormat              = this
 
