@@ -119,7 +119,6 @@ There are a few differences between complex `Writes` and `Reads`:
 - The individual path `Writes` are created using the `JsPath.write` method.
 - There is no validation on conversion to `JsValue` which makes the structure simpler and you won't need any validation helpers.
 
-
 The intermediary `FunctionalBuilder#CanBuildX` (created by `and` combinators) takes a function that translates a complex type `T` to a tuple matching the individual path `Writes`.
 
 In Scala 2, although this is symmetrical to the `Reads` case, the `unapply` method of a case class returns an `Option` of a tuple of properties and must be used with `unlift` to extract the tuple.
