@@ -717,6 +717,9 @@ trait EnvReads {
    * @see [[DefaultJavaPeriodReads]] if you want to use [[java.time.Period]] instead.
    */
   implicit val DefaultJavaDurationReads: Reads[JDuration] = Reads[JDuration] {
+    case JsString(Duration(len, unit)) =>
+      JsSuccess(JDuration.of(len, unit.toChronoUnit))
+
     case JsString(repr) =>
       try {
         JsSuccess(JDuration.parse(repr))

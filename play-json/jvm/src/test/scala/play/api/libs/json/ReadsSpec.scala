@@ -638,7 +638,7 @@ final class ReadsSpec extends org.specs2.mutable.Specification {
       }
     }
 
-    "be parsed from number" in {
+    "be parsed from integer" in {
       val reads1 = Reads.finiteDurationMillisReads
       val reads2 = Reads.finiteDurationNumberReads(TimeUnit.DAYS)
 
@@ -652,6 +652,9 @@ final class ReadsSpec extends org.specs2.mutable.Specification {
 
       Json.fromJson(JsString("1 second"))(reads) must_=== JsSuccess(oneSec) and {
         Json.fromJson(JsString("12 days"))(reads) must_=== JsSuccess(twelveDays)
+      } and {
+        Json.fromJson(JsString("1.23 second"))(reads) must_=== JsSuccess(
+          Duration.create(1230L, TimeUnit.MILLISECONDS))
       }
     }
   }
@@ -662,7 +665,8 @@ final class ReadsSpec extends org.specs2.mutable.Specification {
     Fragment.foreach[(JsValue, JsResult[JDuration])](
       Seq(
         JsString("PT1S")             -> JsSuccess(oneSec),
-        JsString("1 seconds")        -> JsError("error.invalid.duration"),
+        JsString("1 seconds")        -> JsSuccess(oneSec),
+        JsString("1.23 seconds") -> JsSuccess(JDuration.of(1230L, ChronoUnit.MILLIS)),
         JsString("foo")              -> JsError("error.invalid.duration"),
         JsNumber(BigDecimal(1000L))  -> JsSuccess(oneSec),
         JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.long")
