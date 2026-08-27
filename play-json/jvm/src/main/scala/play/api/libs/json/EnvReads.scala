@@ -67,15 +67,36 @@ trait EnvReads {
    * Deserializer of finite duration from an integer (long) number,
    * using the specified temporal unit.
    */
-  def finiteDurationNumberReads(unit: TimeUnit): Reads[FiniteDuration] =
+  def finiteLongDurationNumberReads(unit: TimeUnit): Reads[FiniteDuration] =
     Reads[FiniteDuration] {
-      case n: JsNumber => n.validate[Long].map(l => Duration.create(l, unit))
-      case _           => JsError("error.expected.longDuration")
+      case JsNumber(d) if d.isWhole =>
+        JsSuccess(Duration.create(d.toLongExact, unit))
+
+      case _ => JsError("error.expected.longDuration")
     }
 
-  /** Deserializer of finite duration from a number of milliseconds. */
+  /**
+   * Deserializer of finite duration from a number of milliseconds.
+   *
+   * Note: Unlink `finiteLongDurationNumberReads`, a decimal number is accepted there,
+   * within the scale of micro or nano seconds.
+   */
   val finiteDurationMillisReads: Reads[FiniteDuration] =
-    finiteDurationNumberReads(TimeUnit.MILLISECONDS)
+    Reads[FiniteDuration] {
+      case JsNumber(d) if d.isWhole =>
+        JsSuccess(Duration.create(d.toLongExact, TimeUnit.MILLISECONDS))
+
+      case JsNumber(d) if d.scale <= 3 =>
+        JsSuccess(Duration.create((d * 1000L).toLongExact, TimeUnit.MICROSECONDS))
+
+      case JsNumber(d) if d.scale <= 6 =>
+        JsSuccess(Duration.create((d * 1000000L).toLongExact, TimeUnit.NANOSECONDS))
+
+      case JsNumber(_) =>
+        JsError("error.expected.millisDuration")
+
+      case _ => JsError("error.expected.longDuration")
+    }
 
   /** Deserializer of finite duration using string representation (e.g. "1 second"). */
   val finiteDurationStringReads: Reads[FiniteDuration] =
@@ -691,26 +712,44 @@ trait EnvReads {
     }
   }
 
-  private def jdurationNumberReads(unit: TemporalUnit) =
-    Reads[JDuration] {
-      case n: JsNumber => n.validate[Long].map(l => JDuration.of(l, unit))
-      case _           => JsError("error.expected.longDuration")
-    }
-
   /**
    * Deserializer of Java Duration from an integer (long) number,
    * using the specified temporal unit.
    */
   def javaDurationNumberReads(unit: TemporalUnit): Reads[JDuration] =
-    jdurationNumberReads(unit)
+    Reads[JDuration] {
+      case JsNumber(d) if d.isWhole =>
+        JsSuccess(JDuration.of(d.toLong, unit))
 
-  /** Deserializer of Java Duration from a number of milliseconds. */
+      case _ => JsError("error.expected.longDuration")
+    }
+
+  /**
+   * Deserializer of Java Duration from a number of milliseconds.
+   *
+   * Note: Unlink `javaDurationNumberReads(unit)`, a decimal number is accepted there,
+   * within the scale of micro or nano seconds.
+   */
   val javaDurationMillisReads: Reads[JDuration] =
-    javaDurationNumberReads(ChronoUnit.MILLIS)
+    Reads[JDuration] {
+      case JsNumber(d) if d.isWhole =>
+        JsSuccess(JDuration.of(d.toLong, ChronoUnit.MILLIS))
+
+      case JsNumber(d) if d.scale <= 3 =>
+        JsSuccess(JDuration.of((d * 1000L).toLongExact, ChronoUnit.MICROS))
+
+      case JsNumber(d) if d.scale <= 6 =>
+        JsSuccess(JDuration.of((d * 1000000L).toLongExact, ChronoUnit.NANOS))
+
+      case JsNumber(_) =>
+        JsError("error.expected.millisDuration")
+
+      case _ => JsError("error.expected.longDuration")
+    }
 
   /**
    * Deserializer of Java Duration, from either a time-based amount of time
-   * (string representation such as '34.5 seconds'),
+   * (string representation such as '34.5 seconds' or 'PT1S'),
    * or from a number of milliseconds (see [[javaDurationMillisReads]]).
    *
    * @see [[java.time.Duration]]

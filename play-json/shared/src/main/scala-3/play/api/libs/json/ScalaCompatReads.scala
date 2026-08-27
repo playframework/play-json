@@ -35,6 +35,19 @@ private[json] trait ScalaCompatReads { self: Reads.type =>
    * @return a derived reader for T
    */
   inline def derived[T]: Reads[T] = Json.reads[T]
+
+  // ---
+
+  /**
+   * An `Reads` implementation that delegates to an underlying instance.
+   *
+   * This class is intended for use by macros and should not be used directly.
+   */
+  final class DelegatingReads[A](f: Reads[A] => Reads[A]) extends Reads[A] { self =>
+    lazy val underlying = f(self)
+
+    def reads(js: JsValue): JsResult[A] = underlying.reads(js)
+  }
 }
 
 private[json] object ScalaCompatReads {
