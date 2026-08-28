@@ -620,10 +620,10 @@ object JsMacroImpl { // TODO: debug
                           obj
 
                         case jsValue =>
-                          Json.obj("_value" -> jsValue)
+                          Json.obj(("_value", jsValue))
                       }
 
-                      output ++ JsObject(Map(${ config }.discriminator -> JsString(${ tpeCaseName })))
+                      output ++ JsObject(Map((${ config }.discriminator, JsString(${ tpeCaseName }))))
                     }
 
                   case _ =>
