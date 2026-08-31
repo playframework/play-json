@@ -4,19 +4,25 @@
 
 package play.api.libs.json
 
+import java.time.{
+  Instant,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  OffsetDateTime,
+  Period,
+  ZoneId,
+  ZoneOffset,
+  ZonedDateTime,
+  Duration => JDuration
+}
+
 import java.time.format.DateTimeFormatter
 import java.time.temporal.Temporal
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.Period
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.{ Duration => JDuration }
+
 import java.util.Locale
+
+import scala.concurrent.duration.FiniteDuration
 
 import com.fasterxml.jackson.databind.JsonNode
 import play.api.libs.json.jackson.JacksonJson
@@ -28,6 +34,17 @@ trait EnvWrites {
   object JsonNodeWrites extends Writes[JsonNode] {
     def writes(o: JsonNode): JsValue = JacksonJson.get.jsonNodeToJsValue(o)
   }
+
+  /** Serializer of finite duration as a number of milliseconds. */
+  val finiteDurationMillisWrites: Writes[FiniteDuration] =
+    Writes[FiniteDuration](d => JsNumber(d.toMillis))
+
+  /**
+   * Serializer of finite duration using string representation
+   * (e.g. "1 second").
+   */
+  implicit val finiteDurationWrites: Writes[FiniteDuration] =
+    Writes[FiniteDuration](d => JsString(d.toString))
 
   /**
    * Serializer for Jackson JsonNode

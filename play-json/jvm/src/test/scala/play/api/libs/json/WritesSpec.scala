@@ -6,21 +6,27 @@ package play.api.libs.json
 
 import java.util.Locale
 
-import java.time.Instant
-import java.time.{ Duration => JDuration }
-import java.time.Period
-import java.time.LocalDateTime
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.ZonedDateTime
-import java.time.ZoneOffset
-import java.time.ZoneId
+import java.time.{
+  Instant,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  Period,
+  OffsetDateTime,
+  ZonedDateTime,
+  ZoneOffset,
+  ZoneId,
+  Duration => JDuration
+}
+
+import java.util.concurrent.TimeUnit
 import java.time.temporal.ChronoUnit
+
+import scala.concurrent.duration.Duration
 
 import org.specs2.specification.core.Fragment
 
-class WritesSpec extends org.specs2.mutable.Specification {
+final class WritesSpec extends org.specs2.mutable.Specification {
   title("JSON Writes")
 
   "Local date/time" should {
@@ -39,8 +45,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
             ZoneOffset.UTC
           )
         )
-        .aka("written date")
-        .must_==(JsNumber(BigDecimal.valueOf(1234567890L)))
+        .aka("written date") must_=== JsNumber(BigDecimal.valueOf(1234567890L))
     }
 
     "be written with default implicit as '2011-12-03T10:15:30'" in {
@@ -287,6 +292,19 @@ class WritesSpec extends org.specs2.mutable.Specification {
     }
   }
 
+  "Duration" should {
+    "be written as milliseconds" in {
+      Json
+        .toJson(Duration.create(2L, TimeUnit.SECONDS))(Writes.finiteDurationMillisWrites) must_=== JsNumber(
+        BigDecimal(2000L)
+      )
+    }
+
+    "be written as string" in {
+      Json.toJson(Duration.create(3L, TimeUnit.DAYS)) must_=== JsString("3 days")
+    }
+  }
+
   "Java Duration" should {
     "be written as milliseconds" in {
       Json
@@ -295,7 +313,7 @@ class WritesSpec extends org.specs2.mutable.Specification {
     }
 
     "be written as ISO string" in {
-      Json.toJson(JDuration.of(2L, ChronoUnit.DAYS)).mustEqual(JsString("PT48H"))
+      Json.toJson(JDuration.of(2L, ChronoUnit.DAYS)) must_=== JsString("PT48H")
     }
   }
 
