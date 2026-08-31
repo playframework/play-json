@@ -32,18 +32,18 @@ object KeyWrites extends EnvKeyWrites with LowPriorityKeyWrites {
    * @tparam T the type to write
    * @return a [[KeyWrites]] for `T`
    */
-  implicit def stringRepresentedKeyWrites[T](implicit
-      w: Writes[T],
-      repr: Format.Representation[T, JsString]
-  ): KeyWrites[T] = KeyWrites[T] {
-    w.writes(_) match {
-      case JsString(str) =>
-        str
+  implicit def stringRepresentedKeyWrites[T: Format.Representation.StringRepresentation](implicit
+      w: Writes[T]
+  ): KeyWrites[T] =
+    KeyWrites[T] {
+      w.writes(_) match {
+        case JsString(str) =>
+          str
 
-      case js =>
-        throw new IllegalArgumentException(s"${Json.prettyPrint(js)} is not represented as JSON string")
+        case js =>
+          throw new IllegalArgumentException(s"${Json.prettyPrint(js)} is not represented as JSON string")
+      }
     }
-  }
 }
 
 private[json] sealed trait LowPriorityKeyWrites {

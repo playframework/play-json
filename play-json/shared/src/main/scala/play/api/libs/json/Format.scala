@@ -96,13 +96,15 @@ object Format extends PathFormat with ConstraintFormat with DefaultFormat with S
   object Representation extends EnvFormatRepresentation {
     private object Unsafe extends Representation[Nothing, JsValue] {}
 
-    def asString[T]: Representation[T, JsString] =
-      Unsafe.asInstanceOf[Representation[T, JsString]]
+    type StringRepresentation[T] = Format.Representation[T, JsString]
 
-    implicit val uriRepresentation: Representation[java.net.URI, JsString] =
+    def asString[T]: Representation[T, JsString] =
+      Unsafe.asInstanceOf[StringRepresentation[T]]
+
+    implicit val uriRepresentation: StringRepresentation[java.net.URI] =
       asString[java.net.URI]
 
-    implicit val uuidRepresentation: Representation[java.util.UUID, JsString] =
+    implicit val uuidRepresentation: StringRepresentation[java.util.UUID] =
       asString[java.util.UUID]
 
     /**
