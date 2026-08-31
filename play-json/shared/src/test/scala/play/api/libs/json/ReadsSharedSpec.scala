@@ -64,7 +64,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
   }
 
   "Map" should {
-    "be successfully read with string keys" in {
+    "be successfully read" in {
       Json
         .fromJson[Map[String, Int]](Json.obj("foo" -> 1, "bar" -> 2))
         .mustEqual(JsSuccess(Map("foo" -> 1, "bar" -> 2)))
@@ -109,7 +109,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
               )
             )
           )
-      }
+     }
     }
 
     "be read with byte keys" in {
@@ -148,12 +148,19 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
         .mustEqual(JsSuccess(Map(1.23D -> "foo", 23.4D -> "bar")))
     }
 
-    "be read with Reads'able keys" in {
-      val key = "https://www.playframework.com/documentation/2.8.x/api/scala/index.html#play.api.libs.json.JsResult"
+    "be read with Reads'able keys".which {
+      "are represented as JSON string (URI) as success" in {
+        val key = "https://www.playframework.com/documentation/2.8.x/api/scala/index.html#play.api.libs.json.JsResult"
 
-      implicitly[KeyReads[URI]]
+        implicitly[KeyReads[URI]]
 
-      Json.fromJson[Map[URI, String]](Json.obj(key -> "foo")).mustEqual(JsSuccess(Map((new URI(key)) -> "foo")))
+        Json.fromJson[Map[URI, String]](Json.obj(key -> "foo")).mustEqual(JsSuccess(Map((new URI(key)) -> "foo")))
+      }
+
+      "are not represented as JSON string (tuple keys) as failure" in {
+        "implicitly[_root_.play.api.libs.json.Reads[Map[(Int, Int), String]]]".
+          mustNot(typeCheck)
+      }
     }
   }
 
