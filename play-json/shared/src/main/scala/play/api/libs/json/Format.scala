@@ -78,6 +78,43 @@ object Format extends PathFormat with ConstraintFormat with DefaultFormat with S
     def reads(json: JsValue) = fjs.reads(json)
     def writes(o: A)         = tjs.writes(o)
   }
+
+  /**
+   * Evidence that values of type `T` are represented as values of type `R`.
+   *
+   * This type carries no runtime information and is only used to provide
+   * compile-time evidence of the representation.
+   *
+   * @tparam T the represented type
+   * @tparam R the representation type
+   */
+  @implicitNotFound(
+    "No JSON representation found for ${T} as ${R}. An implicit Format.Representation[${T}, ${R}] is required."
+  )
+  trait Representation[T, R <: JsValue]
+
+  object Representation extends EnvFormatRepresentation {
+    private object Unsafe extends Representation[Nothing, JsValue] {}
+
+    def asString[T]: Representation[T, JsString] =
+      Unsafe.asInstanceOf[Representation[T, JsString]]
+
+    implicit val uriReadsRepresentation: Representation[java.net.URI, JsString] =
+      asString[java.net.URI]
+
+    implicit val uuidReadsRepresentation: Representation[java.util.UUID, JsString] =
+      asString[java.util.UUID]
+
+    /**
+     * Provides [[Representation]] instances for types that may be represented
+     * as JSON strings depending on the [[Writes]] instance in scope.
+     *
+     * These instances are not available implicitly by default and must be
+     * explicitly imported when a string representation is required, for example
+     * when using such types as JSON object keys.
+     */
+    object Implicits extends EnvRepresentations
+  }
 }
 
 /**
