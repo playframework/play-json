@@ -463,7 +463,7 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     )
 
     "be successfully read from number" in {
-      reads(JsNumber(JBigDec.valueOf(123L))).must_===(JsSuccess(Instant.ofEpochMilli(123L)))
+      reads(JsNumber(JBigDec.valueOf(123L))) must_=== JsSuccess(Instant.ofEpochMilli(123L))
     }
 
     "not be read from invalid number" in {
@@ -477,16 +477,21 @@ class ReadsSpec extends org.specs2.mutable.Specification {
     "not be read from invalid string" in {
       reads(JsString("invalid")).must(beLike { case JsError.Message("error.expected.date.isoformat") =>
         ok
-      })
+      }) and {
+        reads(JsString("2024-07-30T23:44:12.969")).must(beLike {
+          case JsError.Message("error.expected.date.isoformat") =>
+            ok
+        })
+      }
     }
 
     "be successfully read with default implicit" >> {
       "from '2015-05-01T13:00:00Z' (with zeros)" in {
-        reads(JsString("2015-05-01T00:00:00Z")).must_===(JsSuccess(Instant.parse("2015-05-01T00:00:00Z")))
+        reads(JsString("2015-05-01T00:00:00Z")) must_=== JsSuccess(Instant.parse("2015-05-01T00:00:00Z"))
       }
 
       "from '2011-12-03T10:15:30Z'" in {
-        reads(JsString("2011-12-03T10:15:30Z")).must_===(JsSuccess(Instant.parse("2011-12-03T10:15:30Z")))
+        reads(JsString("2011-12-03T10:15:30Z")) must_=== JsSuccess(Instant.parse("2011-12-03T10:15:30Z"))
       }
 
       "from '2015-05-01T13:00:00+02:00' (with TZ offset and zeros)" in {
