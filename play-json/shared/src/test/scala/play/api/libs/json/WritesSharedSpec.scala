@@ -66,19 +66,19 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
 
   "Traversable Writes" should {
     "write Seqs" in {
-      Json.toJson(Seq(5, 4, 3, 2, 1)) mustEqual Json.arr(5, 4, 3, 2, 1)
+      Json.toJson(Seq(5, 4, 3, 2, 1)).mustEqual(Json.arr(5, 4, 3, 2, 1))
     }
 
     "write SortedSets" in {
       import scala.collection.immutable.SortedSet
 
-      Json.toJson(SortedSet(1, 2, 3, 4, 5)) mustEqual Json.arr(1, 2, 3, 4, 5)
+      Json.toJson(SortedSet(1, 2, 3, 4, 5)).mustEqual(Json.arr(1, 2, 3, 4, 5))
     }
 
     "write mutable SortedSets" in {
       import scala.collection.mutable.SortedSet
 
-      Json.toJson(SortedSet(1, 2, 3, 4, 5)) mustEqual Json.arr(1, 2, 3, 4, 5)
+      Json.toJson(SortedSet(1, 2, 3, 4, 5)).mustEqual(Json.arr(1, 2, 3, 4, 5))
     }
   }
 
@@ -91,7 +91,7 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
       }
 
       "using AnyVal (Int) keys" in {
-        Json.toJson(Map(1 -> "one")) mustEqual Json.obj("1" -> "one")
+        Json.toJson(Map(1 -> "one")).mustEqual(Json.obj("1" -> "one"))
       }
 
       "using string represented keys" in {
@@ -99,8 +99,7 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
 
         implicitly[KeyWrites[java.net.URI]]
 
-        Json.toJson(Map((new java.net.URI(uriRepr)) -> "foo")).
-          mustEqual(Json.obj(uriRepr -> "foo"))
+        Json.toJson(Map((new java.net.URI(uriRepr)) -> "foo")).mustEqual(Json.obj(uriRepr -> "foo"))
       }
     }
 
