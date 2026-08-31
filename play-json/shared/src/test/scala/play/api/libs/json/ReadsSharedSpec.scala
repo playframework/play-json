@@ -109,7 +109,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
               )
             )
           )
-     }
+      }
     }
 
     "be read with byte keys" in {
@@ -158,8 +158,7 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
       }
 
       "are not represented as JSON string (tuple keys) as failure" in {
-        "implicitly[_root_.play.api.libs.json.Reads[Map[(Int, Int), String]]]".
-          mustNot(typeCheck)
+        "implicitly[_root_.play.api.libs.json.Reads[Map[(Int, Int), String]]]".mustNot(typeCheck)
       }
     }
   }

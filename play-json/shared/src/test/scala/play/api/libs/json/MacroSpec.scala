@@ -34,7 +34,8 @@ final class TextId(val value: String) extends AnyVal
 
 import org.scalacheck.Gen
 
-class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+final class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+
   import MacroSpec._
 
   "Reads" should {
@@ -308,10 +309,17 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
 
     "handle generic case class with multiple generic parameters and self references" when {
       // import TestFormats._ // Doesn't work in Scala 3.0.0-RC1
-      implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]]     = TestFormats.eitherReads[A, B]
-      implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] = TestFormats.eitherWrites[A, B]
-      implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)]           = TestFormats.tuple2Reads[A, B]
-      implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)]     = TestFormats.tuple2OWrites[A, B]
+      implicit def eitherReads[A: Reads, B: Reads]: Reads[Either[A, B]] =
+        TestFormats.eitherReads[A, B]
+
+      implicit def eitherWrites[A: Writes, B: Writes]: Writes[Either[A, B]] =
+        TestFormats.eitherWrites[A, B]
+
+      implicit def tuple2Reads[A: Reads, B: Reads]: Reads[(A, B)] =
+        TestFormats.tuple2Reads[A, B]
+
+      implicit def tuple2OWrites[A: Writes, B: Writes]: OWrites[(A, B)] =
+        TestFormats.tuple2OWrites[A, B]
 
       val nestedLeft = Json.obj("id" -> 2, "a" -> 0.2F, "b" -> 0.3F, "c" -> 3)
 
