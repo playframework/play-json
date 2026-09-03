@@ -96,12 +96,87 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "Big integer Writes" should {
-    "write as JsNumber" in {
-      val jsNum = JsNumber(BigDecimal("123"))
+  "JsNumber" should {
+    "be written from Byte" in {
+      val b     = 1.toByte
+      val jsNum = JsNumber(b)
+      val res   = Json.toJson(b)
 
-      Json.toJson(BigInt("123")).mustEqual(jsNum)
-      Json.toJson(new java.math.BigInteger("123")).mustEqual(jsNum)
+      res mustEqual jsNum
+
+      res.isInstanceOf[JsNumber.JsNumericInt[?]] mustBe true
+    }
+
+    "be written from Short" in {
+      val s     = 2.toShort
+      val jsNum = JsNumber(s)
+      val res   = Json.toJson(s)
+
+      res mustEqual jsNum
+
+      res.isInstanceOf[JsNumber.JsNumericInt[?]] mustBe true
+    }
+
+    "be written from Int" in {
+      val jsNum = JsNumber(3)
+      val res   = Json.toJson(3)
+
+      res mustEqual jsNum
+
+      res.isInstanceOf[JsNumber.JsNumericInt[?]] mustBe true
+    }
+
+    "be written from Long" in {
+      val jsNum = JsNumber(4L)
+      val res   = Json.toJson(4L)
+
+      res mustEqual jsNum
+
+      res.isInstanceOf[JsNumber.JsLong] mustBe true
+    }
+
+    "be written from BigInt" in {
+      val jsNum1 = JsNumber(BigDecimal("123"))
+      val jsNum2 = JsNumber(BigInt("123"))
+
+      {
+        val res = Json.toJson(BigInt("123"))
+
+        res mustEqual jsNum1
+        res mustEqual jsNum2
+
+        res.isInstanceOf[JsNumber.JsBigInteger] mustBe true
+      }
+
+      {
+        val res = Json.toJson(new java.math.BigInteger("123"))
+
+        res mustEqual jsNum1
+        res mustEqual jsNum2
+
+        res.isInstanceOf[JsNumber.JsBigInteger] mustBe true
+      }
+    }
+
+    "be written from BigDecimal" in {
+      val b     = BigDecimal("123.45")
+      val jsNum = JsNumber(b)
+
+      {
+        val res = Json.toJson(b)
+
+        res mustEqual jsNum
+
+        res.isInstanceOf[JsNumber.JsBigDecimal] mustBe true
+      }
+
+      {
+        val res = Json.toJson(new java.math.BigDecimal("123.45"))
+
+        res mustEqual jsNum
+
+        res.isInstanceOf[JsNumber.JsBigDecimal] mustBe true
+      }
     }
   }
 

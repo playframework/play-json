@@ -331,9 +331,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit object IntReads extends Reads[Int] {
     def reads(json: JsValue) = json match {
-      case JsNumber(n) if n.isValidInt => JsSuccess(n.toInt)
-      case JsNumber(n)                 => JsError("error.expected.int")
-      case _                           => JsError("error.expected.jsnumber")
+      case JsNumber.ValidInt(i) => JsSuccess(i)
+      case _: JsNumber          => JsError("error.expected.int")
+      case _                    => JsError("error.expected.jsnumber")
     }
   }
 
@@ -342,9 +342,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit object ShortReads extends Reads[Short] {
     def reads(json: JsValue) = json match {
-      case JsNumber(n) if n.isValidShort => JsSuccess(n.toShort)
-      case JsNumber(n)                   => JsError("error.expected.short")
-      case _                             => JsError("error.expected.jsnumber")
+      case JsNumber.ValidShort(s) => JsSuccess(s)
+      case _: JsNumber            => JsError("error.expected.short")
+      case _                      => JsError("error.expected.jsnumber")
     }
   }
 
@@ -353,9 +353,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit object ByteReads extends Reads[Byte] {
     def reads(json: JsValue) = json match {
-      case JsNumber(n) if n.isValidByte => JsSuccess(n.toByte)
-      case JsNumber(n)                  => JsError("error.expected.byte")
-      case _                            => JsError("error.expected.jsnumber")
+      case JsNumber.ValidByte(b) => JsSuccess(b)
+      case _: JsNumber           => JsError("error.expected.byte")
+      case _                     => JsError("error.expected.jsnumber")
     }
   }
 
@@ -364,9 +364,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit object LongReads extends Reads[Long] {
     def reads(json: JsValue) = json match {
-      case JsNumber(n) if n.isValidLong => JsSuccess(n.toLong)
-      case JsNumber(n)                  => JsError("error.expected.long")
-      case _                            => JsError("error.expected.jsnumber")
+      case JsNumber.ValidLong(l) => JsSuccess(l)
+      case _: JsNumber           => JsError("error.expected.long")
+      case _                     => JsError("error.expected.jsnumber")
     }
   }
 
@@ -375,8 +375,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit object FloatReads extends Reads[Float] {
     def reads(json: JsValue) = json match {
-      case JsNumber(n) => JsSuccess(n.toFloat)
-      case _           => JsError("error.expected.jsnumber")
+      case JsNumber.ValidFloat(f) => JsSuccess(f)
+      case _: JsNumber            => JsError("error.expected.float")
+      case _                      => JsError("error.expected.jsnumber")
     }
   }
 
@@ -385,26 +386,33 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   implicit object DoubleReads extends Reads[Double] {
     def reads(json: JsValue) = json match {
-      case JsNumber(n) => JsSuccess(n.toDouble)
-      case _           => JsError("error.expected.jsnumber")
+      case JsNumber.ValidDouble(d) => JsSuccess(d)
+      case _: JsNumber             => JsError("error.expected.double")
+      case _                       => JsError("error.expected.jsnumber")
     }
   }
 
   /**
    * Deserializer for BigDecimal
    */
-  implicit val javaBigDecReads: Reads[java.math.BigDecimal] = Reads[java.math.BigDecimal](js =>
-    js match {
+  implicit val javaBigDecReads: Reads[java.math.BigDecimal] = Reads[java.math.BigDecimal] {
+    _ match {
       case JsString(s) => parseBigDecimal(s)
       case JsNumber(d) => JsSuccess(d.underlying)
       case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
     }
-  )
+  }
 
   /**
    * Deserializer for BigDecimal
    */
-  implicit val bigDecReads: Reads[BigDecimal] = javaBigDecReads.map(BigDecimal(_))
+  implicit val bigDecReads: Reads[BigDecimal] = Reads[BigDecimal] {
+    _ match {
+      case JsString(s) => parseBigDecimal(s).map(BigDecimal(_))
+      case JsNumber(d) => JsSuccess(d)
+      case _           => JsError(JsonValidationError("error.expected.jsnumberorjsstring"))
+    }
+  }
 
   /**
    * Deserializer for BigInteger
@@ -413,6 +421,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
     def reads(json: JsValue) = json match {
       case JsString(s) =>
         parseBigInteger(s)
+
+      case JsNumber.ValidLong(l) =>
+        JsSuccess(BigInt(l).underlying)
 
       case JsNumber(d) =>
         d.toBigIntExact match {

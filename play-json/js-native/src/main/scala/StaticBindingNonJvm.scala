@@ -77,9 +77,9 @@ private[json] object StaticBindingNonJvm {
     def str = jsValue match {
       case JsNull      => "null"
       case JsString(s) => StaticBinding.fromString(s, escapeNonASCII)
-      case JsNumber(n) => n.toString
       case JsTrue      => "true"
       case JsFalse     => "false"
+      case n: JsNumber => n.text
 
       case JsArray(items) => {
         val il = ilevel + 1
