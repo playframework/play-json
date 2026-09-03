@@ -13,46 +13,42 @@ final class JsonConfigSpec extends AnyWordSpec with Matchers {
   "JsonConfig" should {
     "fetch default setting".which {
       "is defined for nesting depth (parsing)" in {
-        JsonConfig.defaultStreamReadConstraints.getMaxNestingDepth.
-          mustEqual(StreamReadConstraints.DEFAULT_MAX_DEPTH)
+        JsonConfig.defaultStreamReadConstraints.getMaxNestingDepth.mustEqual(StreamReadConstraints.DEFAULT_MAX_DEPTH)
       }
 
       "is defined for nesting depth (serializer)" in {
-        JsonConfig.defaultStreamWriteConstraints.getMaxNestingDepth.
-          mustEqual(StreamWriteConstraints.DEFAULT_MAX_DEPTH)
+        JsonConfig.defaultStreamWriteConstraints.getMaxNestingDepth.mustEqual(StreamWriteConstraints.DEFAULT_MAX_DEPTH)
       }
 
       "is defined for Jackson BigDecimal parser" in {
-        JsonConfig.loadUseJacksonBigDecimalParser mustEqual false
+        JsonConfig.loadUseJacksonBigDecimalParser.mustEqual(false)
 
-        JsonConfig.settings.bigDecimalParseConfig.useJacksonBigDecimalParser mustEqual false
+        JsonConfig.settings.bigDecimalParseConfig.useJacksonParser.mustEqual(false)
 
-        JsonConfig.loadUseJacksonBigDecimalFastParser mustEqual false
+        JsonConfig.loadUseJacksonBigDecimalFastParser.mustEqual(false)
 
-        JsonConfig.settings.bigDecimalParseConfig.
-          useJacksonBigDecimalFastParser mustEqual false
-
+        JsonConfig.settings.bigDecimalParseConfig.useJacksonFastParser.mustEqual(false)
       }
     }
 
     "override nesting depth (parsing)" in withProperty(JsonConfig.maxNestingDepth, "200") {
-      JsonConfig.loadMaxNestingDepth mustEqual 200
+      JsonConfig.loadMaxNestingDepth.mustEqual(200)
     }
 
-    "override nesting depth (serializer)" in withProperty(
-      JsonConfig.maxSerializerNestingDepth, "300") {
+    "override nesting depth (serializer)" in withProperty(JsonConfig.maxSerializerNestingDepth, "300") {
 
-      JsonConfig.loadMaxSerializerNestingDepth mustEqual 300
+      JsonConfig.loadMaxSerializerNestingDepth.mustEqual(300)
     }
 
-    "override use of Jackson BigDecimal parser" in withProperty(
-      "play.json.parser.useJacksonBigDecimalParser", "true") {
-      JsonConfig.loadUseJacksonBigDecimalParser mustEqual true
+    "override use of Jackson BigDecimal parser" in withProperty("play.json.parser.useJacksonBigDecimalParser", "true") {
+      JsonConfig.loadUseJacksonBigDecimalParser.mustEqual(true)
     }
 
     "override the use of Jackson BigDecimal fast parser" in withProperty(
-      "play.json.parser.useJacksonBigDecimalFastParser", "true") {
-      JsonConfig.loadUseJacksonBigDecimalFastParser mustEqual true
+      "play.json.parser.useJacksonBigDecimalFastParser",
+      "true"
+    ) {
+      JsonConfig.loadUseJacksonBigDecimalFastParser.mustEqual(true)
     }
   }
 

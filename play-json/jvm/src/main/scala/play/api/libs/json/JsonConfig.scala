@@ -51,14 +51,14 @@ sealed trait BigDecimalParseConfig {
    * and this can be further configured to use a fast parser.
    * This can be set using the [[JsonConfig.useJacksonParserProperty]] system property.
    */
-  def useJacksonBigDecimalParser: Boolean
+  def useJacksonParser: Boolean
 
   /**
    * Only used when `useJacksonBigDecimalParser` is true.
    * This can be set using the [[JsonConfig.useJacksonBigDecimalFastParserProperty]]
    * system property.
    */
-  def useJacksonBigDecimalFastParser: Boolean
+  def useJacksonFastParser: Boolean
 }
 
 object BigDecimalParseConfig {
@@ -67,14 +67,14 @@ object BigDecimalParseConfig {
       mathContext: MathContext = defaultMathContext,
       scaleLimit: Int = defaultScaleLimit,
       digitsLimit: Int = defaultDigitsLimit,
-      useJacksonBigDecimalParser: Boolean = false,
-      useJacksonBigDecimalFastParser: Boolean = false
+      useJacksonParser: Boolean = false,
+      useJacksonFastParser: Boolean = false
   ): BigDecimalParseConfig = BigDecimalParseConfigImpl(
     mathContext,
     scaleLimit,
     digitsLimit,
-    useJacksonBigDecimalParser,
-    useJacksonBigDecimalFastParser
+    useJacksonParser,
+    useJacksonFastParser
   )
 }
 
@@ -82,14 +82,14 @@ private final case class BigDecimalParseConfigImpl(
     mathContext: MathContext,
     scaleLimit: Int,
     digitsLimit: Int,
-    useJacksonBigDecimalParser: Boolean,
-    useJacksonBigDecimalFastParser: Boolean
+    useJacksonParser: Boolean,
+    useJacksonFastParser: Boolean
 ) extends BigDecimalParseConfig
 
 private object BigDecimalParseConfigImpl
     extends scala.runtime.AbstractFunction3[MathContext, Int, Int, BigDecimalParseConfig] {
 
-  @deprecated("Specify useJacksonBigDecimalParser and useJacksonBigDecimalFastParser parameters", "")
+  @deprecated("Specify useJacksonParser and useJacksonFastParser parameters", "")
   def apply(
       mathContext: MathContext,
       scaleLimit: Int,
