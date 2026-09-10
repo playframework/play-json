@@ -8,24 +8,22 @@ import com.fasterxml.jackson.core.exc.StreamConstraintsException
 
 import java.io.ByteArrayInputStream
 import java.math.BigInteger
-import java.util.Calendar
-import java.util.Date
-import java.util.TimeZone
+import java.util.{ Calendar, Date, TimeZone }
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.fasterxml.jackson.databind.node.{ ArrayNode, NumericNode, ObjectNode }
+
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
 import play.api.libs.json.jackson.{ JacksonJson, PlayJsonMapperModule }
 
-class JsonSpec extends org.specs2.mutable.Specification {
-
+final class JsonSpec extends org.specs2.mutable.Specification {
   sequential
 
   "JSON".title
 
   import java.text.SimpleDateFormat
+
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ssX" // Iso8601 format (forgot timezone stuff)
   val dateParser = new SimpleDateFormat(dateFormat)
 
@@ -46,7 +44,7 @@ class JsonSpec extends org.specs2.mutable.Specification {
     }
   }
 
-  val exceedsDigitsLimit: BigDecimal         = BigDecimal("9" * 1000000)
+  import JsonSpec.exceedsDigitsLimit
   val exceedsDigitsLimitNegative: BigDecimal = exceedsDigitsLimit.unary_-
 
   val invalidJsonExceedingNumberOfDigits: String = s"""
@@ -703,4 +701,8 @@ class JsonSpec extends org.specs2.mutable.Specification {
     }
     ok
   }
+}
+
+object JsonSpec {
+  val exceedsDigitsLimit: BigDecimal = BigDecimal("9" * 1000000)
 }

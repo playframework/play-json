@@ -84,13 +84,7 @@ object JsMacroImpl { // TODO: debug
 
   inline private def withSelfOReads[A](
       f: Reads[A] => Reads[A]
-  ): Reads[A] = {
-    new Reads[A] { self =>
-      lazy val underlying = f(self)
-
-      def reads(js: JsValue): JsResult[A] = underlying.reads(js)
-    }
-  }
+  ): Reads[A] = new Reads.DelegatingReads[A](f)
 
   private def configuredReads[A: Type, OptsT <: MacroOptions: Type](
       config: Expr[JsonConfiguration],
@@ -450,13 +444,7 @@ object JsMacroImpl { // TODO: debug
 
   inline private def withSelfOWrites[A](
       f: OWrites[A] => OWrites[A]
-  ): OWrites[A] = {
-    new OWrites[A] { self =>
-      lazy val underlying = f(self)
-
-      def writes(a: A): JsObject = underlying.writes(a)
-    }
-  }
+  ): OWrites[A] = new OWrites.DelegatingOWrites[A](f)
 
   private def configuredWrites[A: Type, OptsT <: MacroOptions: Type](
       config: Expr[JsonConfiguration],
