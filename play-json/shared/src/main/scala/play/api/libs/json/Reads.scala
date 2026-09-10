@@ -286,7 +286,9 @@ trait LowPriorityDefaultReads extends EnvReads {
         ts.iterator.zipWithIndex
           .foldLeft(JsSuccess {
             val b = bf.newBuilder
+
             b.sizeHint(ts)
+
             b
           }: JsResult[Builder[A, F[A]]]) { case (acc, (elem, idx)) =>
             (acc, ra.reads(elem)) match {
@@ -297,9 +299,11 @@ trait LowPriorityDefaultReads extends EnvReads {
             }
           }
           .map(_.result())
+
       case _ => JsError(Seq(JsPath -> Seq(JsonValidationError("error.expected.jsarray"))))
     }
   }
+
 }
 
 /**
@@ -529,6 +533,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
   implicit def mapReads[K, V](k: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
     case JsObject(m) => {
       type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+
       def locate(e: Errors, key: String) = e.map { case (p, valerr) =>
         (JsPath \ key) ++ p -> valerr
       }
@@ -566,9 +571,8 @@ trait DefaultReads extends LowPriorityDefaultReads {
   /**
    * Deserializer for Array[T] types.
    */
-  implicit def ArrayReads[T: Reads: ClassTag]: Reads[Array[T]] = new Reads[Array[T]] {
-    def reads(json: JsValue) = json.validate[List[T]].map(_.toArray)
-  }
+  implicit def ArrayReads[T: Reads: ClassTag]: Reads[Array[T]] =
+    Reads[Array[T]](_.validate[List[T]].map(_.toArray))
 
   /**
    * Deserializer for java.net.URI
@@ -585,9 +589,8 @@ trait DefaultReads extends LowPriorityDefaultReads {
   class UUIDReader(checkValidity: Boolean) extends Reads[java.util.UUID] {
     import java.util.UUID
 
-    import scala.util.Try
+    def check(s: String)(u: UUID): Boolean = u != null && s == u.toString
 
-    def check(s: String)(u: UUID): Boolean = u != null && s == u.toString()
     def parseUuid(s: String): Option[UUID] = {
       val uncheckedUuid = Try(UUID.fromString(s)).toOption
 
