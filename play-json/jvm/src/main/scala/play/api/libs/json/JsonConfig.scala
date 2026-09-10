@@ -4,15 +4,16 @@
 
 package play.api.libs.json
 
-import com.fasterxml.jackson.core.StreamReadConstraints
-import com.fasterxml.jackson.core.StreamWriteConstraints
+import com.fasterxml.jackson.core.{ StreamReadConstraints, StreamWriteConstraints }
 
-import play.api.libs.json.JsonConfig.defaultMaxPlain
-import play.api.libs.json.JsonConfig.defaultMinPlain
-import play.api.libs.json.JsonConfig.defaultDigitsLimit
-import play.api.libs.json.JsonConfig.defaultMathContext
-import play.api.libs.json.JsonConfig.defaultPreserveZeroDecimal
-import play.api.libs.json.JsonConfig.defaultScaleLimit
+import play.api.libs.json.JsonConfig.{
+  defaultMaxPlain,
+  defaultMinPlain,
+  defaultDigitsLimit,
+  defaultMathContext,
+  defaultPreserveZeroDecimal,
+  defaultScaleLimit
+}
 
 import java.math.MathContext
 
@@ -44,18 +45,57 @@ sealed trait BigDecimalParseConfig {
    * This can be set using the [[JsonConfig.digitsLimitProperty]] system property.
    */
   def digitsLimit: Int
+
+  /**
+   * Jackson has its own parser for `BigDecimal`
+   * and this can be further configured to use a fast parser.
+   * This can be set using the [[JsonConfig.useJacksonParserProperty]] system property.
+   */
+  def useJacksonParser: Boolean
+
+  /**
+   * Only used when `useJacksonBigDecimalParser` is true.
+   * This can be set using the [[JsonConfig.useJacksonBigDecimalFastParserProperty]]
+   * system property.
+   */
+  def useJacksonFastParser: Boolean
 }
 
 object BigDecimalParseConfig {
+
   def apply(
       mathContext: MathContext = defaultMathContext,
       scaleLimit: Int = defaultScaleLimit,
-      digitsLimit: Int = defaultDigitsLimit
-  ): BigDecimalParseConfig = BigDecimalParseConfigImpl(mathContext, scaleLimit, digitsLimit)
+      digitsLimit: Int = defaultDigitsLimit,
+      useJacksonParser: Boolean = false,
+      useJacksonFastParser: Boolean = false
+  ): BigDecimalParseConfig = BigDecimalParseConfigImpl(
+    mathContext,
+    scaleLimit,
+    digitsLimit,
+    useJacksonParser,
+    useJacksonFastParser
+  )
 }
 
-private final case class BigDecimalParseConfigImpl(mathContext: MathContext, scaleLimit: Int, digitsLimit: Int)
-    extends BigDecimalParseConfig
+private final case class BigDecimalParseConfigImpl(
+    mathContext: MathContext,
+    scaleLimit: Int,
+    digitsLimit: Int,
+    useJacksonParser: Boolean,
+    useJacksonFastParser: Boolean
+) extends BigDecimalParseConfig
+
+private object BigDecimalParseConfigImpl
+    extends scala.runtime.AbstractFunction3[MathContext, Int, Int, BigDecimalParseConfig] {
+
+  @deprecated("Specify useJacksonParser and useJacksonFastParser parameters", "")
+  def apply(
+      mathContext: MathContext,
+      scaleLimit: Int,
+      digitsLimit: Int,
+  ): BigDecimalParseConfig = BigDecimalParseConfigImpl(mathContext, scaleLimit, digitsLimit, false, false)
+}
 
 sealed trait BigDecimalSerializerConfig {
 
@@ -153,6 +193,18 @@ object JsonConfig {
   val digitsLimitProperty: String = "play.json.parser.digitsLimit"
 
   /**
+   * The system property to toggle the Jackson BigDecimal parser
+   */
+  val useJacksonBigDecimalParserProperty: String =
+    "play.json.parser.useJacksonBigDecimalParser"
+
+  /**
+   * The system property to toggle the fast-mode for the Jackson BigDecimal parser
+   */
+  val useJacksonBigDecimalFastParserProperty: String =
+    "play.json.parser.useJacksonBigDecimalFastParser"
+
+  /**
    * The system property to override the math context. This can be "decimal32", "decimal64", "decimal128" (the default),
    * or "unlimited".
    */
@@ -195,6 +247,12 @@ object JsonConfig {
 
   private[json] def loadMathContext: MathContext = parseMathContext(mathContextProperty)
 
+  private[json] def loadUseJacksonBigDecimalParser: Boolean =
+    prop(useJacksonBigDecimalParserProperty, false)(_.toBoolean)
+
+  private[json] def loadUseJacksonBigDecimalFastParser: Boolean =
+    prop(useJacksonBigDecimalFastParserProperty, false)(_.toBoolean)
+
   private[json] def loadMinPlain: BigDecimal = prop(minPlainProperty, defaultMinPlain)(BigDecimal.exact)
 
   private[json] def loadMaxPlain: BigDecimal = prop(maxPlainProperty, defaultMaxPlain)(BigDecimal.exact)
@@ -229,7 +287,13 @@ object JsonConfig {
   // To override, call JacksonJson.setConfig()
   val settings: JsonConfig =
     JsonConfig(
-      BigDecimalParseConfig(loadMathContext, loadScaleLimit, loadDigitsLimit),
+      BigDecimalParseConfig(
+        loadMathContext,
+        loadScaleLimit,
+        loadDigitsLimit,
+        loadUseJacksonBigDecimalParser,
+        loadUseJacksonBigDecimalFastParser
+      ),
       BigDecimalSerializerConfig(loadMinPlain, loadMaxPlain, loadPreserveZeroDecimal),
       defaultStreamReadConstraints,
       defaultStreamWriteConstraints
