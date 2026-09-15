@@ -522,7 +522,8 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
     "handle case class with generic type" when {
       lazy val format1 = Json.format[GenericCaseClassWithDefault[Int]]
 
-      lazy val format2 = Json.using[Json.MacroOptions with Json.DefaultValues].format[GenericCaseClassWithDefault[Int]]
+      // Use the cross-version alias: Scala 2 requires `with`, whereas Scala 3 uses `&`.
+      lazy val format2 = Json.using[Json.WithDefaultValues].format[GenericCaseClassWithDefault[Int]]
 
       "field with default value" in {
         val expected     = GenericCaseClassWithDefault(3)

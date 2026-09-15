@@ -24,13 +24,22 @@ final class QuotesSpec extends AnyWordSpec with Matchers with org.scalatestplus.
       }
 
       "generic Bar" in {
-        testProductElements[Bar[Int]].mustEqual(
-          List(
-            "(val name,List(),TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class scala)),object Predef),type String))",
-            "(val opt,List(),AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Option),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int))))",
-            "(val scores,List(),AppliedType(TypeRef(ThisType(TypeRef(NoPrefix,module class immutable)),trait Seq),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Double))))"
+        // The reflected type is unchanged, but its internal representation differs between Scala 3.3 and 3.9+.
+        val elements = testProductElements[Bar[Int]]
+        elements
+          .take(2)
+          .mustEqual(
+            List(
+              "(val name,List(),TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class scala)),object Predef),type String))",
+              "(val opt,List(),AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Option),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int))))"
+            )
           )
-        )
+        Set(
+          // Scala 3.3
+          "(val scores,List(),AppliedType(TypeRef(ThisType(TypeRef(NoPrefix,module class immutable)),trait Seq),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Double))))",
+          // Scala 3.9+
+          "(val scores,List(),AppliedType(TypeRef(TermRef(TermRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),object collection),object immutable),trait Seq),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Double))))"
+        ).must(contain(elements(2)))
       }
 
       "of non-case class" when {

@@ -214,7 +214,7 @@ sealed trait JsonFacade {
  * @define macroTypeParam @tparam The type for which the handler must be materialized
  * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
  */
-object Json extends JsonFacade with JsMacros with JsValueMacros {
+object Json extends JsonFacade with JsMacros with JsValueMacros with ScalaCompatJson {
   def parse(input: String): JsValue = StaticBinding.parseJsValue(input)
 
   def tryParse(input: String): Try[JsValue] = Try(StaticBinding.parseJsValue(input))
@@ -492,14 +492,4 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
    */
   trait DefaultValues { self: MacroOptions => }
 
-  /**
-   * Alias for `MacroOptions with DefaultValues`
-   *
-   * {{{
-   * import play.api.libs.json.Json
-   *
-   * Json.using[Json.WithDefaultValues]
-   * }}}
-   */
-  type WithDefaultValues = MacroOptions with DefaultValues
 }
