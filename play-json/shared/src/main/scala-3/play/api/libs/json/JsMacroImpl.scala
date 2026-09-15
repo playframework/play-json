@@ -704,7 +704,7 @@ object JsMacroImpl { // TODO: debug
                   withField { v =>
                     ('{
                       val nme = ${ config }.naming(${ Expr(pname) })
-                      ${ bufOk } += nme -> ${ writes }.writes(${ v.asExprOf[p] })
+                      ${ bufOk } += ((nme, ${ writes }.writes(${ v.asExprOf[p] })))
                       ()
                     }).asTerm
                   }.asExprOf[Unit]
