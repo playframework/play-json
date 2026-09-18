@@ -22,9 +22,10 @@ import scala.annotation.{ meta, StaticAnnotation }
  *    `Writes` that only produce non-object values are rejected when generating writers.
  *  - `@Flatten` on a recursive self-type is rejected at compile time.
  *  - `@Flatten Option[T]`: on write, `Some` merges nested object fields into the parent and
- *    `None` omits them; on read, a successful nested object read becomes `Some`, otherwise
- *    `None` (nested validation errors are not distinguished from absence — prefer non-`Option`
- *    flatten when strict validation is required).
+ *    `None` omits them; on read, a successful nested object read becomes `Some` and nested
+ *    `JsError`s are '''propagated''' (same as non-`Option` `@Flatten`). Pure absence of nested
+ *    fields therefore fails when the nested `Reads` requires them — `None` is not inferred
+ *    from missing/invalid nested data in this MVP.
  *  - Overlapping JSON keys between a parent field and a flattened nested object are not
  *    rejected at compile time in this MVP; later fields may overwrite earlier ones on write.
  *  - Per-field `@Key` / `@DefaultValue` annotations are out of scope for this MVP

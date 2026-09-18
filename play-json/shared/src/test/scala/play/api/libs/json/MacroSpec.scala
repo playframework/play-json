@@ -613,7 +613,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
         val noneJson  = Json.obj("name" -> "r")
 
         format.writes(noneValue) mustEqual noneJson
-        // Limitation: absence and invalid nested both yield None on read.
+
         format.reads(noneJson) mustEqual JsSuccess(noneValue)
       }
 

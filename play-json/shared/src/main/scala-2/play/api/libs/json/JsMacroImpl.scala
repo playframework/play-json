@@ -692,17 +692,19 @@ class JsMacroImpl(val c: blackbox.Context) {
       /**
        * `@Flatten` write path needs a nested object. Prefer the already-resolved
        * `impl` when it is already an `OWrites`/`OFormat`; otherwise require an
-       * `OWrites` in scope (compile-time, like BSONDocumentWriter checks).
+       * `OWrites` in scope (compile-time).
        */
       def ensureOWrites(tpe: Type, impl: Tree, pname: String): Tree = {
         val owTpe = appliedType(owritesTpeCtor, tpe)
-        val typed =
+        val typed = {
           if (impl.tpe != null) impl
-          else
+          else {
             c.typecheck(impl, pt = owTpe, silent = true) match {
               case EmptyTree => impl
               case t         => t
             }
+          }
+        }
 
         if (typed.tpe != null && typed.tpe <:< owTpe) {
           typed
@@ -728,8 +730,8 @@ class JsMacroImpl(val c: blackbox.Context) {
           default: Option[Tree],
           selfRef: Boolean
       ): Tree = {
-        val pname    = name.decodedName.toString
-        val isOption = paramType.typeConstructor <:< optTpeCtor
+        val pname        = name.decodedName.toString
+        val isOption     = paramType.typeConstructor <:< optTpeCtor
         val defaultValue = // not applicable for 'write' only
           default.filter(_ => methodName != "write")
 
@@ -773,33 +775,39 @@ class JsMacroImpl(val c: blackbox.Context) {
               q"""$json.OWrites[$paramType] {
                 case _root_.scala.Some(inner) =>
                   ($ow: $json.OWrites[$innerTpe]).writes(inner)
+
                 case _root_.scala.None =>
                   $json.JsObject.empty
               }"""
             }
 
+            lazy val optionRead: Tree =
+              q"""$json.Reads[$paramType] { js =>
+                ($impl: $json.Reads[$innerTpe]).reads(js) match {
+                  case $json.JsSuccess(v, _) =>
+                    $json.JsSuccess((_root_.scala.Some(v): $paramType))
+
+                  case $json.JsError(details) if (details.forall {
+                    case (_, List($json.JsonValidationError.Message("error.path.missing"))) =>
+                      true
+
+                    case _ =>
+                      false
+                  }) => $json.JsSuccess(Option.empty[${innerTpe}])
+
+                  case $json.JsError(cause) => $json.JsError(cause)
+                }
+              }"""
+
             methodName match {
               case "read" =>
-                q"""$json.Reads[$paramType] { js =>
-                  ($impl: $json.Reads[$innerTpe]).reads(js) match {
-                    case $json.JsSuccess(v, _) => $json.JsSuccess(_root_.scala.Some(v): $paramType)
-                    case _: $json.JsError     => $json.JsSuccess(_root_.scala.None: $paramType)
-                  }
-                }"""
+                optionRead
 
               case "write" =>
                 optionWrite
 
               case _ =>
-                q"""$json.OFormat[$paramType](
-                  $json.Reads[$paramType] { js =>
-                    ($impl: $json.Reads[$innerTpe]).reads(js) match {
-                      case $json.JsSuccess(v, _) => $json.JsSuccess(_root_.scala.Some(v): $paramType)
-                      case _: $json.JsError     => $json.JsSuccess(_root_.scala.None: $paramType)
-                    }
-                  },
-                  $optionWrite
-                )"""
+                q"$json.OFormat[$paramType]($optionRead, $optionWrite)"
             }
           } else {
             lazy val nestedWrite: Tree = {
@@ -1023,7 +1031,7 @@ class JsMacroImpl(val c: blackbox.Context) {
         val namedTypes: List[(Name, Type)] = utility.params
 
         val resolvedImplicits: List[(Symbol, Name, Implicit)] =
-          params.lazyZip(namedTypes).map { case (param, (name, tpe)) =>
+          (params, namedTypes).zipped.map { case (param, (name, tpe)) =>
             (param, name, createImplicit(tpe))
           }.toList
 

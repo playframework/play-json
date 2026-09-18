@@ -244,25 +244,30 @@ sealed trait JsResult[+A] { self =>
       if (p(a)) JsSuccess(a) else otherwise
     }
 
-  def collect[B](otherwise: JsonValidationError)(p: PartialFunction[A, B]): JsResult[B] = flatMap {
-    case t if p.isDefinedAt(t) => JsSuccess(p(t))
-    case _                     => JsError(otherwise)
-  }
+  def collect[B](otherwise: JsonValidationError)(p: PartialFunction[A, B]): JsResult[B] =
+    flatMap {
+      case t if p.isDefinedAt(t) => JsSuccess(p(t))
+      case _                     => JsError(otherwise)
+    }
 
   def withFilter(p: A => Boolean) = new WithFilter(p)
 
   final class WithFilter(p: A => Boolean) {
     def map[B](f: A => B): JsResult[B] = self match {
-      case JsSuccess(a, path) =>
+      case JsSuccess(a, path) => {
         if (p(a)) JsSuccess(f(a), path)
         else JsError()
+      }
+
       case e @ JsError(_) => e
     }
 
     def flatMap[B](f: A => JsResult[B]): JsResult[B] = self match {
-      case JsSuccess(a, path) =>
+      case JsSuccess(a, path) => {
         if (p(a)) f(a).repath(path)
         else JsError()
+      }
+
       case e @ JsError(_) => e
     }
 
