@@ -561,6 +561,68 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
       }
     }
 
+    "support @Ignore annotation" when {
+      "constructor default is available" in {
+        val format = Json.format[UserWithIgnoredSecret]
+        val user   = UserWithIgnoredSecret("alice", "top-secret")
+        val json   = Json.obj("name" -> "alice")
+
+        format.writes(user) mustEqual json
+
+        format.reads(json) mustEqual JsSuccess(UserWithIgnoredSecret("alice", "default-secret"))
+      }
+
+      "Option field has no default" in {
+        val format = Json.format[UserWithIgnoredOption]
+        val user   = UserWithIgnoredOption("bob", Some("tok"))
+        val json   = Json.obj("name" -> "bob")
+
+        format.writes(user) mustEqual json
+
+        format.reads(json) mustEqual JsSuccess(UserWithIgnoredOption("bob", None))
+      }
+
+      "non-Option without default fails to compile" in {
+        "Json.reads[NotIgnorable]" mustNot typeCheck
+        "Json.format[NotIgnorable]" mustNot typeCheck
+      }
+    }
+
+    "support @Flatten annotation" when {
+      "nested object fields are merged into the parent" in {
+        val format = Json.format[LabelledRange]
+        val value  = LabelledRange("range1", Range(2, 5))
+        val json   = Json.obj("name" -> "range1", "start" -> 2, "end" -> 5)
+
+        format.writes(value) mustEqual json
+
+        format.reads(json) mustEqual JsSuccess(value)
+      }
+
+      "Option nested Some merges and None omits" in {
+        val format = Json.format[OptionalFlattenRange]
+
+        val someValue = OptionalFlattenRange("r", Some(Range(1, 3)))
+        val someJson  = Json.obj("name" -> "r", "start" -> 1, "end" -> 3)
+
+        format.writes(someValue) mustEqual someJson
+
+        format.reads(someJson) mustEqual JsSuccess(someValue)
+
+        val noneValue = OptionalFlattenRange("r", None)
+        val noneJson  = Json.obj("name" -> "r")
+
+        format.writes(noneValue) mustEqual noneJson
+        // Limitation: absence and invalid nested both yield None on read.
+        format.reads(noneJson) mustEqual JsSuccess(noneValue)
+      }
+
+      "non-object nested type fails to compile writers" in {
+        "Json.writes[InvalidFlattenPrimitive]" mustNot typeCheck
+        "Json.format[InvalidFlattenPrimitive]" mustNot typeCheck
+      }
+    }
+
     "field ordering" in {
       // https://github.com/playframework/play-json/issues/1038
       val instance: OWrites[FieldOrderTest] = Json.writes[FieldOrderTest]
@@ -580,6 +642,7 @@ class MacroSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalach
             "x6" -> 6,
           ).map { case (k, v) => k -> JsNumber(v) }
         )
+
       assert(instance.writes(value).value.isInstanceOf[ImmutableLinkedHashMap[?, ?]])
     }
   }
@@ -702,4 +765,33 @@ object MacroSpec {
       data: A,
       descr: String = "something"
   )
+
+  // --- @Ignore / @Flatten fixtures
+
+  case class Range(start: Int, end: Int)
+
+  object Range {
+    implicit val format: OFormat[Range] = Json.format[Range]
+  }
+
+  case class LabelledRange(name: String, @Json.Annotations.Flatten range: Range)
+
+  case class OptionalFlattenRange(
+      name: String,
+      @Json.Annotations.Flatten range: Option[Range]
+  )
+
+  case class UserWithIgnoredSecret(
+      name: String,
+      @Json.Annotations.Ignore secret: String = "default-secret"
+  )
+
+  case class UserWithIgnoredOption(
+      name: String,
+      @Json.Annotations.Ignore token: Option[String]
+  )
+
+  case class NotIgnorable(@Json.Annotations.Ignore title: String, score: Int)
+
+  case class InvalidFlattenPrimitive(@Json.Annotations.Flatten name: String)
 }

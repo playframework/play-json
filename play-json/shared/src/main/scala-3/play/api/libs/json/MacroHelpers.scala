@@ -17,6 +17,23 @@ private[json] trait MacroHelpers { self: OptionSupport =>
   // format: off
   private given q: Q = quotes
 
+  protected final lazy val ignoreAnnotationRepr: TypeRepr =
+    TypeRepr.of[Json.Annotations.Ignore]
+
+  protected final lazy val flattenAnnotationRepr: TypeRepr =
+    TypeRepr.of[Json.Annotations.Flatten]
+
+  protected final lazy val transientAnnotationRepr: TypeRepr =
+    TypeRepr.of[scala.transient]
+
+  protected final def ignoreField(param: Symbol): Boolean =
+    param.annotations.exists { ann =>
+      ann.tpe =:= ignoreAnnotationRepr || ann.tpe =:= transientAnnotationRepr
+    }
+
+  protected final def hasFlatten(param: Symbol): Boolean =
+    param.annotations.exists(_.tpe =:= flattenAnnotationRepr)
+
   /* Some(A) for Option[A] else None */
   protected object OptionTypeParameter {
 

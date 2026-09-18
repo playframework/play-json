@@ -240,10 +240,10 @@ object JsMacroImpl { // TODO: debug
                 }
 
                 val resolve = resolver[Reads, sub](
+                  // Parent forward codec; subtype view is only valid at runtime.
                   '{
                     @SuppressWarnings(Array("AsInstanceOf"))
-                    def forward =
-                      ${ forwardExpr }.asInstanceOf[Reads[sub]]
+                    def forward = ${ forwardExpr }.asInstanceOf[Reads[sub]]
 
                     forward
                   },
@@ -314,27 +314,37 @@ object JsMacroImpl { // TODO: debug
       val resolve = resolver[Reads, T](forwardExpr, debug)(readsTpe)
       val compCls = tpr.typeSymbol.companionClass
 
+      def ctorDefault[t: Type](sym: Symbol, i: Int): Option[Expr[t]] = {
+        if (!sym.flags.is(Flags.HasDefault)) {
+          None
+        } else {
+          compCls.declaredMethod(f"$$lessinit$$greater$$default$$" + (i + 1)).headOption.map {
+            case defaultSym =>
+              val select = Ref(tpr.typeSymbol.companionModule).select(defaultSym)
+              val tree =
+                TypeRepr.of[T].typeArgs match {
+                  case Nil      => select
+                  case typeArgs => select.appliedToTypes(typeArgs)
+                }
+
+              tree.asExprOf[t]
+          }
+        }
+      }
+
       val (optional, required) = tprElements.zipWithIndex
         .map { case ((sym, rpt), i) =>
           val pt = rpt.dealias
 
           pt.asType match {
             case '[t] =>
+              // @Ignore always needs a materialised value on read; use ctor defaults
+              // even when Json.DefaultValues is not enabled (documented limitation).
               val default: Option[Expr[t]] = {
-                if (!sym.flags.is(Flags.HasDefault) || !hasOption[Json.DefaultValues]) {
-                  None
+                if (ignoreField(sym) || hasOption[Json.DefaultValues]) {
+                  ctorDefault[t](sym, i)
                 } else {
-                  compCls.declaredMethod(f"$$lessinit$$greater$$default$$" + (i + 1)).headOption.map {
-                    case defaultSym  =>
-                      val select = Ref(tpr.typeSymbol.companionModule).select(defaultSym)
-                      val tree =
-                        TypeRepr.of[T].typeArgs match {
-                          case Nil      => select
-                          case typeArgs => select.appliedToTypes(typeArgs)
-                        }
-
-                      tree.asExprOf[t]
-                  }
+                  None
                 }
               }
 
@@ -348,32 +358,61 @@ object JsMacroImpl { // TODO: debug
         val reqElmts: Seq[(Int, Expr[JsResult[_]])] = required.map { case ReadableField(param, n, pt, defaultValue) =>
           pt.asType match {
             case ptpe @ '[p] =>
-              val reads: Expr[Reads[p]] = resolve(pt) match {
-                case Some((givenReads, _)) =>
-                  givenReads.asExprOf[Reads[p]]
-
-                case _ =>
-                  report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[${prettyType(pt)}]")
-              }
-
               val pname = param.name
 
-              val get: Expr[JsResult[p]] = {
-                val field = '{ ${ config }.naming(${ Expr(pname) }) }
-                val path  = '{ JsPath \ ${ field } }
-
-                val pathReads: Expr[Reads[p]] = defaultValue match {
+              if (ignoreField(param)) {
+                defaultValue match {
                   case Some(v) =>
-                    '{ ${ path }.readWithDefault[p](${ v.asExprOf[p] })($reads) }
+                    n -> '{ JsSuccess(${ v.asExprOf[p] }) }
+
+                  case None =>
+                    report.errorAndAbort(
+                      s"Cannot ignore '${prettyType(tpr)}.${pname}': no default value (constructor default or Option)"
+                    )
+                }
+              } else {
+                val (readsTerm, selfRef) = resolve(pt) match {
+                  case Some(r) => r
 
                   case _ =>
-                    '{ ${ path }.read[p]($reads) }
+                    report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[${prettyType(pt)}]")
                 }
 
-                '{ ${ pathReads }.reads($input) }
-              }
+                val reads: Expr[Reads[p]] = readsTerm.asExprOf[Reads[p]]
 
-              n -> get
+                val get: Expr[JsResult[p]] = {
+                  if (hasFlatten(param)) {
+                    if (selfRef) {
+                      report.errorAndAbort(
+                        s"Cannot flatten reader for '${prettyType(tpr)}.${pname}': recursive type"
+                      )
+                    }
+
+                    defaultValue match {
+                      case Some(v) =>
+                        '{ ${ reads }.reads($input).orElse(JsSuccess(${ v.asExprOf[p] })) }
+
+                      case None =>
+                        '{ ${ reads }.reads($input) }
+                    }
+                  } else {
+                    val field = '{ ${ config }.naming(${ Expr(pname) }) }
+                    val path  = '{ JsPath \ ${ field } }
+
+                    val pathReads: Expr[Reads[p]] = defaultValue match {
+                      case Some(v) =>
+                        '{ ${ path }.readWithDefault[p](${ v.asExprOf[p] })($reads) }
+
+                      case _ =>
+                        '{ ${ path }.read[p]($reads) }
+                    }
+
+                    '{ ${ pathReads }.reads($input) }
+                  }
+                }
+
+                n -> get
+              }
           }
         }
 
@@ -393,32 +432,61 @@ object JsMacroImpl { // TODO: debug
 
             it.asType match {
               case '[i] =>
-                val reads: Expr[Reads[i]] = resolve(it) match {
-                  case Some((givenReads, _)) =>
-                    givenReads.asExprOf[Reads[i]]
-
-                  case _ =>
-                    report.errorAndAbort(s"Instance not found: ${classOf[Reads[_]].getName}[Option[${prettyType(it)}]]")
-                }
-
                 type p = Option[i]
 
-                val get: Expr[JsResult[p]] = {
-                  val field = '{ ${ config }.naming(${ Expr(pname) }) }
-                  val path  = '{ JsPath \ ${ field } }
-
-                  val pathReads: Expr[Reads[p]] = defaultValue match {
+                if (ignoreField(param)) {
+                  defaultValue match {
                     case Some(v) =>
-                      '{ ${ config }.optionHandlers.readHandlerWithDefault($path, ${ v.asExprOf[p] })($reads) }
+                      n -> '{ JsSuccess(${ v.asExprOf[p] }) }
+
+                    case None =>
+                      n -> '{ JsSuccess(Option.empty[i]) }
+                  }
+                } else {
+                  val (readsTerm, selfRef) = resolve(it) match {
+                    case Some(r) => r
 
                     case _ =>
-                      '{ ${ config }.optionHandlers.readHandler($path)($reads) }
+                      report.errorAndAbort(
+                        s"Instance not found: ${classOf[Reads[_]].getName}[Option[${prettyType(it)}]]"
+                      )
                   }
 
-                  '{ ${ pathReads }.reads($input) }
-                }
+                  val reads: Expr[Reads[i]] = readsTerm.asExprOf[Reads[i]]
 
-                n -> get
+                  val get: Expr[JsResult[p]] = {
+                    if (hasFlatten(param)) {
+                      if (selfRef) {
+                        report.errorAndAbort(
+                          s"Cannot flatten reader for '${prettyType(tpr)}.${pname}': recursive type"
+                        )
+                      }
+
+                      // Limitation: nested JsError becomes None (absence vs invalid not distinguished).
+                      '{
+                        ${ reads }.reads($input) match {
+                          case JsSuccess(v, _) => JsSuccess(Some(v): Option[i])
+                          case _: JsError      => JsSuccess(Option.empty[i])
+                        }
+                      }
+                    } else {
+                      val field = '{ ${ config }.naming(${ Expr(pname) }) }
+                      val path  = '{ JsPath \ ${ field } }
+
+                      val pathReads: Expr[Reads[p]] = defaultValue match {
+                        case Some(v) =>
+                          '{ ${ config }.optionHandlers.readHandlerWithDefault($path, ${ v.asExprOf[p] })($reads) }
+
+                        case _ =>
+                          '{ ${ config }.optionHandlers.readHandler($path)($reads) }
+                      }
+
+                      '{ ${ pathReads }.reads($input) }
+                    }
+                  }
+
+                  n -> get
+                }
             }
           }
 
@@ -594,7 +662,13 @@ object JsMacroImpl { // TODO: debug
                 }
 
                 val resolve = resolver[Writes, sub](
-                  '{ ${ forwardExpr }.asInstanceOf[Writes[sub]] },
+                  // Parent forward codec; subtype view is only valid at runtime.
+                  '{
+                    @SuppressWarnings(Array("AsInstanceOf"))
+                    def forward = ${ forwardExpr }.asInstanceOf[Writes[sub]]
+
+                    forward
+                  },
                   debug
                 )(writesTpe)
 
@@ -652,13 +726,14 @@ object JsMacroImpl { // TODO: debug
       val resolve = resolver[Writes, T](forwardExpr, debug)(writesTpe)
 
       val (optional, required) = tprElements.zipWithIndex.view
-        .map { case ((sym, rpt), i) =>
-          val pt = rpt.dealias
+        .collect {
+          case ((sym, rpt), i) if !ignoreField(sym) =>
+            val pt = rpt.dealias
 
-          pt.asType match {
-            case '[t] =>
-              WritableField(sym, i, pt)
-          }
+            pt.asType match {
+              case '[t] =>
+                WritableField(sym, i, pt)
+            }
         }
         .toSeq
         .partition { case WritableField(_, _, t) => isOptionalType(t) }
@@ -673,6 +748,25 @@ object JsMacroImpl { // TODO: debug
         }
 
       val (tupleTpe, withTupled) = withTuple[T, P, JsObject](tpr, toProduct)
+
+      /** `@Flatten` needs nested `OWrites` so `writes` is typed as `JsObject`. */
+      def ensureOWrites[p: Type](writesTerm: Term, pname: String, fieldTpr: TypeRepr): Expr[OWrites[p]] = {
+        val owTpe = TypeRepr.of[OWrites[p]]
+
+        if (writesTerm.tpe <:< owTpe) {
+          writesTerm.asExprOf[OWrites[p]]
+        } else {
+          Expr.summon[OWrites[p]] match {
+            case Some(ow) =>
+              ow
+
+            case None =>
+              report.errorAndAbort(
+                s"Cannot flatten writer for '${prettyType(tpr)}.${pname}': no OWrites for ${prettyType(fieldTpr)} (nested value must write a JsObject)"
+              )
+          }
+        }
+      }
 
       def writeFields(input: Expr[T]): Expr[JsObject] =
         withTupled(input) { tupled =>
@@ -693,20 +787,38 @@ object JsMacroImpl { // TODO: debug
 
               val expr = pt.asType match {
                 case pTpe @ '[p] =>
-                  val writes: Expr[Writes[p]] = resolve(pt) match {
-                    case Some((givenWrites, _)) =>
-                      givenWrites.asExprOf[Writes[p]]
+                  val (writesTerm, selfRef) = resolve(pt) match {
+                    case Some(w) => w
 
                     case _ =>
                       report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(pt)}]")
                   }
 
+                  val flatten = hasFlatten(param)
+
+                  if (flatten && selfRef) {
+                    report.errorAndAbort(
+                      s"Cannot flatten writer for '${prettyType(tpr)}.${pname}': recursive type"
+                    )
+                  }
+
                   withField { v =>
-                    ('{
-                      val nme = ${ config }.naming(${ Expr(pname) })
-                      ${ bufOk } += ((nme, ${ writes }.writes(${ v.asExprOf[p] })))
-                      ()
-                    }).asTerm
+                    if (flatten) {
+                      val ow = ensureOWrites[p](writesTerm, pname, pt)
+
+                      ('{
+                        ${ bufOk } ++= ${ ow }.writes(${ v.asExprOf[p] }).value
+                        ()
+                      }).asTerm
+                    } else {
+                      val writes: Expr[Writes[p]] = writesTerm.asExprOf[Writes[p]]
+
+                      ('{
+                        val nme = ${ config }.naming(${ Expr(pname) })
+                        ${ bufOk } += ((nme, ${ writes }.writes(${ v.asExprOf[p] })))
+                        ()
+                      }).asTerm
+                    }
                   }.asExprOf[Unit]
               }
               expr -> i
@@ -727,30 +839,55 @@ object JsMacroImpl { // TODO: debug
 
                 val expr = pt.asType match {
                   case pTpe @ '[p] =>
-                    val writes: Expr[Writes[p]] = resolve(pt) match {
-                      case Some((givenWrites, _)) =>
-                        givenWrites.asExprOf[Writes[p]]
+                    val (writesTerm, selfRef) = resolve(pt) match {
+                      case Some(w) => w
 
                       case _ =>
                         report.errorAndAbort(s"Instance not found: ${classOf[Writes[_]].getName}[${prettyType(pt)}]")
                     }
 
-                    val field = '{ ${ config }.naming(${ Expr(pname) }) }
-                    val path  = '{ JsPath \ ${ field } }
+                    val flatten = hasFlatten(param)
 
-                    val pathWrites: Expr[OWrites[Option[p]]] = '{
-                      ${ config }.optionHandlers.writeHandler($path)($writes)
+                    if (flatten && selfRef) {
+                      report.errorAndAbort(
+                        s"Cannot flatten writer for '${prettyType(tpr)}.${pname}': recursive type"
+                      )
                     }
 
-                    withField { v =>
-                      ('{
-                        val nme = ${ config }.naming(${ Expr(pname) })
-                        val js  = ${ pathWrites }.writes(${ v.asExprOf[Option[p]] })
+                    if (flatten) {
+                      // Some: merge nested object fields; None: omit (documented).
+                      val ow = ensureOWrites[p](writesTerm, pname, pt)
 
-                        ${ bufOk } ++= js.value
-                        ()
-                      }).asTerm
-                    }.asExprOf[Unit]
+                      withField { v =>
+                        ('{
+                          ${ v.asExprOf[Option[p]] } match {
+                            case Some(inner) =>
+                              ${ bufOk } ++= ${ ow }.writes(inner).value
+                              ()
+
+                            case None =>
+                              ()
+                          }
+                        }).asTerm
+                      }.asExprOf[Unit]
+                    } else {
+                      val writes: Expr[Writes[p]] = writesTerm.asExprOf[Writes[p]]
+                      val field                   = '{ ${ config }.naming(${ Expr(pname) }) }
+                      val path                    = '{ JsPath \ ${ field } }
+
+                      val pathWrites: Expr[OWrites[Option[p]]] = '{
+                        ${ config }.optionHandlers.writeHandler($path)($writes)
+                      }
+
+                      withField { v =>
+                        ('{
+                          val js = ${ pathWrites }.writes(${ v.asExprOf[Option[p]] })
+
+                          ${ bufOk } ++= js.value
+                          ()
+                        }).asTerm
+                      }.asExprOf[Unit]
+                    }
                 }
                 expr -> i
             } // end of extra.collect
