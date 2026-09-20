@@ -347,7 +347,7 @@ object JsMacroImpl { // TODO: debug
         .partition { case ReadableField(_, _, t, _) => isOptionalType(t) }
 
       def readFields(input: Expr[JsObject]): Expr[JsResult[T]] = {
-        val reqElmts: Seq[(Int, Expr[JsResult[_]])] = required.map { case ReadableField(param, n, pt, defaultValue) =>
+        def reqElmts: Seq[(Int, Expr[JsResult[_]])] = required.map { case ReadableField(param, n, pt, defaultValue) =>
           pt.asType match {
             case ptpe @ '[p] =>
               val pname = param.name
@@ -355,7 +355,7 @@ object JsMacroImpl { // TODO: debug
               if (ignoreField(param)) {
                 defaultValue match {
                   case Some(v) =>
-                    n -> '{ JsSuccess(${ v.asExprOf[p] }) }
+                    n -> ('{ JsSuccess(${ v.asExprOf[p] }) }: Expr[JsResult[p]])
 
                   case None =>
                     report.errorAndAbort(
@@ -429,10 +429,10 @@ object JsMacroImpl { // TODO: debug
                 if (ignoreField(param)) {
                   defaultValue match {
                     case Some(v) =>
-                      n -> '{ JsSuccess(${ v.asExprOf[p] }) }
+                      n -> ('{ JsSuccess(${ v.asExprOf[p] }) }: Expr[JsResult[p]])
 
                     case None =>
-                      n -> '{ JsSuccess(Option.empty[i]) }
+                      n -> ('{ JsSuccess(Option.empty[i]) }: Expr[JsResult[p]])
                   }
                 } else {
                   val (readsTerm, selfRef) = resolve(it) match {
