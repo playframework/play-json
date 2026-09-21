@@ -2,9 +2,7 @@
  * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-resolvers ++= DefaultOptions.resolvers(snapshot = true)
-
-resolvers += "Maven Snapshots".at("https://central.sonatype.com/repository/maven-snapshots/")
+resolvers += Resolver.sonatypeCentralSnapshots
 
 addSbtPlugin(
   "org.playframework" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "3.1.0-M10-173b8802-SNAPSHOT")
