@@ -5,8 +5,8 @@
 package play.api.libs.json
 
 import java.util.{ LinkedHashMap => JLinkedHashMap }
-import scala.collection.AbstractIterator
-import scala.collection.MapFactory
+
+import scala.collection.{ AbstractIterator, MapFactory }
 import scala.collection.immutable.AbstractMap
 import scala.collection.mutable
 
@@ -35,7 +35,7 @@ private[json] class ImmutableLinkedHashMap[A, +B](underlying: JLinkedHashMap[A, 
   override def mapFactory: MapFactory[Map] = ImmutableLinkedHashMap
 
   override def iterator: Iterator[(A, B)] = new AbstractIterator[(A, B)] {
-    private[this] val ui = underlying.entrySet().iterator()
+    private val ui = underlying.entrySet().iterator()
 
     override def hasNext: Boolean = ui.hasNext
 
@@ -65,7 +65,7 @@ private[json] object ImmutableLinkedHashMap extends MapFactory[Map] {
   override def from[K, V](it: IterableOnce[(K, V)]): Map[K, V] = (newBuilder ++= it).result()
 
   override def newBuilder[A, B]: mutable.Builder[(A, B), Map[A, B]] = new mutable.Builder[(A, B), Map[A, B]] {
-    private[this] var lhm = new JLinkedHashMap[A, B](0)
+    private var lhm = new JLinkedHashMap[A, B](0)
 
     override def clear(): Unit = lhm.clear()
 

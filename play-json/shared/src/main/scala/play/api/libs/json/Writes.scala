@@ -503,9 +503,11 @@ sealed trait LowPriorityWrites extends EnvWrites {
 
     Writes[Traversable[A]] { as =>
       val builder = mutable.ArrayBuilder.make[JsValue]
+
       as.foreach { a =>
         builder += w.writes(a)
       }
+
       JsArray(builder.result())
     }
     // Avoid resolution ambiguity with more specific Traversable Writes,
