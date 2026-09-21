@@ -529,9 +529,6 @@ trait DefaultReads extends LowPriorityDefaultReads {
   implicit def mapReads[K, V](k: String => JsResult[K])(implicit fmtv: Reads[V]): Reads[Map[K, V]] = Reads[Map[K, V]] {
     case JsObject(m) => {
       type Errors = Seq[(JsPath, Seq[JsonValidationError])]
-      def locate(e: Errors, key: String) = e.map { case (p, valerr) =>
-        (JsPath \ key) ++ p -> valerr
-      }
 
       // !! Keep accumulating the error after the first one
       m.foldLeft(Right(Map.empty): Either[Errors, Map[K, V]]) { case (acc, (key, value)) =>
@@ -542,9 +539,9 @@ trait DefaultReads extends LowPriorityDefaultReads {
 
         (acc, result) match {
           case (Right(vs), JsSuccess(v, _)) => Right(vs + v)
-          case (Right(_), JsError(e))       => Left(locate(e, key))
+          case (Right(_), e @ JsError(_))   => Left(e.prefixed(key))
           case (Left(e), _: JsSuccess[?])   => Left(e)
-          case (Left(e1), JsError(e2))      => Left(e1 ++ locate(e2, key))
+          case (Left(e1), e2 @ JsError(_))  => Left(e1 ++ e2.prefixed(key))
         }
       }.fold(JsError.apply, res => JsSuccess(res))
     }
@@ -588,6 +585,7 @@ trait DefaultReads extends LowPriorityDefaultReads {
     import scala.util.Try
 
     def check(s: String)(u: UUID): Boolean = u != null && s == u.toString()
+
     def parseUuid(s: String): Option[UUID] = {
       val uncheckedUuid = Try(UUID.fromString(s)).toOption
 
@@ -629,10 +627,19 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   def tuple2[A: Reads, B: Reads](name1: String, name2: String): Reads[(A, B)] =
     Reads[(A, B)] { js =>
-      for {
-        _1 <- (js \ name1).validate[A]
-        _2 <- (js \ name2).validate[B]
-      } yield _1 -> _2
+      ((js \ name1).validate[A] -> (js \ name2).validate[B]) match {
+        case (e1 @ JsError(_), e2 @ JsError(_)) =>
+          JsError(e1.prefixed(name1) ++ e2.prefixed(name2))
+
+        case (JsSuccess(v1, _), JsSuccess(v2, _)) =>
+          JsSuccess(v1 -> v2)
+
+        case (e @ JsError(_), _) =>
+          JsError(e.prefixed(name1))
+
+        case (_, e @ JsError(_)) =>
+          JsError(e.prefixed(name2))
+      }
     }
 
   /**
@@ -660,11 +667,32 @@ trait DefaultReads extends LowPriorityDefaultReads {
    */
   def tuple3[A: Reads, B: Reads, C: Reads](name1: String, name2: String, name3: String): Reads[(A, B, C)] =
     Reads[(A, B, C)] { js =>
-      for {
-        _1 <- (js \ name1).validate[A]
-        _2 <- (js \ name2).validate[B]
-        _3 <- (js \ name3).validate[C]
-      } yield Tuple3(_1, _2, _3)
+      ((js \ name1).validate[A], (js \ name2).validate[B], (js \ name3).validate[C]) match {
+        case (e1 @ JsError(_), e2 @ JsError(_), e3 @ JsError(_)) =>
+          JsError(e1.prefixed(name1) ++ e2.prefixed(name2) ++ e3.prefixed(name3))
+
+        case (JsSuccess(v1, _), JsSuccess(v2, _), JsSuccess(v3, _)) =>
+          JsSuccess((v1, v2, v3))
+
+        case (e1 @ JsError(_), e2 @ JsError(_), _) =>
+          JsError(e1.prefixed(name1) ++ e2.prefixed(name2))
+
+        case (e1 @ JsError(_), _, e3 @ JsError(_)) =>
+          JsError(e1.prefixed(name1) ++ e3.prefixed(name3))
+
+        case (_, e2 @ JsError(_), e3 @ JsError(_)) =>
+          JsError(e2.prefixed(name2) ++ e3.prefixed(name3))
+
+        case (e1 @ JsError(_), _, _) =>
+          JsError(e1.prefixed(name1))
+
+        case (_, e2 @ JsError(_), _) =>
+          JsError(e2.prefixed(name2))
+
+        case (_, _, e3 @ JsError(_)) =>
+          JsError(e3.prefixed(name3))
+
+      }
     }
 
   /**
@@ -698,13 +726,65 @@ trait DefaultReads extends LowPriorityDefaultReads {
       name2: String,
       name3: String,
       name4: String
-  ): Reads[(A, B, C, D)] =
-    Reads[(A, B, C, D)] { js =>
-      for {
-        _1 <- (js \ name1).validate[A]
-        _2 <- (js \ name2).validate[B]
-        _3 <- (js \ name3).validate[C]
-        _4 <- (js \ name4).validate[D]
-      } yield Tuple4(_1, _2, _3, _4)
+  ): Reads[(A, B, C, D)] = Reads[(A, B, C, D)] { js =>
+    (
+      (js \ name1).validate[A],
+      (js \ name2).validate[B],
+      (js \ name3).validate[C],
+      (js \ name4).validate[D]
+    ) match {
+      case (e1 @ JsError(_), e2 @ JsError(_), e3 @ JsError(_), e4 @ JsError(_)) =>
+        JsError(
+          e1.prefixed(name1) ++
+            e2.prefixed(name2) ++
+            e3.prefixed(name3) ++
+            e4.prefixed(name4)
+        )
+
+      case (JsSuccess(v1, _), JsSuccess(v2, _), JsSuccess(v3, _), JsSuccess(v4, _)) =>
+        JsSuccess((v1, v2, v3, v4))
+
+      case (e1 @ JsError(_), e2 @ JsError(_), e3 @ JsError(_), _) =>
+        JsError(e1.prefixed(name1) ++ e2.prefixed(name2) ++ e3.prefixed(name3))
+
+      case (e1 @ JsError(_), e2 @ JsError(_), _, e4 @ JsError(_)) =>
+        JsError(e1.prefixed(name1) ++ e2.prefixed(name2) ++ e4.prefixed(name4))
+
+      case (e1 @ JsError(_), _, e3 @ JsError(_), e4 @ JsError(_)) =>
+        JsError(e1.prefixed(name1) ++ e3.prefixed(name3) ++ e4.prefixed(name4))
+
+      case (_, e2 @ JsError(_), e3 @ JsError(_), e4 @ JsError(_)) =>
+        JsError(e2.prefixed(name2) ++ e3.prefixed(name3) ++ e4.prefixed(name4))
+
+      case (e1 @ JsError(_), e2 @ JsError(_), _, _) =>
+        JsError(e1.prefixed(name1) ++ e2.prefixed(name2))
+
+      case (e1 @ JsError(_), _, e3 @ JsError(_), _) =>
+        JsError(e1.prefixed(name1) ++ e3.prefixed(name3))
+
+      case (e1 @ JsError(_), _, _, e4 @ JsError(_)) =>
+        JsError(e1.prefixed(name1) ++ e4.prefixed(name4))
+
+      case (_, e2 @ JsError(_), e3 @ JsError(_), _) =>
+        JsError(e2.prefixed(name2) ++ e3.prefixed(name3))
+
+      case (_, e2 @ JsError(_), _, e4 @ JsError(_)) =>
+        JsError(e2.prefixed(name2) ++ e4.prefixed(name4))
+
+      case (_, _, e3 @ JsError(_), e4 @ JsError(_)) =>
+        JsError(e3.prefixed(name3) ++ e4.prefixed(name4))
+
+      case (e1 @ JsError(_), _, _, _) =>
+        JsError(e1.prefixed(name1))
+
+      case (_, e2 @ JsError(_), _, _) =>
+        JsError(e2.prefixed(name2))
+
+      case (_, _, e3 @ JsError(_), _) =>
+        JsError(e3.prefixed(name3))
+
+      case (_, _, _, e4 @ JsError(_)) =>
+        JsError(e4.prefixed(name4))
     }
+  }
 }

@@ -6,7 +6,8 @@ package play.api.libs.json
 
 import play.api.libs.functional.ContravariantFunctor
 
-import java.util.Date
+import java.util.{ Date, LinkedHashMap }
+
 import scala.annotation.implicitNotFound
 import scala.collection._
 import scala.reflect.ClassTag
@@ -94,26 +95,29 @@ object OWrites extends PathWrites with ConstraintWrites with ScalaCompatOWrites 
   private object MergedOWrites {
     def apply[A, B](wa: OWrites[A], wb: OWrites[B]): OWrites[A ~ B] =
       new OWritesFromFields[A ~ B] {
-        def writeFields(fieldsMap: mutable.Map[String, JsValue], obj: A ~ B): Unit = {
+        def writeFields(fieldsMap: LinkedHashMap[String, JsValue], obj: A ~ B): Unit = {
           val a ~ b = obj
+
           mergeIn(fieldsMap, wa, a)
           mergeIn(fieldsMap, wb, b)
         }
       }
 
-    @inline final def mergeIn[A](fieldsMap: mutable.Map[String, JsValue], wa: OWrites[A], a: A): Unit = wa match {
+    @inline final def mergeIn[A](fieldsMap: LinkedHashMap[String, JsValue], wa: OWrites[A], a: A): Unit = wa match {
       case wff: OWritesFromFields[A] =>
         wff.writeFields(fieldsMap, a)
+
       case w: OWrites[A] =>
         w.writes(a).underlying.foreach {
           case (key, value: JsObject) =>
             fieldsMap.put(
               key,
               fieldsMap.get(key) match {
-                case Some(o: JsObject) => o.deepMerge(value)
-                case _                 => value
+                case o: JsObject => o.deepMerge(value)
+                case _           => value
               }
             )
+
           case (key, value) =>
             fieldsMap.put(key, value)
         }
@@ -123,13 +127,14 @@ object OWrites extends PathWrites with ConstraintWrites with ScalaCompatOWrites 
   /**
    * An `OWrites` capable of writing an object incrementally to a mutable map
    */
-  private trait OWritesFromFields[A] extends OWrites[A] {
-    def writeFields(fieldsMap: mutable.Map[String, JsValue], a: A): Unit
+  private[json] trait OWritesFromFields[A] extends OWrites[A] {
+    def writeFields(fieldsMap: LinkedHashMap[String, JsValue], a: A): Unit
 
     def writes(a: A): JsObject = {
-      import scala.collection.JavaConverters._
-      val fieldsMap = new java.util.LinkedHashMap[String, JsValue]()
-      writeFields(fieldsMap.asScala, a)
+      val fieldsMap = new LinkedHashMap[String, JsValue]()
+
+      writeFields(fieldsMap, a)
+
       JsObject(new ImmutableLinkedHashMap(fieldsMap))
     }
   }
@@ -358,12 +363,12 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
     val w = implicitly[Writes[T]]
 
     Writes[Array[T]] { ts =>
-      JsArray(ts.map(w.writes(_)).toArray[JsValue])
+      JsArray(ts.map(w.writes(_)).toArray)
     }
   }
 
   /**
-   * Serializer for Map[String,V] types.
+   * Serializer for `Map[String,V]` types.
    */
   @deprecated("Use `genericMapWrites`", "2.8.0")
   def mapWrites[V: Writes]: OWrites[MapWrites.Map[String, V]] = MapWrites.mapWrites
@@ -373,8 +378,14 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
     val vw = implicitly[Writes[V]]
 
     OWrites[M[K, V]] { ts =>
-      JsObject(ts.toSeq.map { case (k, v) =>
-        kw.writeKey(k) -> vw.writes(v)
+      new JsObject({
+        val keyMap = new LinkedHashMap[String, JsValue]()
+
+        ts.iterator.foreach { case (k, v) =>
+          keyMap.put(kw.writeKey(k), vw.writes(v))
+        }
+
+        new ImmutableLinkedHashMap(keyMap)
       })
     }
   }
@@ -384,7 +395,15 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
    */
   implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] =
     OWrites[M[String, V]] { ts =>
-      JsObject(ts.iterator.map { case (k, v) => k -> w.writes(v) }.toSeq)
+      new JsObject({
+        val fieldsMap = new LinkedHashMap[String, JsValue]()
+
+        ts.iterator.foreach { case (k, v) =>
+          fieldsMap.put(k, w.writes(v))
+        }
+
+        new ImmutableLinkedHashMap(fieldsMap)
+      })
     }
 
   @deprecated("Use `jsValueWrites`", "2.8.0")
@@ -395,9 +414,8 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
   /**
    * Serializer for JsValues.
    */
-  implicit def jsValueWrites[T <: JsValue]: Writes[T] = Writes[T] { js =>
-    js
-  }
+  implicit def jsValueWrites[T <: JsValue]: Writes[T] =
+    JsValueWrites.asInstanceOf[Writes[T]]
 
   /**
    * Serializer for JsNull.
