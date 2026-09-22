@@ -10,8 +10,6 @@ import com.typesafe.tools.mima.core._
 import sbtcrossproject.CrossPlugin.autoImport._
 import sbtcrossproject.CrossType
 
-resolvers ++= DefaultOptions.resolvers(snapshot = true)
-
 val isScala3 = Def.setting {
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 != 2)
 }
