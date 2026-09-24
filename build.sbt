@@ -325,9 +325,6 @@ lazy val docs = project
         }
       }
     },
-    PlayDocsKeys.validateDocs := {
-      if (isScala3.value) () else PlayDocsKeys.validateDocs.value
-    },
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
       val code = (base ** "code").get()
