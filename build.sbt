@@ -314,17 +314,6 @@ lazy val docs = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= specs2(scalaVersion.value),
-    libraryDependencies := {
-      val rev = sys.props.getOrElse("play.version", "3.0.11")
-
-      libraryDependencies.value.map { dep =>
-        if (dep.name.startsWith("play-docs")) {
-          dep.withRevision(rev).exclude("org.scala-lang.modules", "*")
-        } else {
-          dep
-        }
-      }
-    },
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
       val code = (base ** "code").get()
