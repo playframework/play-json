@@ -250,12 +250,20 @@ object Reads extends ConstraintReads with PathReads with DefaultReads with Gener
     def fmap[A, B](reads: Reads[A], f: A => B): Reads[B] = a.map(reads, f)
   }
 
-  implicit object JsObjectMonoid extends Monoid[JsObject] {
+  @deprecated("JsObject is not a valid Monoid", "3.1.0")
+  object JsObjectMonoid extends Monoid[JsObject] {
     def append(o1: JsObject, o2: JsObject) = o1.deepMerge(o2)
     def identity                           = JsObject(Seq.empty)
   }
 
-  implicit val JsObjectReducer: Reducer[JsObject, JsObject] = Reducer[JsObject, JsObject](o => o)
+  /**
+   * `Reducer` using `JsObject.deepMerge`
+   */
+  implicit val JsObjectReducer: Reducer[JsObject, JsObject] = new Reducer[JsObject, JsObject] {
+    def unit(o: JsObject): JsObject       = o
+    def prepend(a: JsObject, b: JsObject) = a.deepMerge(b)
+    def append(b: JsObject, a: JsObject)  = b.deepMerge(a)
+  }
 
   implicit object JsArrayMonoid extends Monoid[JsArray] {
     def append(a1: JsArray, a2: JsArray) = a1 ++ a2
