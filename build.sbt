@@ -313,6 +313,7 @@ lazy val docs = project
   .configs(Docs)
   .settings(
     publish / skip := true,
+    resolvers += Resolver.sonatypeCentralSnapshots,
     libraryDependencies ++= specs2(scalaVersion.value),
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
