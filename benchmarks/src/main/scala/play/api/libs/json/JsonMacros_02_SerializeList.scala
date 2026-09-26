@@ -9,8 +9,9 @@ import org.openjdk.jmh.annotations._
 @State(Scope.Benchmark)
 class JsonMacros_02_SerializeList {
 
-  var employees: Seq[Employee] = _
-  var employeesJson: JsValue   = _
+  var employees: Seq[Employee]       = _
+  var employeeArray: Array[Employee] = _
+  var employeesJson: JsValue         = _
 
   @Setup(Level.Iteration)
   def setup(): Unit = {
@@ -24,6 +25,8 @@ class JsonMacros_02_SerializeList {
         Seq("a", "b", "c")
       )
     }
+
+    employeeArray = employees.toArray
   }
 
   @TearDown(Level.Iteration)
@@ -40,4 +43,7 @@ class JsonMacros_02_SerializeList {
     employeesJson = Json.toJson(employees)(Employee.manualSeqWrites)
     employeesJson
   }
+
+  @Benchmark
+  def arrayToJson(): JsValue = Json.toJson(employeeArray)
 }

@@ -307,6 +307,40 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
         val reads = Reads.tuple2[String, Float]("name", "score")
 
         Json.obj("name" -> "Foo", "score" -> 1.23F).validate(reads).mustEqual(JsSuccess("Foo" -> 1.23F))
+
+        Json
+          .obj("name" -> 1, "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "score" -> "bar")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> 3, "score" -> "bar")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring"))),
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
       }
 
       "tuple3" in {
@@ -316,6 +350,89 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
           .obj("name" -> "Foo", "age" -> 10, "score" -> 1.23F)
           .validate(reads)
           .mustEqual(JsSuccess(Tuple3("Foo", 1.23F, 10)))
+
+        Json
+          .obj("name" -> 1, "age" -> 10, "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "age" -> "lorem", "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "age" -> 20, "score" -> "lorem")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> 1, "age" -> "lorem", "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring"))),
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> 1, "age" -> 10, "score" -> "lorem")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring"))),
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "age" -> "lorem", "score" -> "lorem")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber"))),
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> 1, "age" -> "lorem", "score" -> "lorem")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring"))),
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber"))),
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
       }
 
       "tuple4" in {
@@ -325,6 +442,101 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
           .obj("name" -> "Foo", "aliases" -> Seq("Bar"), "age" -> 10, "score" -> 1.23F)
           .validate(reads)
           .mustEqual(JsSuccess(Tuple4("Foo", 1.23F, 10, Seq("Bar"))))
+
+        Json
+          .obj("name" -> 1, "aliases" -> Seq("Bar"), "age" -> 10, "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "aliases" -> Seq("Bar"), "age" -> 10, "score" -> "lorem")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "aliases" -> Seq("Bar"), "age" -> "lorem", "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "aliases" -> "bar", "age" -> 10, "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "aliases", List(JsonValidationError("error.expected.jsarray")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> 1, "aliases" -> Seq("Bar"), "age" -> "lorem", "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring"))),
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> 1, "aliases" -> "bar", "age" -> 10, "score" -> "lorem")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring"))),
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber"))),
+                (JsPath \ "aliases", List(JsonValidationError("error.expected.jsarray")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> "Foo", "aliases" -> "bar", "age" -> "lorem", "score" -> 1.23F)
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber"))),
+                (JsPath \ "aliases", List(JsonValidationError("error.expected.jsarray")))
+              )
+            )
+          )
+
+        Json
+          .obj("name" -> 1, "aliases" -> "bar", "age" -> "lorem", "score" -> "lorem")
+          .validate(reads)
+          .mustEqual(
+            JsError(
+              List(
+                (JsPath \ "name", List(JsonValidationError("error.expected.jsstring"))),
+                (JsPath \ "score", List(JsonValidationError("error.expected.jsnumber"))),
+                (JsPath \ "age", List(JsonValidationError("error.expected.jsnumber"))),
+                (JsPath \ "aliases", List(JsonValidationError("error.expected.jsarray")))
+              )
+            )
+          )
       }
     }
   }

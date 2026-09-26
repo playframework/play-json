@@ -16,9 +16,10 @@ class JsonParsing_01_ParseManyFields {
 
   var stringToParse: String = _
 
-  case class Example(s: String)
+  final case class Example(s: String)
+
   object Example {
-    implicit val reads = Json.reads[Example]
+    implicit val format: OFormat[Example] = Json.format[Example]
   }
 
   @Setup
