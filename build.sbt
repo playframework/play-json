@@ -19,7 +19,7 @@ def specs2(scalaVersion: String) =
     ("org.specs2" %% s"specs2-$n" % "4.23.0") % Test
   }
 
-val jacksonDatabindVersion = "2.22.2"
+val jacksonDatabindVersion = "2.22.3"
 val jacksonDatabind        = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
@@ -34,7 +34,7 @@ val jacksons       = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.14.3"
+  "joda-time" % "joda-time" % "2.14.4"
 )
 
 // Common settings
@@ -53,8 +53,8 @@ def playJsonMimaSettings = Seq(
       case InheritedNewAbstractMethodProblem(_, _) => false
       case IncompatibleResultTypeProblem(old, _)   => old.nonAccessible
       case IncompatibleMethTypeProblem(old, _)     => old.nonAccessible
-      case MissingClassProblem(old)                => !old.isPublic
-      case AbstractClassProblem(old)               => !old.isPublic
+      case MissingClassProblem(old)                => !old.isBytecodePublic
+      case AbstractClassProblem(old)               => !old.isBytecodePublic
       case _                                       => true
     }
 
