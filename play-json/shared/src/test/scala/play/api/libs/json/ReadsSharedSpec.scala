@@ -230,49 +230,166 @@ final class ReadsSharedSpec extends AnyWordSpec with Matchers with Inside {
     }
   }
 
-  "BigDecimal Reads" should {
+  "Numeric Reads" should {
+    "read valid Int" in {
+      JsNumber(123).validate[Int].mustEqual(JsSuccess(123))
+    }
+
+    "reject invalid Int" in {
+      JsNumber(BigDecimal("1.23")).validate[Int].mustEqual(JsError("error.expected.int"))
+    }
+
+    "reject non-number Int" in {
+      JsString("123").validate[Int].mustEqual(JsError("error.expected.jsnumber"))
+    }
+
+    "read valid Short" in {
+      JsNumber(123).validate[Short].mustEqual(JsSuccess(123.toShort))
+    }
+
+    "reject invalid Short" in {
+      JsNumber(BigDecimal(Short.MaxValue.toInt + 1)).validate[Short].mustEqual(JsError("error.expected.short"))
+    }
+
+    "reject non-number Short" in {
+      JsString("123").validate[Short].mustEqual(JsError("error.expected.jsnumber"))
+    }
+
+    "read valid Byte" in {
+      JsNumber(123).validate[Byte].mustEqual(JsSuccess(123.toByte))
+    }
+
+    "reject invalid Byte" in {
+      JsNumber(BigDecimal(Byte.MaxValue.toInt + 1)).validate[Byte].mustEqual(JsError("error.expected.byte"))
+    }
+
+    "reject non-number Byte" in {
+      JsString("123").validate[Byte].mustEqual(JsError("error.expected.jsnumber"))
+    }
+
+    "read valid Long" in {
+      JsNumber(BigDecimal(Long.MaxValue)).validate[Long].mustEqual(JsSuccess(Long.MaxValue))
+    }
+
+    "reject invalid Long" in {
+      JsNumber(BigDecimal("1.23")).validate[Long].mustEqual(JsError("error.expected.long"))
+    }
+
+    "reject non-number Long" in {
+      JsString("123").validate[Long].mustEqual(JsError("error.expected.jsnumber"))
+    }
+
+    "read valid Float" in {
+      JsNumber(BigDecimal("1.23")).validate[Float].mustEqual(JsSuccess(1.23F))
+    }
+
+    "read out-of-bounds Float" in {
+      // Existing issue/No regression;
+      // See https://scastie.scala-lang.org/Ojs1G0pBT3yhm5l83qokOQ )
+      JsNumber(BigDecimal("1e100")).validate[Float].mustEqual(JsSuccess(Float.PositiveInfinity))
+    }
+
+    "reject non-number Float" in {
+      JsString("1.23").validate[Float].mustEqual(JsError("error.expected.jsnumber"))
+    }
+
+    "read valid Double" in {
+      JsNumber(BigDecimal("1.23")).validate[Double].mustEqual(JsSuccess(1.23D))
+    }
+
+    "read out-of-bounds Double" in {
+      // Existing issue/No regression;
+      // See https://scastie.scala-lang.org/Ojs1G0pBT3yhm5l83qokOQ )
+
+      JsNumber(BigDecimal("1e1000")).validate[Double].mustEqual(JsSuccess(Double.PositiveInfinity))
+    }
+
+    "reject non-number Double" in {
+      JsString("1.23").validate[Double].mustEqual(JsError("error.expected.jsnumber"))
+    }
+
     Seq("123", "23", "1.23", "1E+1").foreach { repr =>
-      s"""be successful for JsString("$repr")""" in {
+      s"""read BigDecimal from JsString("$repr")""" in {
         val jsStr = JsString(repr)
+
         jsStr.validate[BigDecimal].mustEqual(JsSuccess(BigDecimal(repr)))
         jsStr.validate[java.math.BigDecimal].mustEqual(JsSuccess(new java.math.BigDecimal(repr)))
       }
     }
 
     Seq("1..0", "A").foreach { repr =>
-      s"fail for '$repr'" in {
+      s"reject invalid BigDecimal string '$repr'" in {
         val jsStr   = JsString(repr)
         val jsError = JsError("error.expected.numberformatexception")
+
         jsStr.validate[BigDecimal].mustEqual(jsError)
         jsStr.validate[java.math.BigDecimal].mustEqual(jsError)
       }
     }
-  }
 
-  "BigInteger Reads" should {
+    "read BigDecimal from JsNumber" in {
+      val jsNum = JsNumber(BigDecimal("123.45"))
+
+      jsNum.validate[BigDecimal].mustEqual(JsSuccess(BigDecimal("123.45")))
+      jsNum.validate[java.math.BigDecimal].mustEqual(JsSuccess(new java.math.BigDecimal("123.45")))
+    }
+
+    "reject non-number/non-string BigDecimal" in {
+      JsBoolean(true).validate[BigDecimal].mustEqual(JsError("error.expected.jsnumberorjsstring"))
+      JsBoolean(true).validate[java.math.BigDecimal].mustEqual(JsError("error.expected.jsnumberorjsstring"))
+    }
+
     Seq("123", "23").foreach { repr =>
-      val jb = new BigInteger(repr)
-      val sb = BigInt(jb)
-
-      s"""be successful for JsString("$repr")""" in {
+      s"""read BigInteger from JsString("$repr")""" in {
+        val jb    = new BigInteger(repr)
+        val sb    = BigInt(jb)
         val jsStr = JsString(repr)
 
         jsStr.validate[BigInteger].mustEqual(JsSuccess(jb))
         jsStr.validate[BigInt].mustEqual(JsSuccess(sb))
       }
+    }
 
-      s"""be successful for JsNumber($sb)""" in {
-        val jsNum = JsNumber(BigDecimal(sb))
+    "read BigInteger from integral JsNumber" in {
+      val value = Long.MaxValue
+      val jsNum = JsNumber(BigDecimal(value))
 
-        jsNum.validate[BigInteger].mustEqual(JsSuccess(jb))
-        jsNum.validate[BigInt].mustEqual(JsSuccess(sb))
-      }
+      jsNum.validate[BigInteger].mustEqual(JsSuccess(BigInteger.valueOf(value)))
+      jsNum.validate[BigInt].mustEqual(JsSuccess(BigInt(value)))
+    }
+
+    "read BigInteger from integral JsNumber beyond Long range" in {
+      val value = BigInt(Long.MaxValue) + 1
+      val jsNum = JsNumber(BigDecimal(value))
+
+      jsNum.validate[BigInteger].mustEqual(JsSuccess(value.bigInteger))
+      jsNum.validate[BigInt].mustEqual(JsSuccess(value))
+    }
+
+    "reject non-integral BigInteger JsNumber" in {
+      val jsNum   = JsNumber(BigDecimal("1.23"))
+      val jsError = JsError("error.invalid.biginteger")
+
+      jsNum.validate[BigInteger].mustEqual(jsError)
+      jsNum.validate[BigInt].mustEqual(jsError)
     }
 
     Seq("1.0", "A").foreach { repr =>
-      s"fails for '$repr'" in {
-        JsString(repr).validate[BigInteger].mustEqual(JsError("error.expected.numberformatexception"))
+      s"reject invalid BigInteger string '$repr'" in {
+        val jsStr   = JsString(repr)
+        val jsError = JsError("error.expected.numberformatexception")
+
+        jsStr.validate[BigInteger].mustEqual(jsError)
+        jsStr.validate[BigInt].mustEqual(jsError)
       }
+    }
+
+    "reject non-number/non-string BigInteger" in {
+      val jsBoolean = JsBoolean(true)
+      val jsError   = JsError("error.expected.jsnumberorjsstring")
+
+      jsBoolean.validate[BigInteger].mustEqual(jsError)
+      jsBoolean.validate[BigInt].mustEqual(jsError)
     }
   }
 

@@ -7,7 +7,7 @@ package play.api.libs.json
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-final class JavaEnumSpec extends AnyWordSpec with Matchers with org.scalatestplus.scalacheck.ScalaCheckPropertyChecks {
+final class JavaEnumSpec extends AnyWordSpec with Matchers {
   "Java Enum" should {
     "be supported with default string representation" when {
       def readsSpecs(r: Reads[JavaColorEnum]) = {

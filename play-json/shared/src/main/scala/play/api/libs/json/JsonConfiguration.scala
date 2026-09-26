@@ -43,8 +43,11 @@ object JsonConfiguration {
 
   // These methods exist for binary compatibility, since Scala protected methods are public from a binary perspective.
   protected def apply(naming: JsonNaming): JsonConfiguration.Aux[Json.MacroOptions] = new Impl(naming)
+
   protected def apply(naming: JsonNaming, optionHandlers: OptionHandlers): JsonConfiguration.Aux[Json.MacroOptions] =
     new Impl(naming, optionHandlers)
+
+  @annotation.nowarn("msg=.*parameterless .*default.*")
   protected def default: JsonConfiguration.Aux[Json.MacroOptions] = apply()
 
   val defaultDiscriminator = "_type"
