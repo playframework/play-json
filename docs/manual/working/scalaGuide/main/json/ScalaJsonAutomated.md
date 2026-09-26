@@ -117,6 +117,36 @@ To implement your own Naming Strategy you just need to implement the `JsonNaming
 
 @[auto-custom-naming-format](code/ScalaJsonAutomatedSpec.scala)
 
+## Field annotations
+
+Constructor parameters processed by the JSON macros can be annotated with `Json.Annotations` to customize field-level mapping. The same annotations are supported by the Scala 3 `derives` syntax.
+
+### `@Ignore`
+
+`@Ignore` (or `@transient`) omits a field from JSON on write. On read, the value must still be materializable: either a constructor default is used, or an `Option` field is read as `None`. Without a default (and when the type is not a bare `Option`), macro expansion fails at compile time. Constructor defaults are applied for `@Ignore` even when `Json.DefaultValues` is not enabled.
+
+@[ignore-model](code/ScalaJsonAutomatedSpec.scala)
+
+@[auto-ignore](code/ScalaJsonAutomatedSpec.scala)
+
+### `@Flatten`
+
+`@Flatten` merges a nested **JSON object** into the parent object instead of nesting it under the property name. The nested type must have an `OWrites` / `OFormat` (so writing produces a `JsObject`); otherwise writer generation fails at compile time. Flattening a recursive self-type is also rejected at compile time.
+
+@[flatten-model](code/ScalaJsonAutomatedSpec.scala)
+
+@[auto-flatten](code/ScalaJsonAutomatedSpec.scala)
+
+#### `@Flatten` on `Option`
+
+On write, `Some` merges nested object fields into the parent and `None` omits them. On read, a successful nested object read becomes `Some`; nested `JsError`s are **propagated**.
+
+@[flatten-option-model](code/ScalaJsonAutomatedSpec.scala)
+
+@[auto-flatten-option](code/ScalaJsonAutomatedSpec.scala)
+
+> Note: Overlapping JSON keys between a parent field and a flattened nested object are not rejected at compile time; later fields may overwrite earlier ones on write. Per-field `@Key` / `@DefaultValue` annotations are out of scope (use `JsonConfiguration.naming` and `Json.DefaultValues` / constructor defaults).
+
 ## Customize the macro to output null
 
 The macro can be configured to output `null` values in the Json instead of removing the empty fields:

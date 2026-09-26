@@ -104,6 +104,7 @@ lazy val commonSettings = Def.settings(
     )
   ),
   scalaVersion := Dependencies.resolveScalaVersion(sys.props.getOrElse("scala.version", Dependencies.scala213Version)),
+  scalacOptions += "-Wconf:msg=(Implicit\\ parameters\\ .*using.*\\ clause|Alphanumeric\\ .*infix.*|.*trailing\\ .*eta.*):s",
   crossScalaVersions := Dependencies.publishedScalaVersions,
   Compile / javacOptions ++= javacSettings,
   Test / javacOptions ++= javacSettings,
