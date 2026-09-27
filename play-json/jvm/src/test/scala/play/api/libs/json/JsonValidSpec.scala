@@ -9,7 +9,7 @@ import org.specs2.mutable._
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
 
-class JsonValidSpec extends Specification {
+final class JsonValidSpec extends Specification {
   "JSON reads" should {
     "validate Dates" in {
       val d  = new java.util.Date()

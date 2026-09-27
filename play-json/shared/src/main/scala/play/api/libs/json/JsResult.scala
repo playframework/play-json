@@ -135,6 +135,7 @@ object JsError {
           if (flat) Array(JsString(err.message))
           else err.messages.map(JsString(_)).toArray[JsValue]
         })
+
         arr :+ JsObject(
           Seq(
             "msg"  -> msg,
@@ -151,10 +152,10 @@ object JsError {
   private def toJson(a: Any): JsValue = a match {
     case s: String   => JsString(s)
     case nb: Int     => JsNumber(nb)
-    case nb: Short   => JsNumber(BigDecimal(nb))
-    case nb: Long    => JsNumber(BigDecimal(nb))
-    case nb: Double  => JsNumber(BigDecimal(nb))
-    case nb: Float   => JsNumber(BigDecimal.decimal(nb))
+    case nb: Short   => JsNumber(nb)
+    case nb: Long    => JsNumber(nb)
+    case nb: Double  => JsNumber(nb)
+    case nb: Float   => JsNumber(nb)
     case b: Boolean  => JsBoolean(b)
     case js: JsValue => js
     case x           => JsString(x.toString)

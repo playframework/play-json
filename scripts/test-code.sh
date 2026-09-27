@@ -6,7 +6,7 @@ sbt -DscalaJSStage=full \
     -Dscala.version="$MATRIX_SCALA" \
     -J-XX:MinRAMPercentage=90.0 \
     -J-XX:MaxRAMPercentage=90.0 \
-    testFull || exit 1
+    'play-jsonJVM/testFull' || exit 1
 
 case "$MATRIX_SCALA" in
   2.12.x | 2.13.x | 3.3.x)

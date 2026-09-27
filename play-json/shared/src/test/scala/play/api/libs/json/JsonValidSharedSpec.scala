@@ -10,7 +10,7 @@ import play.api.libs.functional.syntax._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class JsonValidSharedSpec extends AnyWordSpec with Matchers {
+final class JsonValidSharedSpec extends AnyWordSpec with Matchers {
   // lampepfl/dotty#11052 doesn't work as a locally-defined Enumeration
   //     - should validate Enums *** FAILED *** (1 millisecond)
   //       java.lang.IllegalAccessException: class scala.Enumeration cannot access a member of class play.api.libs.json.JsonValidSharedSpec$Weekdays$1$ with modifiers "public"
@@ -942,7 +942,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         )
     }
 
-    "serialize JsError to json" in {
+    "serialize JsError to JSON" in {
       val jserr = JsError(
         Seq(
           (__ \ Symbol("field1") \ Symbol("field11")) -> Seq(
@@ -979,7 +979,7 @@ class JsonValidSharedSpec extends AnyWordSpec with Matchers {
         )
       )
 
-      JsError.toJson(jserr).mustEqual(json)
+      JsError.toJson(jserr) mustEqual json
     }
 
     "prune json" in {

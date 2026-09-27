@@ -285,14 +285,14 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
    * Serializer for Short types.
    */
   implicit object ShortWrites extends Writes[Short] {
-    def writes(o: Short) = JsNumber(BigDecimal(o))
+    def writes(o: Short) = JsNumber(o)
   }
 
   /**
    * Serializer for Byte types.
    */
   implicit object ByteWrites extends Writes[Byte] {
-    def writes(o: Byte) = JsNumber(BigDecimal(o))
+    def writes(o: Byte) = JsNumber(o)
   }
 
   /**
@@ -306,7 +306,7 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
    * Serializer for Float types.
    */
   implicit object FloatWrites extends Writes[Float] {
-    def writes(o: Float) = JsNumber(BigDecimal.decimal(o))
+    def writes(o: Float) = JsNumber(o)
   }
 
   /**
@@ -324,17 +324,24 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
   }
 
   /**
+   * Serializer for Java BigDecimal types.
+   */
+  implicit object JavaBigDecimalWrites extends Writes[java.math.BigDecimal] {
+    def writes(o: java.math.BigDecimal) = JsNumber(BigDecimal(o))
+  }
+
+  /**
    * Serializer for BigInt type.
    */
   implicit object BigIntWrites extends Writes[BigInt] {
-    def writes(i: BigInt) = JsNumber(BigDecimal(i))
+    def writes(i: BigInt) = JsNumber(i)
   }
 
   /**
    * Serializer for BigInteger type.
    */
   implicit object BigIntegerWrites extends Writes[java.math.BigInteger] {
-    def writes(i: java.math.BigInteger) = JsNumber(BigDecimal(i))
+    def writes(i: java.math.BigInteger) = JsNumber(BigInt(i))
   }
 
   /**

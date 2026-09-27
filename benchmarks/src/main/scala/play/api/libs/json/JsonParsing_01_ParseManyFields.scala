@@ -18,7 +18,7 @@ class JsonParsing_01_ParseManyFields {
 
   case class Example(s: String)
   object Example {
-    implicit val reads = Json.reads[Example]
+    implicit val format: OFormat[Example] = Json.format[Example]
   }
 
   @Setup

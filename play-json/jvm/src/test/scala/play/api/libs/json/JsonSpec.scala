@@ -7,22 +7,25 @@ package play.api.libs.json
 import com.fasterxml.jackson.core.exc.StreamConstraintsException
 
 import java.io.ByteArrayInputStream
+
 import java.math.BigInteger
+import java.text.SimpleDateFormat
 import java.util.{ Calendar, Date, TimeZone }
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.fasterxml.jackson.databind.node.{ ArrayNode, NumericNode, ObjectNode }
 
 import play.api.libs.functional.syntax._
+
 import play.api.libs.json.Json._
+
 import play.api.libs.json.jackson.{ JacksonJson, PlayJsonMapperModule }
 
 final class JsonSpec extends org.specs2.mutable.Specification {
+
   sequential
 
   "JSON".title
-
-  import java.text.SimpleDateFormat
 
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ssX" // Iso8601 format (forgot timezone stuff)
   val dateParser = new SimpleDateFormat(dateFormat)
@@ -45,6 +48,7 @@ final class JsonSpec extends org.specs2.mutable.Specification {
   }
 
   import JsonSpec.exceedsDigitsLimit
+
   val exceedsDigitsLimitNegative: BigDecimal = exceedsDigitsLimit.unary_-
 
   val invalidJsonExceedingNumberOfDigits: String = s"""
@@ -230,12 +234,12 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
         "fail for positive number out of Long limits" in {
           val outOfLimits = BigDecimal(Long.MaxValue) + 10
-          Json.parse(intsJson(long = outOfLimits.toString())).as[IntNumbers].must(throwA[JsResultException])
+          Json.parse(intsJson(long = outOfLimits.toString)).as[IntNumbers].must(throwA[JsResultException])
         }
 
         "fail for negative number out of Long limits" in {
           val outOfLimits = BigDecimal(Long.MaxValue) + 10
-          Json.parse(intsJson(long = outOfLimits.unary_-.toString())).as[IntNumbers].must(throwA[JsResultException])
+          Json.parse(intsJson(long = outOfLimits.unary_-.toString)).as[IntNumbers].must(throwA[JsResultException])
         }
       }
 
@@ -250,12 +254,12 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
         "fail for positive number out of Int limits" in {
           val outOfLimits = BigDecimal(Int.MaxValue) + 10
-          Json.parse(intsJson(int = outOfLimits.toString())).as[IntNumbers].must(throwA[JsResultException])
+          Json.parse(intsJson(int = outOfLimits.toString)).as[IntNumbers].must(throwA[JsResultException])
         }
 
         "fail for negative number out of Int limits" in {
           val outOfLimits = BigDecimal(Int.MaxValue) + 10
-          Json.parse(intsJson(int = outOfLimits.unary_-.toString())).as[IntNumbers].must(throwA[JsResultException])
+          Json.parse(intsJson(int = outOfLimits.unary_-.toString)).as[IntNumbers].must(throwA[JsResultException])
         }
       }
 
@@ -270,12 +274,13 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
         "success for max value" in {
           val maxFloat = BigDecimal(Float.MaxValue.toString)
-          Json.parse(floatsJson(float = maxFloat.toString())).as[FloatNumbers].float.mustEqual(Float.MaxValue)
+
+          Json.parse(floatsJson(float = maxFloat.toString)).as[FloatNumbers].float mustEqual Float.MaxValue
         }
 
         "success for min value" in {
           val minFloat = BigDecimal(Float.MinValue.toString)
-          Json.parse(floatsJson(float = minFloat.toString())).as[FloatNumbers].float.mustEqual(Float.MinValue)
+          Json.parse(floatsJson(float = minFloat.toString)).as[FloatNumbers].float.mustEqual(Float.MinValue)
         }
       }
 
@@ -290,12 +295,13 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
         "success when parsing max value" in {
           val maxDouble = BigDecimal(Double.MaxValue)
-          Json.parse(floatsJson(double = maxDouble.toString())).as[FloatNumbers].double.mustEqual(Double.MaxValue)
+          Json.parse(floatsJson(double = maxDouble.toString)).as[FloatNumbers].double.mustEqual(Double.MaxValue)
         }
 
         "success when parsing min value" in {
           val minDouble = BigDecimal(Double.MinValue)
-          Json.parse(floatsJson(double = minDouble.toString)).as[FloatNumbers].double.mustEqual(Double.MinValue)
+
+          Json.parse(floatsJson(double = minDouble.toString)).as[FloatNumbers].double mustEqual Double.MinValue
         }
       }
 
@@ -304,9 +310,13 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
         // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
         "maintain precision when parsing BigDecimals within precision limit" in {
-          val n    = BigDecimal("12345678901234567890.123456789")
-          val json = toJson(n)
-          parse(stringify(json)).mustEqual(json)
+          val n      = BigDecimal("12345678901234567890.123456789")
+          val json   = toJson(n)
+          val parsed = parse(stringify(json))
+
+          parsed.mustEqual(json)
+
+          json.mustEqual(parsed)
         }
 
         // note: precision refers to `JacksonJson.BigDecimalLimits.DefaultMathContext.getPrecision`
@@ -407,11 +417,11 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
         "success when not exceeding the number of digits limit for negative numbers" in {
           val withinDigitsLimitNegative = BigDecimal(Long.MinValue)
+
           Json
             .parse(bigNumbersJson(bigDec = withinDigitsLimitNegative.toString))
             .as[BigNumbers]
-            .bigDec
-            .mustEqual(withinDigitsLimitNegative)
+            .bigDec mustEqual withinDigitsLimitNegative
         }
 
         "success when not exceeding the number of digits limit for positive numbers" in {
@@ -427,7 +437,6 @@ final class JsonSpec extends org.specs2.mutable.Specification {
           val exceedsScaleLimit = BigDecimal(2, parserSettings.bigDecimalParseConfig.scaleLimit + 1)
           Json
             .parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString))
-            .as[BigNumbers]
             .must(throwA[IllegalArgumentException])
         }
 
@@ -435,14 +444,12 @@ final class JsonSpec extends org.specs2.mutable.Specification {
           val exceedsScaleLimit = BigDecimal(2, parserSettings.bigDecimalParseConfig.scaleLimit + 1).unary_-
           Json
             .parse(bigNumbersJson(bigDec = exceedsScaleLimit.toString))
-            .as[BigNumbers]
             .must(throwA[IllegalArgumentException])
         }
 
         "fail when exceeding the number of digits limit for positive numbers" in {
           Json
             .parse(invalidJsonExceedingNumberOfDigits)
-            .as[BigNumbers]
             .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
               e.getMessage.must(
                 equalTo(
@@ -455,13 +462,17 @@ final class JsonSpec extends org.specs2.mutable.Specification {
         "fail when exceeding the number of digits limit for negative numbers" in {
           Json
             .parse(invalidJsonExceedingNumberOfDigitsNegative)
-            .as[BigNumbers]
-            .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
-              e.getMessage.must(
-                equalTo(
-                  "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+            .must(throwA[Exception].like {
+              case e: StreamConstraintsException =>
+                e.getMessage.must(
+                  equalTo(
+                    "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+                  )
                 )
-              )
+
+              case e: IllegalArgumentException =>
+                // Scala 2.13
+                e.getMessage.mustEqual("Number scale is out of limits for field 'bigDec': -999967 > 6178")
             })
         }
       }
@@ -484,14 +495,15 @@ final class JsonSpec extends org.specs2.mutable.Specification {
         .createObjectNode()
         .put("foo", 1)
         .put("bar", "two")
-      val json                             = Json.obj("foo" -> 1, "bar" -> "two")
-      val deserialized: JsResult[JsonNode] = fromJson[JsonNode](json)
 
-      toJson(on).must_==(json) and (
-        deserialized.map(_.isInstanceOf[ObjectNode]).must_==(JsSuccess(true))
-      ) and (
-        deserialized.map(_.toString).must_==(JsSuccess(on.toString))
-      )
+      val json                             = Json.obj("foo" -> 1, "bar" -> "two")
+      val deserialized: JsResult[JsonNode] = Json.fromJson[JsonNode](json)
+
+      toJson(on) must_=== json and {
+        deserialized must beLike { case JsSuccess(obj: ObjectNode, _) =>
+          obj.toString must_=== on.toString
+        }
+      }
     }
 
     "Serialize and deserialize Jackson ArrayNodes" in {
@@ -499,14 +511,15 @@ final class JsonSpec extends org.specs2.mutable.Specification {
         .createArrayNode()
         .add("one")
         .add(2)
+
       val json                             = Json.arr("one", 2)
       val deserialized: JsResult[JsonNode] = fromJson[JsonNode](json)
 
-      toJson(an).must(equalTo(json)) and (
-        deserialized.map(_.isInstanceOf[ArrayNode]).must_==(JsSuccess(true))
-      ) and (
-        deserialized.map(_.toString).must_==(JsSuccess(an.toString))
-      )
+      toJson(an) must_=== json and {
+        deserialized must beLike { case JsSuccess(arr: ArrayNode, _) =>
+          arr.toString must_=== an.toString
+        }
+      }
     }
 
     "Deserialize integer JsNumber as Jackson number node" in {
@@ -704,5 +717,25 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 }
 
 object JsonSpec {
-  val exceedsDigitsLimit: BigDecimal = BigDecimal("9" * 1000000)
+  lazy val exceedsDigitsLimit: BigDecimal = {
+    // BigDecimal("9" * 1000000)
+
+    // Use serialization to work around performance issue about BigDecimal instantiation
+    lazy val in  = getClass.getResourceAsStream("/very-large-bigdecimal.ser")
+    lazy val ois = new java.io.ObjectInputStream(in)
+
+    try {
+      val jdb = ois.readObject().asInstanceOf[java.math.BigDecimal]
+
+      BigDecimal(jdb)
+    } finally {
+      try {
+        in.close()
+      } catch {
+        case _: Exception =>
+      }
+
+      ois.close()
+    }
+  }
 }

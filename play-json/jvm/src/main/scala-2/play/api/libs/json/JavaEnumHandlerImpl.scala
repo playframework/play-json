@@ -41,7 +41,7 @@ final class JavaEnumHandlerImpl(val c: blackbox.Context) {
 
     debug(showCode(generated))
 
-    c.Expr[Reads[T]](c.typeCheck(generated))
+    c.Expr[Reads[T]](c.typecheck(generated))
   }
 
   def format[T <: JEnum[?]: c.WeakTypeTag]: c.Expr[Format[T]] = {
@@ -54,7 +54,7 @@ final class JavaEnumHandlerImpl(val c: blackbox.Context) {
 
     debug(showCode(generated))
 
-    c.Expr[Format[T]](c.typeCheck(generated))
+    c.Expr[Format[T]](c.typecheck(generated))
   }
 
   // ---

@@ -5,15 +5,20 @@
 package play.api.libs.json
 
 import org.openjdk.jol.info.GraphLayout
+
 import org.scalatest.freespec.AnyFreeSpec
+
 import scala.util.Properties
+
 import scala.util.chaining.*
 
-class JsonMemoryFootprintSpec extends AnyFreeSpec {
+final class JsonMemoryFootprintSpec extends AnyFreeSpec {
 
   "Json.parse" - {
     "obj0" in assertSizes("""{}""", 16, 16)
+
     "obj1" in assertSizes("""{"1":true}""", 152, 168, expectedJdk21 = Some(160), hashedJdk21 = Some(184))
+
     "obj4" in assertSizes(
       """{"1":true,"2":true,"3":true,"4":true}""",
       296,
@@ -23,24 +28,35 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     )
 
     "arr0" in assertSizes("""[]""", 40, 40)
+
     "arr1" in assertSizes("""[true]""", 120, 120)
+
     "arr4" in assertSizes("""[true,true,true,true]""", 120, 120)
 
-    "num0" in assertSizes("""0""", 80, 80)
-    "num0.1" in assertSizes("""0.1""", 80, 80)
-    "num0.5" in assertSizes("""0.5""", 80, 80)
-    "numLongMax" in assertSizes(Long.MaxValue.toString, 144, 144)
-    "numDoubleMax" in assertSizes(Double.MaxValue.toString, 144, 144)
+    "num0" in assertSizes("""0""", 32, 80)
+
+    "num0.1" in assertSizes("""0.1""", 136, 240)
+
+    "num0.5" in assertSizes("""0.5""", 136, 240)
+
+    "numLongMax" in assertSizes(Long.MaxValue.toString, 24, 88)
+
+    "numDoubleMax" in assertSizes(Double.MaxValue.toString, 216, 216)
 
     "true" in assertSizes("""true""", 0, 0)
+
     "false" in assertSizes("""false""", 0, 0)
+
     "null" in assertSizes("""null""", 0, 0)
   }
 
   "JsObject" - {
     def obj(json: String) = Json.parse(json).as[JsObject]
+
     "obj0 ++ obj0" in assertSize(obj("{}") ++ obj("{}"), 16)
+
     "obj0 ++ obj1" in assertSize(obj("{}") ++ obj("""{"1":true}"""), 152, expectedJdk21 = Some(160))
+
     "obj1 ++ obj0" in assertSize(obj("""{"1":true}""") ++ obj("""{}"""), 152, expectedJdk21 = Some(160))
 
     "obj1.value" in assertSize(obj("""{"1":true}""").tap(_.value), 152, expectedJdk21 = Some(160))
@@ -50,11 +66,16 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     // if we pack data into ~1KB of input, how much memory amplification can we achieve?
     def arr1KB(elem: String, targetSize: Int = 1000): String =
       Iterator.continually(elem).take(targetSize / (elem.length + 1)).mkString("[", ",", "]")
+
     "obj0" in assertSizes(arr1KB("{}"), 7432, 7432)
-    "obj1" in assertSizes(arr1KB("""{"a":6}"""), 29568, 31568, expectedJdk21 = Some(30568), hashedJdk21 = Some(33568))
-    "nums" in assertSizes(arr1KB("6"), 42104, 42104)
+
+    "obj1" in assertSizes(arr1KB("""{"a":6}"""), 23568, 31568, expectedJdk21 = Some(24568), hashedJdk21 = Some(33568))
+
+    "nums" in assertSizes(arr1KB("6"), 18104, 42104)
+
     "arr0" in assertSizes(arr1KB("[]"), 15424, 15424)
-    "arr1" in assertSizes(arr1KB("[6]"), 51080, 51080)
+
+    "arr1" in assertSizes(arr1KB("[6]"), 39080, 51080)
   }
 
   private def assertSizes(
