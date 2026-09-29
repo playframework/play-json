@@ -2,12 +2,10 @@
 
 echo MATRIX_SCALA=$MATRIX_SCALA
 
-sbt -DscalaJSStage=full \
+# sbt 2 starts a server via its thin client; -J options do not reach that server.
+# See https://github.com/sbt/sbt/pull/9839 for the proposed fix.
+JAVA_OPTS="${JAVA_OPTS:+$JAVA_OPTS }-Xmx4G" sbt -DscalaJSStage=full \
     -Dscala.version="$MATRIX_SCALA" \
-    -J-Xss2M \
-    -J-XX:ReservedCodeCacheSize=192m \
-    -J-XX:MinRAMPercentage=90.0 \
-    -J-XX:MaxRAMPercentage=90.0 \
     testFull || exit 1
 
 case "$MATRIX_SCALA" in
