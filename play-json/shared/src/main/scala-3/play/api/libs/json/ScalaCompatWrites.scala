@@ -75,6 +75,19 @@ private[json] trait ScalaCompatOWrites { self: OWrites.type =>
    * @return a derived writer for T
    */
   inline def derived[T]: OWrites[T] = Json.writes[T]
+
+  // ---
+
+  /**
+   * An `OWrites` implementation that delegates to an underlying instance.
+   *
+   * This class is intended for use by macros and should not be used directly.
+   */
+  final class DelegatingOWrites[A](f: OWrites[A] => OWrites[A]) extends OWrites[A] { self =>
+    lazy val underlying = f(self)
+
+    def writes(a: A): JsObject = underlying.writes(a)
+  }
 }
 
 private[json] object ScalaCompatOWrites {

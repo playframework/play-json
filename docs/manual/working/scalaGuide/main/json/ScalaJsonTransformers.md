@@ -257,24 +257,53 @@ res13: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 
 ```
 
-####`(__ \ 'key2).json.update(reads: Reads[A < JsValue])`
+#### `(__ \ 'key2).json.update(reads: Reads[A < JsValue])`
 
 - Is a `Reads[JsObject]`
 
-####`(__ \ 'key2 \ 'key24).json.update(reads)` does 3 things:
+#### `(__ \ 'key2 \ 'key24).json.update(reads)` does 3 things:
 
 - Extracts value from input JSON at JsPath `(__ \ 'key2 \ 'key24)`.
 - Applies `reads` on this relative value and re-creates a branch `(__ \ 'key2 \ 'key24)` adding result of `reads` as leaf.
 - Merges this branch with full input JSON replacing existing branch (so it works only with input `JsObject` and not other type of `JsValue`).
 
-####`JsSuccess({…},)`
+#### `JsSuccess({…},)`
 
 - Just for info, there is no JsPath as 2nd parameter there because the JSON manipulation was done from Root JsPath
 
 > **Reminder:**
 > `jsPath.json.update(Reads[A <: JsValue])` only works for `JsObject`, copies full input `JsObject` and updates jsPath with provided `Reads[A <: JsValue]`
 
-## Case 5: Put a given value in a new branch
+## Case 5: Update an optional field
+
+```scala
+import play.api.libs.json._
+
+val json = Json.obj("whatever" -> 1, "content" -> "hello world")
+val json2 = Json.obj("whatever" -> 1)
+
+val transformer = (__ \ 'content).json.update(
+  __.readNullable[JsString].map{
+    case Some(JsString(str)) => JsString(str.replaceAll("world", "scala"))
+  }
+).orElse(__.json.pick[JsObject])
+
+json.transform(transformer)
+// Update 'content' field => JsSuccess({"whatever":1,"content":"hello scala"},/content)
+
+json2.transform(transformer)
+// Unchanged as no optional 'content' => JsSuccess({"whatever":1},)
+```
+
+#### `(__ \ 'content).json.update(reads).orElse(__.json.pick[JsObject])`
+
+* `update` transforms the value at `content` when it exists.
+* `orElse(__.json.pick[JsObject])` keeps the original JSON when `content` is missing.
+
+> **Reminder:**
+> `jsPath.json.update(reads).orElse(__.json.pick[JsObject])` can be used to update an optional field or object.
+
+## Case 6: Put a given value in a new branch
 
 ```scala
 import play.api.libs.json._
@@ -290,7 +319,6 @@ res14: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
       }
     },
   )
-
 ```
 
 ####`(__ \ 'key24 \ 'key241).json.put( a: => JsValue )`
@@ -314,7 +342,7 @@ res14: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 > **Reminder: **
 > `jsPath.json.put( a: => Jsvalue )` creates a new branch with a given value without taking into account input JSON
 
-## Case 6: Prune a branch from input JSON
+## Case 7: Prune a branch from input JSON
 
 ```scala
 import play.api.libs.json._
@@ -360,7 +388,7 @@ Please note the resulting `JsObject` hasn't same keys order as input `JsObject`.
 
 # More complicated cases
 
-## Case 7: Pick a branch and update its content in 2 places
+## Case 8: Pick a branch and update its content in 2 places
 
 ```scala
 import play.api.libs.json._
@@ -424,7 +452,7 @@ res16: play.api.libs.json.JsResult[play.api.libs.json.JsObject] =
 
 > Please note the result is just the `__ \ 'key2` branch since we picked only this branch
 
-## Case 8: Pick a branch and prune a sub-branch
+## Case 9: Pick a branch and prune a sub-branch
 
 ```scala
 import play.api.libs.json._

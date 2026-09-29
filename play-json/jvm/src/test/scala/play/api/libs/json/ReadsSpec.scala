@@ -5,26 +5,34 @@
 package play.api.libs.json
 
 import java.math.{ BigDecimal => JBigDec }
-import java.util.Locale
-import java.time.{ Duration => JDuration }
-import java.time.Instant
-import java.time.Period
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.ZoneOffset
+
+import java.time.{
+  Instant,
+  Period,
+  LocalDate,
+  LocalTime,
+  LocalDateTime,
+  OffsetDateTime,
+  ZoneId,
+  ZonedDateTime,
+  ZoneOffset,
+  Duration => JDuration
+}
+
 import java.time.temporal.ChronoUnit
 import java.time.format.DateTimeFormatter
 
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+import scala.concurrent.duration.{ Duration, FiniteDuration }
+
 import org.specs2.specification.core.Fragment
 
-class ReadsSpec extends org.specs2.mutable.Specification {
-  val veryLargeNumber = BigDecimal("9" * 1000000)
-
+final class ReadsSpec extends org.specs2.mutable.Specification {
   "JSON Reads".title
+
+  import JsonSpec.{ exceedsDigitsLimit => veryLargeNumber }
 
   "Local date/time" should {
     val DefaultReads = implicitly[Reads[LocalDateTime]]
@@ -602,31 +610,120 @@ class ReadsSpec extends org.specs2.mutable.Specification {
 
     Fragment.foreach(locales.zip(objs)) { case (locale, obj) =>
       s"be ${locale.toLanguageTag} and be read as JSON object" in {
-        Json.fromJson[Locale](obj)(Reads.localeObjectReads).mustEqual(JsSuccess(locale))
+        Json.fromJson[Locale](obj)(Reads.localeObjectReads) must_=== JsSuccess(locale)
       }
     }
 
     Fragment.foreach(locales.zip(tags)) { case (locale, tag) =>
       s"be ${locale.toLanguageTag} and be read from JSON string (tag)" in {
-        Json.fromJson[Locale](JsString(tag)).must_==(JsSuccess(locale))
+        Json.fromJson[Locale](JsString(tag)) must_=== JsSuccess(locale)
+      }
+    }
+  }
+
+  "Finite duration" should {
+    lazy val oneSec     = Duration.create(1L, TimeUnit.SECONDS)
+    lazy val fractional = Duration.create(1230L, TimeUnit.MICROSECONDS)
+    lazy val twelveDays = Duration.create(12L, TimeUnit.DAYS)
+
+    "be parsed using default deserializer" >> {
+      Fragment.foreach[(JsValue, JsResult[FiniteDuration])](
+        Seq(
+          JsString("1 second")          -> JsSuccess(oneSec),
+          JsString("1.23 milliseconds") -> JsSuccess(fractional),
+          JsString("foo")               -> JsError("error.invalid.duration"),
+          JsNumber(BigDecimal(1000L))   -> JsSuccess(oneSec),
+          JsNumber(BigDecimal(1.23D))   -> JsSuccess(fractional),
+          JsNumber(BigDecimal(0.0123D)) -> JsSuccess(Duration.create(12300L, TimeUnit.NANOSECONDS)),
+          // decimal boundaries
+          JsNumber(BigDecimal("1.001"))    -> JsSuccess(Duration.create(1001L, TimeUnit.MICROSECONDS)),
+          JsNumber(BigDecimal("1.000001")) -> JsSuccess(Duration.create(1000001L, TimeUnit.NANOSECONDS)),
+          JsNumber(BigDecimal("0.0123"))   -> JsSuccess(Duration.create(12300L, TimeUnit.NANOSECONDS))
+        )
+      ) { case (input, result) =>
+        s"from ${Json.stringify(input)} as $result" in {
+          Json.fromJson[FiniteDuration](input) must_=== result
+        }
+      }
+
+      "from integer" in {
+        val reads1 = Reads.finiteDurationMillisReads
+        val reads2 = Reads.finiteLongDurationNumberReads(TimeUnit.DAYS)
+
+        Json.fromJson(JsNumber(BigDecimal(1000L)))(reads1) must_=== JsSuccess(oneSec) and {
+          Json.fromJson(JsNumber(BigDecimal(12L)))(reads2) must_=== JsSuccess(twelveDays)
+        }
+      }
+
+      "from string" in {
+        import Reads.{ finiteDurationStringReads => reads }
+
+        Json.fromJson(JsString("1 second"))(reads) must_=== JsSuccess(oneSec) and {
+          Json.fromJson(JsString("12 days"))(reads) must_=== JsSuccess(twelveDays)
+        } and {
+          Json.fromJson(JsString("1.23 second"))(reads) must_=== JsSuccess(
+            Duration.create(1230L, TimeUnit.MILLISECONDS)
+          )
+        }
+      }
+    }
+
+    "be parsed using configured deserializer" >> {
+      val unit                                  = TimeUnit.MINUTES
+      implicit def reads: Reads[FiniteDuration] =
+        Reads.finiteLongDurationNumberReads(unit)
+
+      Fragment.foreach[(JsValue, JsResult[FiniteDuration])](
+        Seq(
+          JsNumber(BigDecimal(2L))    -> JsSuccess(Duration.create(2L, unit)),
+          JsNumber(BigDecimal(1.23D)) -> JsError("error.expected.longDuration"),
+        )
+      ) { case (input, result) =>
+        s"from ${Json.stringify(input)} as $result" in {
+          Json.fromJson[FiniteDuration](input) must_=== result
+        }
       }
     }
   }
 
   "Java Duration" should {
-    val oneSec = JDuration.of(1L, ChronoUnit.SECONDS)
+    lazy val oneSec     = JDuration.of(1L, ChronoUnit.SECONDS)
+    lazy val fractional = JDuration.of(1230L, ChronoUnit.MICROS)
 
     Fragment.foreach[(JsValue, JsResult[JDuration])](
       Seq(
-        JsString("PT1S")             -> JsSuccess(oneSec),
-        JsString("1 seconds")        -> JsError("error.invalid.duration"),
-        JsString("foo")              -> JsError("error.invalid.duration"),
-        JsNumber(BigDecimal(1000L))  -> JsSuccess(oneSec),
-        JsNumber(BigDecimal(1.234D)) -> JsError("error.expected.long")
+        JsString("PT1S")              -> JsSuccess(oneSec),
+        JsString("1 seconds")         -> JsSuccess(oneSec),
+        JsString("1.23 milliseconds") -> JsSuccess(fractional),
+        JsString("foo")               -> JsError("error.invalid.duration"),
+        JsNumber(BigDecimal(1000L))   -> JsSuccess(oneSec),
+        JsNumber(BigDecimal(1.23D))   -> JsSuccess(fractional),
+        JsNumber(BigDecimal(0.0123D)) -> JsSuccess(JDuration.of(12300L, ChronoUnit.NANOS)),
+        // decimal boundaries
+        JsNumber(BigDecimal("1.001"))    -> JsSuccess(JDuration.of(1001L, ChronoUnit.MICROS)),
+        JsNumber(BigDecimal("1.000001")) -> JsSuccess(JDuration.of(1000001L, ChronoUnit.NANOS)),
+        JsNumber(BigDecimal("0.0123"))   -> JsSuccess(JDuration.of(12300L, ChronoUnit.NANOS))
       )
     ) { case (input, result) =>
       s"be parsed from ${Json.stringify(input)} as $result" in {
         Json.fromJson[JDuration](input).mustEqual(result)
+      }
+    }
+
+    "be parsed using configured deserializer" >> {
+      val unit                             = ChronoUnit.MINUTES
+      implicit def reads: Reads[JDuration] =
+        Reads.javaDurationNumberReads(unit)
+
+      Fragment.foreach[(JsValue, JsResult[JDuration])](
+        Seq(
+          JsNumber(BigDecimal(2L))    -> JsSuccess(JDuration.of(2L, unit)),
+          JsNumber(BigDecimal(1.23D)) -> JsError("error.expected.longDuration"),
+        )
+      ) { case (input, result) =>
+        s"from ${Json.stringify(input)} as $result" in {
+          Json.fromJson[JDuration](input) must_=== result
+        }
       }
     }
   }

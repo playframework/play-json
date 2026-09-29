@@ -10,8 +10,6 @@ import com.typesafe.tools.mima.core._
 import sbtcrossproject.CrossPlugin.autoImport._
 import sbtcrossproject.CrossType
 
-resolvers ++= DefaultOptions.resolvers(snapshot = true)
-
 val isScala3 = Def.setting {
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 != 2)
 }
@@ -21,7 +19,7 @@ def specs2(scalaVersion: String) =
     ("org.specs2" %% s"specs2-$n" % "4.23.0") % Test
   }
 
-val jacksonDatabindVersion = "2.22.2"
+val jacksonDatabindVersion = "2.22.3"
 val jacksonDatabind        = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion
 )
@@ -36,7 +34,7 @@ val jacksons       = Seq(
 ).map(_ % jacksonVersion) ++ jacksonDatabind
 
 val joda = Seq(
-  "joda-time" % "joda-time" % "2.14.3"
+  "joda-time" % "joda-time" % "2.14.4"
 )
 
 // Common settings
@@ -55,8 +53,8 @@ def playJsonMimaSettings = Seq(
       case InheritedNewAbstractMethodProblem(_, _) => false
       case IncompatibleResultTypeProblem(old, _)   => old.nonAccessible
       case IncompatibleMethTypeProblem(old, _)     => old.nonAccessible
-      case MissingClassProblem(old)                => !old.isPublic
-      case AbstractClassProblem(old)               => !old.isPublic
+      case MissingClassProblem(old)                => !old.isBytecodePublic
+      case AbstractClassProblem(old)               => !old.isBytecodePublic
       case _                                       => true
     }
 
@@ -105,8 +103,9 @@ lazy val commonSettings = Def.settings(
       s"Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>"
     )
   ),
-  scalaVersion       := Dependencies.Scala213,
-  crossScalaVersions := Seq(Dependencies.Scala212, Dependencies.Scala213, Dependencies.Scala3),
+  scalaVersion := Dependencies.resolveScalaVersion(sys.props.getOrElse("scala.version", Dependencies.scala213Version)),
+  scalacOptions += "-Wconf:msg=(Implicit\\ parameters\\ .*using.*\\ clause|Alphanumeric\\ .*infix.*|.*trailing\\ .*eta.*|.*vararg.* splice.*|.*wildcard argument.*):s",
+  crossScalaVersions := Dependencies.publishedScalaVersions,
   Compile / javacOptions ++= javacSettings,
   Test / javacOptions ++= javacSettings,
   Compile / compile / javacOptions ++= Seq("--release", "17"), // sbt #1785, avoids passing to javadoc
@@ -265,7 +264,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
           specs2(scalaVersion.value)
         }
       } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.6.3" % Test
+        "ch.qos.logback" % "logback-classic" % "1.6.4" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
@@ -315,21 +314,8 @@ lazy val docs = project
   .configs(Docs)
   .settings(
     publish / skip := true,
+    resolvers += Resolver.sonatypeCentralSnapshots,
     libraryDependencies ++= specs2(scalaVersion.value),
-    libraryDependencies := {
-      val rev = sys.props.getOrElse("play.version", "3.0.11")
-
-      libraryDependencies.value.map { dep =>
-        if (dep.name.startsWith("play-docs")) {
-          dep.withRevision(rev).exclude("org.scala-lang.modules", "*")
-        } else {
-          dep
-        }
-      }
-    },
-    PlayDocsKeys.validateDocs := {
-      if (isScala3.value) () else PlayDocsKeys.validateDocs.value
-    },
     PlayDocsKeys.scalaManualSourceDirectories := {
       val base = baseDirectory.value / "manual" / "working" / "scalaGuide"
       val code = (base ** "code").get()

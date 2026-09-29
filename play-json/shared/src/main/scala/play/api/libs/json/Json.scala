@@ -51,8 +51,9 @@ sealed trait JsonFacade {
   /**
    * $parseDescription (use `tryParse` to be safe).
    *
-   * The character encoding used will be automatically detected as UTF-8,
-   * UTF-16 or UTF-32, as per the heuristics in RFC-4627.
+   * The character encoding is automatically detected as UTF-8, UTF-16 or
+   * UTF-32, using the heuristics defined in RFC-4627.
+   * This also supports encodings that are not valid JSON encodings according to RFC-8259.
    *
    * @param input the byte array to parse
    */
@@ -213,7 +214,7 @@ sealed trait JsonFacade {
  * @define macroTypeParam @tparam The type for which the handler must be materialized
  * @define macroWarning If any missing implicit is discovered, compiler will break with corresponding error.
  */
-object Json extends JsonFacade with JsMacros with JsValueMacros {
+object Json extends JsonFacade with JsMacros with JsValueMacros with ScalaCompatJson {
   def parse(input: String): JsValue = StaticBinding.parseJsValue(input)
 
   def tryParse(input: String): Try[JsValue] = Try(StaticBinding.parseJsValue(input))
@@ -491,14 +492,4 @@ object Json extends JsonFacade with JsMacros with JsValueMacros {
    */
   trait DefaultValues { self: MacroOptions => }
 
-  /**
-   * Alias for `MacroOptions with DefaultValues`
-   *
-   * {{{
-   * import play.api.libs.json.Json
-   *
-   * Json.using[Json.WithDefaultValues]
-   * }}}
-   */
-  type WithDefaultValues = MacroOptions with DefaultValues
 }

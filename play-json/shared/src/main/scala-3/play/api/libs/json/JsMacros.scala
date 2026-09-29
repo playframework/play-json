@@ -24,7 +24,7 @@ private[json] trait JsMacros extends EnumHandler {
    * case class User(userName: String, age: Int)
    *
    * implicit val userReads: Reads[User] =
-   *   Json.using[Json.MacroOptions with Json.DefaultValues].reads[User]
+   *   Json.using[Json.MacroOptions & Json.DefaultValues].reads[User]
    * }}}
    */
   inline def reads[A]: Reads[A] = ${ JsMacroImpl.reads[A] }

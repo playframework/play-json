@@ -4,19 +4,27 @@
 
 package play.api.libs.json
 
+import java.time.{
+  Instant,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  OffsetDateTime,
+  Period,
+  ZoneId,
+  ZoneOffset,
+  ZonedDateTime,
+  Duration => JDuration
+}
+
 import java.time.format.DateTimeFormatter
 import java.time.temporal.Temporal
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.Period
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.{ Duration => JDuration }
+
 import java.util.Locale
+
+import scala.collection.mutable.{ ArrayBuilder, Map => MMap }
+
+import scala.concurrent.duration.FiniteDuration
 
 import com.fasterxml.jackson.databind.JsonNode
 import play.api.libs.json.jackson.JacksonJson
@@ -28,6 +36,17 @@ trait EnvWrites {
   object JsonNodeWrites extends Writes[JsonNode] {
     def writes(o: JsonNode): JsValue = JacksonJson.get.jsonNodeToJsValue(o)
   }
+
+  /** Serializer of finite duration as a number of milliseconds. */
+  val finiteDurationMillisWrites: Writes[FiniteDuration] =
+    Writes[FiniteDuration](d => JsNumber(d.toMillis))
+
+  /**
+   * Serializer of finite duration using string representation
+   * (e.g. "1 second").
+   */
+  implicit val finiteDurationWrites: Writes[FiniteDuration] =
+    Writes[FiniteDuration](d => JsString(d.toString))
 
   /**
    * Serializer for Jackson JsonNode
@@ -275,53 +294,71 @@ trait EnvWrites {
     OWrites[Locale] { l =>
       val fields = Map.newBuilder[String, JsValue]
 
-      fields += "language" -> Json.toJson(l.getLanguage)
+      fields += "language" -> JsString(l.getLanguage)
 
-      Option(l.getCountry).filter(_.nonEmpty).foreach { country =>
-        fields += "country" -> Json.toJson(country)
+      val country = l.getCountry
+      if (country != null && country.length > 0) {
+        fields += "country" -> JsString(country)
       }
 
-      Option(l.getVariant).filter(_.nonEmpty).foreach { variant =>
-        fields += "variant" -> Json.toJson(variant)
+      val variant = l.getVariant
+      if (variant != null && variant.length > 0) {
+        fields += "variant" -> JsString(variant)
       }
 
-      Option(l.getScript).filter(_.nonEmpty).foreach { script =>
-        fields += "script" -> Json.toJson(script)
+      val script = l.getScript
+      if (script != null && script.length > 0) {
+        fields += "script" -> JsString(script)
       }
 
-      val attrs = l.getUnicodeLocaleAttributes.asScala
-      if (attrs.nonEmpty) {
-        fields += "attributes" -> Json.toJson(attrs.toSet)
+      val attrs = l.getUnicodeLocaleAttributes
+      if (!attrs.isEmpty) {
+        val builder = ArrayBuilder.make[JsString]
+
+        val it = attrs.iterator()
+        while (it.hasNext) {
+          builder += JsString(it.next())
+        }
+
+        fields += "attributes" -> JsArray(builder.result())
       }
 
-      val keywords = l.getUnicodeLocaleKeys.asScala
-      if (keywords.nonEmpty) {
-        fields += "keywords" -> Json.toJson {
-          val ks = Map.newBuilder[String, String]
+      val keywords = l.getUnicodeLocaleKeys
+      if (!keywords.isEmpty) {
+        fields += "keywords" -> (new JsObject({
+          val ks = MMap.empty[String, JsValue]
 
-          keywords.foreach { key =>
-            Option(l.getUnicodeLocaleType(key)).foreach { typ =>
-              ks += (key -> typ)
+          val it = keywords.iterator()
+          while (it.hasNext) {
+            val key = it.next()
+            val typ = l.getUnicodeLocaleType(key)
+
+            if (typ != null) {
+              ks.put(key, JsString(typ))
             }
           }
 
-          ks.result()
-        }
+          ks
+        }))
       }
 
-      val extension = l.getExtensionKeys.asScala
-      if (extension.nonEmpty) {
-        fields += "extension" -> Json.toJson {
-          val ext = Map.newBuilder[String, String]
+      val extension = l.getExtensionKeys
+      if (!extension.isEmpty) {
+        fields += "extension" -> (new JsObject({
+          val ext = MMap.empty[String, JsValue]
 
-          extension.foreach { key =>
-            Option(l.getExtension(key)).foreach { v =>
-              ext += (key.toString -> v)
+          val it = extension.iterator()
+          while (it.hasNext) {
+            val key = it.next()
+            val v   = l.getExtension(key)
+
+            if (v != null) {
+              ext.put(key.toString, JsString(v))
             }
           }
 
-          ext.result()
-        }
+          ext
+        }))
       }
 
       JsObject(fields.result())
