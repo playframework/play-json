@@ -71,28 +71,55 @@ final class WritesSharedSpec extends AnyWordSpec with Matchers {
 
     "write SortedSets" in {
       import scala.collection.immutable.SortedSet
+
       Json.toJson(SortedSet(1, 2, 3, 4, 5)).mustEqual(Json.arr(1, 2, 3, 4, 5))
     }
 
     "write mutable SortedSets" in {
       import scala.collection.mutable.SortedSet
+
       Json.toJson(SortedSet(1, 2, 3, 4, 5)).mustEqual(Json.arr(1, 2, 3, 4, 5))
     }
   }
 
   "Map Writes" should {
-    "write lazy maps" in {
-      Json.toJson(Map("a" -> 1).map(kv => kv._1 -> (kv._2 + 1))).mustEqual(Json.obj("a" -> 2))
+    "be successfully written" when {
+      "using string keys" in {
+        Json
+          .toJson(Map[String, Int]("foo" -> 1, "bar" -> 2))
+          .mustEqual(Json.obj("foo" -> 1, "bar" -> 2))
+      }
+
+      "using AnyVal (Int) keys" in {
+        Json.toJson(Map(1 -> "one")).mustEqual(Json.obj("1" -> "one"))
+      }
+
+      "using string represented keys" in {
+        val uriRepr = "https://www.playframework.org"
+
+        implicitly[KeyWrites[java.net.URI]]
+
+        Json.toJson(Map((new java.net.URI(uriRepr)) -> "foo")).mustEqual(Json.obj(uriRepr -> "foo"))
+      }
     }
 
-    "write a map nested in a seq" in {
-      Json.toJson(Seq(Map("a" -> 1))).mustEqual(Json.arr(Json.obj("a" -> 1)))
+    "write lazy maps" in {
+      Json.toJson(Map("a" -> 1).map(kv => kv._1 -> (kv._2 + 1))).mustEqual(Json.obj("a" -> 2))
     }
   }
 
   "Iterable writes" should {
-    "write maps" in {
-      Json.toJson(Map(1 -> "one")).mustEqual(Json.obj("1" -> "one"))
+    "write array for Map with unsupported key type" in {
+      // Limitation: This case is not symmetrical to `Map` reads which fails
+      // at compile-time for unsupported key type.
+
+      Json
+        .toJson(Map[(Int, Int), String]((1, 2) -> "foo"))
+        .mustEqual(Json.arr(Json.arr(Json.arr(1, 2), JsString("foo"))))
+    }
+
+    "write a map nested in a seq" in {
+      Json.toJson(Seq(Map("a" -> 1))).mustEqual(Json.arr(Json.obj("a" -> 1)))
     }
   }
 
