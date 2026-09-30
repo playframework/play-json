@@ -4,7 +4,10 @@
 
 package play.api.libs.json
 
+import java.util.LinkedHashMap
+
 import scala.collection.Seq
+import scala.collection.mutable
 
 /**
  * The result for a successful parsing.
@@ -50,11 +53,13 @@ case class JsSuccess[T](value: T, path: JsPath = JsPath()) extends JsResult[T] {
  * The result in case of parsing `errors`.
  */
 case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsResult[Nothing] {
+
   def get: Nothing = throw new NoSuchElementException("JsError.get")
 
   def ++(error: JsError): JsError = JsError.merge(this, error)
 
-  def :+(error: (JsPath, JsonValidationError)): JsError     = JsError.merge(this, JsError(error))
+  def :+(error: (JsPath, JsonValidationError)): JsError = JsError.merge(this, JsError(error))
+
   def append(error: (JsPath, JsonValidationError)): JsError = this.:+(error)
 
   def +:(error: (JsPath, JsonValidationError)): JsError      = JsError.merge(JsError(error), this)
@@ -93,6 +98,10 @@ case class JsError(errors: Seq[(JsPath, Seq[JsonValidationError])]) extends JsRe
   def recoverTotal[U >: Nothing](errManager: JsError => U): U = errManager(this)
 
   def recoverWith[U >: Nothing](errManager: JsError => JsResult[U]): JsResult[U] = errManager(this)
+
+  private[json] def prefixed(prefix: String) = errors.map { case (p, valerr) =>
+    (JsPath \ prefix) ++ p -> valerr
+  }
 }
 
 object JsError {
@@ -129,20 +138,31 @@ object JsError {
   }
 
   private def toJson(errors: Seq[(JsPath, Seq[JsonValidationError])], flat: Boolean): JsObject = {
-    errors.foldLeft(JsObject.empty) { (obj, error) =>
-      obj ++ JsObject(Seq(error._1.toJsonString -> error._2.foldLeft(JsArray.empty) { (arr, err) =>
+    val details = new LinkedHashMap[String, JsArray]()
+
+    errors.foreach { case (k, errs) =>
+      val builder = mutable.ArrayBuilder.make[JsObject]
+
+      errs.foreach { err =>
         val msg = JsArray(Predef.wrapRefArray[JsValue] {
           if (flat) Array(JsString(err.message))
           else err.messages.map(JsString(_)).toArray[JsValue]
         })
-        arr :+ JsObject(
-          Seq(
-            "msg"  -> msg,
-            "args" -> JsArray(err.args.map(toJson).toArray[JsValue])
-          )
-        )
-      }))
+
+        builder += JsObject {
+          val fieldsMap = new LinkedHashMap[String, JsValue]
+
+          fieldsMap.put("msg", msg)
+          fieldsMap.put("args", JsArray(err.args.map(toJson).toArray[JsValue]))
+
+          new ImmutableLinkedHashMap(fieldsMap)
+        }
+      }
+
+      details.put(k.toJsonString, JsArray(builder.result()))
     }
+
+    new JsObject(new ImmutableLinkedHashMap(details))
   }
 
   /**
