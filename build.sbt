@@ -264,7 +264,7 @@ lazy val `play-jsonJVM` = `play-json`.jvm
           specs2(scalaVersion.value)
         }
       } :+ (
-        "ch.qos.logback" % "logback-classic" % "1.6.4" % Test
+        "ch.qos.logback" % "logback-classic" % "1.6.5" % Test
       ),
     Test / unmanagedSourceDirectories ++= (docsP / PlayDocsKeys.scalaManualSourceDirectories).value,
   )
