@@ -250,6 +250,41 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
     }
   }
 
+  "JsObject.+" should {
+    "append a new field and keep the position of an overwritten one" in {
+      val obj = Json.obj("a" -> 1, "b" -> 2, "c" -> 3)
+
+      Json.stringify(obj + ("d" -> JsNumber(4))).mustEqual("""{"a":1,"b":2,"c":3,"d":4}""")
+      Json.stringify(obj + ("b" -> JsNumber(20))).mustEqual("""{"a":1,"b":20,"c":3}""")
+      Json.stringify(obj).mustEqual("""{"a":1,"b":2,"c":3}""")
+    }
+
+    "build the same object as JsObject.apply, at every size" in {
+      // crosses the LinkedHashMap resize thresholds
+      0.to(40).foreach { n =>
+        val fields   = 0.until(n).map(i => s"f$i" -> JsNumber(i))
+        val stepwise = fields.foldLeft(Json.obj())(_ + _)
+        val oneGo    = JsObject(fields)
+
+        stepwise.mustEqual(oneGo)
+        stepwise.hashCode.mustEqual(oneGo.hashCode)
+        Json.stringify(stepwise).mustEqual(Json.stringify(oneGo))
+
+        val removed = fields.indices.filter(_ % 3 == 0).foldLeft(stepwise)((o, i) => o - s"f$i")
+        val kept    = fields.zipWithIndex.collect { case (f, i) if i % 3 != 0 => f }
+        Json.stringify(removed).mustEqual(Json.stringify(JsObject(kept)))
+      }
+    }
+  }
+
+  "JsObject.++" should {
+    "keep the left fields in order, overwrite in place and append new ones" in {
+      val merged = Json.obj("a" -> 1, "b" -> 2) ++ Json.obj("b" -> 20, "c" -> 3)
+
+      Json.stringify(merged).mustEqual("""{"a":1,"b":20,"c":3}""")
+    }
+  }
+
   "JsObject" should {
     // see https://github.com/playframework/play-json/issues/390
     "accept null fields when calling Json.obj" in {

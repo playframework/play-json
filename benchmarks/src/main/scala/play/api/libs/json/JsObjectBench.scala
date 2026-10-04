@@ -46,9 +46,12 @@ class JsObjectBench {
   private var jsObject: JsObject      = _
   private var jsObjectClone: JsObject = _
   private var jsObjectCopy: JsObject  = _
+  private var fields: Seq[(String, JsValue)] = _
+  private val small: JsObject                = Json.obj("a" -> 1, "b" -> 2)
 
   @Setup def setup(): Unit = {
-    jsObject = JsObject(0.until(size).map(i => i.toString -> JsTrue))
+    fields = 0.until(size).map(i => i.toString -> JsTrue)
+    jsObject = JsObject(fields)
     jsObjectClone = JsObject(jsObject.underlying)
     jsObjectCopy = Json.parse(jsObject.toString).as[JsObject]
   }
@@ -57,4 +60,10 @@ class JsObjectBench {
   @Benchmark def oEqualsNe     = jsObject == jsObjectClone
   @Benchmark def oEqualsCopy   = jsObject == jsObjectCopy
   @Benchmark def oHashCodeWarm = jsObject.hashCode()
+
+  @Benchmark def oPlusNewKey      = jsObject + ("new" -> JsFalse)
+  @Benchmark def oPlusExistingKey = jsObject + ("0" -> JsFalse)
+  @Benchmark def oMinus           = jsObject - "0"
+  @Benchmark def oConcat          = jsObject ++ small
+  @Benchmark def oBuildByAdds     = fields.foldLeft(JsObject.empty)(_ + _)
 }
