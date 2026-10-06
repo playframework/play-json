@@ -272,6 +272,7 @@ class JsObjectSpec extends AnyWordSpec with Matchers {
 
         val removed = fields.indices.filter(_ % 3 == 0).foldLeft(stepwise)((o, i) => o - s"f$i")
         val kept    = fields.zipWithIndex.collect { case (f, i) if i % 3 != 0 => f }
+
         Json.stringify(removed).mustEqual(Json.stringify(JsObject(kept)))
       }
     }

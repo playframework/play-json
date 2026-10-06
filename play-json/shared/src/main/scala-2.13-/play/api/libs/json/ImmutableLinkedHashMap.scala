@@ -64,10 +64,12 @@ private[json] class ImmutableLinkedHashMap[A, +B](underlying: JLinkedHashMap[A, 
   private def shallowCopy[V1 >: B](sizeHint: Int = size): JLinkedHashMap[A, V1] = {
     val c  = new JLinkedHashMap[A, V1](ImmutableLinkedHashMap.capacityFor(sizeHint))
     val it = underlying.entrySet().iterator()
+
     while (it.hasNext) {
       val e = it.next()
       c.put(e.getKey, e.getValue)
     }
+
     c
   }
 }
