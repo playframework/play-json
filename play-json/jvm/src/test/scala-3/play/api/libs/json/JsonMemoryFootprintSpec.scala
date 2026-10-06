@@ -48,16 +48,16 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     "built with + takes the same memory as built at once" in {
       1.to(20).foreach { n =>
         val fields   = 0.until(n).map(i => s"$i" -> JsTrue)
-        val stepwise = fields.foldLeft(JsObject.empty)(_ + _)
-        withClue(s"$n fields:")(assert(footprint(stepwise) === footprint(JsObject(fields))))
+        val stepwise = footprint(fields.foldLeft(JsObject.empty)(_ + _))
+        val oneGo    = footprint(JsObject(fields))
+        withClue(s"$n fields:")(assert(stepwise > 0 && stepwise === oneGo))
       }
     }
   }
 
-  private def footprint(a: JsValue): Long = {
-    val distinct = GraphLayout.parseInstance(a).subtract(GraphLayout.parseInstance(a))
-    distinct.totalSize()
-  }
+  // By-name: each layout is diffed against a second instance, so shared singletons don't count.
+  private def footprint(a: => JsValue): Long =
+    GraphLayout.parseInstance(a).subtract(GraphLayout.parseInstance(a)).totalSize()
 
   "malicious" - {
     // if we pack data into ~1KB of input, how much memory amplification can we achieve?
