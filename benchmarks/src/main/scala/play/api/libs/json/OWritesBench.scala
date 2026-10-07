@@ -13,8 +13,8 @@ class OWritesBench {
 
   private val employeeWritesFromFields = new OWrites.OWritesFromFields[Employee] {
     override def writeFields(
-      fieldsMap: java.util.LinkedHashMap[String, JsValue],
-      e: Employee
+        fieldsMap: java.util.LinkedHashMap[String, JsValue],
+        e: Employee
     ): Unit = {
       fieldsMap.put("employeeNumber", JsNumber(e.employeeNumber))
       fieldsMap.put("firstName", JsString(e.firstName))
@@ -42,11 +42,12 @@ class OWritesBench {
 
     employeeIdMap = Map(
       "firstName" -> employee.firstName,
-      "lastName" -> employee.lastName,
-      "city" -> employee.city,
-      "country" -> employee.country)
+      "lastName"  -> employee.lastName,
+      "city"      -> employee.city,
+      "country"   -> employee.country
+    )
 
-    scoreMap = (1 to 100).map(i => i -> (i / 10D)).toMap
+    scoreMap = 1.to(100).map(i => i -> (i / 10D)).toMap
   }
 
   // ---
@@ -57,9 +58,9 @@ class OWritesBench {
 
   @Benchmark
   def writesFromGenericMap(): JsObject =
-    Writes.genericMapWrites.writes(employeeIdMap)
+    Writes.genericMapWrites[String, Map].writes(employeeIdMap)
 
   @Benchmark
   def writesFromKeyMap(): JsObject =
-    Writes.keyMapWrites.writes(scoreMap)
+    Writes.keyMapWrites[Int, Double, Map].writes(scoreMap)
 }
