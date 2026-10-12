@@ -218,12 +218,15 @@ private[json] trait ImplicitResolver[A] {
     neededGiven.map(_ -> selfRef)
   }
 
-  protected def resolver[M[_], T](
-      forwardExpr: Expr[M[T]],
+  /**
+   * @param forwardExpr The forward instance for the type being materialized (`A`), used when a nested field refers to `A` itself (Placeholder). Always `M[A]` — never a sealed subtype — so callers need not cast.
+   */
+  protected def resolver[M[_]](
+      forwardExpr: Expr[M[A]],
       debug: String => Unit
   )(tc: Type[M]): TypeRepr => Option[Implicit] = {
     val tx =
-      new ImplicitTransformer[M[T]](forwardExpr)
+      new ImplicitTransformer[M[A]](forwardExpr)
 
     createImplicit(debug)(tc, _: TypeRepr, tx)
   }
