@@ -69,7 +69,29 @@ object KeyReads extends EnvKeyReads with LowPriorityKeyReads {
 }
 
 private[json] sealed trait LowPriorityKeyReads {
-  implicit def readableKeyReads[T](implicit r: Reads[T]): KeyReads[T] =
+
+  /**
+   * Creates a [[KeyReads]] for values represented as JSON strings.
+   *
+   * The supplied [[Reads]] is applied to a [[JsString]] containing the object key.
+   * A [[Format.Representation]] is required to explicitly indicate that `T` is
+   * represented as a JSON string.
+   *
+   * @tparam T the type to read
+   * @return a [[KeyReads]] for `T`
+   */
+  implicit def stringRepresentedKeyReads[T](implicit
+      r: Reads[T],
+      repr: Format.Representation[T, JsString]
+  ): KeyReads[T] =
+    KeyReads[T] { key =>
+      r.reads(JsString(key))
+    }
+
+  @deprecated(
+    "Use stringRepresentedKeyReads instead. A Format.Representation[T, JsString] is required to ensure that T is represented as a JSON string.",
+    "3.1"
+  ) def readableKeyReads[T](implicit r: Reads[T]): KeyReads[T] =
     KeyReads[T] { key =>
       r.reads(JsString(key))
     }

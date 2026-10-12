@@ -10,7 +10,10 @@ import java.util.{ Date, LinkedHashMap }
 
 import scala.annotation.implicitNotFound
 import scala.collection._
+
 import scala.reflect.ClassTag
+
+import play.api.libs.functional.ContravariantFunctor
 
 /**
  * Json serializer: write an implicit to define a serializer for any type
@@ -357,7 +360,7 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
   }
 
   /**
-   * Serializer for Array[T] types.
+   * Serializer for `Array[T]` types.
    */
   implicit def arrayWrites[T: ClassTag: Writes]: Writes[Array[T]] = {
     val w = implicitly[Writes[T]]
@@ -391,7 +394,7 @@ trait DefaultWrites extends LowPriorityWrites with EnumerationWrites {
   }
 
   /**
-   * Serializer for Map[String,V] types.
+   * Serializer for `Map[String,V]` types.
    */
   implicit def genericMapWrites[V, M[A, B] <: MapWrites.Map[A, B]](implicit w: Writes[V]): OWrites[M[String, V]] =
     OWrites[M[String, V]] { ts =>
