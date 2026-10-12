@@ -174,6 +174,54 @@ class JsonSharedSpec
       )
     }
 
+    "create object using builder, keeping the field order" in {
+      // more fields than the specialised small immutable Maps hold
+      val fields  = 1.to(20).map(i => s"f$i" -> JsNumber(i))
+      val builder = Json.newBuilder
+
+      fields.foreach { case (k, v) => builder += (k -> v) }
+      builder += ("f3" -> 30)
+
+      val expected = JsObject(fields.updated(2, "f3" -> JsNumber(30)))
+
+      Json.stringify(builder.result()).mustEqual(Json.stringify(expected))
+    }
+
+    "not change a built object when the builder is reused" in {
+      val builder = Json.newBuilder
+
+      builder += ("a" -> 1)
+      builder += ("b" -> 2)
+
+      val first = builder.result()
+
+      builder += ("c" -> 3)
+
+      val second = builder.result()
+
+      builder.clear()
+      builder += ("d" -> 4)
+
+      Json.stringify(first).mustEqual("""{"a":1,"b":2}""")
+      Json.stringify(second).mustEqual("""{"a":1,"b":2,"c":3}""")
+      Json.stringify(builder.result()).mustEqual("""{"d":4}""")
+    }
+
+    "create object using builder append, mixed with +=" in {
+      val builder = new JsObjectBuilder()
+
+      builder.append("a", 1)
+      builder += ("b" -> "two")
+      builder.append("c", Json.arr(3))
+
+      val first = builder.result()
+
+      builder.append("a", 10)
+
+      Json.stringify(first).mustEqual("""{"a":1,"b":"two","c":[3]}""")
+      Json.stringify(builder.result()).mustEqual("""{"a":10,"b":"two","c":[3]}""")
+    }
+
     "convert to a byte array containing the UTF-8 representation" in json { js =>
       val json = js.parse("""
                             |{
