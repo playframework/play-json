@@ -55,6 +55,17 @@ class JsonMemoryFootprintSpec extends AnyFreeSpec {
     }
   }
 
+  "Json.newBuilder" - {
+    "takes the same memory as JsObject(fields)" in {
+      1.to(20).foreach { n =>
+        val fields = 0.until(n).map(i => s"$i" -> JsTrue)
+        val built  = footprint(fields.foldLeft(Json.newBuilder)((b, f) => b += (f._1 -> f._2)).result())
+        val oneGo  = footprint(JsObject(fields))
+        withClue(s"$n fields:")(assert(built > 0 && built === oneGo))
+      }
+    }
+  }
+
   // By-name: each layout is diffed against a second instance, so shared singletons don't count.
   private def footprint(a: => JsValue): Long =
     GraphLayout.parseInstance(a).subtract(GraphLayout.parseInstance(a)).totalSize()

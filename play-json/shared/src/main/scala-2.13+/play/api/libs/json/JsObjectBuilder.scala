@@ -8,12 +8,14 @@ import scala.collection.mutable.{ Builder => MBuilder }
 
 private[json] final class JsObjectBuilder extends MBuilder[(String, Json.JsValueWrapper), JsObject] {
 
-  private val fs = Map.newBuilder[String, JsValue]
+  // Keeps the fields in insertion order, as JsObject.apply does.
+  private val fs = ImmutableLinkedHashMap.newBuilder[String, JsValue]
 
-  def addOne(elem: (String, Json.JsValueWrapper)): this.type = {
-    val (name, wrapped) = elem
+  def addOne(elem: (String, Json.JsValueWrapper)): this.type = append(elem._1, elem._2)
 
-    fs += (name -> Json.unwrap(wrapped))
+  // Adds a field without the caller allocating a tuple.
+  def append(key: String, value: Json.JsValueWrapper): this.type = {
+    fs += (key -> Json.unwrap(value))
 
     this
   }
