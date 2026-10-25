@@ -51,7 +51,11 @@ def playJsonMimaSettings = Seq(
       case _                                       => true
     }
 
-    Seq(missingMethodInOld)
+    Seq(
+      missingMethodInOld,
+      // Jackson 3 upgrade: SimpleModule moved from com.fasterxml to tools.jackson
+      ProblemFilters.exclude[MissingTypesProblem]("play.api.libs.json.jackson.PlayJsonMapperModule"),
+    )
   }
 )
 
