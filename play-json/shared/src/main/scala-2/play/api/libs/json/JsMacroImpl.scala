@@ -171,9 +171,10 @@ class JsMacroImpl(val c: blackbox.Context) {
         selfRef: Boolean
     )
 
-    val optTpeCtor  = typeOf[Option[?]].typeConstructor
-    val forwardName = TermName(c.freshName("forward"))
-    val configName  = TermName(c.freshName("config"))
+    val optTpeCtor     = typeOf[Option[?]].typeConstructor
+    val owritesTpeCtor = typeOf[OWrites[?]].typeConstructor
+    val forwardName    = TermName(c.freshName("forward"))
+    val configName     = TermName(c.freshName("config"))
 
     // MacroOptions
     val options = config.actualType.member(TypeName("Opts")).asType.toTypeIn(config.actualType)
@@ -488,7 +489,7 @@ class JsMacroImpl(val c: blackbox.Context) {
 
       def hasUnapply: Boolean = unapply != NoSymbol || unapplySeq != NoSymbol
 
-      @inline private def params: List[(Name, Type)] = applyFunction match {
+      @inline private[json] def params: List[(Name, Type)] = applyFunction match {
         case Some((_, _, ps, _)) => {
           val base = if (hasVarArgs) ps.init else ps
           val defs = base.map { p =>
@@ -679,34 +680,195 @@ class JsMacroImpl(val c: blackbox.Context) {
         )
       }
 
-      def fieldHandler(name: Name, impl: Tree, paramType: Type, default: Option[Tree]): Tree = {
-        // Equivalent to __ \ "name", but uses a naming scheme
-        // of (String) => (String) to find the correct "name"
-        val cn         = c.Expr[String](q"$configName.naming(${name.decodedName.toString})")
-        val jspathTree = q"$JsPath \ $cn"
-        val isOption   = paramType.typeConstructor <:< optTpeCtor
+      def ignoreField(param: Symbol): Boolean =
+        param.annotations.exists(ann =>
+          ann.tree.tpe =:= typeOf[Json.Annotations.Ignore] ||
+            ann.tree.tpe =:= typeOf[scala.transient]
+        )
 
+      def hasFlatten(param: Symbol): Boolean =
+        param.annotations.exists(_.tree.tpe =:= typeOf[Json.Annotations.Flatten])
+
+      /**
+       * `@Flatten` write path needs a nested object. Prefer the already-resolved
+       * `impl` when it is already an `OWrites`/`OFormat`; otherwise require an
+       * `OWrites` in scope (compile-time).
+       */
+      def ensureOWrites(tpe: Type, impl: Tree, pname: String): Tree = {
+        val owTpe = appliedType(owritesTpeCtor, tpe)
+        val typed = {
+          if (impl.tpe != null) impl
+          else {
+            c.typecheck(impl, pt = owTpe, silent = true) match {
+              case EmptyTree => impl
+              case t         => t
+            }
+          }
+        }
+
+        if (typed.tpe != null && typed.tpe <:< owTpe) {
+          typed
+        } else {
+          val ow = c.inferImplicitValue(owTpe, silent = true)
+
+          if (ow == EmptyTree) {
+            c.abort(
+              c.enclosingPosition,
+              s"Cannot flatten writer for '${atpe.typeSymbol.fullName}.$pname': no OWrites for ${prettyType(identity)(tpe.dealias)} (nested value must write a JsObject)"
+            )
+          } else {
+            ow
+          }
+        }
+      }
+
+      def fieldHandler(
+          param: Symbol,
+          name: Name,
+          impl: Tree,
+          paramType: Type,
+          default: Option[Tree],
+          selfRef: Boolean
+      ): Tree = {
+        val pname        = name.decodedName.toString
+        val isOption     = paramType.typeConstructor <:< optTpeCtor
         val defaultValue = // not applicable for 'write' only
           default.filter(_ => methodName != "write")
 
-        // - If we're a default value, invoke the withDefault version
-        // - If we're an option with default value,
-        //   invoke the WithDefault version
-        (isOption, defaultValue) match {
-          case (true, Some(v)) =>
-            val c = TermName(s"${methodName}HandlerWithDefault")
-            q"$configName.optionHandlers.$c($jspathTree, $v)($impl)"
+        if (ignoreField(param)) {
+          lazy val pureRead: Tree = defaultValue match {
+            case Some(v) =>
+              q"$json.Reads.pure[$paramType](f = $v)"
 
-          case (true, _) =>
-            val c = TermName(s"${methodName}Handler")
-            q"$configName.optionHandlers.$c($jspathTree)($impl)"
+            case None if isOption =>
+              q"$json.Reads.pure[$paramType](f = _root_.scala.None)"
 
-          case (false, Some(v)) =>
-            val c = TermName(s"${methodName}WithDefault")
-            q"$jspathTree.$c($v)($impl)"
+            case None =>
+              c.abort(
+                c.enclosingPosition,
+                s"Cannot ignore '${atpe.typeSymbol.fullName}.$pname': no default value (constructor default or Option)"
+              )
+          }
 
-          case _ =>
-            q"$jspathTree.${TermName(methodName)}($impl)"
+          lazy val emptyWrite =
+            q"$json.OWrites[$paramType]((_: $paramType) => $json.JsObject.empty)"
+
+          methodName match {
+            case "read"  => pureRead
+            case "write" => emptyWrite
+            case _       => q"$json.OFormat[$paramType]($pureRead, $emptyWrite)"
+          }
+        } else if (hasFlatten(param)) {
+          if (selfRef) {
+            c.abort(
+              c.enclosingPosition,
+              s"Cannot flatten ${methodName}er for '${atpe.typeSymbol.fullName}.$pname': recursive type"
+            )
+          }
+
+          if (isOption) {
+            val innerTpe = paramType.typeArgs.head
+
+            lazy val optionWrite: Tree = {
+              val ow = ensureOWrites(innerTpe, impl, pname)
+
+              q"""$json.OWrites[$paramType] {
+                case _root_.scala.Some(inner) =>
+                  ($ow: $json.OWrites[$innerTpe]).writes(inner)
+
+                case _root_.scala.None =>
+                  $json.JsObject.empty
+              }"""
+            }
+
+            lazy val optionRead: Tree =
+              q"""$json.Reads[$paramType] { js =>
+                ($impl: $json.Reads[$innerTpe]).reads(js) match {
+                  case $json.JsSuccess(v, _) =>
+                    $json.JsSuccess((_root_.scala.Some(v): $paramType))
+
+                  case $json.JsError(details) if (details.forall {
+                    case (_, List($json.JsonValidationError.Message("error.path.missing"))) =>
+                      true
+
+                    case _ =>
+                      false
+                  }) => $json.JsSuccess(Option.empty[${innerTpe}])
+
+                  case $json.JsError(cause) => $json.JsError(cause)
+                }
+              }"""
+
+            methodName match {
+              case "read" =>
+                optionRead
+
+              case "write" =>
+                optionWrite
+
+              case _ =>
+                q"$json.OFormat[$paramType]($optionRead, $optionWrite)"
+            }
+          } else {
+            lazy val nestedWrite: Tree = {
+              val ow = ensureOWrites(paramType, impl, pname)
+              q"($ow: $json.OWrites[$paramType])"
+            }
+
+            methodName match {
+              case "read" =>
+                defaultValue match {
+                  case Some(v) =>
+                    q"""$json.Reads[$paramType] { js =>
+                      ($impl: $json.Reads[$paramType]).reads(js).orElse($json.JsSuccess($v))
+                    }"""
+
+                  case None =>
+                    q"($impl: $json.Reads[$paramType])"
+                }
+
+              case "write" =>
+                nestedWrite
+
+              case _ =>
+                val r = defaultValue match {
+                  case Some(v) =>
+                    q"""$json.Reads[$paramType] { js =>
+                      ($impl: $json.Reads[$paramType]).reads(js).orElse($json.JsSuccess($v))
+                    }"""
+
+                  case None =>
+                    q"($impl: $json.Reads[$paramType])"
+                }
+
+                q"$json.OFormat[$paramType]($r, $nestedWrite)"
+            }
+          }
+        } else {
+          // Equivalent to __ \ "name", but uses a naming scheme
+          // of (String) => (String) to find the correct "name"
+          val cn         = c.Expr[String](q"$configName.naming($pname)")
+          val jspathTree = q"$JsPath \ $cn"
+
+          // - If we're a default value, invoke the withDefault version
+          // - If we're an option with default value,
+          //   invoke the WithDefault version
+          (isOption, defaultValue) match {
+            case (true, Some(v)) =>
+              val c = TermName(s"${methodName}HandlerWithDefault")
+              q"$configName.optionHandlers.$c($jspathTree, $v)($impl)"
+
+            case (true, _) =>
+              val c = TermName(s"${methodName}Handler")
+              q"$configName.optionHandlers.$c($jspathTree)($impl)"
+
+            case (false, Some(v)) =>
+              val c = TermName(s"${methodName}WithDefault")
+              q"$jspathTree.$c($v)($impl)"
+
+            case _ =>
+              q"$jspathTree.${TermName(methodName)}($impl)"
+          }
         }
       }
 
@@ -758,26 +920,37 @@ class JsMacroImpl(val c: blackbox.Context) {
         val companion      = atpe.typeSymbol.companion
 
         val fields = constructorParams(atpe).zipWithIndex.map { case (param, i) =>
-          val name    = param.name
-          val tpe     = param.typeSignature.asSeenFrom(atpe, atpe.typeSymbol)
-          val helper  = createImplicit(tpe)
+          val name   = param.name
+          val tpe    = param.typeSignature.asSeenFrom(atpe, atpe.typeSymbol)
+          val helper = createImplicit(tpe)
+          // @Ignore uses ctor defaults even without Json.DefaultValues (documented).
           val default =
-            if (hasOption[Json.DefaultValues]) defaultValue(companion, param.asTerm, i)
+            if (ignoreField(param) || hasOption[Json.DefaultValues]) defaultValue(companion, param.asTerm, i)
             else None
 
-          (name, tpe, helper, default)
+          (param, name, tpe, helper, default)
         }
 
-        val missing = fields.collect { case (_, tpe, Implicit(_, EmptyTree /* not found */, _, _), _) => tpe }
+        val missing = fields.collect {
+          case (param, _, tpe, Implicit(_, EmptyTree /* not found */, _, _), _) if !ignoreField(param) =>
+            tpe
+        }
 
         if (missing.nonEmpty) {
           abortMissingImplicits(natag.tpe.typeSymbol.fullName, missing.map(prettyType(_.dealias)))
         }
 
-        val fieldHandlers = fields.map { case (name, _, helper, default) =>
-          name -> fieldHandler(name, helper.neededImplicit, helper.paramType, default)
+        val fieldHandlers = fields.map { case (param, name, _, helper, default) =>
+          name -> fieldHandler(
+            param,
+            name,
+            helper.neededImplicit,
+            helper.paramType,
+            default,
+            helper.selfRef
+          )
         }
-        val hasSelfRef = fields.exists(_._3.selfRef)
+        val hasSelfRef = fields.exists(_._4.selfRef)
 
         def readObject: Tree = {
           val (vals, refs) = fieldHandlers.map { case (_, handler) =>
@@ -844,18 +1017,39 @@ class JsMacroImpl(val c: blackbox.Context) {
           }
         })
 
+        // @Ignore uses ctor defaults even without Json.DefaultValues (documented).
         val defaultValueMap: Map[Name, Tree] =
-          if (!hasOption[Json.DefaultValues]) Map.empty
-          else {
-            (params, defaultValues).zipped.collect { case (p, Some(dv)) =>
-              p.name.encodedName -> dv
-            }.toMap
-          }
+          (params, defaultValues).zipped.collect {
+            case (p, Some(dv)) if ignoreField(p) || hasOption[Json.DefaultValues] =>
+              p.name -> dv
+          }.toMap
 
-        val resolvedImplicits = utility.implicits(resolver)
-        val canBuild          = resolvedImplicits
-          .map { case (name, Implicit(pt, impl, _, _)) =>
-            fieldHandler(name, impl, pt, defaultValueMap.get(name))
+        val createImplicit = resolver.createImplicit(atpe, natag.tpe) _
+
+        // Pair apply parameters with CaseClass.params types
+        // (varargs last param uses unapply return type, not <repeated>).
+        val namedTypes: List[(Name, Type)] = utility.params
+
+        val resolvedImplicits: List[(Symbol, Name, Implicit)] =
+          (params, namedTypes).zipped.map { case (param, (name, tpe)) =>
+            (param, name, createImplicit(tpe))
+          }.toList
+
+        val missingImplicits = resolvedImplicits.collect {
+          case (param, _, Implicit(t, EmptyTree, _, _)) if !ignoreField(param) =>
+            t
+        }
+
+        if (missingImplicits.nonEmpty) {
+          abortMissingImplicits(
+            natag.tpe.typeSymbol.fullName,
+            missingImplicits.map(t => prettyType(identity)(t.dealias))
+          )
+        }
+
+        val canBuild = resolvedImplicits
+          .map { case (param, name, Implicit(pt, impl, _, selfRef)) =>
+            fieldHandler(param, name, impl, pt, defaultValueMap.get(name), selfRef)
           }
           .reduceLeft[Tree] { (acc, r) =>
             q"$acc.and($r)"
@@ -905,7 +1099,7 @@ class JsMacroImpl(val c: blackbox.Context) {
           case _ => buildCall
         }
 
-        wrap(canBuildCall, resolvedImplicits.exists(_._2.selfRef), syntaxImport)
+        wrap(canBuildCall, resolvedImplicits.exists(_._3.selfRef), syntaxImport)
       }
     }
 
