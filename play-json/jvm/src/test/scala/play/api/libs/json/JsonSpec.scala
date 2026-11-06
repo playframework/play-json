@@ -4,14 +4,15 @@
 
 package play.api.libs.json
 
-import com.fasterxml.jackson.core.exc.StreamConstraintsException
+import tools.jackson.core.exc.StreamConstraintsException
 
 import java.io.ByteArrayInputStream
 import java.math.BigInteger
 import java.util.{ Calendar, Date, TimeZone }
 
-import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
-import com.fasterxml.jackson.databind.node.{ ArrayNode, NumericNode, ObjectNode }
+import tools.jackson.databind.{ JsonNode, ObjectMapper }
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.node.{ ArrayNode, BigIntegerNode, DoubleNode, NumericNode, ObjectNode }
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
@@ -527,12 +528,11 @@ final class JsonSpec extends org.specs2.mutable.Specification {
       )
     }
 
-    "Use a custom ObjectMapper subclass for ASCII serialization" in {
+    "Use a custom JsonMapper for ASCII serialization" in {
       val jacksonJson  = JacksonJson(JsonConfig.settings)
-      val customMapper = new ObjectMapper() {}
+      val customMapper = JsonMapper.builder().addModule(new PlayJsonMapperModule(JsonConfig.settings)).build()
 
       jacksonJson.setObjectMapper(customMapper)
-      customMapper.registerModule(new PlayJsonMapperModule())
 
       jacksonJson
         .generateFromJsValue(JsString("é"), escapeNonASCII = true)
@@ -638,7 +638,7 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
     "allow parsing objects nested up to max depth" in {
       try {
-        val depth = 1000
+        val depth = 500
         Json.parse(("{\"obj\":" * depth) + "1" + ("}" * depth))
       } catch {
         case _: StackOverflowError =>
@@ -650,13 +650,13 @@ final class JsonSpec extends org.specs2.mutable.Specification {
     }
 
     "disallow parsing nested objects exceeding max depth" in {
-      val depth = 1001
+      val depth = 501
       Json
         .parse(("{\"obj\":" * depth) + "1" + ("}" * depth))
         .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
           e.getMessage.must(
             equalTo(
-              "Document nesting depth (1001) exceeds the maximum allowed (1000, from `StreamReadConstraints.getMaxNestingDepth()`)"
+              "Document nesting depth (501) exceeds the maximum allowed (500, from `StreamReadConstraints.getMaxNestingDepth()`)"
             )
           )
         })
@@ -664,7 +664,7 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
     "allow parsing heavily nested mixed arrays and objects" in {
       try {
-        val depth = 1000 - 2 // in the string two open objects { are hardcoded
+        val depth = 500 - 2 // in the string two open objects { are hardcoded
         Json.parse("{\"foo\":  {\"arr\":" + ("[" * depth) + "1" + ("]" * depth) + "}}")
       } catch {
         case _: StackOverflowError =>
@@ -676,13 +676,13 @@ final class JsonSpec extends org.specs2.mutable.Specification {
     }
 
     "disallow parsing heavily nested mixed arrays and objects" in {
-      val depth = 1001 - 2 // in the string two open objects { are hardcoded
+      val depth = 501 - 2 // in the string two open objects { are hardcoded
       Json
         .parse("{\"foo\":  {\"arr\":" + ("[" * depth) + "1" + ("]" * depth) + "}}")
         .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
           e.getMessage.must(
             equalTo(
-              "Document nesting depth (1001) exceeds the maximum allowed (1000, from `StreamReadConstraints.getMaxNestingDepth()`)"
+              "Document nesting depth (501) exceeds the maximum allowed (500, from `StreamReadConstraints.getMaxNestingDepth()`)"
             )
           )
         })
