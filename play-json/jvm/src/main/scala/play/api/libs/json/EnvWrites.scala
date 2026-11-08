@@ -26,7 +26,7 @@ import scala.collection.mutable.{ ArrayBuilder, Map => MMap }
 
 import scala.concurrent.duration.FiniteDuration
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import play.api.libs.json.jackson.JacksonJson
 
 trait EnvWrites {
