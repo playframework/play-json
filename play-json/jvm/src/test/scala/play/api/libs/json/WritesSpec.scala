@@ -340,8 +340,7 @@ final class WritesSpec extends org.specs2.mutable.Specification {
       Json
         .toJson(
           Map(Locale.ENGLISH -> 1, Locale.FRENCH -> 2)
-        )
-        .must_==(Json.obj("en" -> 1, "fr" -> 2))
+        )(Writes.keyMapWrites[Locale, Int, Map]) must_=== Json.obj("en" -> 1, "fr" -> 2)
     }
   }
 
