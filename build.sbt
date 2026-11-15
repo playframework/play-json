@@ -19,7 +19,7 @@ def specs2(scalaVersion: String) =
     ("org.specs2" %% s"specs2-$n" % "4.23.0") % Test
   }
 
-val jacksonVersion = "3.2.4"
+val jacksonVersion = "3.3.0"
 val jacksons       = Seq(
   "tools.jackson.core"    % "jackson-core",
   "tools.jackson.core"    % "jackson-databind",

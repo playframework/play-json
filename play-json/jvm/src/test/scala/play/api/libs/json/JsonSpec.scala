@@ -445,9 +445,10 @@ final class JsonSpec extends org.specs2.mutable.Specification {
             .parse(invalidJsonExceedingNumberOfDigits)
             .as[BigNumbers]
             .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+              // Jackson 3.3 fails fast, so the reported length depends on where parsing stopped
               e.getMessage.must(
-                equalTo(
-                  "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+                beMatching(
+                  """Number value length \(\d+\) exceeds the maximum allowed \(310, from `StreamReadConstraints\.getMaxNumberLength\(\)`\)"""
                 )
               )
             })
@@ -458,9 +459,10 @@ final class JsonSpec extends org.specs2.mutable.Specification {
             .parse(invalidJsonExceedingNumberOfDigitsNegative)
             .as[BigNumbers]
             .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+              // Jackson 3.3 fails fast, so the reported length depends on where parsing stopped
               e.getMessage.must(
-                equalTo(
-                  "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+                beMatching(
+                  """Number value length \(\d+\) exceeds the maximum allowed \(310, from `StreamReadConstraints\.getMaxNumberLength\(\)`\)"""
                 )
               )
             })
@@ -588,6 +590,40 @@ final class JsonSpec extends org.specs2.mutable.Specification {
       numStrings.map { numString =>
         val bigDec = new java.math.BigDecimal(numString)
         Json.stringify(JsNumber(bigDec)).must_==(bigDec.toString)
+      }
+    }
+
+    "Serialize JsNumbers within the plain range without e notation" in {
+      val cases = Seq(
+        "1E-7"     -> "0.0000001",
+        "-1.5E-9"  -> "-0.0000000015",
+        "1E-10"    -> "0.0000000001",
+        "1E+2"     -> "100",
+        "1.2E+19"  -> "12000000000000000000",
+        "-1.0E+20" -> "-100000000000000000000"
+      )
+      cases.map { case (in, expected) =>
+        Json.stringify(JsNumber(new java.math.BigDecimal(in))).must_==(expected)
+      }
+    }
+
+    "Serialize JsNumbers outside the plain range with e notation" in {
+      val cases = Seq(
+        "1E-11"   -> "1E-11",
+        "1.5E+21" -> "1.5E+21"
+      )
+      cases.map { case (in, expected) =>
+        Json.stringify(JsNumber(new java.math.BigDecimal(in))).must_==(expected)
+      }
+    }
+
+    "Convert JsNumbers to JsonNode with the same numeric value" in {
+      val numStrings = Seq("0", "1", "-1", "1.5", "1E-7", "1E+2", "1.5E+21", "1E-11", "10.00")
+      numStrings.map { numString =>
+        val bigDec = new java.math.BigDecimal(numString)
+        val node   = Json.toJson(JsNumber(bigDec)).as[JsonNode]
+        node.isNumber.must_==(true)
+        node.decimalValue.compareTo(bigDec).must_==(0)
       }
     }
 
