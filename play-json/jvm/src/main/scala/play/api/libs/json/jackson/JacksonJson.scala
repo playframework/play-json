@@ -30,6 +30,7 @@ import tools.jackson.databind.cfg.DateTimeFeature
 import tools.jackson.databind.deser.Deserializers
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.module.SimpleModule
+import tools.jackson.databind.node.TreeBuildingGenerator
 import tools.jackson.databind.ser.Serializers
 import tools.jackson.module.scala.DefaultScalaModule
 
@@ -88,7 +89,19 @@ private[jackson] class JsValueSerializer(jsonConfig: JsonConfig) extends ValueSe
           va <= jsonConfig.bigDecimalSerializerConfig.maxPlain && va >= jsonConfig.bigDecimalSerializerConfig.minPlain
         }
         val stripped = stripTrailingZeros(v.bigDecimal)
-        json.writeNumber(if (shouldWritePlain) new JBigDec(stripped.toPlainString) else stripped)
+        json match {
+          case _: TreeBuildingGenerator =>
+            // Used by ObjectMapper.valueToTree: does not support writeNumber(String)
+            // (jackson-databind#5528), so numbers must be written as typed values.
+            // A negative scale (e.g. 1E+2 after stripping zeros) is what makes
+            // BigDecimal.toString use e notation for large numbers, so normalise it
+            // rather than round-tripping through toPlainString.
+            json.writeNumber(if (shouldWritePlain && stripped.scale < 0) stripped.setScale(0) else stripped)
+          case _ =>
+            // Textual generators: write the pre-formatted number directly, avoiding
+            // both an extra BigDecimal allocation and Jackson's own formatting
+            json.writeNumber(if (shouldWritePlain) stripped.toPlainString else stripped.toString)
+        }
       }
 
       case JsString(v)  => json.writeString(v)
