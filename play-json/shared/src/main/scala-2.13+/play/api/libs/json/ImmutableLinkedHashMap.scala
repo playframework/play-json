@@ -79,16 +79,34 @@ private[json] object ImmutableLinkedHashMap extends MapFactory[Map] {
   override def newBuilder[A, B]: mutable.Builder[(A, B), Map[A, B]] = new mutable.Builder[(A, B), Map[A, B]] {
     private var lhm = new JLinkedHashMap[A, B](0)
 
-    override def clear(): Unit = lhm.clear()
+    // Whether lhm backs a map returned by result(), so it must be copied before any change.
+    private var aliased = false
+
+    override def clear(): Unit = {
+      if (aliased) {
+        lhm = new JLinkedHashMap[A, B](0)
+        aliased = false
+      } else lhm.clear()
+    }
 
     override def sizeHint(size: Int): Unit = if (size > 0 && lhm.isEmpty) lhm = new JLinkedHashMap[A, B](size)
 
+    override def knownSize: Int = lhm.size()
+
     override def result(): Map[A, B] = {
       if (lhm.isEmpty) empty
-      else new ImmutableLinkedHashMap(lhm)
+      else {
+        aliased = true
+        new ImmutableLinkedHashMap(lhm)
+      }
     }
 
     override def addOne(elem: (A, B)): this.type = {
+      if (aliased) {
+        lhm = new JLinkedHashMap[A, B](lhm)
+        aliased = false
+      }
+
       lhm.put(elem._1, elem._2)
       this
     }
