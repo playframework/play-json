@@ -6,7 +6,7 @@ resolvers ++= DefaultOptions.resolvers(snapshot = true)
 
 addSbtPlugin("org.playframework" % "play-docs-sbt-plugin" % sys.props.getOrElse("play.version", "3.0.9"))
 
-addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.8")
+addSbtPlugin("com.github.sbt" % "sbt-jmh" % "0.4.9")
 
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.2.1")
 
