@@ -29,8 +29,8 @@ import scala.concurrent.duration.{ Duration, FiniteDuration }
 
 import scala.util.control.NonFatal
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.{ ArrayNode, ObjectNode }
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.node.{ ArrayNode, ObjectNode }
 
 import play.api.libs.json.jackson.JacksonJson
 
