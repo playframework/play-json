@@ -284,13 +284,11 @@ trait EnvWrites {
   /** Serializer for a `Locale` using the IETF BCP 47 string representation */
   implicit val localeWrites: Writes[Locale] =
     Writes[Locale] { l =>
-      JsString(KeyWrites.LanguageTagWrites.writeKey(l))
+      JsString(l.toLanguageTag)
     }
 
   /** Serializer for a `Locale` using a object representation */
   val localeObjectWrites: OWrites[Locale] = {
-    import scala.collection.JavaConverters.asScalaSetConverter
-
     OWrites[Locale] { l =>
       val fields = Map.newBuilder[String, JsValue]
 
@@ -396,8 +394,4 @@ trait EnvWrites {
     Writes.StringWrites.contramap[E](_.name)
 }
 
-trait EnvKeyWrites {
-  implicit object LanguageTagWrites extends KeyWrites[Locale] {
-    def writeKey(locale: Locale): String = locale.toLanguageTag
-  }
-}
+trait EnvKeyWrites {}
