@@ -4,14 +4,15 @@
 
 package play.api.libs.json
 
-import com.fasterxml.jackson.core.exc.StreamConstraintsException
+import tools.jackson.core.exc.StreamConstraintsException
 
 import java.io.ByteArrayInputStream
 import java.math.BigInteger
 import java.util.{ Calendar, Date, TimeZone }
 
-import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
-import com.fasterxml.jackson.databind.node.{ ArrayNode, NumericNode, ObjectNode }
+import tools.jackson.databind.{ JsonNode, ObjectMapper }
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.node.{ ArrayNode, BigIntegerNode, DoubleNode, NumericNode, ObjectNode }
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Json._
@@ -444,9 +445,10 @@ final class JsonSpec extends org.specs2.mutable.Specification {
             .parse(invalidJsonExceedingNumberOfDigits)
             .as[BigNumbers]
             .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+              // Jackson 3.3 fails fast, so the reported length depends on where parsing stopped
               e.getMessage.must(
-                equalTo(
-                  "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+                beMatching(
+                  """Number value length \(\d+\) exceeds the maximum allowed \(310, from `StreamReadConstraints\.getMaxNumberLength\(\)`\)"""
                 )
               )
             })
@@ -457,9 +459,10 @@ final class JsonSpec extends org.specs2.mutable.Specification {
             .parse(invalidJsonExceedingNumberOfDigitsNegative)
             .as[BigNumbers]
             .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
+              // Jackson 3.3 fails fast, so the reported length depends on where parsing stopped
               e.getMessage.must(
-                equalTo(
-                  "Number value length (1000000) exceeds the maximum allowed (310, from `StreamReadConstraints.getMaxNumberLength()`)"
+                beMatching(
+                  """Number value length \(\d+\) exceeds the maximum allowed \(310, from `StreamReadConstraints\.getMaxNumberLength\(\)`\)"""
                 )
               )
             })
@@ -527,12 +530,11 @@ final class JsonSpec extends org.specs2.mutable.Specification {
       )
     }
 
-    "Use a custom ObjectMapper subclass for ASCII serialization" in {
+    "Use a custom JsonMapper for ASCII serialization" in {
       val jacksonJson  = JacksonJson(JsonConfig.settings)
-      val customMapper = new ObjectMapper() {}
+      val customMapper = JsonMapper.builder().addModule(new PlayJsonMapperModule(JsonConfig.settings)).build()
 
       jacksonJson.setObjectMapper(customMapper)
-      customMapper.registerModule(new PlayJsonMapperModule())
 
       jacksonJson
         .generateFromJsValue(JsString("é"), escapeNonASCII = true)
@@ -591,6 +593,40 @@ final class JsonSpec extends org.specs2.mutable.Specification {
       }
     }
 
+    "Serialize JsNumbers within the plain range without e notation" in {
+      val cases = Seq(
+        "1E-7"     -> "0.0000001",
+        "-1.5E-9"  -> "-0.0000000015",
+        "1E-10"    -> "0.0000000001",
+        "1E+2"     -> "100",
+        "1.2E+19"  -> "12000000000000000000",
+        "-1.0E+20" -> "-100000000000000000000"
+      )
+      cases.map { case (in, expected) =>
+        Json.stringify(JsNumber(new java.math.BigDecimal(in))).must_==(expected)
+      }
+    }
+
+    "Serialize JsNumbers outside the plain range with e notation" in {
+      val cases = Seq(
+        "1E-11"   -> "1E-11",
+        "1.5E+21" -> "1.5E+21"
+      )
+      cases.map { case (in, expected) =>
+        Json.stringify(JsNumber(new java.math.BigDecimal(in))).must_==(expected)
+      }
+    }
+
+    "Convert JsNumbers to JsonNode with the same numeric value" in {
+      val numStrings = Seq("0", "1", "-1", "1.5", "1E-7", "1E+2", "1.5E+21", "1E-11", "10.00")
+      numStrings.map { numString =>
+        val bigDec = new java.math.BigDecimal(numString)
+        val node   = Json.toJson(JsNumber(bigDec)).as[JsonNode]
+        node.isNumber.must_==(true)
+        node.decimalValue.compareTo(bigDec).must_==(0)
+      }
+    }
+
     "parse from InputStream and close it" in {
       val js = Json.obj(
         "key1" -> "value1",
@@ -638,7 +674,7 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
     "allow parsing objects nested up to max depth" in {
       try {
-        val depth = 1000
+        val depth = 500
         Json.parse(("{\"obj\":" * depth) + "1" + ("}" * depth))
       } catch {
         case _: StackOverflowError =>
@@ -650,13 +686,13 @@ final class JsonSpec extends org.specs2.mutable.Specification {
     }
 
     "disallow parsing nested objects exceeding max depth" in {
-      val depth = 1001
+      val depth = 501
       Json
         .parse(("{\"obj\":" * depth) + "1" + ("}" * depth))
         .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
           e.getMessage.must(
             equalTo(
-              "Document nesting depth (1001) exceeds the maximum allowed (1000, from `StreamReadConstraints.getMaxNestingDepth()`)"
+              "Document nesting depth (501) exceeds the maximum allowed (500, from `StreamReadConstraints.getMaxNestingDepth()`)"
             )
           )
         })
@@ -664,7 +700,7 @@ final class JsonSpec extends org.specs2.mutable.Specification {
 
     "allow parsing heavily nested mixed arrays and objects" in {
       try {
-        val depth = 1000 - 2 // in the string two open objects { are hardcoded
+        val depth = 500 - 2 // in the string two open objects { are hardcoded
         Json.parse("{\"foo\":  {\"arr\":" + ("[" * depth) + "1" + ("]" * depth) + "}}")
       } catch {
         case _: StackOverflowError =>
@@ -676,13 +712,13 @@ final class JsonSpec extends org.specs2.mutable.Specification {
     }
 
     "disallow parsing heavily nested mixed arrays and objects" in {
-      val depth = 1001 - 2 // in the string two open objects { are hardcoded
+      val depth = 501 - 2 // in the string two open objects { are hardcoded
       Json
         .parse("{\"foo\":  {\"arr\":" + ("[" * depth) + "1" + ("]" * depth) + "}}")
         .must(throwA[StreamConstraintsException].like { case e: StreamConstraintsException =>
           e.getMessage.must(
             equalTo(
-              "Document nesting depth (1001) exceeds the maximum allowed (1000, from `StreamReadConstraints.getMaxNestingDepth()`)"
+              "Document nesting depth (501) exceeds the maximum allowed (500, from `StreamReadConstraints.getMaxNestingDepth()`)"
             )
           )
         })
